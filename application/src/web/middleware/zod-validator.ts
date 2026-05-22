@@ -1,7 +1,7 @@
 import { zValidator } from '@hono/zod-validator'
 import type { Context, ValidationTargets } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { ZodSchema } from 'zod'
+import { z, ZodSchema } from 'zod'
 import { Env } from '../env'
 
 // 参考: https://github.com/honojs/middleware/blob/main/packages/zod-validator/README.md
@@ -11,7 +11,7 @@ const zodValidator = <Target extends keyof ValidationTargets, T extends ZodSchem
 ) =>
   zValidator(target, schema, (result) => {
     if (!result.success) {
-      const errorMessages = result.error.flatten().fieldErrors
+      const errorMessages = z.flattenError(result.error).fieldErrors
       throw new HTTPException(422, {
         message: 'Invalid input',
         cause: errorMessages,

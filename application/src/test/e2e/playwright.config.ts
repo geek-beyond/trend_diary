@@ -85,6 +85,8 @@ export default defineConfig({
     command: 'CHOKIDAR_USEPOLLING=1 npm run start:e2e',
     cwd: '../../..',
     url: 'http://localhost:5173',
+    // CIの遅いランナーでvite初回ビルドが60sを超えることがあるため余裕を持たせる
+    timeout: 180000,
     // INFO: CIに合わせる
     reuseExistingServer: false,
   },

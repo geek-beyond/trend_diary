@@ -1,5 +1,5 @@
-import { AsyncResult } from '@yuukihayashi0510/core'
 import { ClientError, ServerError } from '@/common/errors'
+import { AsyncResult } from '@/common/result'
 import { Nullable } from '@/common/types/utility'
 
 import type { CurrentUser } from './schema/active-user-schema'

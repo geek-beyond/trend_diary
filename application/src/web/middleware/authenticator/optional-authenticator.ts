@@ -1,5 +1,5 @@
-import { isSuccess } from '@yuukihayashi0510/core'
 import { createMiddleware } from 'hono/factory'
+import { isSuccess } from '@/common/result'
 import { Env } from '../../env'
 import CONTEXT_KEY from '../context'
 import { validateSession } from './validate'

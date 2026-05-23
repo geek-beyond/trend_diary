@@ -1,5 +1,5 @@
-import { isFailure } from '@yuukihayashi0510/core'
 import { ExternalServiceError, handleError } from '@/common/errors'
+import { isFailure } from '@/common/result'
 import { type AuthInput, createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'

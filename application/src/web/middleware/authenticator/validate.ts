@@ -1,7 +1,7 @@
-import { failure, isFailure, type Result, success } from '@yuukihayashi0510/core'
 import type { Context } from 'hono'
 import { ClientError, ServerError } from '@/common/errors'
 import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
+import { failure, isFailure, type Result, success } from '@/common/result'
 import { createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'

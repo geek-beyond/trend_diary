@@ -1,5 +1,6 @@
-import { isFailure } from '@yuukihayashi0510/core'
+import { z } from 'zod'
 import { addJstDays, toJstDateString } from '@/common/locale/date'
+import { isFailure } from '@/common/result'
 import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
 import type { CleanUpIds } from '@/test/helper/user'
@@ -73,7 +74,7 @@ describe('diaryQuerySchema', () => {
     expect(result.success).toBe(false)
     if (result.success) return
 
-    const errors = result.error.flatten().fieldErrors
+    const errors = z.flattenError(result.error).fieldErrors
     expect(errors.from).toContain('date must be a valid JST date')
     expect(errors.to).toContain('date must be a valid JST date')
   })
@@ -87,7 +88,7 @@ describe('diaryQuerySchema', () => {
     expect(result.success).toBe(false)
     if (result.success) return
 
-    const errors = result.error.flatten().fieldErrors
+    const errors = z.flattenError(result.error).fieldErrors
     expect(errors.page).toContain('page is available only when from and to are the same date')
   })
 })

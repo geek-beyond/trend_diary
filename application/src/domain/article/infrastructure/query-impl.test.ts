@@ -1,6 +1,6 @@
 import { Article as PrismaArticle } from '@prisma/client'
-import { isFailure, isSuccess } from '@yuukihayashi0510/core'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { isFailure, isSuccess } from '@/common/result'
 import mockDb from '@/test/__mocks__/prisma'
 import QueryImpl from './query-impl'
 

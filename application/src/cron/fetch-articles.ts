@@ -1,5 +1,5 @@
-import { isFailure, wrapAsyncCall } from '@yuukihayashi0510/core'
 import Parser from 'rss-parser'
+import { isFailure, wrapAsyncCall } from '@/common/result'
 import type { ArticleMedia } from '@/domain/article/media'
 import getRdbClient from '@/infrastructure/rdb'
 

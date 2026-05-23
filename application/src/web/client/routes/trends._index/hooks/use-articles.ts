@@ -1,4 +1,3 @@
-import { isFailure } from '@yuukihayashi0510/core'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
@@ -10,6 +9,7 @@ import {
   offsetPaginationMobileSchema,
   offsetPaginationSchema,
 } from '@/common/pagination/schema'
+import { isFailure } from '@/common/result'
 import { isArticleMedia } from '@/domain/article/media'
 import type { ArticleOutput } from '@/domain/article/schema/article-schema'
 import { useIsMobile } from '@/web/client/components/shadcn/hooks/use-mobile'

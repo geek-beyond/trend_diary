@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { AuthInput, authInputSchema } from '@/domain/user'
 import { newValidationError, newValidationSuccess, ValidationResult } from '../validation'
 
@@ -21,7 +22,7 @@ export function validateAuthenticateForm(
 
   if (!result.success) {
     return newValidationError<AuthenticateErrors>(
-      result.error.flatten().fieldErrors as AuthenticateErrors,
+      z.flattenError(result.error).fieldErrors as AuthenticateErrors,
     )
   }
 

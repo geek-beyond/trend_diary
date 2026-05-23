@@ -1,6 +1,6 @@
-import { AsyncResult } from '@yuukihayashi0510/core'
 import { ServerError } from '@/common/errors'
 import { OffsetPaginationResult } from '@/common/pagination'
+import { AsyncResult } from '@/common/result'
 import { Nullable } from '@/common/types/utility'
 import type { ArticleMedia } from '@/domain/article/media'
 import type { Article, ArticleWithOptionalReadStatus } from './schema/article-schema'

@@ -1,6 +1,6 @@
-import { failure, success } from '@yuukihayashi0510/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as dateModule from '@/common/locale/date'
+import { failure, success } from '@/common/result'
 import { getTodayJst, sumSourceSummary } from './diary-shared'
 
 describe('diary-shared', () => {

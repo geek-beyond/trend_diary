@@ -5,6 +5,8 @@ import {
   type SupabaseClient,
   type User,
 } from '@supabase/supabase-js'
+import { AlreadyExistsError, ClientError, ServerError } from '@/common/errors'
+import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
 import {
   type AsyncResult,
   failure,
@@ -12,9 +14,7 @@ import {
   type Result,
   success,
   wrapAsyncCall,
-} from '@yuukihayashi0510/core'
-import { AlreadyExistsError, ClientError, ServerError } from '@/common/errors'
-import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
+} from '@/common/result'
 import type { AuthLoginResult, AuthRepository, AuthSignupResult } from '../repository'
 import type { AuthenticationUser } from '../schema/auth-schema'
 

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { isFailure } from '@yuukihayashi0510/core'
 import { addJstDays, toJstDateString } from '@/common/locale/date'
+import { isFailure } from '@/common/result'
 import { ArticleDrawer } from '@/test/e2e/pom/components/article-drawer'
 import { DesktopMediaFilter } from '@/test/e2e/pom/components/desktop-media-filter'
 import { SUPPORTED_ARTICLE_URL_PATTERN } from '@/test/e2e/pom/constants'

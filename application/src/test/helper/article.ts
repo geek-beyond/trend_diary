@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker'
-import { isFailure } from '@yuukihayashi0510/core'
 import { toJstDateString } from '@/common/locale/date'
+import { isFailure } from '@/common/result'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@/domain/article/media'
 import { fromDbId, toDbId, toDbIds } from '@/infrastructure/rdb-id'
 import { getTestRdb } from './rdb'

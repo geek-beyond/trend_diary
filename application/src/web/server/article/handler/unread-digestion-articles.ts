@@ -1,6 +1,6 @@
-import { isFailure } from '@yuukihayashi0510/core'
 import { z } from 'zod'
 import { handleError } from '@/common/errors'
+import { isFailure } from '@/common/result'
 import { createArticleUseCase } from '@/domain/article'
 import { ARTICLE_MEDIA } from '@/domain/article/media'
 import type { ArticleOutput } from '@/domain/article/schema/article-schema'

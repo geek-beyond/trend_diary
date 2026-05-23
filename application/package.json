@@ -52,7 +52,6 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.76.1",
     "@tailwindcss/vite": "^4.2.4",
-    "@yuukihayashi0510/core": "npm:@jsr/yuukihayashi0510__core@^0.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "hono": "^4.12.18",

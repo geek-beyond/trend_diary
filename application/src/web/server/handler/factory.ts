@@ -54,13 +54,13 @@
  * - deletePermission.ts（動的パス + $delete）
  */
 
-import type { Result } from '@yuukihayashi0510/core'
-import { isFailure } from '@yuukihayashi0510/core'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { ContentfulStatusCode, StatusCode } from 'hono/utils/http-status'
 import { handleError } from '@/common/errors'
 import type { LoggerType } from '@/common/logger'
+import type { Result } from '@/common/result'
+import { isFailure } from '@/common/result'
 import getRdbClient, { type RdbClient } from '@/infrastructure/rdb'
 import type { Env, SessionUser } from '@/web/env'
 import CONTEXT_KEY from '@/web/middleware/context'

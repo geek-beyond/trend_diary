@@ -1,6 +1,6 @@
-import { isFailure } from '@yuukihayashi0510/core'
 import type { Context } from 'hono'
 import { handleError } from '@/common/errors'
+import { isFailure } from '@/common/result'
 import { createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'

@@ -1,5 +1,5 @@
-import { isFailure, isSuccess } from '@yuukihayashi0510/core'
 import { afterEach, beforeEach, vi } from 'vitest'
+import { isFailure, isSuccess } from '@/common/result'
 import {
   addJstDays,
   formatSummaryDateTick,

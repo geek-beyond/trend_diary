@@ -1,5 +1,5 @@
-import { AsyncResult, failure, isFailure, success, wrapAsyncCall } from '@yuukihayashi0510/core'
 import { ServerError } from '@/common/errors'
+import { AsyncResult, failure, isFailure, success, wrapAsyncCall } from '@/common/result'
 import { RdbClient } from '@/infrastructure/rdb'
 import { Command } from '../repository'
 import type { CurrentUser } from '../schema/active-user-schema'

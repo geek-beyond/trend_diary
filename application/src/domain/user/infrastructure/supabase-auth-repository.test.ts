@@ -5,11 +5,11 @@ import {
   type SupabaseClient,
   type User,
 } from '@supabase/supabase-js'
-import { isFailure, isSuccess } from '@yuukihayashi0510/core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
 import { AlreadyExistsError, ClientError, ServerError } from '@/common/errors'
 import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
+import { isFailure, isSuccess } from '@/common/result'
 import { SupabaseAuthRepository } from './supabase-auth-repository'
 
 const buildSupabaseUser = (overrides: Partial<User> = {}): User => ({

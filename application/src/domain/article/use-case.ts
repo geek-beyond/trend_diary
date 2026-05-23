@@ -1,7 +1,7 @@
-import { AsyncResult, failure, isFailure, success } from '@yuukihayashi0510/core'
 import { NotFoundError, ServerError } from '@/common/errors'
 import { toJstDateString } from '@/common/locale/date'
 import { DEFAULT_LIMIT, DEFAULT_PAGE, OffsetPaginationResult } from '@/common/pagination'
+import { AsyncResult, failure, isFailure, success } from '@/common/result'
 import extractTrimmed from '@/common/sanitization'
 import { isNull } from '@/common/types/utility'
 import type { ArticleMedia } from '@/domain/article/media'

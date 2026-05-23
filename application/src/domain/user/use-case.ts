@@ -1,5 +1,5 @@
-import { type AsyncResult, failure, isFailure, success } from '@yuukihayashi0510/core'
 import { ClientError, ServerError } from '@/common/errors'
+import { type AsyncResult, failure, isFailure, success } from '@/common/result'
 import type { Command, Query } from '@/domain/user/repository'
 import type { CurrentUser } from '@/domain/user/schema/active-user-schema'
 import type { AuthRepository } from './repository'

@@ -1,5 +1,5 @@
-import { AsyncResult, failure, isFailure, success, wrapAsyncCall } from '@yuukihayashi0510/core'
 import { ServerError } from '@/common/errors'
+import { AsyncResult, failure, isFailure, success, wrapAsyncCall } from '@/common/result'
 import { Command } from '@/domain/article/repository'
 import type { ReadHistory } from '@/domain/article/schema/read-history-schema'
 import type { SkippedArticle } from '@/domain/article/schema/skipped-article-schema'

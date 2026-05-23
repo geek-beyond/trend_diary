@@ -1,6 +1,6 @@
-import { isFailure } from '@yuukihayashi0510/core'
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
+import { isFailure } from '@/common/result'
 import { Env } from '../../env'
 import CONTEXT_KEY from '../context'
 import { validateSession } from './validate'

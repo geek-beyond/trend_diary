@@ -1,6 +1,6 @@
-import { isFailure, wrapAsyncCall } from '@yuukihayashi0510/core'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { isFailure, wrapAsyncCall } from '@/common/result'
 import getApiClientForClient from '../../../infrastructure/api'
 
 const MarkAsReadErrorMessage = '既読に失敗しました'

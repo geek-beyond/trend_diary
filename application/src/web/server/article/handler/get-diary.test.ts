@@ -1,6 +1,6 @@
-import { isFailure } from '@yuukihayashi0510/core'
 import { z } from 'zod'
 import { addJstDays, toJstDateString } from '@/common/locale/date'
+import { isFailure } from '@/common/result'
 import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
 import type { CleanUpIds } from '@/test/helper/user'

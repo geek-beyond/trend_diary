@@ -91,11 +91,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # actions/checkout は HEAD ブランチしか fetch しないため、--only-changed が参照する base ref を明示的に取得する
-      - name: Fetch base ref
-        working-directory: ${{ github.workspace }}
-        run: git fetch --no-tags origin "$GITHUB_BASE_REF"
-
       - id: setup-supabase
         name: Supabaseのセットアップ
         uses: ./.github/actions/setup_supabase

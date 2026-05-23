@@ -1,0 +1,5 @@
+bin/
+supabase
+*.test
+*.out
+coverage.txt

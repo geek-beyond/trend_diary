@@ -31,44 +31,48 @@ describe('offsetPaginationSchema', () => {
   }
 
   const invalidCases = [
-    { name: 'pageが文字列', input: { page: 'abc' }, message: 'Expected number, received nan' },
+    {
+      name: 'pageが文字列',
+      input: { page: 'abc' },
+      message: 'Invalid input: expected number, received NaN',
+    },
     {
       name: 'limitが文字列',
       input: { limit: 'invalid' },
-      message: 'Expected number, received nan',
+      message: 'Invalid input: expected number, received NaN',
     },
-    { name: 'pageが0', input: { page: 0 }, message: 'Number must be greater than or equal to 1' },
+    { name: 'pageが0', input: { page: 0 }, message: 'Too small: expected number to be >=1' },
     {
       name: 'pageが負の値',
       input: { page: -1 },
-      message: 'Number must be greater than or equal to 1',
+      message: 'Too small: expected number to be >=1',
     },
     {
       name: 'pageが大きな負の値',
       input: { page: -999 },
-      message: 'Number must be greater than or equal to 1',
+      message: 'Too small: expected number to be >=1',
     },
-    { name: 'pageが小数', input: { page: 1.5 }, message: 'Expected integer' },
-    { name: 'pageが1未満の小数', input: { page: 0.9 }, message: 'Expected integer' },
+    { name: 'pageが小数', input: { page: 1.5 }, message: 'Invalid input: expected int' },
+    { name: 'pageが1未満の小数', input: { page: 0.9 }, message: 'Invalid input: expected int' },
     {
       name: `limitが${MIN_LIMIT}未満`,
       input: { limit: 0 },
-      message: `Number must be greater than or equal to ${MIN_LIMIT}`,
+      message: `Too small: expected number to be >=${MIN_LIMIT}`,
     },
     {
       name: 'limitが負の値',
       input: { limit: -10 },
-      message: `Number must be greater than or equal to ${MIN_LIMIT}`,
+      message: `Too small: expected number to be >=${MIN_LIMIT}`,
     },
     {
       name: `limitが${MAX_LIMIT}より大きい`,
       input: { limit: 101 },
-      message: `Number must be less than or equal to ${MAX_LIMIT}`,
+      message: `Too big: expected number to be <=${MAX_LIMIT}`,
     },
     {
       name: 'limitが大きな値',
       input: { limit: 500 },
-      message: `Number must be less than or equal to ${MAX_LIMIT}`,
+      message: `Too big: expected number to be <=${MAX_LIMIT}`,
     },
   ]
 
@@ -100,38 +104,42 @@ describe('offsetPaginationMobileSchema', () => {
   }
 
   const invalidCases = [
-    { name: 'pageが文字列', input: { page: 'abc' }, message: 'Expected number, received nan' },
+    {
+      name: 'pageが文字列',
+      input: { page: 'abc' },
+      message: 'Invalid input: expected number, received NaN',
+    },
     {
       name: 'limitが文字列',
       input: { limit: 'invalid' },
-      message: 'Expected number, received nan',
+      message: 'Invalid input: expected number, received NaN',
     },
-    { name: 'pageが0', input: { page: 0 }, message: 'Number must be greater than or equal to 1' },
+    { name: 'pageが0', input: { page: 0 }, message: 'Too small: expected number to be >=1' },
     {
       name: 'pageが負の値',
       input: { page: -1 },
-      message: 'Number must be greater than or equal to 1',
+      message: 'Too small: expected number to be >=1',
     },
-    { name: 'pageが小数', input: { page: 1.5 }, message: 'Expected integer' },
+    { name: 'pageが小数', input: { page: 1.5 }, message: 'Invalid input: expected int' },
     {
       name: `limitが${MIN_LIMIT}未満`,
       input: { limit: 0 },
-      message: `Number must be greater than or equal to ${MIN_LIMIT}`,
+      message: `Too small: expected number to be >=${MIN_LIMIT}`,
     },
     {
       name: 'limitが負の値',
       input: { limit: -10 },
-      message: `Number must be greater than or equal to ${MIN_LIMIT}`,
+      message: `Too small: expected number to be >=${MIN_LIMIT}`,
     },
     {
       name: `limitが${MAX_LIMIT}より大きい`,
       input: { limit: 101 },
-      message: `Number must be less than or equal to ${MAX_LIMIT}`,
+      message: `Too big: expected number to be <=${MAX_LIMIT}`,
     },
     {
       name: 'limitが大きな値',
       input: { limit: 500 },
-      message: `Number must be less than or equal to ${MAX_LIMIT}`,
+      message: `Too big: expected number to be <=${MAX_LIMIT}`,
     },
   ]
 

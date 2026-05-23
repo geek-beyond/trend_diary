@@ -1,5 +1,5 @@
-import { failure, isFailure, type Result, success } from '@yuukihayashi0510/core'
 import { z } from 'zod'
+import { failure, isFailure, type Result, success } from '@/common/result'
 
 const dateSchema = z.union([z.string().datetime(), z.date()])
 const jstDateFormatter = new Intl.DateTimeFormat('ja-JP', {

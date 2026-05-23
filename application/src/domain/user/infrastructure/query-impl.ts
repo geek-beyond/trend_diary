@@ -1,5 +1,5 @@
-import { AsyncResult, failure, isFailure, success, wrapAsyncCall } from '@yuukihayashi0510/core'
 import { ServerError } from '@/common/errors'
+import { AsyncResult, failure, isFailure, success, wrapAsyncCall } from '@/common/result'
 import { Nullable } from '@/common/types/utility'
 import { RdbClient } from '@/infrastructure/rdb'
 import { toDbId } from '@/infrastructure/rdb-id'

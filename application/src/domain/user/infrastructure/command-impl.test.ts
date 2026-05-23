@@ -1,5 +1,5 @@
-import { isFailure, isSuccess } from '@yuukihayashi0510/core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { isFailure, isSuccess } from '@/common/result'
 import prisma from '@/test/__mocks__/prisma'
 import CommandImpl from './command-impl'
 

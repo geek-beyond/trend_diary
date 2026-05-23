@@ -1,5 +1,5 @@
-import { isFailure } from '@yuukihayashi0510/core'
 import { toTodayJstDateString } from '@/common/locale/date'
+import { isFailure } from '@/common/result'
 
 type SourceSummary = {
   read: number

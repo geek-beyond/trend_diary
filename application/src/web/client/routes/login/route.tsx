@@ -1,4 +1,3 @@
-import { isFailure } from '@yuukihayashi0510/core'
 import {
   type ActionFunctionArgs,
   type MetaFunction,
@@ -7,6 +6,7 @@ import {
   useNavigation,
 } from 'react-router'
 import Logger from '@/common/logger'
+import { isFailure } from '@/common/result'
 import { createAuthActionUseCase } from '@/web/client/features/authenticate/auth-action-use-case'
 import {
   AUTH_ERROR_MESSAGES,

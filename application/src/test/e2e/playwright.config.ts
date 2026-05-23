@@ -81,11 +81,21 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'CHOKIDAR_USEPOLLING=1 npm run start:e2e',
-    cwd: '../../..',
-    url: 'http://localhost:5173',
-    // INFO: CIに合わせる
-    reuseExistingServer: false,
-  },
+  // INFO: Supabase Auth エミュレータをまず起動し、その後アプリ dev サーバを起動する。
+  // どちらも単体で health チェックを待つことで、テスト開始時には両者が ready 状態になる。
+  webServer: [
+    {
+      command:
+        'cd emulator/supabase && go build -o bin/supabase-emulator . && ./bin/supabase-emulator -addr 127.0.0.1:54321',
+      cwd: '../../..',
+      url: 'http://127.0.0.1:54321/auth/v1/health',
+      reuseExistingServer: false,
+    },
+    {
+      command: 'CHOKIDAR_USEPOLLING=1 npm run start:e2e',
+      cwd: '../../..',
+      url: 'http://localhost:5173',
+      reuseExistingServer: false,
+    },
+  ],
 })

@@ -30,6 +30,8 @@
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
     "supabase:status": "supabase status",
     "supabase:stop": "supabase stop",
+    "emulator:build": "cd ../emulator/supabase && go build -o bin/supabase-emulator .",
+    "emulator:test": "cd ../emulator/supabase && go test -race ./...",
     "storybook": "storybook dev -p 6006",
     "test-storybook": "vitest run -c src/test/vitest/storybook/config.ts"
   },

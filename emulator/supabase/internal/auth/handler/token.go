@@ -36,27 +36,29 @@ func (h *Token) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "refresh_token":
 		h.refresh(w, r)
 	default:
-		writeOAuthError(w, http.StatusBadRequest, "unsupported_grant_type", "grant_type is required")
+		httpx.MustFromContext(r.Context()).OAuthError(http.StatusBadRequest, "unsupported_grant_type", "grant_type is required")
 	}
 }
 
 func (h *Token) password(w http.ResponseWriter, r *http.Request) {
+	resp := httpx.MustFromContext(r.Context())
+
 	var req passwordGrantRequest
 	if err := httpx.ReadJSON(r, &req); err != nil {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_request", "invalid request body")
+		resp.OAuthError(http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
 	// signup 側で TrimSpace してから保存するので、login も同じ正規化を行わないと
 	// トレーリングスペース付き email でログインできない非対称が生まれる。
 	req.Email = strings.TrimSpace(req.Email)
 	if req.Email == "" || req.Password == "" {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		resp.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return
 	}
 
 	u, ok := h.store.FindUserByEmail(req.Email)
 	if !ok || !store.VerifyPassword(u.PasswordHash, req.Password) {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		resp.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return
 	}
 
@@ -65,43 +67,45 @@ func (h *Token) password(w http.ResponseWriter, r *http.Request) {
 	// FindUserByID の ok を見て invalid_grant にフォールバックする。
 	fresh, ok := h.store.FindUserByID(u.ID)
 	if !ok {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		resp.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return
 	}
 
-	resp, err := h.tokens.Issue(fresh)
+	tr, err := h.tokens.Issue(fresh)
 	if err != nil {
-		writeAPIError(w, http.StatusInternalServerError, err.Error())
+		resp.APIError(http.StatusInternalServerError, err.Error())
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, resp)
+	resp.JSON(http.StatusOK, tr)
 }
 
 func (h *Token) refresh(w http.ResponseWriter, r *http.Request) {
+	resp := httpx.MustFromContext(r.Context())
+
 	var req refreshGrantRequest
 	if err := httpx.ReadJSON(r, &req); err != nil {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_request", "invalid request body")
+		resp.OAuthError(http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
 	if req.RefreshToken == "" {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
+		resp.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
 		return
 	}
 
 	newRT, u, err := h.store.ConsumeRefreshToken(req.RefreshToken)
 	if err != nil {
 		if errors.Is(err, store.ErrInvalidRefreshToken) {
-			writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
+			resp.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
 			return
 		}
-		writeAPIError(w, http.StatusInternalServerError, err.Error())
+		resp.APIError(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	resp, err := h.tokens.Build(u, newRT.SessionID, newRT.Token)
+	tr, err := h.tokens.Build(u, newRT.SessionID, newRT.Token)
 	if err != nil {
-		writeAPIError(w, http.StatusInternalServerError, err.Error())
+		resp.APIError(http.StatusInternalServerError, err.Error())
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, resp)
+	resp.JSON(http.StatusOK, tr)
 }

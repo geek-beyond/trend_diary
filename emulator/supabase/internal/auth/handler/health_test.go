@@ -14,7 +14,7 @@ func TestHealth(t *testing.T) {
 	t.Run("200 + name=GoTrue", func(t *testing.T) {
 		h := handler.NewHealth()
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/health", nil))
+		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/health", nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("status: %d", rec.Code)
 		}

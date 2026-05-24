@@ -19,7 +19,7 @@ func TestAdminDeleteUser(t *testing.T) {
 		req := handlertest.NewRequest(t, http.MethodDelete, "/auth/v1/admin/users/"+seeded.User.ID, nil)
 		req.SetPathValue("id", seeded.User.ID)
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, req)
+		handlertest.Serve(h, rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("status: %d", rec.Code)
 		}
@@ -45,7 +45,7 @@ func TestAdminDeleteUser(t *testing.T) {
 				req := handlertest.NewRequest(t, http.MethodDelete, "/auth/v1/admin/users/"+c.id, nil)
 				req.SetPathValue("id", c.id)
 				rec := httptest.NewRecorder()
-				h.ServeHTTP(rec, req)
+				handlertest.Serve(h, rec, req)
 				if rec.Code != c.wantStatus {
 					t.Fatalf("status: got=%d want=%d", rec.Code, c.wantStatus)
 				}

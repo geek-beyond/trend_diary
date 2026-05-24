@@ -17,7 +17,7 @@ func TestSignup(t *testing.T) {
 			h := handler.NewSignup(st, handlertest.NewTokens(st, nil))
 
 			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", map[string]string{
+			handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", map[string]string{
 				"email": "alice@example.com", "password": "password123",
 			}))
 
@@ -39,7 +39,7 @@ func TestSignup(t *testing.T) {
 			h := handler.NewSignup(st, handlertest.NewTokens(st, nil))
 
 			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", map[string]any{
+			handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", map[string]any{
 				"email": "alice@example.com", "password": "password123",
 				"data": map[string]any{"nickname": "alice"},
 			}))
@@ -60,7 +60,7 @@ func TestSignup(t *testing.T) {
 			h := handler.NewSignup(st, handlertest.NewTokens(st, nil))
 
 			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", map[string]string{
+			handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", map[string]string{
 				"email": "Alice@Example.COM", "password": "password123",
 			}))
 
@@ -113,7 +113,7 @@ func TestSignup(t *testing.T) {
 				h := handler.NewSignup(st, handlertest.NewTokens(st, nil))
 
 				rec := httptest.NewRecorder()
-				h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", c.body))
+				handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", c.body))
 
 				if rec.Code != c.wantStatus {
 					t.Fatalf("status: got=%d want=%d", rec.Code, c.wantStatus)
@@ -130,10 +130,10 @@ func TestSignup(t *testing.T) {
 			st := handlertest.NewStore(nil)
 			h := handler.NewSignup(st, handlertest.NewTokens(st, nil))
 			body := map[string]string{"email": "alice@example.com", "password": "password123"}
-			h.ServeHTTP(httptest.NewRecorder(), handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", body))
+			handlertest.Serve(h, httptest.NewRecorder(), handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", body))
 
 			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", body))
+			handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", body))
 			if rec.Code != http.StatusUnprocessableEntity {
 				t.Fatalf("status: %d", rec.Code)
 			}

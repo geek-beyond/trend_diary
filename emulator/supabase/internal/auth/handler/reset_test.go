@@ -17,7 +17,7 @@ func TestReset(t *testing.T) {
 		h := handler.NewReset(st)
 
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/reset", nil))
+		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/reset", nil))
 		if rec.Code != http.StatusNoContent {
 			t.Fatalf("status: %d", rec.Code)
 		}

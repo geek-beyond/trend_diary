@@ -19,6 +19,8 @@ func NewAdminListUsers(st *store.Store) *AdminListUsers {
 }
 
 func (h *AdminListUsers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	resp := httpx.MustFromContext(r.Context())
+
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page <= 0 {
@@ -51,12 +53,12 @@ func (h *AdminListUsers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// supabase-js GoTrueAdminApi.listUsers は x-total-count と Link ヘッダから
 	// nextPage / lastPage / total を組み立てる。
 	total := len(snap.Users)
-	w.Header().Set("x-total-count", strconv.Itoa(total))
+	resp.Header().Set("x-total-count", strconv.Itoa(total))
 	if link := paginationLinkHeader(r, page, perPage, total); link != "" {
-		w.Header().Set("Link", link)
+		resp.Header().Set("Link", link)
 	}
 
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{
+	resp.JSON(http.StatusOK, map[string]any{
 		"users": users,
 		"aud":   "authenticated",
 	})

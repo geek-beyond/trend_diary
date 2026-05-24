@@ -13,6 +13,7 @@ import (
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/config"
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
 const Issuer = "http://127.0.0.1:54321/auth/v1"
@@ -43,6 +44,8 @@ func Seed(t *testing.T, st *store.Store, tk *handler.Tokens, email, password str
 	return resp
 }
 
+// NewRequest は handler が要求する WithResponder middleware を済ませた *http.Request を返す。
+// 本番では main.go が mux 全体に WithResponder を被せているのと同じセットアップを再現する。
 func NewRequest(t *testing.T, method, target string, body any) *http.Request {
 	t.Helper()
 	var rdr io.Reader
@@ -54,7 +57,15 @@ func NewRequest(t *testing.T, method, target string, body any) *http.Request {
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	// httptest.ResponseRecorder を都度作り直すと Responder の対象が変わるため、
+	// テスト側は handlertest.Serve(...) を介して書き込み先を結合する想定。
 	return req
+}
+
+// Serve は handler を WithResponder middleware で包んで実行する。
+// テストは httptest.NewRecorder() を毎回作り、このヘルパ経由でハンドラを呼ぶ。
+func Serve(h http.Handler, rec *httptest.ResponseRecorder, req *http.Request) {
+	httpx.WithResponder(h).ServeHTTP(rec, req)
 }
 
 func DecodeJSON(t *testing.T, rec *httptest.ResponseRecorder, dst any) {

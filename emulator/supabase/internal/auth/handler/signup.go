@@ -25,30 +25,32 @@ type signupRequest struct {
 }
 
 func (h *Signup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	resp := httpx.MustFromContext(r.Context())
+
 	var req signupRequest
 	if err := httpx.ReadJSON(r, &req); err != nil {
-		writeAPIError(w, http.StatusBadRequest, "invalid request body")
+		resp.APIError(http.StatusBadRequest, "invalid request body")
 		return
 	}
 	req.Email = strings.TrimSpace(req.Email)
 	if req.Email == "" || req.Password == "" {
-		writeAPIError(w, http.StatusBadRequest, "email and password are required")
+		resp.APIError(http.StatusBadRequest, "email and password are required")
 		return
 	}
 	if !strings.Contains(req.Email, "@") {
-		writeAPIError(w, http.StatusBadRequest, "Unable to validate email address: invalid format")
+		resp.APIError(http.StatusBadRequest, "Unable to validate email address: invalid format")
 		return
 	}
 	// GoTrue デフォルト password_min_length=6 と合わせる。アプリ層 Zod は min=8 を要求するため
 	// エミュレータ直叩きしない限り 6-7 文字はアプリ側で先に弾かれる。
 	if len(req.Password) < 6 {
-		writeAPIError(w, http.StatusUnprocessableEntity, "Password should be at least 6 characters")
+		resp.APIError(http.StatusUnprocessableEntity, "Password should be at least 6 characters")
 		return
 	}
 
 	hash, err := store.HashPassword(req.Password)
 	if err != nil {
-		writeAPIError(w, http.StatusInternalServerError, "failed to hash password")
+		resp.APIError(http.StatusInternalServerError, "failed to hash password")
 		return
 	}
 
@@ -56,10 +58,10 @@ func (h *Signup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, store.ErrUserAlreadyExists) {
 			// アプリ側 isUserAlreadyExistsError は "already registered" 包含判定なので変更不可
-			writeAPIError(w, http.StatusUnprocessableEntity, "User already registered")
+			resp.APIError(http.StatusUnprocessableEntity, "User already registered")
 			return
 		}
-		writeAPIError(w, http.StatusInternalServerError, err.Error())
+		resp.APIError(http.StatusInternalServerError, err.Error())
 		return
 	}
 	if len(req.Data) > 0 {
@@ -73,8 +75,8 @@ func (h *Signup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// supabase-js が {data:{user, session}} に再構成する。
 	session, err := h.tokens.Issue(u)
 	if err != nil {
-		writeAPIError(w, http.StatusInternalServerError, err.Error())
+		resp.APIError(http.StatusInternalServerError, err.Error())
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, session)
+	resp.JSON(http.StatusOK, session)
 }

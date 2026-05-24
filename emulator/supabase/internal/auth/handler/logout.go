@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
 type Logout struct {
@@ -16,6 +17,8 @@ func NewLogout(st *store.Store, tk *Tokens) *Logout {
 }
 
 func (h *Logout) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	resp := httpx.MustFromContext(r.Context())
+
 	// GoTrue は logout を冪等として扱い、Bearer 無し/期限切れでも 204 を返す。
 	// access_token が exp 切れでも session を revoke すべきなので、署名のみ検証してから
 	// claims を取り出す（exp 検証を絡めると expired token で revoke が走らず、
@@ -27,5 +30,5 @@ func (h *Logout) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	w.WriteHeader(http.StatusNoContent)
+	resp.NoContent()
 }

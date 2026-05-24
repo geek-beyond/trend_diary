@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
 type Reset struct {
@@ -12,7 +13,7 @@ type Reset struct {
 
 func NewReset(st *store.Store) *Reset { return &Reset{store: st} }
 
-func (h *Reset) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+func (h *Reset) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.store.Reset()
-	w.WriteHeader(http.StatusNoContent)
+	httpx.MustFromContext(r.Context()).NoContent()
 }

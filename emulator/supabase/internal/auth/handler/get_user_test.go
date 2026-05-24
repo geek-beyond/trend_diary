@@ -22,7 +22,7 @@ func TestGetUser(t *testing.T) {
 			req := handlertest.NewRequest(t, http.MethodGet, "/auth/v1/user", nil)
 			req.Header.Set("Authorization", "Bearer "+seeded.AccessToken)
 			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, req)
+			handlertest.Serve(h, rec, req)
 
 			if rec.Code != http.StatusOK {
 				t.Fatalf("status: %d", rec.Code)
@@ -76,7 +76,7 @@ func TestGetUser(t *testing.T) {
 				req := handlertest.NewRequest(t, http.MethodGet, "/auth/v1/user", nil)
 				c.setHeader(req, validToken)
 				rec := httptest.NewRecorder()
-				h.ServeHTTP(rec, req)
+				handlertest.Serve(h, rec, req)
 
 				if rec.Code != http.StatusUnauthorized {
 					t.Fatalf("status: %d", rec.Code)
@@ -103,7 +103,7 @@ func TestGetUser(t *testing.T) {
 		req := handlertest.NewRequest(t, http.MethodGet, "/auth/v1/user", nil)
 		req.Header.Set("Authorization", "Bearer "+seeded.AccessToken)
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, req)
+		handlertest.Serve(h, rec, req)
 
 		if rec.Code != http.StatusUnauthorized {
 			t.Fatalf("status: %d", rec.Code)

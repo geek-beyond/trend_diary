@@ -19,7 +19,7 @@ func TestToken(t *testing.T) {
 			h := handler.NewToken(st, tk)
 
 			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", map[string]string{
+			handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", map[string]string{
 				"email": "alice@example.com", "password": "password123",
 			}))
 			if rec.Code != http.StatusOK {
@@ -44,7 +44,7 @@ func TestToken(t *testing.T) {
 					h := handler.NewToken(st, tk)
 
 					rec := httptest.NewRecorder()
-					h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", c.body))
+					handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", c.body))
 
 					if rec.Code != http.StatusBadRequest {
 						t.Fatalf("status: %d", rec.Code)
@@ -66,7 +66,7 @@ func TestToken(t *testing.T) {
 			h := handler.NewToken(st, tk)
 
 			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+			handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
 				"refresh_token": seeded.RefreshToken,
 			}))
 			if rec.Code != http.StatusOK {
@@ -94,7 +94,7 @@ func TestToken(t *testing.T) {
 					h := handler.NewToken(st, handlertest.NewTokens(st, nil))
 
 					rec := httptest.NewRecorder()
-					h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+					handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
 						"refresh_token": c.refreshTok,
 					}))
 					if rec.Code != http.StatusBadRequest {
@@ -115,7 +115,7 @@ func TestToken(t *testing.T) {
 		h := handler.NewToken(st, tk)
 
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", map[string]string{
+		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", map[string]string{
 			"email": "  alice@example.com  ", "password": "password123",
 		}))
 		if rec.Code != http.StatusOK {
@@ -128,7 +128,7 @@ func TestToken(t *testing.T) {
 		h := handler.NewToken(st, handlertest.NewTokens(st, nil))
 
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token", map[string]string{
+		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token", map[string]string{
 			"email": "alice@example.com", "password": "password123",
 		}))
 		if rec.Code != http.StatusBadRequest {

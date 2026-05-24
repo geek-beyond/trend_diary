@@ -16,7 +16,7 @@ func TestSnapshot(t *testing.T) {
 		h := handler.NewSnapshot(st)
 
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodGet, "/__emulator/snapshot", nil))
+		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodGet, "/__emulator/snapshot", nil))
 		body := rec.Body.String()
 		for _, key := range []string{`"users":[]`, `"sessions":[]`, `"refresh_tokens":[]`} {
 			if !strings.Contains(body, key) {

@@ -15,7 +15,7 @@ func TestSeedUser(t *testing.T) {
 		h := handler.NewSeedUser(st)
 
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
+		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
 			"email": "alice@example.com", "password": "password123",
 		}))
 		if rec.Code != http.StatusCreated {
@@ -52,13 +52,13 @@ func TestSeedUser(t *testing.T) {
 				st := handlertest.NewStore(nil)
 				h := handler.NewSeedUser(st)
 				if c.seed {
-					h.ServeHTTP(httptest.NewRecorder(), handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
+					handlertest.Serve(h, httptest.NewRecorder(), handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
 						"email": "alice@example.com", "password": "password123",
 					}))
 				}
 
 				rec := httptest.NewRecorder()
-				h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", c.body))
+				handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", c.body))
 				if rec.Code != c.wantStatus {
 					t.Fatalf("status: got=%d want=%d", rec.Code, c.wantStatus)
 				}

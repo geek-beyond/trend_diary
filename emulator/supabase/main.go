@@ -15,6 +15,7 @@ import (
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/config"
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
 func main() {
@@ -49,7 +50,7 @@ func run(args []string) error {
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           mux,
+		Handler:           httpx.WithResponder(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

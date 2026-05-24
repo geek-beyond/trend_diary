@@ -46,7 +46,7 @@ func TestAdminListUsers(t *testing.T) {
 				h := handler.NewAdminListUsers(st)
 
 				rec := httptest.NewRecorder()
-				h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/admin/users?"+c.query, nil))
+				handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/admin/users?"+c.query, nil))
 
 				if got := rec.Header().Get("x-total-count"); got != c.wantTotal {
 					t.Errorf("x-total-count: got=%s want=%s", got, c.wantTotal)
@@ -71,7 +71,7 @@ func TestAdminListUsers(t *testing.T) {
 		h := handler.NewAdminListUsers(st)
 
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/admin/users", nil))
+		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/admin/users", nil))
 		if !strings.Contains(rec.Body.String(), `"users":[]`) {
 			t.Errorf("users must be empty array: %s", rec.Body.String())
 		}

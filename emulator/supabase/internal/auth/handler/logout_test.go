@@ -27,7 +27,7 @@ func TestLogout(t *testing.T) {
 				req := handlertest.NewRequest(t, http.MethodPost, "/auth/v1/logout", nil)
 				c.setHeader(req)
 				rec := httptest.NewRecorder()
-				h.ServeHTTP(rec, req)
+				handlertest.Serve(h, rec, req)
 				if rec.Code != http.StatusNoContent {
 					t.Fatalf("status: %d", rec.Code)
 				}
@@ -45,13 +45,13 @@ func TestLogout(t *testing.T) {
 		req := handlertest.NewRequest(t, http.MethodPost, "/auth/v1/logout", nil)
 		req.Header.Set("Authorization", "Bearer "+seeded.AccessToken)
 		rec := httptest.NewRecorder()
-		logout.ServeHTTP(rec, req)
+		handlertest.Serve(logout, rec, req)
 		if rec.Code != http.StatusNoContent {
 			t.Fatalf("logout status: %d", rec.Code)
 		}
 
 		refresh := httptest.NewRecorder()
-		tokenH.ServeHTTP(refresh, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+		handlertest.Serve(tokenH, refresh, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
 			"refresh_token": seeded.RefreshToken,
 		}))
 		if refresh.Code != http.StatusBadRequest {
@@ -75,13 +75,13 @@ func TestLogout(t *testing.T) {
 		req := handlertest.NewRequest(t, http.MethodPost, "/auth/v1/logout", nil)
 		req.Header.Set("Authorization", "Bearer "+seeded.AccessToken)
 		rec := httptest.NewRecorder()
-		logout.ServeHTTP(rec, req)
+		handlertest.Serve(logout, rec, req)
 		if rec.Code != http.StatusNoContent {
 			t.Fatalf("logout status: %d", rec.Code)
 		}
 
 		refresh := httptest.NewRecorder()
-		tokenH.ServeHTTP(refresh, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+		handlertest.Serve(tokenH, refresh, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
 			"refresh_token": seeded.RefreshToken,
 		}))
 		if refresh.Code != http.StatusBadRequest {

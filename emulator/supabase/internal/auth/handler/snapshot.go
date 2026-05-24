@@ -13,6 +13,6 @@ type Snapshot struct {
 
 func NewSnapshot(st *store.Store) *Snapshot { return &Snapshot{store: st} }
 
-func (h *Snapshot) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
-	httpx.WriteJSON(w, http.StatusOK, h.store.Snapshot())
+func (h *Snapshot) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	httpx.MustFromContext(r.Context()).JSON(http.StatusOK, h.store.Snapshot())
 }

@@ -20,25 +20,27 @@ type seedUserRequest struct {
 }
 
 func (h *SeedUser) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	resp := httpx.MustFromContext(r.Context())
+
 	var req seedUserRequest
 	if err := httpx.ReadJSON(r, &req); err != nil {
-		writeAPIError(w, http.StatusBadRequest, "invalid request body")
+		resp.APIError(http.StatusBadRequest, "invalid request body")
 		return
 	}
 	req.Email = strings.TrimSpace(req.Email)
 	if req.Email == "" || req.Password == "" {
-		writeAPIError(w, http.StatusBadRequest, "email and password are required")
+		resp.APIError(http.StatusBadRequest, "email and password are required")
 		return
 	}
 	hash, err := store.HashPassword(req.Password)
 	if err != nil {
-		writeAPIError(w, http.StatusInternalServerError, err.Error())
+		resp.APIError(http.StatusInternalServerError, err.Error())
 		return
 	}
 	u, err := h.store.CreateUser(req.Email, hash)
 	if err != nil {
-		writeAPIError(w, http.StatusConflict, err.Error())
+		resp.APIError(http.StatusConflict, err.Error())
 		return
 	}
-	httpx.WriteJSON(w, http.StatusCreated, u)
+	resp.JSON(http.StatusCreated, u)
 }

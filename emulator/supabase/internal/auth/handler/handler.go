@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,9 +52,6 @@ type Handler struct {
 }
 
 func (h *Handler) Request() *http.Request   { return h.r }
-func (h *Handler) Context() context.Context { return h.r.Context() }
-func (h *Handler) Store() *store.Store      { return h.store }
-func (h *Handler) Tokens() *Tokens          { return h.tokens }
 func (h *Handler) Header() http.Header      { return h.w.Header() }
 func (h *Handler) Path(name string) string  { return h.r.PathValue(name) }
 func (h *Handler) Query(name string) string { return h.r.URL.Query().Get(name) }

@@ -50,6 +50,9 @@ func Seed(t *testing.T, st *store.Store, tk *handler.Tokens, email, password str
 // 本番では ServeMux がパターンマッチで埋めるが、テストでは mux を通さないので手動で渡す。
 func NewRequest(t *testing.T, method, target string, body any, paths ...string) *http.Request {
 	t.Helper()
+	if len(paths)%2 != 0 {
+		t.Fatalf("NewRequest: paths must be key/value pairs, got %d args", len(paths))
+	}
 	var rdr io.Reader
 	if body != nil {
 		b, _ := json.Marshal(body)
@@ -59,7 +62,7 @@ func NewRequest(t *testing.T, method, target string, body any, paths ...string) 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	for i := 0; i+1 < len(paths); i += 2 {
+	for i := 0; i < len(paths); i += 2 {
 		req.SetPathValue(paths[i], paths[i+1])
 	}
 	return req

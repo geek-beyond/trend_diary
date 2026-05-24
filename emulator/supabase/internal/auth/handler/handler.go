@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -33,7 +34,7 @@ func (f *Factory) Handle(fn Func) http.Handler {
 		// handler 内 panic を 500 + JSON エラーに変換し、connection reset を防ぐ。
 		defer func() {
 			if rec := recover(); rec != nil {
-				fmt.Fprintf(os.Stderr, "supabase-emulator: handler panic: %v\n", rec)
+				fmt.Fprintf(os.Stderr, "supabase-emulator: handler panic: %v\n%s\n", rec, debug.Stack())
 				h.ErrorCode(http.StatusInternalServerError, "unexpected_failure", "internal server error")
 			}
 		}()
@@ -103,9 +104,8 @@ func (h *Handler) NoContent() {
 	h.w.WriteHeader(http.StatusNoContent)
 }
 
-// Error / ErrorCode / OAuth はそれぞれ別の JSON 形を使う:
-//   - サインアップ系: {"code":"N","error_code":"...","msg":"..."}
-//   - トークン系:     {"error":"...","error_description":"..."}
+// Error / ErrorCode は同じ apiErrorBody（サインアップ系の {"code","error_code","msg"}）、
+// OAuth は別形式の oauthErrorBody（トークン系の {"error","error_description"}）を返す。
 //
 // アプリ側の文字列マッチ判定（"already registered" / "Invalid login credentials" /
 // "Auth session missing"）と整合させるため、msg / error_description の値は変更しないこと。

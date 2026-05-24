@@ -11,11 +11,11 @@ import (
 
 func unixToTime(sec int64) time.Time { return time.Unix(sec, 0) }
 
-// Audience は本物 GoTrue と同じく単一 string で出すため、jwtv5.RegisteredClaims を embed せず
-// 自前定義する（RegisteredClaims の Audience は ClaimStrings=[]string で配列に展開されてしまう）。
 type Claims struct {
-	Subject      string         `json:"sub,omitempty"`
-	Issuer       string         `json:"iss,omitempty"`
+	Subject string `json:"sub,omitempty"`
+	Issuer  string `json:"iss,omitempty"`
+	// 本物 GoTrue と同じく単一 string で出すため、jwtv5.RegisteredClaims を embed せず自前定義する
+	// （RegisteredClaims の Audience は ClaimStrings=[]string で配列に展開されてしまう）。
 	Audience     string         `json:"aud,omitempty"`
 	IssuedAt     int64          `json:"iat,omitempty"`
 	Expiry       int64          `json:"exp,omitempty"`
@@ -26,8 +26,7 @@ type Claims struct {
 	UserMetadata map[string]any `json:"user_metadata,omitempty"`
 }
 
-// 以下は jwtv5.Claims インターフェース実装。標準 validator (exp/nbf チェック) を流用するために必要。
-
+// jwtv5.Claims インターフェース実装。標準 validator (exp/nbf チェック) を流用するために必要。
 func (c Claims) GetExpirationTime() (*jwtv5.NumericDate, error) {
 	if c.Expiry == 0 {
 		return nil, nil
@@ -61,6 +60,7 @@ type TokenResponse struct {
 	User         *store.User `json:"user"`
 }
 
+// Factory が 1 インスタンス保持し全ハンドラから共有されるため、フィールドは構築後 immutable に保つこと。
 type Tokens struct {
 	store  *store.Store
 	secret string
@@ -95,6 +95,8 @@ func (t *Tokens) Issue(u *store.User) (*TokenResponse, error) {
 	return t.Build(u, sess.ID, rt.Token)
 }
 
+// rotation 後の access_token 再発行で、既存 sessionID / refreshToken をそのまま流用するため
+// Issue とは別経路で持つ。Issue にマージすると refresh のたびに新 session が増えて leak する。
 func (t *Tokens) Build(u *store.User, sessionID, refreshToken string) (*TokenResponse, error) {
 	now := t.clock()
 	exp := now.Add(t.ttl)
@@ -133,7 +135,7 @@ func (t *Tokens) Verify(token string) (*Claims, error) {
 			return nil, errors.New("unexpected signing method")
 		}
 		return []byte(t.secret), nil
-	}, jwtv5.WithTimeFunc(t.clock), jwtv5.WithIssuer(t.issuer))
+	}, jwtv5.WithTimeFunc(t.clock), jwtv5.WithIssuer(t.issuer), jwtv5.WithValidMethods([]string{"HS256"}))
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,27 @@ go build -o bin/supabase-emulator .
 ./bin/supabase-emulator -addr 127.0.0.1:54321
 ```
 
+## アプリ層の結合テストと組み合わせる
+
+vitest 結合テスト（`npm run test:server`）は emulator の起動・ビルドを**行わない**。事前にこのバイナリを別ターミナルで起動しておくこと。
+
+```bash
+# ターミナル1: エミュレータを起動しっぱなしにする
+cd emulator/supabase
+./bin/supabase-emulator -addr 127.0.0.1:54321
+
+# ターミナル2: 結合テスト
+cd application
+npm run test:server
+```
+
+E2E（`npm run e2e`）だけは Playwright の `webServer` 設定で emulator を自動 build + 起動する。
+
+`application/package.json` には手動ビルド/テスト用のショートカットを用意してある:
+
+- `npm run emulator:build` — Go バイナリをビルド
+- `npm run emulator:test` — Go テストを実行
+
 ## 実装済みエンドポイント
 
 | Method | Path | 用途 |

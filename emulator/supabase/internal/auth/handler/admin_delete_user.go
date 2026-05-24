@@ -8,17 +8,17 @@ import (
 )
 
 func AdminDeleteUser(h *Handler) {
-	id := h.PathValue("id")
+	id := h.Path("id")
 	if id == "" {
-		h.APIError(http.StatusBadRequest, "user id is required")
+		h.Error(http.StatusBadRequest, "user id is required")
 		return
 	}
 	if err := h.store.DeleteUser(id); err != nil {
 		if errors.Is(err, store.ErrUserNotFound) {
-			h.APIError(http.StatusNotFound, "User not found")
+			h.Error(http.StatusNotFound, "User not found")
 			return
 		}
-		h.APIError(http.StatusInternalServerError, err.Error())
+		h.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
 	h.JSON(http.StatusOK, map[string]any{})

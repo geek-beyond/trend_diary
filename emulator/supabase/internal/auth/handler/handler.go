@@ -16,7 +16,7 @@ import (
 // X-Supabase-Api-Version ヘッダを全エラーレスポンスに付与する必要がある。
 const apiVersion = "2024-01-01"
 
-type HandlerFunc func(*Handler)
+type Func func(*Handler)
 
 type Factory struct {
 	store  *store.Store
@@ -27,21 +27,21 @@ func NewFactory(st *store.Store, tk *Tokens) *Factory {
 	return &Factory{store: st, tokens: tk}
 }
 
-func (f *Factory) Handle(fn HandlerFunc) http.Handler {
+func (f *Factory) Handle(fn Func) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := &Handler{w: w, r: r, store: f.store, tokens: f.tokens}
 		// handler 内 panic を 500 + JSON エラーに変換し、connection reset を防ぐ。
 		defer func() {
 			if rec := recover(); rec != nil {
 				fmt.Fprintf(os.Stderr, "supabase-emulator: handler panic: %v\n", rec)
-				h.APIErrorWithCode(http.StatusInternalServerError, "unexpected_failure", "internal server error")
+				h.ErrorCode(http.StatusInternalServerError, "unexpected_failure", "internal server error")
 			}
 		}()
 		fn(h)
 	})
 }
 
-// written フラグで JSON/NoContent/APIError 系の二重呼び出しを no-op にし、
+// written フラグで JSON/NoContent/Error 系の二重呼び出しを no-op にし、
 // superfluous WriteHeader / body 連結を防ぐ。
 type Handler struct {
 	w       http.ResponseWriter
@@ -51,13 +51,13 @@ type Handler struct {
 	written bool
 }
 
-func (h *Handler) Request() *http.Request       { return h.r }
-func (h *Handler) Context() context.Context     { return h.r.Context() }
-func (h *Handler) Store() *store.Store          { return h.store }
-func (h *Handler) Tokens() *Tokens              { return h.tokens }
-func (h *Handler) Header() http.Header          { return h.w.Header() }
-func (h *Handler) PathValue(name string) string { return h.r.PathValue(name) }
-func (h *Handler) Query(name string) string     { return h.r.URL.Query().Get(name) }
+func (h *Handler) Request() *http.Request   { return h.r }
+func (h *Handler) Context() context.Context { return h.r.Context() }
+func (h *Handler) Store() *store.Store      { return h.store }
+func (h *Handler) Tokens() *Tokens          { return h.tokens }
+func (h *Handler) Header() http.Header      { return h.w.Header() }
+func (h *Handler) Path(name string) string  { return h.r.PathValue(name) }
+func (h *Handler) Query(name string) string { return h.r.URL.Query().Get(name) }
 
 // supabase-js は gotrue_meta_security 等の追加フィールドを送るため DisallowUnknownFields は付けない。
 func (h *Handler) ReadJSON(dst any) error {
@@ -103,9 +103,9 @@ func (h *Handler) NoContent() {
 	h.w.WriteHeader(http.StatusNoContent)
 }
 
-// GoTrue 互換のエラー形式は 2 種類:
-//   - apiErrorBody:   {"code":"N","error_code":"...","msg":"..."}（サインアップ系）
-//   - oauthErrorBody: {"error":"...","error_description":"..."}（トークン系）
+// Error / ErrorCode / OAuth はそれぞれ別の JSON 形を使う:
+//   - サインアップ系: {"code":"N","error_code":"...","msg":"..."}
+//   - トークン系:     {"error":"...","error_description":"..."}
 //
 // アプリ側の文字列マッチ判定（"already registered" / "Invalid login credentials" /
 // "Auth session missing"）と整合させるため、msg / error_description の値は変更しないこと。
@@ -122,17 +122,17 @@ type oauthErrorBody struct {
 	ErrorDescription string `json:"error_description,omitempty"`
 }
 
-func (h *Handler) APIError(status int, msg string) {
+func (h *Handler) Error(status int, msg string) {
 	h.w.Header().Set("X-Supabase-Api-Version", apiVersion)
 	h.JSON(status, apiErrorBody{Code: strconv.Itoa(status), Msg: msg})
 }
 
-func (h *Handler) APIErrorWithCode(status int, errCode, msg string) {
+func (h *Handler) ErrorCode(status int, errCode, msg string) {
 	h.w.Header().Set("X-Supabase-Api-Version", apiVersion)
 	h.JSON(status, apiErrorBody{Code: strconv.Itoa(status), ErrorCode: errCode, Msg: msg})
 }
 
-func (h *Handler) OAuthError(status int, errCode, description string) {
+func (h *Handler) OAuth(status int, errCode, description string) {
 	h.w.Header().Set("X-Supabase-Api-Version", apiVersion)
 	h.JSON(status, oauthErrorBody{Error: errCode, ErrorDescription: description})
 }

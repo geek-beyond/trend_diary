@@ -46,7 +46,9 @@ func Seed(t *testing.T, st *store.Store, tk *handler.Tokens, email, password str
 	return resp
 }
 
-func NewRequest(t *testing.T, method, target string, body any) *http.Request {
+// paths は key, value, key, value... のペアで PathValue を直接埋める。
+// 本番では ServeMux がパターンマッチで埋めるが、テストでは mux を通さないので手動で渡す。
+func NewRequest(t *testing.T, method, target string, body any, paths ...string) *http.Request {
 	t.Helper()
 	var rdr io.Reader
 	if body != nil {
@@ -57,10 +59,13 @@ func NewRequest(t *testing.T, method, target string, body any) *http.Request {
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	for i := 0; i+1 < len(paths); i += 2 {
+		req.SetPathValue(paths[i], paths[i+1])
+	}
 	return req
 }
 
-func Serve(f *handler.Factory, fn handler.HandlerFunc, rec *httptest.ResponseRecorder, req *http.Request) {
+func Serve(f *handler.Factory, fn handler.Func, rec *httptest.ResponseRecorder, req *http.Request) {
 	f.Handle(fn).ServeHTTP(rec, req)
 }
 

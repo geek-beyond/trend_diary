@@ -46,7 +46,7 @@ type Session struct {
 	CreatedAt time.Time
 }
 
-// Snapshot は /__emulator/snapshot で JSON 化される前提のため snake_case を担保する。
+// /__emulator/snapshot で JSON 化される前提のため snake_case + 空 slice を担保する。
 type Snapshot struct {
 	Users         []User         `json:"users"`
 	Sessions      []Session      `json:"sessions"`

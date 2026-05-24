@@ -98,7 +98,7 @@ func (s *Store) DeleteUser(id string) error {
 	return nil
 }
 
-// SetUserMetadata は GoTrue の raw_user_meta_data 上書き挙動と同じく置換する（merge ではない）。
+// 本物 GoTrue の raw_user_meta_data は merge ではなく置換挙動なので合わせる。
 func (s *Store) SetUserMetadata(id string, data map[string]any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

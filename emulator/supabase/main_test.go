@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-// TestSmoke はビルド済みバイナリを起動し /auth/v1/health に到達することを確認する。
 func TestSmoke(t *testing.T) {
 	t.Run("バイナリ起動後にhealthエンドポイントが応答する", func(t *testing.T) {
 		port, err := freePort()

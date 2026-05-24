@@ -17,28 +17,28 @@ type signupRequest struct {
 func Signup(h *Handler) {
 	var req signupRequest
 	if err := h.ReadJSON(&req); err != nil {
-		h.APIError(http.StatusBadRequest, "invalid request body")
+		h.Error(http.StatusBadRequest, "invalid request body")
 		return
 	}
 	req.Email = strings.TrimSpace(req.Email)
 	if req.Email == "" || req.Password == "" {
-		h.APIError(http.StatusBadRequest, "email and password are required")
+		h.Error(http.StatusBadRequest, "email and password are required")
 		return
 	}
 	if !strings.Contains(req.Email, "@") {
-		h.APIError(http.StatusBadRequest, "Unable to validate email address: invalid format")
+		h.Error(http.StatusBadRequest, "Unable to validate email address: invalid format")
 		return
 	}
 	// GoTrue デフォルト password_min_length=6 と合わせる。アプリ層 Zod は min=8 を要求するため
 	// エミュレータ直叩きしない限り 6-7 文字はアプリ側で先に弾かれる。
 	if len(req.Password) < 6 {
-		h.APIError(http.StatusUnprocessableEntity, "Password should be at least 6 characters")
+		h.Error(http.StatusUnprocessableEntity, "Password should be at least 6 characters")
 		return
 	}
 
 	hash, err := store.HashPassword(req.Password)
 	if err != nil {
-		h.APIError(http.StatusInternalServerError, "failed to hash password")
+		h.Error(http.StatusInternalServerError, "failed to hash password")
 		return
 	}
 
@@ -46,10 +46,10 @@ func Signup(h *Handler) {
 	if err != nil {
 		if errors.Is(err, store.ErrUserAlreadyExists) {
 			// アプリ側 isUserAlreadyExistsError は "already registered" 包含判定なので変更不可
-			h.APIError(http.StatusUnprocessableEntity, "User already registered")
+			h.Error(http.StatusUnprocessableEntity, "User already registered")
 			return
 		}
-		h.APIError(http.StatusInternalServerError, err.Error())
+		h.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
 	if len(req.Data) > 0 {
@@ -63,7 +63,7 @@ func Signup(h *Handler) {
 	// supabase-js が {data:{user, session}} に再構成する。
 	session, err := h.tokens.Issue(u)
 	if err != nil {
-		h.APIError(http.StatusInternalServerError, err.Error())
+		h.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
 	h.JSON(http.StatusOK, session)

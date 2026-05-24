@@ -16,10 +16,9 @@ func TestAdminDeleteUser(t *testing.T) {
 		f := handlertest.NewFactory(st, tk)
 		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
-		req := handlertest.NewRequest(t, http.MethodDelete, "/auth/v1/admin/users/"+seeded.User.ID, nil)
-		req.SetPathValue("id", seeded.User.ID)
 		rec := httptest.NewRecorder()
-		handlertest.Serve(f, handler.AdminDeleteUser, rec, req)
+		handlertest.Serve(f, handler.AdminDeleteUser, rec,
+			handlertest.NewRequest(t, http.MethodDelete, "/auth/v1/admin/users/"+seeded.User.ID, nil, "id", seeded.User.ID))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("status: %d", rec.Code)
 		}
@@ -42,10 +41,9 @@ func TestAdminDeleteUser(t *testing.T) {
 				st := handlertest.NewStore(nil)
 				f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
 
-				req := handlertest.NewRequest(t, http.MethodDelete, "/auth/v1/admin/users/"+c.id, nil)
-				req.SetPathValue("id", c.id)
 				rec := httptest.NewRecorder()
-				handlertest.Serve(f, handler.AdminDeleteUser, rec, req)
+				handlertest.Serve(f, handler.AdminDeleteUser, rec,
+					handlertest.NewRequest(t, http.MethodDelete, "/auth/v1/admin/users/"+c.id, nil, "id", c.id))
 				if rec.Code != c.wantStatus {
 					t.Fatalf("status: got=%d want=%d", rec.Code, c.wantStatus)
 				}

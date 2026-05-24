@@ -15,22 +15,22 @@ type seedUserRequest struct {
 func SeedUser(h *Handler) {
 	var req seedUserRequest
 	if err := h.ReadJSON(&req); err != nil {
-		h.APIError(http.StatusBadRequest, "invalid request body")
+		h.Error(http.StatusBadRequest, "invalid request body")
 		return
 	}
 	req.Email = strings.TrimSpace(req.Email)
 	if req.Email == "" || req.Password == "" {
-		h.APIError(http.StatusBadRequest, "email and password are required")
+		h.Error(http.StatusBadRequest, "email and password are required")
 		return
 	}
 	hash, err := store.HashPassword(req.Password)
 	if err != nil {
-		h.APIError(http.StatusInternalServerError, err.Error())
+		h.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
 	u, err := h.store.CreateUser(req.Email, hash)
 	if err != nil {
-		h.APIError(http.StatusConflict, err.Error())
+		h.Error(http.StatusConflict, err.Error())
 		return
 	}
 	h.JSON(http.StatusCreated, u)

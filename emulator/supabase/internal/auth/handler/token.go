@@ -24,27 +24,27 @@ func Token(h *Handler) {
 	case "refresh_token":
 		tokenRefresh(h)
 	default:
-		h.OAuthError(http.StatusBadRequest, "unsupported_grant_type", "grant_type is required")
+		h.OAuth(http.StatusBadRequest, "unsupported_grant_type", "grant_type is required")
 	}
 }
 
 func tokenPassword(h *Handler) {
 	var req passwordGrantRequest
 	if err := h.ReadJSON(&req); err != nil {
-		h.OAuthError(http.StatusBadRequest, "invalid_request", "invalid request body")
+		h.OAuth(http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
 	// signup 側で TrimSpace してから保存するので、login も同じ正規化を行わないと
 	// トレーリングスペース付き email でログインできない非対称が生まれる。
 	req.Email = strings.TrimSpace(req.Email)
 	if req.Email == "" || req.Password == "" {
-		h.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return
 	}
 
 	u, ok := h.store.FindUserByEmail(req.Email)
 	if !ok || !store.VerifyPassword(u.PasswordHash, req.Password) {
-		h.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return
 	}
 
@@ -53,13 +53,13 @@ func tokenPassword(h *Handler) {
 	// FindUserByID の ok を見て invalid_grant にフォールバックする。
 	fresh, ok := h.store.FindUserByID(u.ID)
 	if !ok {
-		h.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return
 	}
 
 	tr, err := h.tokens.Issue(fresh)
 	if err != nil {
-		h.APIError(http.StatusInternalServerError, err.Error())
+		h.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
 	h.JSON(http.StatusOK, tr)
@@ -68,27 +68,27 @@ func tokenPassword(h *Handler) {
 func tokenRefresh(h *Handler) {
 	var req refreshGrantRequest
 	if err := h.ReadJSON(&req); err != nil {
-		h.OAuthError(http.StatusBadRequest, "invalid_request", "invalid request body")
+		h.OAuth(http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
 	if req.RefreshToken == "" {
-		h.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
+		h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
 		return
 	}
 
 	newRT, u, err := h.store.ConsumeRefreshToken(req.RefreshToken)
 	if err != nil {
 		if errors.Is(err, store.ErrInvalidRefreshToken) {
-			h.OAuthError(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
+			h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
 			return
 		}
-		h.APIError(http.StatusInternalServerError, err.Error())
+		h.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	tr, err := h.tokens.Build(u, newRT.SessionID, newRT.Token)
 	if err != nil {
-		h.APIError(http.StatusInternalServerError, err.Error())
+		h.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
 	h.JSON(http.StatusOK, tr)

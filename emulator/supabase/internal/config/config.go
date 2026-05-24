@@ -32,7 +32,7 @@ func Default() Config {
 	}
 }
 
-// Parse は os.Args[1:] と環境変数から Config を組み立てる（CLI フラグ優先）。
+// CLI フラグが環境変数より優先される。
 func Parse(args []string) (Config, error) {
 	cfg := Default()
 	if v := os.Getenv("SUPABASE_EMULATOR_ADDR"); v != "" {

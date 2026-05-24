@@ -18,9 +18,8 @@ func (s *Store) IssueRefreshToken(userID, sessionID string) (*RefreshToken, erro
 	return s.issueRefreshTokenLocked(userID, sessionID)
 }
 
-// IssueSession は session と refresh_token を 1 ロックで原子的に発行する。
 // CreateSession + IssueRefreshToken を別ロックで呼ぶと、その隙に DeleteUser が走った場合に
-// session だけ残って refresh_token 発行が失敗するため、handler から使うときはこちらを使う。
+// session だけ残って refresh_token 発行が失敗するため、handler 経路では 1 ロックで両方発行する。
 func (s *Store) IssueSession(userID string) (*Session, *RefreshToken, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -65,10 +64,8 @@ func (s *Store) issueRefreshTokenLocked(userID, sessionID string) (*RefreshToken
 	return s.cloneRefreshToken(rt), nil
 }
 
-// ConsumeRefreshToken は rotation を行う:
-//   - 未失効 token: 新 token を発行、旧 token は Revoked=true + IssuedAt=now で reuse_interval 起点を更新
-//   - Revoked token: reuse_interval 内なら親→子チェーンの未失効末端を返す（ロスト応答リトライ耐性）
-//   - reuse_interval 超過: ErrInvalidRefreshToken
+// Revoked token を reuse_interval 内に再 consume したときに親→子チェーンの末端を返すのは
+// 「ネットワークロストで client が同じ token をもう一度送ってきた」シナリオへの耐性のため。
 func (s *Store) ConsumeRefreshToken(token string) (*RefreshToken, *User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -130,9 +127,8 @@ func (s *Store) findLatestChild(parent string) *RefreshToken {
 	}
 }
 
-// RevokeRefreshTokensBySession は logout 用。reuse_interval 内 reuse もブロックしたいので
-// IssuedAt を reuse_interval+1s 過去に遡らせる。
-// 旧実装は -1h 固定で reuse_interval>1h のとき logout 無効化される不具合があった。
+// logout で reuse_interval 内 reuse もブロックしたいので IssuedAt を reuse_interval+1s 過去に
+// 遡らせる。-1h 固定だと運用で reuse_interval を 2h 等にした瞬間 logout が無効化される。
 func (s *Store) RevokeRefreshTokensBySession(sessionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

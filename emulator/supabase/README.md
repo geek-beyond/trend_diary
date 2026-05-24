@@ -27,10 +27,11 @@ npm run test:server  # vitest 結合テスト
 npm run e2e          # Playwright E2E
 ```
 
-`application/package.json` には手動ビルド/テスト用のショートカットを用意してある:
+emulator 側のビルド・テストは `emulator/supabase/Makefile` 経由で完結する:
 
-- `npm run emulator:build` — Go バイナリをビルド
-- `npm run emulator:test` — Go テストを実行
+- `make build` — Go バイナリをビルド
+- `make test` / `make test-race` — Go テストを実行
+- `make run` — ビルドして起動
 
 ## 実装済みエンドポイント
 

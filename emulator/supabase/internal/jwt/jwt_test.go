@@ -14,8 +14,8 @@ const testSecret = "super-secret-jwt-token-with-at-least-32-characters-long"
 func TestSign(t *testing.T) {
 	t.Run("HS256で3パートのJWT文字列を生成する", func(t *testing.T) {
 		claims := Claims{
-			Subject: "user-1",
-			Issuer:  "http://127.0.0.1:54321/auth/v1",
+			Subject:  "user-1",
+			Issuer:   "http://127.0.0.1:54321/auth/v1",
 			Audience: "authenticated",
 			Role:     "authenticated",
 			IssuedAt: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),

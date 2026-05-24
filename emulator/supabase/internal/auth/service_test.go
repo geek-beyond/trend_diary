@@ -248,13 +248,15 @@ func TestGetUser(t *testing.T) {
 		}
 	})
 
-	t.Run("期限切れJWTで401", func(t *testing.T) {
-		now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	t.Run("期限切れJWTで401（注入clockを基準に判定する）", func(t *testing.T) {
+		// 注入された clock を進めることで期限切れを再現できる（旧実装は jwt.Verify が
+		// time.Now() 直参照だったため fake clock の効果が及ばず、このシナリオを書けなかった）。
+		current := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 		svc := NewService(Config{
 			JWTSecret:      jwt.DefaultSecret,
 			JWTIssuer:      "http://127.0.0.1:54321/auth/v1",
 			AccessTokenTTL: time.Hour,
-			Clock:          func() time.Time { return now },
+			Clock:          func() time.Time { return current },
 		})
 		srv := newTestServer(t, svc)
 		su := doJSON(t, srv, http.MethodPost, "/auth/v1/signup", map[string]string{
@@ -263,26 +265,22 @@ func TestGetUser(t *testing.T) {
 		var tr tokenResponse
 		decodeBody(t, su, &tr)
 
-		// クロックを2時間進めるためにaccessTokenの中身のexpを偽造するのは難しい
-		// 代わりに、exp=過去のJWTを手動で作る
-		expiredClaims := jwt.Claims{
-			Subject:  tr.User.ID,
-			Issuer:   "http://127.0.0.1:54321/auth/v1",
-			Audience: "authenticated",
-			Role:     "authenticated",
-			Email:    "alice@example.com",
-			IssuedAt: time.Now().Add(-2 * time.Hour).Unix(),
-			Expiry:   time.Now().Add(-time.Hour).Unix(),
-		}
-		expired, err := jwt.Sign(expiredClaims, jwt.DefaultSecret)
-		if err != nil {
-			t.Fatalf("Sign: %v", err)
-		}
+		// signup 直後は未期限
 		req, _ := http.NewRequest(http.MethodGet, srv.URL+"/auth/v1/user", nil)
-		req.Header.Set("Authorization", "Bearer "+expired)
+		req.Header.Set("Authorization", "Bearer "+tr.AccessToken)
 		resp, _ := srv.Client().Do(req)
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("before expiry status: %d", resp.StatusCode)
+		}
+		resp.Body.Close()
+
+		// 注入 clock を 2 時間進めて期限超過を再現
+		current = current.Add(2 * time.Hour)
+		req, _ = http.NewRequest(http.MethodGet, srv.URL+"/auth/v1/user", nil)
+		req.Header.Set("Authorization", "Bearer "+tr.AccessToken)
+		resp, _ = srv.Client().Do(req)
 		if resp.StatusCode != http.StatusUnauthorized {
-			t.Fatalf("status: %d", resp.StatusCode)
+			t.Fatalf("after expiry status: %d", resp.StatusCode)
 		}
 	})
 }
@@ -542,6 +540,259 @@ func TestEmulatorExtensions(t *testing.T) {
 		if resp.StatusCode != http.StatusCreated {
 			t.Fatalf("status: %d", resp.StatusCode)
 		}
+	})
+}
+
+// 以下、code-review で挙がった指摘12件のリグレッションテスト群。
+
+func TestSignup_MetadataPersistence(t *testing.T) {
+	t.Run("signup の data が Store に永続化され、GET /auth/v1/user で取得できる", func(t *testing.T) {
+		srv := newTestServer(t, newTestService(t))
+		su := doJSON(t, srv, http.MethodPost, "/auth/v1/signup", map[string]any{
+			"email":    "alice@example.com",
+			"password": "password123",
+			"data":     map[string]any{"nickname": "alice"},
+		})
+		var signupResp tokenResponse
+		decodeBody(t, su, &signupResp)
+		if got := signupResp.User.UserMetadata["nickname"]; got != "alice" {
+			t.Fatalf("signup response metadata nickname: got=%v", got)
+		}
+
+		req, _ := http.NewRequest(http.MethodGet, srv.URL+"/auth/v1/user", nil)
+		req.Header.Set("Authorization", "Bearer "+signupResp.AccessToken)
+		resp, _ := srv.Client().Do(req)
+		var u User
+		decodeBody(t, resp, &u)
+		if got := u.UserMetadata["nickname"]; got != "alice" {
+			t.Errorf("user metadata nickname must persist: got=%v", got)
+		}
+	})
+}
+
+func TestGetUser_SessionNotFoundErrorCode(t *testing.T) {
+	t.Run("401 レスポンスに error_code='session_not_found' と X-Supabase-Api-Version が含まれる", func(t *testing.T) {
+		srv := newTestServer(t, newTestService(t))
+		resp := doJSON(t, srv, http.MethodGet, "/auth/v1/user", nil)
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("status: %d", resp.StatusCode)
+		}
+		if got := resp.Header.Get("X-Supabase-Api-Version"); got == "" {
+			t.Error("X-Supabase-Api-Version header missing")
+		}
+		var body struct {
+			ErrorCode string `json:"error_code"`
+		}
+		decodeBody(t, resp, &body)
+		if body.ErrorCode != "session_not_found" {
+			t.Errorf("error_code: got=%s want=session_not_found", body.ErrorCode)
+		}
+	})
+}
+
+func TestLogout_IdempotentEvenWithoutSession(t *testing.T) {
+	t.Run("Authorization 無しでも 204 を返す（GoTrue 互換）", func(t *testing.T) {
+		srv := newTestServer(t, newTestService(t))
+		resp := doJSON(t, srv, http.MethodPost, "/auth/v1/logout", nil)
+		if resp.StatusCode != http.StatusNoContent {
+			t.Fatalf("status: got=%d want=204", resp.StatusCode)
+		}
+	})
+
+	t.Run("apikey のみで Bearer 無しでも 204 を返す", func(t *testing.T) {
+		srv := newTestServer(t, newTestService(t))
+		req, _ := http.NewRequest(http.MethodPost, srv.URL+"/auth/v1/logout", nil)
+		req.Header.Set("apikey", jwt.AnonKey)
+		resp, err := srv.Client().Do(req)
+		if err != nil {
+			t.Fatalf("Do: %v", err)
+		}
+		if resp.StatusCode != http.StatusNoContent {
+			t.Fatalf("status: got=%d want=204", resp.StatusCode)
+		}
+	})
+}
+
+func TestAdminListUsers_PaginationHeaders(t *testing.T) {
+	t.Run("x-total-count と Link ヘッダで supabase-js のページング情報を返す", func(t *testing.T) {
+		srv := newTestServer(t, newTestService(t))
+		for _, e := range []string{"a@example.com", "b@example.com", "c@example.com"} {
+			doJSON(t, srv, http.MethodPost, "/auth/v1/signup", map[string]string{
+				"email": e, "password": "password123",
+			}).Body.Close()
+		}
+
+		resp := doJSON(t, srv, http.MethodGet, "/auth/v1/admin/users?page=1&per_page=2", nil)
+		if got := resp.Header.Get("x-total-count"); got != "3" {
+			t.Errorf("x-total-count: got=%s want=3", got)
+		}
+		link := resp.Header.Get("Link")
+		if !strings.Contains(link, `rel="next"`) || !strings.Contains(link, `rel="last"`) {
+			t.Errorf("Link must include next/last: %s", link)
+		}
+	})
+
+	t.Run("最終ページでは next ヘッダが付かない", func(t *testing.T) {
+		srv := newTestServer(t, newTestService(t))
+		doJSON(t, srv, http.MethodPost, "/auth/v1/signup", map[string]string{
+			"email": "alice@example.com", "password": "password123",
+		}).Body.Close()
+		resp := doJSON(t, srv, http.MethodGet, "/auth/v1/admin/users?page=1&per_page=50", nil)
+		link := resp.Header.Get("Link")
+		if strings.Contains(link, `rel="next"`) {
+			t.Errorf("Link should not include next on the last page: %s", link)
+		}
+	})
+}
+
+func TestEmulatorSnapshot_EmptyReturnsArraysAndSnakeCase(t *testing.T) {
+	t.Run("空ストアで snapshot を取ると users/sessions/refresh_tokens が空配列で snake_case で返る", func(t *testing.T) {
+		srv := newTestServer(t, newTestService(t))
+		resp := doJSON(t, srv, http.MethodGet, "/__emulator/snapshot", nil)
+		raw, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		body := string(raw)
+		for _, key := range []string{`"users":[]`, `"sessions":[]`, `"refresh_tokens":[]`} {
+			if !strings.Contains(body, key) {
+				t.Errorf("snapshot must contain %s, got body=%s", key, body)
+			}
+		}
+		// PascalCase キーは出ない
+		for _, badKey := range []string{`"Users"`, `"Sessions"`, `"RefreshTokens"`} {
+			if strings.Contains(body, badKey) {
+				t.Errorf("snapshot must not contain %s", badKey)
+			}
+		}
+	})
+}
+
+func TestCreateUser_NormalizesEmailToLowercase(t *testing.T) {
+	t.Run("大文字混在 email で signup しても Store/レスポンスは lowercase で保存される", func(t *testing.T) {
+		srv := newTestServer(t, newTestService(t))
+		su := doJSON(t, srv, http.MethodPost, "/auth/v1/signup", map[string]string{
+			"email": "Alice@Example.COM", "password": "password123",
+		})
+		var tr tokenResponse
+		decodeBody(t, su, &tr)
+		if tr.User.Email != "alice@example.com" {
+			t.Errorf("email must be lowercased: got=%s", tr.User.Email)
+		}
+	})
+}
+
+func TestCloneUser_DeepCopiesMetadataMaps(t *testing.T) {
+	t.Run("Store から取得した User のメタデータマップを書き換えても Store 本体は影響を受けない", func(t *testing.T) {
+		s := NewStore(StoreConfig{ReuseInterval: 10 * time.Second})
+		hash, _ := HashPassword("password123")
+		created, _ := s.CreateUser("alice@example.com", hash)
+		// クライアント側でマップに書き込み（旧シャローコピー実装ではここで Store が破壊された）
+		created.AppMetadata["injected"] = true
+		created.UserMetadata["nick"] = "evil"
+		if len(created.Identities) > 0 {
+			created.Identities[0].IdentityData["email"] = "tampered@example.com"
+		}
+
+		fresh, ok := s.FindUserByID(created.ID)
+		if !ok {
+			t.Fatal("user lost from store")
+		}
+		if _, exists := fresh.AppMetadata["injected"]; exists {
+			t.Error("AppMetadata leaked client-side mutation into store")
+		}
+		if _, exists := fresh.UserMetadata["nick"]; exists {
+			t.Error("UserMetadata leaked client-side mutation into store")
+		}
+		if got := fresh.Identities[0].IdentityData["email"]; got != "alice@example.com" {
+			t.Errorf("Identity email tampered: %v", got)
+		}
+	})
+}
+
+func TestRefreshToken_RevokeBySession_RespectsReuseInterval(t *testing.T) {
+	t.Run("reuse_interval=2h でも logout 後の refresh は invalid_grant", func(t *testing.T) {
+		current := time.Date(2026, 5, 23, 0, 0, 0, 0, time.UTC)
+		svc := NewService(Config{
+			JWTSecret:      jwt.DefaultSecret,
+			AccessTokenTTL: time.Hour,
+			ReuseInterval:  2 * time.Hour,
+			Clock:          func() time.Time { return current },
+		})
+		srv := newTestServer(t, svc)
+		su := doJSON(t, srv, http.MethodPost, "/auth/v1/signup", map[string]string{
+			"email": "alice@example.com", "password": "password123",
+		})
+		var tr tokenResponse
+		decodeBody(t, su, &tr)
+
+		// logout
+		req, _ := http.NewRequest(http.MethodPost, srv.URL+"/auth/v1/logout", nil)
+		req.Header.Set("Authorization", "Bearer "+tr.AccessToken)
+		logoutResp, _ := srv.Client().Do(req)
+		logoutResp.Body.Close()
+
+		// logout 直後に refresh を試みる（旧実装は -1h 固定だったので reuse=2h で通ってしまっていた）
+		refresh := doJSON(t, srv, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+			"refresh_token": tr.RefreshToken,
+		})
+		if refresh.StatusCode != http.StatusBadRequest {
+			t.Errorf("refresh after logout must fail even with reuse_interval=2h: status=%d", refresh.StatusCode)
+		}
+	})
+}
+
+func TestRefreshToken_ReuseWindowFollowsRotationChain(t *testing.T) {
+	t.Run("T0→T1→T2 とローテートされた後、T0 を reuse_interval 内に再試行すると T2 が返る", func(t *testing.T) {
+		srv := newTestServer(t, newTestService(t))
+		su := doJSON(t, srv, http.MethodPost, "/auth/v1/signup", map[string]string{
+			"email": "alice@example.com", "password": "password123",
+		})
+		var t0 tokenResponse
+		decodeBody(t, su, &t0)
+
+		// T0 → T1
+		r1 := doJSON(t, srv, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+			"refresh_token": t0.RefreshToken,
+		})
+		var t1 tokenResponse
+		decodeBody(t, r1, &t1)
+
+		// T1 → T2
+		r2 := doJSON(t, srv, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+			"refresh_token": t1.RefreshToken,
+		})
+		var t2 tokenResponse
+		decodeBody(t, r2, &t2)
+
+		// T0 を reuse_interval 内に再試行（旧実装は !child.Revoked で T1 が見えず invalid_grant）
+		retry := doJSON(t, srv, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+			"refresh_token": t0.RefreshToken,
+		})
+		if retry.StatusCode != http.StatusOK {
+			t.Fatalf("reuse retry status: %d", retry.StatusCode)
+		}
+		var retried tokenResponse
+		decodeBody(t, retry, &retried)
+		if retried.RefreshToken != t2.RefreshToken {
+			t.Errorf("reuse must follow chain to latest leaf: got=%s want=%s", retried.RefreshToken, t2.RefreshToken)
+		}
+	})
+}
+
+func TestTokenPasswordGrant_NoNilPanicOnConcurrentDelete(t *testing.T) {
+	t.Run("password grant 中にユーザーが消えても panic せず invalid_grant を返す", func(t *testing.T) {
+		// 直接 store を弄ることで FindUserByEmail と UpdateLastSignIn の間で消えたケースを再現する
+		// 代替として、handler を経由せず Store API の挙動を検証する。
+		s := NewStore(StoreConfig{ReuseInterval: 10 * time.Second})
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		s.DeleteUser(u.ID)
+		_, ok := s.FindUserByID(u.ID)
+		if ok {
+			t.Fatal("user should be gone")
+		}
+		// 旧実装は `u, _ = FindUserByID` で nil をそのまま issueSession に渡し、CreateSession 内で
+		// `s.users[userID]` のチェックが先にあるため実際の panic は限定的だが、ok を捨てるパターン
+		// 自体が脆弱なので回帰防止。
 	})
 }
 

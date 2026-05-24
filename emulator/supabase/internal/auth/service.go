@@ -3,6 +3,8 @@ package auth
 import (
 	"net/http"
 	"time"
+
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/jwt"
 )
 
 // Config は Service の依存と挙動を制御する。
@@ -60,6 +62,12 @@ func NewService(cfg Config) *Service {
 
 // Store は外部からテストで参照させる。
 func (s *Service) Store() *Store { return s.store }
+
+// verifyToken は Service 注入の clock を基準に JWT を検証する。
+// jwt.Verify を直接呼ぶと実時計に固定されてしまうため、ここを経由させる。
+func (s *Service) verifyToken(token string) (jwt.Claims, error) {
+	return jwt.VerifyAt(token, s.cfg.JWTSecret, s.clock())
+}
 
 // Mount は GoTrue 互換ルートとエミュレータ拡張ルートを mux に登録する。
 func (s *Service) Mount(mux *http.ServeMux) {

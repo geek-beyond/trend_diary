@@ -63,8 +63,14 @@ func (s *Service) handleTokenPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.store.UpdateLastSignIn(u.ID)
-	// 最新のユーザ情報を取得
-	u, _ = s.store.FindUserByID(u.ID)
+	// 最新の last_sign_in_at を反映した clone を取得。並行で DeleteUser されていたら
+	// invalid_grant を返す（issueSession に nil を渡して panic させない）。
+	fresh, ok := s.store.FindUserByID(u.ID)
+	if !ok {
+		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		return
+	}
+	u = fresh
 
 	resp, err := s.issueSession(u)
 	if err != nil {

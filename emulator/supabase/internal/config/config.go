@@ -17,13 +17,13 @@ type Config struct {
 
 // AuthConfig は auth.Service.Config 相当を文字列ベースで保持し、main で詰め替える。
 type AuthConfig struct {
-	JWTSecret       string
-	JWTIssuer       string
-	AccessTokenTTL  time.Duration
-	ReuseInterval   time.Duration
-	RequireAPIKey   bool
-	AnonKey         string
-	ServiceRoleKey  string
+	JWTSecret      string
+	JWTIssuer      string
+	AccessTokenTTL time.Duration
+	ReuseInterval  time.Duration
+	RequireAPIKey  bool
+	AnonKey        string
+	ServiceRoleKey string
 }
 
 // Default はゼロ値以外のデフォルトを埋めた Config を返す。

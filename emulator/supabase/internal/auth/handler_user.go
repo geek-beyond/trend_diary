@@ -4,14 +4,16 @@ import (
 	"net/http"
 
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/jwt"
 )
 
 func (s *Service) handleGetUser(w http.ResponseWriter, r *http.Request) {
 	u, err := s.authenticateUser(r)
 	if err != nil {
-		// 既存実装 isAuthSessionMissing は "Auth session missing" を含むかで判定する。
-		writeAPIError(w, http.StatusUnauthorized, "AuthSessionMissingError: Auth session missing!")
+		// supabase-js v2 は X-Supabase-Api-Version + error_code='session_not_found' で
+		// AuthSessionMissingError に instanceof マップする。msg のフォールバック判定も
+		// アプリ側で残っているので "Auth session missing" 文字列も維持する。
+		writeAPIErrorWithCode(w, http.StatusUnauthorized, "session_not_found",
+			"AuthSessionMissingError: Auth session missing!")
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, u)
@@ -28,7 +30,7 @@ func (s *Service) authenticateUser(r *http.Request) (*User, error) {
 	if token == s.cfg.AnonKey || token == s.cfg.ServiceRoleKey {
 		return nil, ErrUserNotFound
 	}
-	claims, err := jwt.Verify(token, s.cfg.JWTSecret)
+	claims, err := s.verifyToken(token)
 	if err != nil {
 		return nil, ErrUserNotFound
 	}

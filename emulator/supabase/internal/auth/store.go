@@ -36,10 +36,11 @@ var (
 )
 
 // Snapshot はテスト/デバッグ用にStoreの全データをコピーして返す。
+// JSON 化されて /__emulator/snapshot として返ることを前提に snake_case と空配列を保証する。
 type Snapshot struct {
-	Users         []User
-	Sessions      []Session
-	RefreshTokens []RefreshToken
+	Users         []User         `json:"users"`
+	Sessions      []Session      `json:"sessions"`
+	RefreshTokens []RefreshToken `json:"refresh_tokens"`
 }
 
 func NewStore(cfg StoreConfig) *Store {
@@ -63,8 +64,11 @@ func (s *Store) CreateUser(email string, passwordHash []byte) (*User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	key := strings.ToLower(email)
-	if _, exists := s.emailIndex[key]; exists {
+	// 本物 GoTrue と同じく email は lowercase 正規化して保存する。
+	// 旧実装は原文を保存しており、'Alice@example.com' で signup したテストが本物環境で
+	// join key 不一致を起こす silent divergence の温床だった。
+	normalized := strings.ToLower(email)
+	if _, exists := s.emailIndex[normalized]; exists {
 		return nil, ErrUserAlreadyExists
 	}
 
@@ -73,7 +77,7 @@ func (s *Store) CreateUser(email string, passwordHash []byte) (*User, error) {
 	id := uuidx.New()
 	u := &User{
 		ID:               id,
-		Email:            email,
+		Email:            normalized,
 		Aud:              "authenticated",
 		Role:             "authenticated",
 		EmailConfirmedAt: &confirmed,
@@ -84,7 +88,7 @@ func (s *Store) CreateUser(email string, passwordHash []byte) (*User, error) {
 			ID:           id,
 			UserID:       id,
 			Provider:     "email",
-			IdentityData: map[string]any{"email": email, "sub": id},
+			IdentityData: map[string]any{"email": normalized, "sub": id},
 			CreatedAt:    now,
 			UpdatedAt:    now,
 			LastSignInAt: now,
@@ -94,7 +98,7 @@ func (s *Store) CreateUser(email string, passwordHash []byte) (*User, error) {
 		PasswordHash: passwordHash,
 	}
 	s.users[id] = u
-	s.emailIndex[key] = id
+	s.emailIndex[normalized] = id
 	return s.cloneUser(u), nil
 }
 
@@ -142,6 +146,24 @@ func (s *Store) DeleteUser(id string) error {
 		}
 	}
 	return nil
+}
+
+// SetUserMetadata は signup 時の data フィールド等を Store の元 User に書き込む。
+// 既存の map との merge ではなく置換する（GoTrue の raw_user_meta_data 上書き挙動）。
+func (s *Store) SetUserMetadata(id string, data map[string]any) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	u, ok := s.users[id]
+	if !ok {
+		return
+	}
+	// data を独立した map にコピーして共有を断ち切る
+	cp := make(map[string]any, len(data))
+	for k, v := range data {
+		cp[k] = v
+	}
+	u.UserMetadata = cp
+	u.UpdatedAt = s.clock()
 }
 
 func (s *Store) UpdateLastSignIn(id string) {
@@ -205,13 +227,12 @@ func (s *Store) ConsumeRefreshToken(token string) (*RefreshToken, *User, error) 
 	}
 
 	if rt.Revoked {
-		// reuse_interval 内なら同一の子tokenを返す
+		// reuse_interval 内なら親→子チェーンの末端（=最新の未失効子）を返す。
+		// 子も並行リクエストで rotation されているケース（A→B→C のとき A を再試行）に
+		// 対応するため、Parent でチェーンを辿る。
 		if s.clock().Sub(rt.IssuedAt) <= s.reuseInterval {
-			// 子tokenを探す
-			for _, child := range s.refreshTokens {
-				if child.Parent == rt.Token && !child.Revoked {
-					return s.cloneRefreshToken(child), s.cloneUser(u), nil
-				}
+			if leaf := s.findLatestChild(rt.Token); leaf != nil {
+				return s.cloneRefreshToken(leaf), s.cloneUser(u), nil
 			}
 		}
 		return nil, nil, ErrInvalidRefreshToken
@@ -232,15 +253,44 @@ func (s *Store) ConsumeRefreshToken(token string) (*RefreshToken, *User, error) 
 	return s.cloneRefreshToken(newRT), s.cloneUser(u), nil
 }
 
+// findLatestChild は token を親に持つ refresh token のうち、Revoked=false のものを返す。
+// 子も並行 rotation で revoke されている場合は、さらにその子を再帰的に辿る。
+// 全て revoked ならチェーン上の最末端（誰にも親として参照されていない token）を返す。
+// 呼び出し側で write lock を保持していること。
+func (s *Store) findLatestChild(parent string) *RefreshToken {
+	visited := map[string]bool{parent: true}
+	current := parent
+	for {
+		var next *RefreshToken
+		for _, child := range s.refreshTokens {
+			if child.Parent == current && !visited[child.Token] {
+				next = child
+				break
+			}
+		}
+		if next == nil {
+			break
+		}
+		visited[next.Token] = true
+		current = next.Token
+		if !next.Revoked {
+			return next
+		}
+	}
+	return nil
+}
+
 // RevokeRefreshTokensBySession は logout で呼ばれる。指定sessionの全refresh tokenを失効。
+// reuse_interval 内の reuse パスもブロックしたいので IssuedAt を reuse_interval+1 だけ過去に遡らせる。
+// 旧実装は -1h 固定だったため、運用で reuse_interval を 2h などに設定したときに logout が無効化されない不具合があった。
 func (s *Store) RevokeRefreshTokensBySession(sessionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	past := s.clock().Add(-(s.reuseInterval + time.Second))
 	for _, rt := range s.refreshTokens {
 		if rt.SessionID == sessionID {
 			rt.Revoked = true
-			// 再利用も不可にするため IssuedAt を 1 時間前に遡らせる
-			rt.IssuedAt = s.clock().Add(-time.Hour)
+			rt.IssuedAt = past
 		}
 	}
 	delete(s.sessions, sessionID)
@@ -258,7 +308,12 @@ func (s *Store) Reset() {
 func (s *Store) Snapshot() Snapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	snap := Snapshot{}
+	// nil スライスが JSON で null になるのを避けるため空スライスで初期化する
+	snap := Snapshot{
+		Users:         []User{},
+		Sessions:      []Session{},
+		RefreshTokens: []RefreshToken{},
+	}
 	for _, u := range s.users {
 		snap.Users = append(snap.Users, *s.cloneUser(u))
 	}
@@ -271,9 +326,25 @@ func (s *Store) Snapshot() Snapshot {
 	return snap
 }
 
+// cloneUser は呼び出し側の map/スライス変更がストアの実体に漏れないよう deep copy する。
+// 旧実装はシャローコピーで、呼び出し側で `u.AppMetadata["k"]=v` をすると RWMutex の外から
+// ストアの map に書き込みが入り、Snapshot 中の goroutine と並走して concurrent map fatal を
+// 引き起こすリスクがあった。
 func (s *Store) cloneUser(u *User) *User {
 	c := *u
-	// マップは浅いコピーで十分（呼び出し側で書き換える想定がない）
+	c.AppMetadata = cloneAnyMap(u.AppMetadata)
+	c.UserMetadata = cloneAnyMap(u.UserMetadata)
+	if u.Identities != nil {
+		c.Identities = make([]Identity, len(u.Identities))
+		for i, id := range u.Identities {
+			ic := id
+			ic.IdentityData = cloneAnyMap(id.IdentityData)
+			c.Identities[i] = ic
+		}
+	}
+	if u.PasswordHash != nil {
+		c.PasswordHash = append([]byte(nil), u.PasswordHash...)
+	}
 	return &c
 }
 
@@ -285,4 +356,15 @@ func (s *Store) cloneSession(sess *Session) *Session {
 func (s *Store) cloneRefreshToken(rt *RefreshToken) *RefreshToken {
 	c := *rt
 	return &c
+}
+
+func cloneAnyMap(m map[string]any) map[string]any {
+	if m == nil {
+		return nil
+	}
+	cp := make(map[string]any, len(m))
+	for k, v := range m {
+		cp[k] = v
+	}
+	return cp
 }

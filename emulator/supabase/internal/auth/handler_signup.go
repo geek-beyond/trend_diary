@@ -29,6 +29,9 @@ func (s *Service) handleSignup(w http.ResponseWriter, r *http.Request) {
 		writeAPIError(w, http.StatusBadRequest, "Unable to validate email address: invalid format")
 		return
 	}
+	// GoTrue デフォルトの password_min_length=6 と合わせる。アプリ層の Zod は
+	// より厳しい min=8 を要求するため、エミュレータを HTTP 直叩きしない限り 6-7 文字は
+	// アプリ側で先に弾かれる。GoTrue 互換性を優先してここでは緩めにしている。
 	if len(req.Password) < 6 {
 		writeAPIError(w, http.StatusUnprocessableEntity, "Password should be at least 6 characters")
 		return
@@ -51,7 +54,11 @@ func (s *Service) handleSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(req.Data) > 0 {
-		u.UserMetadata = req.Data
+		s.store.SetUserMetadata(u.ID, req.Data)
+		// 直後の issueSession に同じ metadata が反映されるよう clone を取り直す
+		if fresh, ok := s.store.FindUserByID(u.ID); ok {
+			u = fresh
+		}
 	}
 
 	// mailer_autoconfirm=true 想定。GoTrue は AccessTokenResponse をそのまま返す。

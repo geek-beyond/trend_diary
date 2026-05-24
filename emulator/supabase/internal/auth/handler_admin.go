@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -40,10 +41,42 @@ func (s *Service) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 	if users == nil {
 		users = []User{}
 	}
+
+	// supabase-js GoTrueAdminApi.listUsers は x-total-count と Link ヘッダから
+	// nextPage / lastPage / total を組み立てる。最低限の互換のため両方付与する。
+	total := len(snap.Users)
+	w.Header().Set("x-total-count", strconv.Itoa(total))
+	if link := buildPaginationLinkHeader(r, page, perPage, total); link != "" {
+		w.Header().Set("Link", link)
+	}
+
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{
 		"users": users,
 		"aud":   "authenticated",
 	})
+}
+
+// buildPaginationLinkHeader は RFC 5988 形式の `<url>; rel="next", <url>; rel="last"` を返す。
+func buildPaginationLinkHeader(r *http.Request, page, perPage, total int) string {
+	if perPage <= 0 {
+		return ""
+	}
+	lastPage := (total + perPage - 1) / perPage
+	if lastPage < 1 {
+		lastPage = 1
+	}
+	base := r.URL.Path
+	links := ""
+	if page < lastPage {
+		links += fmt.Sprintf(`<%s?page=%d&per_page=%d>; rel="next"`, base, page+1, perPage)
+	}
+	if lastPage > 1 {
+		if links != "" {
+			links += ", "
+		}
+		links += fmt.Sprintf(`<%s?page=%d&per_page=%d>; rel="last"`, base, lastPage, perPage)
+	}
+	return links
 }
 
 func (s *Service) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {

@@ -1,20 +1,26 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
-var errUnauthenticated = errors.New("handler: unauthenticated")
+type GetUser struct {
+	store  *store.Store
+	tokens *Tokens
+}
 
-func (h *Handler) handleGetUser(w http.ResponseWriter, r *http.Request) {
-	u, err := h.authenticateUser(r)
-	if err != nil {
+func NewGetUser(st *store.Store, tk *Tokens) *GetUser {
+	return &GetUser{store: st, tokens: tk}
+}
+
+func (h *GetUser) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	u, ok := h.lookup(r)
+	if !ok {
 		// supabase-js v2 は X-Supabase-Api-Version + error_code='session_not_found' で
-		// AuthSessionMissingError に instanceof マップする。アプリ側の msg 包含判定も残す。
+		// AuthSessionMissingError に instanceof マップする。アプリ側 msg 包含判定も残す。
 		writeAPIErrorWithCode(w, http.StatusUnauthorized, "session_not_found",
 			"AuthSessionMissingError: Auth session missing!")
 		return
@@ -22,22 +28,14 @@ func (h *Handler) handleGetUser(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, u)
 }
 
-func (h *Handler) authenticateUser(r *http.Request) (*store.User, error) {
+func (h *GetUser) lookup(r *http.Request) (*store.User, bool) {
 	token := authBearer(r)
 	if token == "" {
-		return nil, errUnauthenticated
+		return nil, false
 	}
-	// anon / service_role は user とみなさない
-	if token == h.cfg.AnonKey || token == h.cfg.ServiceRoleKey {
-		return nil, errUnauthenticated
-	}
-	c, err := h.verifyToken(token)
+	c, err := h.tokens.Verify(token)
 	if err != nil {
-		return nil, errUnauthenticated
+		return nil, false
 	}
-	u, ok := h.store.FindUserByID(c.Subject)
-	if !ok {
-		return nil, errUnauthenticated
-	}
-	return u, nil
+	return h.store.FindUserByID(c.Subject)
 }

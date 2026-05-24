@@ -11,7 +11,15 @@ import (
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
-func (h *Handler) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
+type AdminListUsers struct {
+	store *store.Store
+}
+
+func NewAdminListUsers(st *store.Store) *AdminListUsers {
+	return &AdminListUsers{store: st}
+}
+
+func (h *AdminListUsers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page <= 0 {
@@ -45,7 +53,7 @@ func (h *Handler) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 	// nextPage / lastPage / total を組み立てる。
 	total := len(snap.Users)
 	w.Header().Set("x-total-count", strconv.Itoa(total))
-	if link := buildPaginationLinkHeader(r, page, perPage, total); link != "" {
+	if link := paginationLinkHeader(r, page, perPage, total); link != "" {
 		w.Header().Set("Link", link)
 	}
 
@@ -55,7 +63,7 @@ func (h *Handler) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func buildPaginationLinkHeader(r *http.Request, page, perPage, total int) string {
+func paginationLinkHeader(r *http.Request, page, perPage, total int) string {
 	if perPage <= 0 {
 		return ""
 	}
@@ -77,7 +85,15 @@ func buildPaginationLinkHeader(r *http.Request, page, perPage, total int) string
 	return links
 }
 
-func (h *Handler) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
+type AdminDeleteUser struct {
+	store *store.Store
+}
+
+func NewAdminDeleteUser(st *store.Store) *AdminDeleteUser {
+	return &AdminDeleteUser{store: st}
+}
+
+func (h *AdminDeleteUser) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
 		writeAPIError(w, http.StatusBadRequest, "user id is required")

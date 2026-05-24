@@ -9,13 +9,22 @@ import (
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
+type Signup struct {
+	store  *store.Store
+	tokens *Tokens
+}
+
+func NewSignup(st *store.Store, tk *Tokens) *Signup {
+	return &Signup{store: st, tokens: tk}
+}
+
 type signupRequest struct {
 	Email    string         `json:"email"`
 	Password string         `json:"password"`
 	Data     map[string]any `json:"data"`
 }
 
-func (h *Handler) handleSignup(w http.ResponseWriter, r *http.Request) {
+func (h *Signup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var req signupRequest
 	if err := httpx.ReadJSON(r, &req); err != nil {
 		writeAPIError(w, http.StatusBadRequest, "invalid request body")
@@ -30,7 +39,7 @@ func (h *Handler) handleSignup(w http.ResponseWriter, r *http.Request) {
 		writeAPIError(w, http.StatusBadRequest, "Unable to validate email address: invalid format")
 		return
 	}
-	// GoTrue デフォルト password_min_length=6 と合わせる。アプリ層 Zod は min=8 を要求するので
+	// GoTrue デフォルト password_min_length=6 と合わせる。アプリ層 Zod は min=8 を要求するため
 	// エミュレータ直叩きしない限り 6-7 文字はアプリ側で先に弾かれる。
 	if len(req.Password) < 6 {
 		writeAPIError(w, http.StatusUnprocessableEntity, "Password should be at least 6 characters")
@@ -62,7 +71,7 @@ func (h *Handler) handleSignup(w http.ResponseWriter, r *http.Request) {
 
 	// mailer_autoconfirm=true 想定。GoTrue は AccessTokenResponse をそのまま返し、
 	// supabase-js が {data:{user, session}} に再構成する。
-	session, err := h.issueSession(u)
+	session, err := h.tokens.Issue(u)
 	if err != nil {
 		writeAPIError(w, http.StatusInternalServerError, err.Error())
 		return

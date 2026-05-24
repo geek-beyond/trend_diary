@@ -1,5 +1,5 @@
 // Supabase エミュレータのエントリポイント。
-// シングルバイナリで auth（将来 storage/realtime も）を 1ポートにマウントする。
+// シングルバイナリで auth（将来 storage/realtime も）を 1 ポートにマウントする。
 package main
 
 import (
@@ -35,22 +35,22 @@ func run(args []string) error {
 	logger := newLogger(cfg.LogLevel)
 	slog.SetDefault(logger)
 
-	st := store.New(store.Config{
-		Clock:         time.Now,
-		ReuseInterval: cfg.Auth.ReuseInterval,
-	})
-	h := handler.New(handler.Config{
-		JWTSecret:      cfg.Auth.JWTSecret,
-		JWTIssuer:      cfg.Auth.JWTIssuer,
-		AccessTokenTTL: cfg.Auth.AccessTokenTTL,
-		RequireAPIKey:  cfg.Auth.RequireAPIKey,
-		AnonKey:        cfg.Auth.AnonKey,
-		ServiceRoleKey: cfg.Auth.ServiceRoleKey,
-		Clock:          time.Now,
-	}, st)
+	clock := time.Now
+	st := store.New(store.Config{Clock: clock, ReuseInterval: cfg.Auth.ReuseInterval})
+	tk := handler.NewTokens(st, cfg.Auth.JWTSecret, cfg.Auth.JWTIssuer, cfg.Auth.AccessTokenTTL, clock)
 
 	mux := http.NewServeMux()
-	h.Mount(mux)
+	mux.Handle("GET /auth/v1/health", handler.NewHealth())
+	mux.Handle("GET /auth/v1/settings", handler.NewSettings())
+	mux.Handle("POST /auth/v1/signup", handler.NewSignup(st, tk))
+	mux.Handle("POST /auth/v1/token", handler.NewToken(st, tk))
+	mux.Handle("GET /auth/v1/user", handler.NewGetUser(st, tk))
+	mux.Handle("POST /auth/v1/logout", handler.NewLogout(st, tk))
+	mux.Handle("GET /auth/v1/admin/users", handler.NewAdminListUsers(st))
+	mux.Handle("DELETE /auth/v1/admin/users/{id}", handler.NewAdminDeleteUser(st))
+	mux.Handle("POST /__emulator/reset", handler.NewReset(st))
+	mux.Handle("GET /__emulator/snapshot", handler.NewSnapshot(st))
+	mux.Handle("POST /__emulator/users", handler.NewSeedUser(st))
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
@@ -60,7 +60,7 @@ func run(args []string) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("supabase emulator started", "addr", cfg.Addr, "require_api_key", cfg.Auth.RequireAPIKey)
+		logger.Info("supabase emulator started", "addr", cfg.Addr)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 			return

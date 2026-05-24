@@ -10,12 +10,15 @@ import (
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler/handlertest"
 )
 
-func TestSettings(t *testing.T) {
-	t.Run("mailer_autoconfirm=true を返す", func(t *testing.T) {
-		h := handler.NewSettings()
+func TestHealth(t *testing.T) {
+	t.Run("200 + name=GoTrue", func(t *testing.T) {
+		h := handler.NewHealth()
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/settings", nil))
-		if !strings.Contains(rec.Body.String(), `"mailer_autoconfirm":true`) {
+		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/health", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status: %d", rec.Code)
+		}
+		if !strings.Contains(rec.Body.String(), `"name":"GoTrue"`) {
 			t.Errorf("body: %s", rec.Body.String())
 		}
 	})

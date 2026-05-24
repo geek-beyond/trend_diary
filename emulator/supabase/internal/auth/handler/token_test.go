@@ -1,105 +1,126 @@
-package handler
+package handler_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler/handlertest"
 )
 
-func TestTokenPassword_Success(t *testing.T) {
-	st := newStoreWith(nil)
-	tk := newTokensWith(st, nil)
-	_ = seed(t, st, tk, "alice@example.com", "password123")
-	h := NewToken(st, tk)
+func TestToken(t *testing.T) {
+	t.Run("password grant", func(t *testing.T) {
+		t.Run("正しい資格情報で200を返す", func(t *testing.T) {
+			st := handlertest.NewStore(nil)
+			tk := handlertest.NewTokens(st, nil)
+			handlertest.Seed(t, st, tk, "alice@example.com", "password123")
+			h := handler.NewToken(st, tk)
 
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, newRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", map[string]string{
-		"email": "alice@example.com", "password": "password123",
-	}))
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status: %d", rec.Code)
-	}
-}
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", map[string]string{
+				"email": "alice@example.com", "password": "password123",
+			}))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status: %d", rec.Code)
+			}
+		})
 
-func TestTokenPassword_WrongPassword(t *testing.T) {
-	st := newStoreWith(nil)
-	tk := newTokensWith(st, nil)
-	_ = seed(t, st, tk, "alice@example.com", "password123")
-	h := NewToken(st, tk)
+		t.Run("認証失敗で400 + invalid_grant + 'Invalid login credentials'", func(t *testing.T) {
+			cases := []struct {
+				name string
+				body map[string]string
+			}{
+				{name: "誤ったpassword", body: map[string]string{"email": "alice@example.com", "password": "WRONG"}},
+				{name: "未登録email", body: map[string]string{"email": "nobody@example.com", "password": "password123"}},
+				{name: "emailもpasswordも空", body: map[string]string{}},
+			}
+			for _, c := range cases {
+				t.Run(c.name, func(t *testing.T) {
+					st := handlertest.NewStore(nil)
+					tk := handlertest.NewTokens(st, nil)
+					handlertest.Seed(t, st, tk, "alice@example.com", "password123")
+					h := handler.NewToken(st, tk)
 
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, newRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", map[string]string{
-		"email": "alice@example.com", "password": "WRONG",
-	}))
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status: %d", rec.Code)
-	}
-	body := rec.Body.String()
-	if !strings.Contains(body, "invalid_grant") || !strings.Contains(body, "Invalid login credentials") {
-		t.Errorf("body: %s", body)
-	}
-}
+					rec := httptest.NewRecorder()
+					h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", c.body))
 
-func TestTokenPassword_UnknownEmail(t *testing.T) {
-	st := newStoreWith(nil)
-	tk := newTokensWith(st, nil)
-	h := NewToken(st, tk)
+					if rec.Code != http.StatusBadRequest {
+						t.Fatalf("status: %d", rec.Code)
+					}
+					body := rec.Body.String()
+					if !strings.Contains(body, "invalid_grant") || !strings.Contains(body, "Invalid login credentials") {
+						t.Errorf("body: %s", body)
+					}
+				})
+			}
+		})
+	})
 
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, newRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", map[string]string{
-		"email": "nobody@example.com", "password": "password123",
-	}))
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status: %d", rec.Code)
-	}
-}
+	t.Run("refresh_token grant", func(t *testing.T) {
+		t.Run("有効なrefresh_tokenで rotation した新ペアを返す", func(t *testing.T) {
+			st := handlertest.NewStore(nil)
+			tk := handlertest.NewTokens(st, nil)
+			seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
+			h := handler.NewToken(st, tk)
 
-func TestToken_NoGrantType(t *testing.T) {
-	st := newStoreWith(nil)
-	h := NewToken(st, newTokensWith(st, nil))
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+				"refresh_token": seeded.RefreshToken,
+			}))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status: %d", rec.Code)
+			}
+			var rotated handler.TokenResponse
+			handlertest.DecodeJSON(t, rec, &rotated)
+			if rotated.RefreshToken == seeded.RefreshToken {
+				t.Error("refresh_token not rotated")
+			}
+		})
 
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, newRequest(t, http.MethodPost, "/auth/v1/token", map[string]string{
-		"email": "alice@example.com", "password": "password123",
-	}))
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status: %d", rec.Code)
-	}
-}
+		t.Run("不正なrefresh_tokenで400 + 'Invalid Refresh Token'", func(t *testing.T) {
+			cases := []struct {
+				name        string
+				refreshTok  string
+				wantInBody  string
+			}{
+				{name: "存在しないtoken", refreshTok: "bogus", wantInBody: "Invalid Refresh Token"},
+				{name: "空文字", refreshTok: "", wantInBody: "Invalid Refresh Token"},
+			}
+			for _, c := range cases {
+				t.Run(c.name, func(t *testing.T) {
+					st := handlertest.NewStore(nil)
+					h := handler.NewToken(st, handlertest.NewTokens(st, nil))
 
-func TestTokenRefresh_Success(t *testing.T) {
-	st := newStoreWith(nil)
-	tk := newTokensWith(st, nil)
-	first := seed(t, st, tk, "alice@example.com", "password123")
-	h := NewToken(st, tk)
+					rec := httptest.NewRecorder()
+					h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+						"refresh_token": c.refreshTok,
+					}))
+					if rec.Code != http.StatusBadRequest {
+						t.Fatalf("status: %d", rec.Code)
+					}
+					if !strings.Contains(rec.Body.String(), c.wantInBody) {
+						t.Errorf("body: %s", rec.Body.String())
+					}
+				})
+			}
+		})
+	})
 
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, newRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
-		"refresh_token": first.RefreshToken,
-	}))
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status: %d", rec.Code)
-	}
-	var rotated TokenResponse
-	decodeJSON(t, rec, &rotated)
-	if rotated.RefreshToken == first.RefreshToken {
-		t.Error("refresh_token not rotated")
-	}
-}
+	t.Run("grant_type 未指定で 400", func(t *testing.T) {
+		st := handlertest.NewStore(nil)
+		h := handler.NewToken(st, handlertest.NewTokens(st, nil))
 
-func TestTokenRefresh_InvalidToken(t *testing.T) {
-	st := newStoreWith(nil)
-	h := NewToken(st, newTokensWith(st, nil))
-
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, newRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
-		"refresh_token": "bogus",
-	}))
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status: %d", rec.Code)
-	}
-	if !strings.Contains(rec.Body.String(), "Invalid Refresh Token") {
-		t.Errorf("body: %s", rec.Body.String())
-	}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token", map[string]string{
+			"email": "alice@example.com", "password": "password123",
+		}))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status: %d", rec.Code)
+		}
+		if !strings.Contains(rec.Body.String(), "unsupported_grant_type") {
+			t.Errorf("body: %s", rec.Body.String())
+		}
+	})
 }

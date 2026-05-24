@@ -1,4 +1,5 @@
-package handler
+// Package handlertest は handler パッケージのテストで共用するヘルパ群を提供する。
+package handlertest
 
 import (
 	"bytes"
@@ -9,25 +10,26 @@ import (
 	"testing"
 	"time"
 
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/config"
 )
 
-const testIssuer = "http://127.0.0.1:54321/auth/v1"
+const Issuer = "http://127.0.0.1:54321/auth/v1"
 
-func newStoreWith(clock func() time.Time) *store.Store {
+func NewStore(clock func() time.Time) *store.Store {
 	return store.New(store.Config{Clock: clock, ReuseInterval: 10 * time.Second})
 }
 
-func newTokensWith(st *store.Store, clock func() time.Time) *Tokens {
+func NewTokens(st *store.Store, clock func() time.Time) *handler.Tokens {
 	if clock == nil {
 		clock = time.Now
 	}
-	return NewTokens(st, config.DefaultJWTSecret, testIssuer, time.Hour, clock)
+	return handler.NewTokens(st, config.DefaultJWTSecret, Issuer, time.Hour, clock)
 }
 
-// seed は store にユーザを直接登録して TokenResponse を返す（テスト用ヘルパ）。
-func seed(t *testing.T, st *store.Store, tk *Tokens, email, password string) *TokenResponse {
+// Seed は store に直接ユーザを登録し、access_token / refresh_token を発行する。
+func Seed(t *testing.T, st *store.Store, tk *handler.Tokens, email, password string) *handler.TokenResponse {
 	t.Helper()
 	hash, _ := store.HashPassword(password)
 	u, err := st.CreateUser(email, hash)
@@ -41,7 +43,7 @@ func seed(t *testing.T, st *store.Store, tk *Tokens, email, password string) *To
 	return resp
 }
 
-func newRequest(t *testing.T, method, target string, body any) *http.Request {
+func NewRequest(t *testing.T, method, target string, body any) *http.Request {
 	t.Helper()
 	var rdr io.Reader
 	if body != nil {
@@ -55,7 +57,7 @@ func newRequest(t *testing.T, method, target string, body any) *http.Request {
 	return req
 }
 
-func decodeJSON(t *testing.T, rec *httptest.ResponseRecorder, dst any) {
+func DecodeJSON(t *testing.T, rec *httptest.ResponseRecorder, dst any) {
 	t.Helper()
 	if err := json.NewDecoder(rec.Body).Decode(dst); err != nil {
 		t.Fatalf("decode: %v", err)

@@ -1,0 +1,27 @@
+package handler_test
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler/handlertest"
+)
+
+func TestSnapshot(t *testing.T) {
+	t.Run("空ストアで snake_case の空配列を返す", func(t *testing.T) {
+		st := handlertest.NewStore(nil)
+		h := handler.NewSnapshot(st)
+
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodGet, "/__emulator/snapshot", nil))
+		body := rec.Body.String()
+		for _, key := range []string{`"users":[]`, `"sessions":[]`, `"refresh_tokens":[]`} {
+			if !strings.Contains(body, key) {
+				t.Errorf("snapshot must contain %s: %s", key, body)
+			}
+		}
+	})
+}

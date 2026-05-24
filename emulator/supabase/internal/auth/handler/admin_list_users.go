@@ -7,26 +7,14 @@ import (
 	"strconv"
 
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
-type AdminListUsers struct {
-	store *store.Store
-}
-
-func NewAdminListUsers(st *store.Store) *AdminListUsers {
-	return &AdminListUsers{store: st}
-}
-
-func (h *AdminListUsers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	resp := httpx.MustFromContext(r.Context())
-
-	q := r.URL.Query()
-	page, _ := strconv.Atoi(q.Get("page"))
+func AdminListUsers(h *Handler) {
+	page, _ := strconv.Atoi(h.Query("page"))
 	if page <= 0 {
 		page = 1
 	}
-	perPage, _ := strconv.Atoi(q.Get("per_page"))
+	perPage, _ := strconv.Atoi(h.Query("per_page"))
 	if perPage <= 0 {
 		perPage = 50
 	}
@@ -53,20 +41,20 @@ func (h *AdminListUsers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// supabase-js GoTrueAdminApi.listUsers は x-total-count と Link ヘッダから
 	// nextPage / lastPage / total を組み立てる。
 	total := len(snap.Users)
-	resp.Header().Set("x-total-count", strconv.Itoa(total))
-	if link := paginationLinkHeader(r, page, perPage, total); link != "" {
-		resp.Header().Set("Link", link)
+	h.Header().Set("x-total-count", strconv.Itoa(total))
+	if link := paginationLinkHeader(h.Request(), page, perPage, total); link != "" {
+		h.Header().Set("Link", link)
 	}
 
-	resp.JSON(http.StatusOK, map[string]any{
+	h.JSON(http.StatusOK, map[string]any{
 		"users": users,
 		"aud":   "authenticated",
 	})
 }
 
-// paginationLinkHeader は本物 GoTrue と同じく単一ページでも rel="last" を必ず付ける。
-// supabase-js (GoTrueAdminApi.listUsers) は Link が空のとき pagination.total を 0 にしてしまうので、
-// 単一ページレスポンスでも最低限 rel="last" を出さないとクライアントの total が壊れる。
+// paginationLinkHeader は単一ページでも rel="last" を必ず付ける。
+// supabase-js (GoTrueAdminApi.listUsers) は Link が空のとき pagination.total を 0 にしてしまうため、
+// 本物 GoTrue と同じく rel="last" を常時出す。
 func paginationLinkHeader(r *http.Request, page, perPage, total int) string {
 	if perPage <= 0 {
 		return ""

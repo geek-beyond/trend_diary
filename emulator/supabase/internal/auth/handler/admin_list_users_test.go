@@ -17,8 +17,8 @@ func TestAdminListUsers(t *testing.T) {
 			seedEmails  []string
 			query       string
 			wantTotal   string
-			mustContain []string // Link ヘッダに含まれていてほしい
-			mustExclude []string // Link ヘッダに含まれていてほしくない
+			mustContain []string
+			mustExclude []string
 		}{
 			{
 				name:        "1ページ目で next/last が両方付く",
@@ -28,7 +28,7 @@ func TestAdminListUsers(t *testing.T) {
 				mustContain: []string{`rel="next"`, `rel="last"`},
 			},
 			{
-				name:        "単一ページでも rel=\"last\" は必ず出る（supabase-js pagination.total 用）",
+				name:        "単一ページでも rel=\"last\" は必ず出る",
 				seedEmails:  []string{"alice@example.com"},
 				query:       "page=1&per_page=50",
 				wantTotal:   "1",
@@ -40,13 +40,13 @@ func TestAdminListUsers(t *testing.T) {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
 				tk := handlertest.NewTokens(st, nil)
+				f := handlertest.NewFactory(st, tk)
 				for _, e := range c.seedEmails {
 					handlertest.Seed(t, st, tk, e, "password123")
 				}
-				h := handler.NewAdminListUsers(st)
 
 				rec := httptest.NewRecorder()
-				handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/admin/users?"+c.query, nil))
+				handlertest.Serve(f, handler.AdminListUsers, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/admin/users?"+c.query, nil))
 
 				if got := rec.Header().Get("x-total-count"); got != c.wantTotal {
 					t.Errorf("x-total-count: got=%s want=%s", got, c.wantTotal)
@@ -68,10 +68,10 @@ func TestAdminListUsers(t *testing.T) {
 
 	t.Run("空ストアでも users:[] が返る", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
-		h := handler.NewAdminListUsers(st)
+		f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
 
 		rec := httptest.NewRecorder()
-		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/admin/users", nil))
+		handlertest.Serve(f, handler.AdminListUsers, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/admin/users", nil))
 		if !strings.Contains(rec.Body.String(), `"users":[]`) {
 			t.Errorf("users must be empty array: %s", rec.Body.String())
 		}

@@ -12,9 +12,11 @@ import (
 
 func TestHealth(t *testing.T) {
 	t.Run("200 + name=GoTrue", func(t *testing.T) {
-		h := handler.NewHealth()
+		st := handlertest.NewStore(nil)
+		f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+
 		rec := httptest.NewRecorder()
-		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/health", nil))
+		handlertest.Serve(f, handler.Health, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/health", nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("status: %d", rec.Code)
 		}

@@ -12,10 +12,10 @@ import (
 func TestSeedUser(t *testing.T) {
 	t.Run("正常系: 201", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
-		h := handler.NewSeedUser(st)
+		f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
 
 		rec := httptest.NewRecorder()
-		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
+		handlertest.Serve(f, handler.SeedUser, rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
 			"email": "alice@example.com", "password": "password123",
 		}))
 		if rec.Code != http.StatusCreated {
@@ -30,35 +30,22 @@ func TestSeedUser(t *testing.T) {
 			body       map[string]string
 			wantStatus int
 		}{
-			{
-				name:       "email欠落で400",
-				body:       map[string]string{"password": "password123"},
-				wantStatus: http.StatusBadRequest,
-			},
-			{
-				name:       "password欠落で400",
-				body:       map[string]string{"email": "alice@example.com"},
-				wantStatus: http.StatusBadRequest,
-			},
-			{
-				name:       "既存emailで409",
-				seed:       true,
-				body:       map[string]string{"email": "alice@example.com", "password": "password123"},
-				wantStatus: http.StatusConflict,
-			},
+			{name: "email欠落で400", body: map[string]string{"password": "password123"}, wantStatus: http.StatusBadRequest},
+			{name: "password欠落で400", body: map[string]string{"email": "alice@example.com"}, wantStatus: http.StatusBadRequest},
+			{name: "既存emailで409", seed: true, body: map[string]string{"email": "alice@example.com", "password": "password123"}, wantStatus: http.StatusConflict},
 		}
 		for _, c := range cases {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
-				h := handler.NewSeedUser(st)
+				f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
 				if c.seed {
-					handlertest.Serve(h, httptest.NewRecorder(), handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
+					handlertest.Serve(f, handler.SeedUser, httptest.NewRecorder(), handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
 						"email": "alice@example.com", "password": "password123",
 					}))
 				}
 
 				rec := httptest.NewRecorder()
-				handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", c.body))
+				handlertest.Serve(f, handler.SeedUser, rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", c.body))
 				if rec.Code != c.wantStatus {
 					t.Fatalf("status: got=%d want=%d", rec.Code, c.wantStatus)
 				}

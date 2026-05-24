@@ -1,5 +1,3 @@
-// Supabase エミュレータのエントリポイント。
-// シングルバイナリで auth（将来 storage/realtime も）を 1 ポートにマウントする。
 package main
 
 import (
@@ -15,7 +13,6 @@ import (
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/config"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
 func main() {
@@ -34,29 +31,26 @@ func run(args []string) error {
 	clock := time.Now
 	st := store.New(store.Config{Clock: clock, ReuseInterval: cfg.Auth.ReuseInterval})
 	tk := handler.NewTokens(st, cfg.Auth.JWTSecret, cfg.Auth.JWTIssuer, cfg.Auth.AccessTokenTTL, clock)
+	f := handler.NewFactory(st, tk)
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /auth/v1/health", handler.NewHealth())
-	mux.Handle("GET /auth/v1/settings", handler.NewSettings())
-	mux.Handle("POST /auth/v1/signup", handler.NewSignup(st, tk))
-	mux.Handle("POST /auth/v1/token", handler.NewToken(st, tk))
-	mux.Handle("GET /auth/v1/user", handler.NewGetUser(st, tk))
-	mux.Handle("POST /auth/v1/logout", handler.NewLogout(st, tk))
-	mux.Handle("GET /auth/v1/admin/users", handler.NewAdminListUsers(st))
-	mux.Handle("DELETE /auth/v1/admin/users/{id}", handler.NewAdminDeleteUser(st))
-	mux.Handle("POST /__emulator/reset", handler.NewReset(st))
-	mux.Handle("GET /__emulator/snapshot", handler.NewSnapshot(st))
-	mux.Handle("POST /__emulator/users", handler.NewSeedUser(st))
-	// catch-all で 404 を JSON 化。Go 1.22 mux は具体性の高いパターンを優先するので
-	// 既存ルートには干渉しない。default の http.NotFoundHandler は text/plain なので
-	// supabase-js の typed error マッピングが効かず X-Supabase-Api-Version も出ない。
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		httpx.MustFromContext(r.Context()).APIErrorWithCode(http.StatusNotFound, "not_found", "endpoint not found: "+r.Method+" "+r.URL.Path)
-	}))
+	mux.Handle("GET /auth/v1/health", f.Handle(handler.Health))
+	mux.Handle("GET /auth/v1/settings", f.Handle(handler.Settings))
+	mux.Handle("POST /auth/v1/signup", f.Handle(handler.Signup))
+	mux.Handle("POST /auth/v1/token", f.Handle(handler.Token))
+	mux.Handle("GET /auth/v1/user", f.Handle(handler.GetUser))
+	mux.Handle("POST /auth/v1/logout", f.Handle(handler.Logout))
+	mux.Handle("GET /auth/v1/admin/users", f.Handle(handler.AdminListUsers))
+	mux.Handle("DELETE /auth/v1/admin/users/{id}", f.Handle(handler.AdminDeleteUser))
+	mux.Handle("POST /__emulator/reset", f.Handle(handler.Reset))
+	mux.Handle("GET /__emulator/snapshot", f.Handle(handler.Snapshot))
+	mux.Handle("POST /__emulator/users", f.Handle(handler.SeedUser))
+	// Go 1.22 mux は具体性の高いパターンを優先するので "/" は既存ルートに干渉せず catch-all になる。
+	mux.Handle("/", f.Handle(handler.NotFound))
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           httpx.WithResponder(mux),
+		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

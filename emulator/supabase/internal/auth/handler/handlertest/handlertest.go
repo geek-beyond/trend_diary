@@ -13,7 +13,6 @@ import (
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/config"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
 const Issuer = "http://127.0.0.1:54321/auth/v1"
@@ -29,7 +28,10 @@ func NewTokens(st *store.Store, clock func() time.Time) *handler.Tokens {
 	return handler.NewTokens(st, config.DefaultJWTSecret, Issuer, time.Hour, clock)
 }
 
-// Seed は store に直接ユーザを登録し、access_token / refresh_token を発行する。
+func NewFactory(st *store.Store, tk *handler.Tokens) *handler.Factory {
+	return handler.NewFactory(st, tk)
+}
+
 func Seed(t *testing.T, st *store.Store, tk *handler.Tokens, email, password string) *handler.TokenResponse {
 	t.Helper()
 	hash, _ := store.HashPassword(password)
@@ -44,9 +46,6 @@ func Seed(t *testing.T, st *store.Store, tk *handler.Tokens, email, password str
 	return resp
 }
 
-// NewRequest はテスト用の *http.Request を組み立てる薄いヘルパ。
-// 実際の Responder 注入は Serve 経由で行う必要があるので、本関数だけで返した request を
-// h.ServeHTTP(rec, req) に直接渡すと MustFromContext で panic する。必ず Serve を使うこと。
 func NewRequest(t *testing.T, method, target string, body any) *http.Request {
 	t.Helper()
 	var rdr io.Reader
@@ -58,15 +57,11 @@ func NewRequest(t *testing.T, method, target string, body any) *http.Request {
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	// httptest.ResponseRecorder を都度作り直すと Responder の対象が変わるため、
-	// テスト側は handlertest.Serve(...) を介して書き込み先を結合する想定。
 	return req
 }
 
-// Serve は handler を WithResponder middleware で包んで実行する。
-// テストは httptest.NewRecorder() を毎回作り、このヘルパ経由でハンドラを呼ぶ。
-func Serve(h http.Handler, rec *httptest.ResponseRecorder, req *http.Request) {
-	httpx.WithResponder(h).ServeHTTP(rec, req)
+func Serve(f *handler.Factory, fn handler.HandlerFunc, rec *httptest.ResponseRecorder, req *http.Request) {
+	f.Handle(fn).ServeHTTP(rec, req)
 }
 
 func DecodeJSON(t *testing.T, rec *httptest.ResponseRecorder, dst any) {

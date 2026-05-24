@@ -12,27 +12,23 @@ import (
 )
 
 func TestGetUser(t *testing.T) {
-	t.Run("正常系", func(t *testing.T) {
-		t.Run("有効なBearerでuserを返す", func(t *testing.T) {
-			st := handlertest.NewStore(nil)
-			tk := handlertest.NewTokens(st, nil)
-			seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
-			h := handler.NewGetUser(st, tk)
+	t.Run("正常系: 有効な Bearer で user を返す", func(t *testing.T) {
+		st := handlertest.NewStore(nil)
+		tk := handlertest.NewTokens(st, nil)
+		f := handlertest.NewFactory(st, tk)
+		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
-			req := handlertest.NewRequest(t, http.MethodGet, "/auth/v1/user", nil)
-			req.Header.Set("Authorization", "Bearer "+seeded.AccessToken)
-			rec := httptest.NewRecorder()
-			handlertest.Serve(h, rec, req)
+		req := handlertest.NewRequest(t, http.MethodGet, "/auth/v1/user", nil)
+		req.Header.Set("Authorization", "Bearer "+seeded.AccessToken)
+		rec := httptest.NewRecorder()
+		handlertest.Serve(f, handler.GetUser, rec, req)
 
-			if rec.Code != http.StatusOK {
-				t.Fatalf("status: %d", rec.Code)
-			}
-		})
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status: %d", rec.Code)
+		}
 	})
 
 	t.Run("認証失敗のエラーコード分類", func(t *testing.T) {
-		// supabase-js の _removeSession() を session_not_found のときだけ走らせるため、
-		// 「Authorization 無し」「JWT 不正」「user 削除済み」を別 error_code に分けている。
 		cases := []struct {
 			name          string
 			setHeader     func(r *http.Request, validToken string)
@@ -62,7 +58,7 @@ func TestGetUser(t *testing.T) {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
 				tk := handlertest.NewTokens(st, nil)
-				h := handler.NewGetUser(st, tk)
+				f := handlertest.NewFactory(st, tk)
 
 				var validToken string
 				if c.deleteUser {
@@ -76,7 +72,7 @@ func TestGetUser(t *testing.T) {
 				req := handlertest.NewRequest(t, http.MethodGet, "/auth/v1/user", nil)
 				c.setHeader(req, validToken)
 				rec := httptest.NewRecorder()
-				handlertest.Serve(h, rec, req)
+				handlertest.Serve(f, handler.GetUser, rec, req)
 
 				if rec.Code != http.StatusUnauthorized {
 					t.Fatalf("status: %d", rec.Code)
@@ -96,14 +92,14 @@ func TestGetUser(t *testing.T) {
 		clock := func() time.Time { return current }
 		st := handlertest.NewStore(clock)
 		tk := handlertest.NewTokens(st, clock)
+		f := handlertest.NewFactory(st, tk)
 		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
-		h := handler.NewGetUser(st, tk)
 
 		current = current.Add(2 * time.Hour)
 		req := handlertest.NewRequest(t, http.MethodGet, "/auth/v1/user", nil)
 		req.Header.Set("Authorization", "Bearer "+seeded.AccessToken)
 		rec := httptest.NewRecorder()
-		handlertest.Serve(h, rec, req)
+		handlertest.Serve(f, handler.GetUser, rec, req)
 
 		if rec.Code != http.StatusUnauthorized {
 			t.Fatalf("status: %d", rec.Code)

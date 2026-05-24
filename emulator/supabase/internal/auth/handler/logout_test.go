@@ -22,12 +22,12 @@ func TestLogout(t *testing.T) {
 		for _, c := range cases {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
-				h := handler.NewLogout(st, handlertest.NewTokens(st, nil))
+				f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
 
 				req := handlertest.NewRequest(t, http.MethodPost, "/auth/v1/logout", nil)
 				c.setHeader(req)
 				rec := httptest.NewRecorder()
-				handlertest.Serve(h, rec, req)
+				handlertest.Serve(f, handler.Logout, rec, req)
 				if rec.Code != http.StatusNoContent {
 					t.Fatalf("status: %d", rec.Code)
 				}
@@ -38,20 +38,19 @@ func TestLogout(t *testing.T) {
 	t.Run("有効な Bearer で 204 + refresh_token 失効", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
 		tk := handlertest.NewTokens(st, nil)
+		f := handlertest.NewFactory(st, tk)
 		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
-		logout := handler.NewLogout(st, tk)
-		tokenH := handler.NewToken(st, tk)
 
 		req := handlertest.NewRequest(t, http.MethodPost, "/auth/v1/logout", nil)
 		req.Header.Set("Authorization", "Bearer "+seeded.AccessToken)
 		rec := httptest.NewRecorder()
-		handlertest.Serve(logout, rec, req)
+		handlertest.Serve(f, handler.Logout, rec, req)
 		if rec.Code != http.StatusNoContent {
 			t.Fatalf("logout status: %d", rec.Code)
 		}
 
 		refresh := httptest.NewRecorder()
-		handlertest.Serve(tokenH, refresh, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+		handlertest.Serve(f, handler.Token, refresh, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
 			"refresh_token": seeded.RefreshToken,
 		}))
 		if refresh.Code != http.StatusBadRequest {
@@ -60,28 +59,25 @@ func TestLogout(t *testing.T) {
 	})
 
 	t.Run("期限切れ access_token でも refresh_token は revoke される", func(t *testing.T) {
-		// 旧実装は Tokens.Verify が exp で失敗 → revoke 走らず、logout 後も refresh が通った。
 		current := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 		clock := func() time.Time { return current }
 		st := handlertest.NewStore(clock)
 		tk := handlertest.NewTokens(st, clock)
+		f := handlertest.NewFactory(st, tk)
 		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
-		logout := handler.NewLogout(st, tk)
-		tokenH := handler.NewToken(st, tk)
 
-		// access_token を期限切れにする
 		current = current.Add(2 * time.Hour)
 
 		req := handlertest.NewRequest(t, http.MethodPost, "/auth/v1/logout", nil)
 		req.Header.Set("Authorization", "Bearer "+seeded.AccessToken)
 		rec := httptest.NewRecorder()
-		handlertest.Serve(logout, rec, req)
+		handlertest.Serve(f, handler.Logout, rec, req)
 		if rec.Code != http.StatusNoContent {
 			t.Fatalf("logout status: %d", rec.Code)
 		}
 
 		refresh := httptest.NewRecorder()
-		handlertest.Serve(tokenH, refresh, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
+		handlertest.Serve(f, handler.Token, refresh, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
 			"refresh_token": seeded.RefreshToken,
 		}))
 		if refresh.Code != http.StatusBadRequest {

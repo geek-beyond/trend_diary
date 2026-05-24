@@ -12,9 +12,11 @@ import (
 
 func TestSettings(t *testing.T) {
 	t.Run("mailer_autoconfirm=true を返す", func(t *testing.T) {
-		h := handler.NewSettings()
+		st := handlertest.NewStore(nil)
+		f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+
 		rec := httptest.NewRecorder()
-		handlertest.Serve(h, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/settings", nil))
+		handlertest.Serve(f, handler.Settings, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/settings", nil))
 		if !strings.Contains(rec.Body.String(), `"mailer_autoconfirm":true`) {
 			t.Errorf("body: %s", rec.Body.String())
 		}

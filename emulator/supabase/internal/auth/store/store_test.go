@@ -252,6 +252,83 @@ func TestCloneIsDeep(t *testing.T) {
 	})
 }
 
+func TestCloneIsDeep_NestedSliceInAppMetadata(t *testing.T) {
+	t.Run("AppMetadata['providers'] の []string を書き換えても Store 本体は影響を受けない", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		created, _ := s.CreateUser("alice@example.com", hash)
+
+		// CreateUser が seed する providers slice をクライアント側で書き換える
+		providers, ok := created.AppMetadata["providers"].([]string)
+		if !ok {
+			t.Fatalf("providers slice missing: %T", created.AppMetadata["providers"])
+		}
+		providers[0] = "github"
+
+		fresh, _ := s.FindUserByID(created.ID)
+		if got := fresh.AppMetadata["providers"].([]string)[0]; got != "email" {
+			t.Errorf("providers leaked into store: %s", got)
+		}
+	})
+}
+
+func TestIssueSession_Atomic(t *testing.T) {
+	t.Run("削除済みユーザに対しては ErrUserNotFound を返し、session も残らない", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		if err := s.DeleteUser(u.ID); err != nil {
+			t.Fatalf("DeleteUser: %v", err)
+		}
+
+		_, _, err := s.IssueSession(u.ID)
+		if !errors.Is(err, ErrUserNotFound) {
+			t.Fatalf("expected ErrUserNotFound, got %v", err)
+		}
+		if len(s.Snapshot().Sessions) != 0 {
+			t.Error("session leaked on failed IssueSession")
+		}
+	})
+}
+
+func TestRevokeRefreshTokensBySession_CleansParentToChild(t *testing.T) {
+	t.Run("logout 後に同じ session の parentToChild エントリが残らない", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		sess, rt, err := s.IssueSession(u.ID)
+		if err != nil {
+			t.Fatalf("IssueSession: %v", err)
+		}
+		// 1 回 rotation して parentToChild にエントリを作る
+		if _, _, err := s.ConsumeRefreshToken(rt.Token); err != nil {
+			t.Fatalf("Consume: %v", err)
+		}
+
+		s.RevokeRefreshTokensBySession(sess.ID)
+		if got := len(s.parentToChild); got != 0 {
+			t.Errorf("parentToChild not cleaned: %d entries remain", got)
+		}
+	})
+}
+
+func TestDeleteUser_CleansParentToChild(t *testing.T) {
+	t.Run("ユーザ削除時に parentToChild の両エッジが掃除される", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		_, rt, _ := s.IssueSession(u.ID)
+		_, _, _ = s.ConsumeRefreshToken(rt.Token)
+
+		if err := s.DeleteUser(u.ID); err != nil {
+			t.Fatalf("DeleteUser: %v", err)
+		}
+		if got := len(s.parentToChild); got != 0 {
+			t.Errorf("parentToChild not cleaned: %d entries remain", got)
+		}
+	})
+}
+
 func TestRace(t *testing.T) {
 	t.Run("並行書き込みで競合しない", func(t *testing.T) {
 		s := newStore()

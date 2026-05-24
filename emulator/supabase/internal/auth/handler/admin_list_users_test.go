@@ -28,10 +28,11 @@ func TestAdminListUsers(t *testing.T) {
 				mustContain: []string{`rel="next"`, `rel="last"`},
 			},
 			{
-				name:        "最終ページでは next が付かない",
+				name:        "単一ページでも rel=\"last\" は必ず出る（supabase-js pagination.total 用）",
 				seedEmails:  []string{"alice@example.com"},
 				query:       "page=1&per_page=50",
 				wantTotal:   "1",
+				mustContain: []string{`rel="last"`},
 				mustExclude: []string{`rel="next"`},
 			},
 		}

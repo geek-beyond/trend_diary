@@ -30,22 +30,51 @@ func TestGetUser(t *testing.T) {
 		})
 	})
 
-	t.Run("認証失敗", func(t *testing.T) {
-		// 共通して 401 + X-Supabase-Api-Version + error_code='session_not_found' を返す。
+	t.Run("認証失敗のエラーコード分類", func(t *testing.T) {
+		// supabase-js の _removeSession() を session_not_found のときだけ走らせるため、
+		// 「Authorization 無し」「JWT 不正」「user 削除済み」を別 error_code に分けている。
 		cases := []struct {
-			name      string
-			setHeader func(r *http.Request)
+			name          string
+			setHeader     func(r *http.Request, validToken string)
+			deleteUser    bool
+			wantErrorCode string
 		}{
-			{name: "Authorization 欠落", setHeader: func(*http.Request) {}},
-			{name: "不正な署名の Bearer", setHeader: func(r *http.Request) { r.Header.Set("Authorization", "Bearer not-a-jwt") }},
+			{
+				name:          "Authorization 欠落は no_authorization",
+				setHeader:     func(*http.Request, string) {},
+				wantErrorCode: "no_authorization",
+			},
+			{
+				name:          "不正な署名の Bearer は bad_jwt",
+				setHeader:     func(r *http.Request, _ string) { r.Header.Set("Authorization", "Bearer not-a-jwt") },
+				wantErrorCode: "bad_jwt",
+			},
+			{
+				name: "user が削除済みは session_not_found",
+				setHeader: func(r *http.Request, validToken string) {
+					r.Header.Set("Authorization", "Bearer "+validToken)
+				},
+				deleteUser:    true,
+				wantErrorCode: "session_not_found",
+			},
 		}
 		for _, c := range cases {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
-				h := handler.NewGetUser(st, handlertest.NewTokens(st, nil))
+				tk := handlertest.NewTokens(st, nil)
+				h := handler.NewGetUser(st, tk)
+
+				var validToken string
+				if c.deleteUser {
+					seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
+					validToken = seeded.AccessToken
+					if err := st.DeleteUser(seeded.User.ID); err != nil {
+						t.Fatalf("DeleteUser: %v", err)
+					}
+				}
 
 				req := handlertest.NewRequest(t, http.MethodGet, "/auth/v1/user", nil)
-				c.setHeader(req)
+				c.setHeader(req, validToken)
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
@@ -55,12 +84,8 @@ func TestGetUser(t *testing.T) {
 				if rec.Header().Get("X-Supabase-Api-Version") == "" {
 					t.Error("X-Supabase-Api-Version header missing")
 				}
-				body := rec.Body.String()
-				if !strings.Contains(body, `"session_not_found"`) {
-					t.Errorf("error_code missing: %s", body)
-				}
-				if !strings.Contains(body, "Auth session missing") {
-					t.Errorf("msg missing: %s", body)
+				if !strings.Contains(rec.Body.String(), `"error_code":"`+c.wantErrorCode+`"`) {
+					t.Errorf("error_code want=%s body=%s", c.wantErrorCode, rec.Body.String())
 				}
 			})
 		}

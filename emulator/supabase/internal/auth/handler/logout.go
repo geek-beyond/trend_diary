@@ -17,11 +17,14 @@ func NewLogout(st *store.Store, tk *Tokens) *Logout {
 
 func (h *Logout) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// GoTrue は logout を冪等として扱い、Bearer 無し/期限切れでも 204 を返す。
-	// 旧実装は 401 を返していたため、supabase-js が session 期限切れで signOut を呼んだとき
-	// アプリ層で AuthSessionMissingError が偽陽性発火していた。
+	// access_token が exp 切れでも session を revoke すべきなので、署名のみ検証してから
+	// claims を取り出す（exp 検証を絡めると expired token で revoke が走らず、
+	// 同 session の refresh_token がそのまま使えてしまうため）。
 	if token := authBearer(r); token != "" {
-		if claims, err := h.tokens.Verify(token); err == nil && claims.SessionID != "" {
-			h.store.RevokeRefreshTokensBySession(claims.SessionID)
+		if err := h.tokens.VerifySignature(token); err == nil {
+			if claims, err := h.tokens.DecodeUnverified(token); err == nil && claims.SessionID != "" {
+				h.store.RevokeRefreshTokensBySession(claims.SessionID)
+			}
 		}
 	}
 	w.WriteHeader(http.StatusNoContent)

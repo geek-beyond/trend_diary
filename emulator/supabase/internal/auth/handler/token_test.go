@@ -108,6 +108,21 @@ func TestToken(t *testing.T) {
 		})
 	})
 
+	t.Run("password grant: email のトレーリングスペースを TrimSpace してログインできる", func(t *testing.T) {
+		st := handlertest.NewStore(nil)
+		tk := handlertest.NewTokens(st, nil)
+		handlertest.Seed(t, st, tk, "alice@example.com", "password123")
+		h := handler.NewToken(st, tk)
+
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=password", map[string]string{
+			"email": "  alice@example.com  ", "password": "password123",
+		}))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status: %d, body=%s", rec.Code, rec.Body.String())
+		}
+	})
+
 	t.Run("grant_type 未指定で 400", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
 		h := handler.NewToken(st, handlertest.NewTokens(st, nil))

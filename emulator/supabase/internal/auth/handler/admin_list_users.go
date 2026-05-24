@@ -62,6 +62,9 @@ func (h *AdminListUsers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// paginationLinkHeader は本物 GoTrue と同じく単一ページでも rel="last" を必ず付ける。
+// supabase-js (GoTrueAdminApi.listUsers) は Link が空のとき pagination.total を 0 にしてしまうので、
+// 単一ページレスポンスでも最低限 rel="last" を出さないとクライアントの total が壊れる。
 func paginationLinkHeader(r *http.Request, page, perPage, total int) string {
 	if perPage <= 0 {
 		return ""
@@ -75,11 +78,9 @@ func paginationLinkHeader(r *http.Request, page, perPage, total int) string {
 	if page < lastPage {
 		links += fmt.Sprintf(`<%s?page=%d&per_page=%d>; rel="next"`, base, page+1, perPage)
 	}
-	if lastPage > 1 {
-		if links != "" {
-			links += ", "
-		}
-		links += fmt.Sprintf(`<%s?page=%d&per_page=%d>; rel="last"`, base, lastPage, perPage)
+	if links != "" {
+		links += ", "
 	}
+	links += fmt.Sprintf(`<%s?page=%d&per_page=%d>; rel="last"`, base, lastPage, perPage)
 	return links
 }

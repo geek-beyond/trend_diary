@@ -37,7 +37,32 @@ func cloneAnyMap(m map[string]any) map[string]any {
 	}
 	cp := make(map[string]any, len(m))
 	for k, v := range m {
-		cp[k] = v
+		cp[k] = cloneAny(v)
 	}
 	return cp
+}
+
+// cloneAny は any 値を深くコピーする。slice / map / nested any を再帰的に複製し、
+// それ以外の値（string / bool / 数値）は値コピーで十分。
+// CreateUser が AppMetadata["providers"] に []string を入れている等、ネストした参照型を
+// 含むケースで Store と clone を確実に切り離すため。
+func cloneAny(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		return cloneAnyMap(x)
+	case []any:
+		cp := make([]any, len(x))
+		for i, e := range x {
+			cp[i] = cloneAny(e)
+		}
+		return cp
+	case []string:
+		cp := make([]string, len(x))
+		copy(cp, x)
+		return cp
+	case []byte:
+		return append([]byte(nil), x...)
+	default:
+		return v
+	}
 }

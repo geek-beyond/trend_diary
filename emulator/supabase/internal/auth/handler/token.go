@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
@@ -45,6 +46,9 @@ func (h *Token) password(w http.ResponseWriter, r *http.Request) {
 		writeOAuthError(w, http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
+	// signup 側で TrimSpace してから保存するので、login も同じ正規化を行わないと
+	// トレーリングスペース付き email でログインできない非対称が生まれる。
+	req.Email = strings.TrimSpace(req.Email)
 	if req.Email == "" || req.Password == "" {
 		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return

@@ -88,7 +88,11 @@ func (s *Store) DeleteUser(id string) error {
 	for tok, rt := range s.refreshTokens {
 		if rt.UserID == id {
 			delete(s.refreshTokens, tok)
-			delete(s.parentToChild, rt.Parent)
+			// 親→子の両エッジを掃除（rt が子側のエントリ + rt 自身が親として保持しているエントリ）
+			if rt.Parent != "" {
+				delete(s.parentToChild, rt.Parent)
+			}
+			delete(s.parentToChild, tok)
 		}
 	}
 	return nil

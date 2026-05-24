@@ -3,6 +3,7 @@ package config
 
 import (
 	"flag"
+	"io"
 	"os"
 	"time"
 )
@@ -42,6 +43,9 @@ func Parse(args []string) (Config, error) {
 	}
 
 	fs := flag.NewFlagSet("supabase-emulator", flag.ContinueOnError)
+	// 不正フラグ時に FlagSet が独自で stderr に Usage を吐くのを抑止し、
+	// エラー出力は呼び出し側 (main) の 1 行に統一する。
+	fs.SetOutput(io.Discard)
 	fs.StringVar(&cfg.Addr, "addr", cfg.Addr, "listen address (host:port)")
 	fs.StringVar(&cfg.Auth.JWTSecret, "jwt-secret", cfg.Auth.JWTSecret, "JWT HS256 secret")
 	fs.StringVar(&cfg.Auth.JWTIssuer, "jwt-issuer", cfg.Auth.JWTIssuer, "JWT issuer (iss claim)")

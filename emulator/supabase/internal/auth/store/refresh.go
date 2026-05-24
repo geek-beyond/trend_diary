@@ -9,6 +9,35 @@ import (
 func (s *Store) CreateSession(userID string) (*Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.createSessionLocked(userID)
+}
+
+func (s *Store) IssueRefreshToken(userID, sessionID string) (*RefreshToken, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.issueRefreshTokenLocked(userID, sessionID)
+}
+
+// IssueSession は session と refresh_token を 1 ロックで原子的に発行する。
+// CreateSession + IssueRefreshToken を別ロックで呼ぶと、その隙に DeleteUser が走った場合に
+// session だけ残って refresh_token 発行が失敗するため、handler から使うときはこちらを使う。
+func (s *Store) IssueSession(userID string) (*Session, *RefreshToken, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sess, err := s.createSessionLocked(userID)
+	if err != nil {
+		return nil, nil, err
+	}
+	rt, err := s.issueRefreshTokenLocked(userID, sess.ID)
+	if err != nil {
+		// session 単独で残らないよう巻き戻す
+		delete(s.sessions, sess.ID)
+		return nil, nil, err
+	}
+	return sess, rt, nil
+}
+
+func (s *Store) createSessionLocked(userID string) (*Session, error) {
 	if _, ok := s.users[userID]; !ok {
 		return nil, ErrUserNotFound
 	}
@@ -21,9 +50,7 @@ func (s *Store) CreateSession(userID string) (*Session, error) {
 	return s.cloneSession(sess), nil
 }
 
-func (s *Store) IssueRefreshToken(userID, sessionID string) (*RefreshToken, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *Store) issueRefreshTokenLocked(userID, sessionID string) (*RefreshToken, error) {
 	if _, ok := s.users[userID]; !ok {
 		return nil, ErrUserNotFound
 	}
@@ -110,10 +137,15 @@ func (s *Store) RevokeRefreshTokensBySession(sessionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	past := s.clock().Add(-(s.reuseInterval + time.Second))
-	for _, rt := range s.refreshTokens {
+	for tok, rt := range s.refreshTokens {
 		if rt.SessionID == sessionID {
 			rt.Revoked = true
 			rt.IssuedAt = past
+			// parentToChild に残ると findLatestChild が無駄に辿ってしまうので両端を掃除する。
+			if rt.Parent != "" {
+				delete(s.parentToChild, rt.Parent)
+			}
+			delete(s.parentToChild, tok)
 		}
 	}
 	delete(s.sessions, sessionID)

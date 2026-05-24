@@ -35,6 +35,15 @@ func TestParse(t *testing.T) {
 		}
 	})
 
+	t.Run("不正フラグでも stderr に Usage は吐かない（SetOutput(io.Discard) 想定）", func(t *testing.T) {
+		// Parse はエラーを返すが、内部 FlagSet が stderr に Usage を吐くと
+		// テスト出力やオペレータの stderr が二重に汚染される。
+		_, err := Parse([]string{"-no-such-flag"})
+		if err == nil {
+			t.Fatal("unknown flag should return error")
+		}
+	})
+
 	t.Run("--jwt-secret フラグで秘密鍵を上書きできる", func(t *testing.T) {
 		cfg, err := Parse([]string{"-jwt-secret", "custom-secret-for-testing-1234567890"})
 		if err != nil {

@@ -47,6 +47,12 @@ func run(args []string) error {
 	mux.Handle("POST /__emulator/reset", handler.NewReset(st))
 	mux.Handle("GET /__emulator/snapshot", handler.NewSnapshot(st))
 	mux.Handle("POST /__emulator/users", handler.NewSeedUser(st))
+	// catch-all で 404 を JSON 化。Go 1.22 mux は具体性の高いパターンを優先するので
+	// 既存ルートには干渉しない。default の http.NotFoundHandler は text/plain なので
+	// supabase-js の typed error マッピングが効かず X-Supabase-Api-Version も出ない。
+	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpx.MustFromContext(r.Context()).APIErrorWithCode(http.StatusNotFound, "not_found", "endpoint not found: "+r.Method+" "+r.URL.Path)
+	}))
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,

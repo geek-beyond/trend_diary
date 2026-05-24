@@ -44,8 +44,9 @@ func Seed(t *testing.T, st *store.Store, tk *handler.Tokens, email, password str
 	return resp
 }
 
-// NewRequest は handler が要求する WithResponder middleware を済ませた *http.Request を返す。
-// 本番では main.go が mux 全体に WithResponder を被せているのと同じセットアップを再現する。
+// NewRequest はテスト用の *http.Request を組み立てる薄いヘルパ。
+// 実際の Responder 注入は Serve 経由で行う必要があるので、本関数だけで返した request を
+// h.ServeHTTP(rec, req) に直接渡すと MustFromContext で panic する。必ず Serve を使うこと。
 func NewRequest(t *testing.T, method, target string, body any) *http.Request {
 	t.Helper()
 	var rdr io.Reader

@@ -32,15 +32,15 @@ type refreshGrantRequest struct {
 func (h *Token) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Query().Get("grant_type") {
 	case "password":
-		h.password(w, r)
+		h.password(r)
 	case "refresh_token":
-		h.refresh(w, r)
+		h.refresh(r)
 	default:
 		httpx.MustFromContext(r.Context()).OAuthError(http.StatusBadRequest, "unsupported_grant_type", "grant_type is required")
 	}
 }
 
-func (h *Token) password(w http.ResponseWriter, r *http.Request) {
+func (h *Token) password(r *http.Request) {
 	resp := httpx.MustFromContext(r.Context())
 
 	var req passwordGrantRequest
@@ -79,7 +79,7 @@ func (h *Token) password(w http.ResponseWriter, r *http.Request) {
 	resp.JSON(http.StatusOK, tr)
 }
 
-func (h *Token) refresh(w http.ResponseWriter, r *http.Request) {
+func (h *Token) refresh(r *http.Request) {
 	resp := httpx.MustFromContext(r.Context())
 
 	var req refreshGrantRequest

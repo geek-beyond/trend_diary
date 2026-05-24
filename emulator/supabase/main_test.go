@@ -35,28 +35,70 @@ func TestSmoke(t *testing.T) {
 		})
 
 		// ListenAndServe が立ち上がるまで待つ
+		base := "http://127.0.0.1:" + port
 		deadline := time.Now().Add(5 * time.Second)
 		var lastErr error
 		for time.Now().Before(deadline) {
-			resp, err := http.Get("http://127.0.0.1:" + port + "/auth/v1/health")
+			resp, err := http.Get(base + "/auth/v1/health")
 			if err == nil {
-				defer resp.Body.Close()
-				if resp.StatusCode != http.StatusOK {
-					t.Fatalf("status: %d", resp.StatusCode)
-				}
-				var body map[string]any
-				if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-					t.Fatalf("decode: %v", err)
-				}
-				if body["name"] != "GoTrue" {
-					t.Errorf("name: %v", body["name"])
-				}
-				return
+				resp.Body.Close()
+				lastErr = nil
+				break
 			}
 			lastErr = err
 			time.Sleep(50 * time.Millisecond)
 		}
-		t.Fatalf("server did not start: %v", lastErr)
+		if lastErr != nil {
+			t.Fatalf("server did not start: %v", lastErr)
+		}
+
+		// middleware 配線 drift を検知するため、複数経路の応答形式を確認する。
+		// health: 通常応答、settings: 別 handler、unknown: 404 catch-all、user: error_code 経路。
+		t.Run("/auth/v1/health は GoTrue name を返す", func(t *testing.T) {
+			resp, err := http.Get(base + "/auth/v1/health")
+			if err != nil {
+				t.Fatalf("Get: %v", err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("status: %d", resp.StatusCode)
+			}
+			var body map[string]any
+			if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			if body["name"] != "GoTrue" {
+				t.Errorf("name: %v", body["name"])
+			}
+		})
+
+		t.Run("/auth/v1/user は X-Supabase-Api-Version 付き 401 を返す", func(t *testing.T) {
+			resp, err := http.Get(base + "/auth/v1/user")
+			if err != nil {
+				t.Fatalf("Get: %v", err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusUnauthorized {
+				t.Fatalf("status: %d", resp.StatusCode)
+			}
+			if got := resp.Header.Get("X-Supabase-Api-Version"); got == "" {
+				t.Error("X-Supabase-Api-Version header missing (middleware drift?)")
+			}
+		})
+
+		t.Run("未知 path は JSON 404 を返す（catch-all）", func(t *testing.T) {
+			resp, err := http.Get(base + "/auth/v1/unknown")
+			if err != nil {
+				t.Fatalf("Get: %v", err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusNotFound {
+				t.Fatalf("status: %d", resp.StatusCode)
+			}
+			if got := resp.Header.Get("Content-Type"); got != "application/json" {
+				t.Errorf("Content-Type: %s", got)
+			}
+		})
 	})
 }
 

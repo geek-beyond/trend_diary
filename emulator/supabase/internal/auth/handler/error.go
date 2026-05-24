@@ -1,4 +1,4 @@
-package auth
+package handler
 
 import (
 	"net/http"
@@ -6,17 +6,14 @@ import (
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
-// GoTrue互換のエラーレスポンスは状況により形式が2種類ある。
+// GoTrue 互換のエラーレスポンスは状況により形式が2種類ある:
+//   - サインアップ系 (apiError): {"code":N, "error_code":"...", "msg":"..."}
+//   - トークン系 (oauthError):   {"error":"...", "error_description":"..."}
 //
-//   - 4xxサインアップ系: {"code":N, "error_code":"...", "msg":"..."} （HTTPステータス + 文字列error_code）
-//   - 4xxトークン系:     {"error":"...", "error_description":"..."}
-//
-// 既存のapplication側 isUserAlreadyExistsError / isInvalidCredentialsError の文字列マッチに
-// 合致させるため、msg / error_description の値は絶対に変更しないこと。
-//
-// supabase-js v2 は API バージョンが 2024-01-01 以降のレスポンスでのみ error_code を
-// 専用エラー型（AuthSessionMissingError 等）にマップする。X-Supabase-Api-Version ヘッダを
-// 必ず付与する必要があるため、writeAPIError 内で設定する。
+// supabase-js v2 は X-Supabase-Api-Version ヘッダ + 文字列 error_code を見て
+// AuthSessionMissingError などに instanceof マップする。両方を確実に付与する。
+// アプリ側の文字列マッチ判定（"already registered" / "Invalid login credentials" /
+// "Auth session missing"）と整合させるため、msg / error_description の値は変更しないこと。
 
 const apiVersion = "2024-01-01"
 
@@ -36,7 +33,6 @@ func writeAPIError(w http.ResponseWriter, status int, msg string) {
 	httpx.WriteJSON(w, status, apiError{Code: status, Msg: msg})
 }
 
-// writeAPIErrorWithCode は supabase-js が instanceof マッピングに使う error_code 付きで返す。
 func writeAPIErrorWithCode(w http.ResponseWriter, status int, errCode, msg string) {
 	w.Header().Set("X-Supabase-Api-Version", apiVersion)
 	httpx.WriteJSON(w, status, apiError{Code: status, ErrorCode: errCode, Msg: msg})

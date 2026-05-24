@@ -1,4 +1,4 @@
-package auth
+package handler
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
-func (s *Service) handleHealth(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{
 		"version":     "v2.150.0",
 		"name":        "GoTrue",
@@ -14,7 +14,7 @@ func (s *Service) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	})
 }
 
-func (s *Service) handleSettings(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) handleSettings(w http.ResponseWriter, _ *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{
 		"external": map[string]bool{
 			"anonymous_users": false,

@@ -1,4 +1,4 @@
-package auth
+package handler
 
 import (
 	"errors"
@@ -7,10 +7,11 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/httpx"
 )
 
-func (s *Service) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page <= 0 {
@@ -21,8 +22,7 @@ func (s *Service) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 		perPage = 50
 	}
 
-	snap := s.store.Snapshot()
-	// 作成日時 ASC で並べる（GoTrue挙動寄せ）
+	snap := h.store.Snapshot()
 	sort.Slice(snap.Users, func(i, j int) bool {
 		return snap.Users[i].CreatedAt.Before(snap.Users[j].CreatedAt)
 	})
@@ -36,14 +36,13 @@ func (s *Service) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 		end = len(snap.Users)
 	}
 
-	// nil スライスが JSON で null になるのを避けるため空スライスに正規化する
 	users := snap.Users[start:end]
 	if users == nil {
-		users = []User{}
+		users = []store.User{}
 	}
 
 	// supabase-js GoTrueAdminApi.listUsers は x-total-count と Link ヘッダから
-	// nextPage / lastPage / total を組み立てる。最低限の互換のため両方付与する。
+	// nextPage / lastPage / total を組み立てる。
 	total := len(snap.Users)
 	w.Header().Set("x-total-count", strconv.Itoa(total))
 	if link := buildPaginationLinkHeader(r, page, perPage, total); link != "" {
@@ -56,7 +55,6 @@ func (s *Service) handleAdminListUsers(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// buildPaginationLinkHeader は RFC 5988 形式の `<url>; rel="next", <url>; rel="last"` を返す。
 func buildPaginationLinkHeader(r *http.Request, page, perPage, total int) string {
 	if perPage <= 0 {
 		return ""
@@ -79,14 +77,14 @@ func buildPaginationLinkHeader(r *http.Request, page, perPage, total int) string
 	return links
 }
 
-func (s *Service) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
 		writeAPIError(w, http.StatusBadRequest, "user id is required")
 		return
 	}
-	if err := s.store.DeleteUser(id); err != nil {
-		if errors.Is(err, ErrUserNotFound) {
+	if err := h.store.DeleteUser(id); err != nil {
+		if errors.Is(err, store.ErrUserNotFound) {
 			writeAPIError(w, http.StatusNotFound, "User not found")
 			return
 		}

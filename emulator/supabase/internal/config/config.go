@@ -15,7 +15,7 @@ type Config struct {
 	Auth     AuthConfig
 }
 
-// AuthConfig は auth.Service.Config 相当を文字列ベースで保持し、main で詰め替える。
+// AuthConfig は handler.Config 相当を保持し、main で詰め替える。
 type AuthConfig struct {
 	JWTSecret      string
 	JWTIssuer      string
@@ -32,11 +32,13 @@ func Default() Config {
 		Addr:     "127.0.0.1:54321",
 		LogLevel: "info",
 		Auth: AuthConfig{
-			JWTSecret:      "super-secret-jwt-token-with-at-least-32-characters-long",
+			JWTSecret:      DefaultJWTSecret,
 			JWTIssuer:      "http://127.0.0.1:54321/auth/v1",
 			AccessTokenTTL: time.Hour,
 			ReuseInterval:  10 * time.Second,
 			RequireAPIKey:  false,
+			AnonKey:        DefaultAnonKey,
+			ServiceRoleKey: DefaultServiceRoleKey,
 		},
 	}
 }

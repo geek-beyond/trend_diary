@@ -1,0 +1,293 @@
+package store
+
+import (
+	"errors"
+	"sync"
+	"testing"
+	"time"
+)
+
+func newStore() *Store {
+	return New(Config{
+		Clock:         func() time.Time { return time.Date(2026, 5, 23, 0, 0, 0, 0, time.UTC) },
+		ReuseInterval: 10 * time.Second,
+	})
+}
+
+func TestCreateUser(t *testing.T) {
+	t.Run("新規ユーザーがIDとともに登録される", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		u, err := s.CreateUser("alice@example.com", hash)
+		if err != nil {
+			t.Fatalf("CreateUser: %v", err)
+		}
+		if u.ID == "" || u.Email != "alice@example.com" {
+			t.Errorf("got=%+v", u)
+		}
+		if u.Aud != "authenticated" || u.Role != "authenticated" {
+			t.Errorf("aud/role mismatch: %+v", u)
+		}
+	})
+
+	t.Run("同じemailで2回作るとErrUserAlreadyExists", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		_, _ = s.CreateUser("alice@example.com", hash)
+		_, err := s.CreateUser("alice@example.com", hash)
+		if !errors.Is(err, ErrUserAlreadyExists) {
+			t.Fatalf("expected ErrUserAlreadyExists, got %v", err)
+		}
+	})
+
+	t.Run("emailを大文字小文字無視して重複検知し、lowercaseで保存する", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("Alice@Example.COM", hash)
+		if u.Email != "alice@example.com" {
+			t.Errorf("email must be lowercased: %s", u.Email)
+		}
+		_, err := s.CreateUser("ALICE@example.com", hash)
+		if !errors.Is(err, ErrUserAlreadyExists) {
+			t.Fatalf("expected ErrUserAlreadyExists, got %v", err)
+		}
+	})
+}
+
+func TestFindUser(t *testing.T) {
+	t.Run("emailの大文字小文字を無視して検索できる", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		created, _ := s.CreateUser("alice@example.com", hash)
+		got, ok := s.FindUserByEmail("ALICE@EXAMPLE.COM")
+		if !ok || got.ID != created.ID {
+			t.Fatalf("not found or ID mismatch")
+		}
+	})
+
+	t.Run("存在しないIDはfalseを返す", func(t *testing.T) {
+		s := newStore()
+		if _, ok := s.FindUserByID("nope"); ok {
+			t.Error("should not be found")
+		}
+	})
+}
+
+func TestDeleteUser(t *testing.T) {
+	t.Run("削除で関連session/refresh_tokenも消える", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		sess, _ := s.CreateSession(u.ID)
+		tok, _ := s.IssueRefreshToken(u.ID, sess.ID)
+
+		if err := s.DeleteUser(u.ID); err != nil {
+			t.Fatalf("DeleteUser: %v", err)
+		}
+		if _, ok := s.FindUserByID(u.ID); ok {
+			t.Error("user still exists")
+		}
+		if _, _, err := s.ConsumeRefreshToken(tok.Token); err == nil {
+			t.Error("refresh token still usable after delete")
+		}
+	})
+
+	t.Run("存在しないIDはErrUserNotFound", func(t *testing.T) {
+		s := newStore()
+		if err := s.DeleteUser("nonexistent"); !errors.Is(err, ErrUserNotFound) {
+			t.Fatalf("expected ErrUserNotFound, got %v", err)
+		}
+	})
+}
+
+func TestSetUserMetadata(t *testing.T) {
+	t.Run("Storeに永続化され、後続のFindで取得できる", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+
+		s.SetUserMetadata(u.ID, map[string]any{"nickname": "alice"})
+
+		fresh, _ := s.FindUserByID(u.ID)
+		if got := fresh.UserMetadata["nickname"]; got != "alice" {
+			t.Errorf("metadata not persisted: got=%v", got)
+		}
+	})
+}
+
+func TestRefreshTokenRotation(t *testing.T) {
+	t.Run("Consumeで新tokenを発行し旧tokenを失効させる", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		sess, _ := s.CreateSession(u.ID)
+		old, _ := s.IssueRefreshToken(u.ID, sess.ID)
+
+		newTok, gotUser, err := s.ConsumeRefreshToken(old.Token)
+		if err != nil {
+			t.Fatalf("ConsumeRefreshToken: %v", err)
+		}
+		if newTok.Token == old.Token {
+			t.Fatal("token not rotated")
+		}
+		if gotUser.ID != u.ID {
+			t.Errorf("user ID mismatch")
+		}
+	})
+
+	t.Run("reuse_interval内なら旧tokenの再利用で同じ子tokenが返る", func(t *testing.T) {
+		now := time.Date(2026, 5, 23, 0, 0, 0, 0, time.UTC)
+		s := New(Config{Clock: func() time.Time { return now }, ReuseInterval: 10 * time.Second})
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		sess, _ := s.CreateSession(u.ID)
+		old, _ := s.IssueRefreshToken(u.ID, sess.ID)
+
+		first, _, _ := s.ConsumeRefreshToken(old.Token)
+		reused, _, err := s.ConsumeRefreshToken(old.Token)
+		if err != nil {
+			t.Fatalf("reuse within interval should succeed: %v", err)
+		}
+		if reused.Token != first.Token {
+			t.Errorf("reuse must return same child token: %s vs %s", reused.Token, first.Token)
+		}
+	})
+
+	t.Run("reuse_interval超過後は旧tokenがinvalidになる", func(t *testing.T) {
+		now := time.Date(2026, 5, 23, 0, 0, 0, 0, time.UTC)
+		s := New(Config{Clock: func() time.Time { return now }, ReuseInterval: 10 * time.Second})
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		sess, _ := s.CreateSession(u.ID)
+		old, _ := s.IssueRefreshToken(u.ID, sess.ID)
+
+		_, _, _ = s.ConsumeRefreshToken(old.Token)
+		now = now.Add(11 * time.Second)
+		_, _, err := s.ConsumeRefreshToken(old.Token)
+		if !errors.Is(err, ErrInvalidRefreshToken) {
+			t.Fatalf("expected ErrInvalidRefreshToken, got %v", err)
+		}
+	})
+
+	t.Run("T0→T1→T2 とローテートされても、T0 reuse で末端 T2 を返す", func(t *testing.T) {
+		now := time.Date(2026, 5, 23, 0, 0, 0, 0, time.UTC)
+		s := New(Config{Clock: func() time.Time { return now }, ReuseInterval: time.Minute})
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		sess, _ := s.CreateSession(u.ID)
+		t0, _ := s.IssueRefreshToken(u.ID, sess.ID)
+
+		t1, _, _ := s.ConsumeRefreshToken(t0.Token)
+		t2, _, _ := s.ConsumeRefreshToken(t1.Token)
+
+		reused, _, err := s.ConsumeRefreshToken(t0.Token)
+		if err != nil {
+			t.Fatalf("reuse: %v", err)
+		}
+		if reused.Token != t2.Token {
+			t.Errorf("reuse must follow chain to leaf t2: got=%s want=%s", reused.Token, t2.Token)
+		}
+	})
+
+	t.Run("RevokeRefreshTokensBySessionでreuse_intervalが2hでも再利用不可", func(t *testing.T) {
+		now := time.Date(2026, 5, 23, 0, 0, 0, 0, time.UTC)
+		s := New(Config{Clock: func() time.Time { return now }, ReuseInterval: 2 * time.Hour})
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		sess, _ := s.CreateSession(u.ID)
+		tok, _ := s.IssueRefreshToken(u.ID, sess.ID)
+
+		s.RevokeRefreshTokensBySession(sess.ID)
+		if _, _, err := s.ConsumeRefreshToken(tok.Token); !errors.Is(err, ErrInvalidRefreshToken) {
+			t.Fatalf("expected ErrInvalidRefreshToken, got %v", err)
+		}
+	})
+}
+
+func TestSnapshotAndReset(t *testing.T) {
+	t.Run("空ストアで空配列が返る（JSONでnullにならない）", func(t *testing.T) {
+		s := newStore()
+		snap := s.Snapshot()
+		if snap.Users == nil || snap.Sessions == nil || snap.RefreshTokens == nil {
+			t.Fatalf("must be empty slice not nil: %+v", snap)
+		}
+	})
+
+	t.Run("Resetで全データが消える", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		u, _ := s.CreateUser("alice@example.com", hash)
+		sess, _ := s.CreateSession(u.ID)
+		_, _ = s.IssueRefreshToken(u.ID, sess.ID)
+
+		s.Reset()
+
+		snap := s.Snapshot()
+		if len(snap.Users) != 0 || len(snap.RefreshTokens) != 0 || len(snap.Sessions) != 0 {
+			t.Errorf("snapshot not empty: %+v", snap)
+		}
+	})
+}
+
+func TestCloneIsDeep(t *testing.T) {
+	t.Run("clone のmetadata書き換えがStore本体に影響しない", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		created, _ := s.CreateUser("alice@example.com", hash)
+
+		created.AppMetadata["injected"] = true
+		created.UserMetadata["nick"] = "evil"
+		created.Identities[0].IdentityData["email"] = "tampered@example.com"
+
+		fresh, _ := s.FindUserByID(created.ID)
+		if _, exists := fresh.AppMetadata["injected"]; exists {
+			t.Error("AppMetadata leaked into store")
+		}
+		if _, exists := fresh.UserMetadata["nick"]; exists {
+			t.Error("UserMetadata leaked into store")
+		}
+		if got := fresh.Identities[0].IdentityData["email"]; got != "alice@example.com" {
+			t.Errorf("identity email leaked: %v", got)
+		}
+	})
+}
+
+func TestRace(t *testing.T) {
+	t.Run("並行書き込みで競合しない", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		var wg sync.WaitGroup
+		for i := 0; i < 50; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				email := "u" + itoa(i) + "@example.com"
+				u, err := s.CreateUser(email, hash)
+				if err != nil {
+					t.Errorf("CreateUser: %v", err)
+					return
+				}
+				sess, _ := s.CreateSession(u.ID)
+				_, _ = s.IssueRefreshToken(u.ID, sess.ID)
+			}(i)
+		}
+		wg.Wait()
+		if got := len(s.Snapshot().Users); got != 50 {
+			t.Errorf("user count: got=%d want=50", got)
+		}
+	})
+}
+
+func itoa(i int) string {
+	if i == 0 {
+		return "0"
+	}
+	var b [10]byte
+	pos := len(b)
+	for i > 0 {
+		pos--
+		b[pos] = byte('0' + i%10)
+		i /= 10
+	}
+	return string(b[pos:])
+}

@@ -14,9 +14,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth"
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
+	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
 	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/config"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/jwt"
 )
 
 func main() {
@@ -31,27 +31,26 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
-	if cfg.Auth.AnonKey == "" {
-		cfg.Auth.AnonKey = jwt.AnonKey
-	}
-	if cfg.Auth.ServiceRoleKey == "" {
-		cfg.Auth.ServiceRoleKey = jwt.ServiceRoleKey
-	}
 
 	logger := newLogger(cfg.LogLevel)
 	slog.SetDefault(logger)
 
-	mux := http.NewServeMux()
-	authSvc := auth.NewService(auth.Config{
+	st := store.New(store.Config{
+		Clock:         time.Now,
+		ReuseInterval: cfg.Auth.ReuseInterval,
+	})
+	h := handler.New(handler.Config{
 		JWTSecret:      cfg.Auth.JWTSecret,
 		JWTIssuer:      cfg.Auth.JWTIssuer,
 		AccessTokenTTL: cfg.Auth.AccessTokenTTL,
-		ReuseInterval:  cfg.Auth.ReuseInterval,
 		RequireAPIKey:  cfg.Auth.RequireAPIKey,
 		AnonKey:        cfg.Auth.AnonKey,
 		ServiceRoleKey: cfg.Auth.ServiceRoleKey,
-	})
-	authSvc.Mount(mux)
+		Clock:          time.Now,
+	}, st)
+
+	mux := http.NewServeMux()
+	h.Mount(mux)
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
@@ -80,10 +79,7 @@ func run(args []string) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		return err
-	}
-	return nil
+	return srv.Shutdown(ctx)
 }
 
 func newLogger(level string) *slog.Logger {
@@ -94,7 +90,6 @@ func newLogger(level string) *slog.Logger {
 	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: lv}))
 }
 
-// withLogging はリクエストを構造化ログに残す薄いミドルウェア。
 func withLogging(logger *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()

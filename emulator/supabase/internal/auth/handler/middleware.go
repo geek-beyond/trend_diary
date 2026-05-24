@@ -1,20 +1,17 @@
-package auth
+package handler
 
 import (
 	"net/http"
 	"strings"
 )
 
-// withAPIKey は RequireAPIKey=true のとき apikey ヘッダ or Authorization Bearer を検証するラッパ。
-// 検証は AnonKey / ServiceRoleKey のどちらかと一致すればOK。
-// デフォルト（フラグなし）では何もせず handler を呼ぶ。
-func (s *Service) withAPIKey(next http.HandlerFunc) http.HandlerFunc {
+func (h *Handler) withAPIKey(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.cfg.RequireAPIKey {
+		if !h.cfg.RequireAPIKey {
 			next(w, r)
 			return
 		}
-		if !s.apiKeyValid(r) {
+		if !h.apiKeyValid(r) {
 			writeAPIError(w, http.StatusUnauthorized, "No API key found in request")
 			return
 		}
@@ -22,10 +19,9 @@ func (s *Service) withAPIKey(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// withServiceRole は admin エンドポイント用。service_role キーが必須。
-func (s *Service) withServiceRole(next http.HandlerFunc) http.HandlerFunc {
+func (h *Handler) withServiceRole(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.cfg.RequireAPIKey {
+		if !h.cfg.RequireAPIKey {
 			next(w, r)
 			return
 		}
@@ -33,7 +29,7 @@ func (s *Service) withServiceRole(next http.HandlerFunc) http.HandlerFunc {
 		if key == "" {
 			key = r.Header.Get("apikey")
 		}
-		if key != s.cfg.ServiceRoleKey {
+		if key != h.cfg.ServiceRoleKey {
 			writeAPIError(w, http.StatusForbidden, "User not allowed")
 			return
 		}
@@ -41,14 +37,14 @@ func (s *Service) withServiceRole(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func (s *Service) apiKeyValid(r *http.Request) bool {
+func (h *Handler) apiKeyValid(r *http.Request) bool {
 	if key := r.Header.Get("apikey"); key != "" {
-		if key == s.cfg.AnonKey || key == s.cfg.ServiceRoleKey {
+		if key == h.cfg.AnonKey || key == h.cfg.ServiceRoleKey {
 			return true
 		}
 	}
 	if bearer := authBearer(r); bearer != "" {
-		if bearer == s.cfg.AnonKey || bearer == s.cfg.ServiceRoleKey {
+		if bearer == h.cfg.AnonKey || bearer == h.cfg.ServiceRoleKey {
 			return true
 		}
 	}

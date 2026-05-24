@@ -1,8 +1,7 @@
-package auth
+package store
 
 import "time"
 
-// User はGoTrue互換のユーザー表現。レスポンス時のJSONフィールド名は GoTrue と一致させる。
 type User struct {
 	ID               string         `json:"id"`
 	Email            string         `json:"email"`
@@ -18,12 +17,9 @@ type User struct {
 	CreatedAt        time.Time      `json:"created_at"`
 	UpdatedAt        time.Time      `json:"updated_at"`
 
-	// 内部用（JSONには出さない）
 	PasswordHash []byte `json:"-"`
 }
 
-// Identity は GoTrue が user に紐づける identity 表現。
-// password ログインだけサポートする本エミュレータでは provider="email" 固定で1個だけ作る。
 type Identity struct {
 	ID           string         `json:"id"`
 	UserID       string         `json:"user_id"`
@@ -34,7 +30,6 @@ type Identity struct {
 	LastSignInAt time.Time      `json:"last_sign_in_at"`
 }
 
-// RefreshToken はrefresh_token 1本を表す。rotation時に旧トークンを失効させる。
 type RefreshToken struct {
 	Token     string
 	UserID    string
@@ -45,9 +40,15 @@ type RefreshToken struct {
 	Parent string
 }
 
-// Session は user に紐づくセッション。logout や admin.deleteUser で関連 refresh_token と共に消す。
 type Session struct {
 	ID        string
 	UserID    string
 	CreatedAt time.Time
+}
+
+// Snapshot は /__emulator/snapshot で JSON 化される前提のため snake_case を担保する。
+type Snapshot struct {
+	Users         []User         `json:"users"`
+	Sessions      []Session      `json:"sessions"`
+	RefreshTokens []RefreshToken `json:"refresh_tokens"`
 }

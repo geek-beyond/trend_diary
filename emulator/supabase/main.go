@@ -6,11 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -32,9 +30,6 @@ func run(args []string) error {
 		return err
 	}
 
-	logger := newLogger(cfg.LogLevel)
-	slog.SetDefault(logger)
-
 	clock := time.Now
 	st := store.New(store.Config{Clock: clock, ReuseInterval: cfg.Auth.ReuseInterval})
 	tk := handler.NewTokens(st, cfg.Auth.JWTSecret, cfg.Auth.JWTIssuer, cfg.Auth.AccessTokenTTL, clock)
@@ -54,13 +49,13 @@ func run(args []string) error {
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           withLogging(logger, mux),
+		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("supabase emulator started", "addr", cfg.Addr)
+		fmt.Fprintf(os.Stdout, "supabase-emulator listening on %s\n", cfg.Addr)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 			return
@@ -71,8 +66,7 @@ func run(args []string) error {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	select {
-	case sig := <-sigCh:
-		logger.Info("shutting down", "signal", sig.String())
+	case <-sigCh:
 	case err := <-errCh:
 		return err
 	}
@@ -80,36 +74,4 @@ func run(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return srv.Shutdown(ctx)
-}
-
-func newLogger(level string) *slog.Logger {
-	var lv slog.Level
-	if err := lv.UnmarshalText([]byte(strings.ToUpper(level))); err != nil {
-		lv = slog.LevelInfo
-	}
-	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: lv}))
-}
-
-func withLogging(logger *slog.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		ww := &statusWriter{ResponseWriter: w, status: 200}
-		next.ServeHTTP(ww, r)
-		logger.Debug("http",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"status", ww.status,
-			"duration_ms", time.Since(start).Milliseconds(),
-		)
-	})
-}
-
-type statusWriter struct {
-	http.ResponseWriter
-	status int
-}
-
-func (w *statusWriter) WriteHeader(code int) {
-	w.status = code
-	w.ResponseWriter.WriteHeader(code)
 }

@@ -8,9 +8,8 @@ import (
 )
 
 type Config struct {
-	Addr     string
-	LogLevel string
-	Auth     AuthConfig
+	Addr string
+	Auth AuthConfig
 }
 
 type AuthConfig struct {
@@ -22,8 +21,7 @@ type AuthConfig struct {
 
 func Default() Config {
 	return Config{
-		Addr:     "127.0.0.1:54321",
-		LogLevel: "info",
+		Addr: "127.0.0.1:54321",
 		Auth: AuthConfig{
 			JWTSecret:      DefaultJWTSecret,
 			JWTIssuer:      "http://127.0.0.1:54321/auth/v1",
@@ -39,16 +37,12 @@ func Parse(args []string) (Config, error) {
 	if v := os.Getenv("SUPABASE_EMULATOR_ADDR"); v != "" {
 		cfg.Addr = v
 	}
-	if v := os.Getenv("SUPABASE_EMULATOR_LOG_LEVEL"); v != "" {
-		cfg.LogLevel = v
-	}
 	if v := os.Getenv("SUPABASE_EMULATOR_JWT_SECRET"); v != "" {
 		cfg.Auth.JWTSecret = v
 	}
 
 	fs := flag.NewFlagSet("supabase-emulator", flag.ContinueOnError)
 	fs.StringVar(&cfg.Addr, "addr", cfg.Addr, "listen address (host:port)")
-	fs.StringVar(&cfg.LogLevel, "log-level", cfg.LogLevel, "log level (debug|info|warn|error)")
 	fs.StringVar(&cfg.Auth.JWTSecret, "jwt-secret", cfg.Auth.JWTSecret, "JWT HS256 secret")
 	fs.StringVar(&cfg.Auth.JWTIssuer, "jwt-issuer", cfg.Auth.JWTIssuer, "JWT issuer (iss claim)")
 	fs.DurationVar(&cfg.Auth.AccessTokenTTL, "access-token-ttl", cfg.Auth.AccessTokenTTL, "access_token TTL")

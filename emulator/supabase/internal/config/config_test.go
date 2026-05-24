@@ -8,7 +8,6 @@ import (
 func TestParse(t *testing.T) {
 	t.Run("デフォルト値を返す", func(t *testing.T) {
 		t.Setenv("SUPABASE_EMULATOR_ADDR", "")
-		t.Setenv("SUPABASE_EMULATOR_LOG_LEVEL", "")
 		t.Setenv("SUPABASE_EMULATOR_JWT_SECRET", "")
 		cfg, err := Parse(nil)
 		if err != nil {

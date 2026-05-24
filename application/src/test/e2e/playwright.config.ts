@@ -81,8 +81,6 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  // Supabase Auth エミュレータは webServer では起動しない。E2E では本物の Supabase
-  // または別途手動起動した emulator を利用する前提。
   webServer: {
     command: 'CHOKIDAR_USEPOLLING=1 npm run start:e2e',
     cwd: '../../..',

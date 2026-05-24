@@ -18,6 +18,10 @@ type Store struct {
 	emailIndex    map[string]string        // lower(email) -> userID
 	sessions      map[string]*Session      // SessionID -> Session
 	refreshTokens map[string]*RefreshToken // Token -> RefreshToken
+	// parentToChild は refresh_token rotation で `親トークン -> 直近の子トークン` を O(1) 参照するための副索引。
+	// 旧実装は ConsumeRefreshToken の reuse パスで refreshTokens 全件を走査していたため、
+	// 長寿命プロセスで O(N) スキャンがロック競合の原因になっていた。
+	parentToChild map[string]string
 
 	clock         func() time.Time
 	reuseInterval time.Duration
@@ -55,6 +59,7 @@ func NewStore(cfg StoreConfig) *Store {
 		emailIndex:    make(map[string]string),
 		sessions:      make(map[string]*Session),
 		refreshTokens: make(map[string]*RefreshToken),
+		parentToChild: make(map[string]string),
 		clock:         cfg.Clock,
 		reuseInterval: cfg.ReuseInterval,
 	}
@@ -143,6 +148,7 @@ func (s *Store) DeleteUser(id string) error {
 	for tok, rt := range s.refreshTokens {
 		if rt.UserID == id {
 			delete(s.refreshTokens, tok)
+			delete(s.parentToChild, rt.Parent)
 		}
 	}
 	return nil
@@ -250,34 +256,31 @@ func (s *Store) ConsumeRefreshToken(token string) (*RefreshToken, *User, error) 
 		Parent:    rt.Token,
 	}
 	s.refreshTokens[newRT.Token] = newRT
+	s.parentToChild[rt.Token] = newRT.Token
 	return s.cloneRefreshToken(newRT), s.cloneUser(u), nil
 }
 
-// findLatestChild は token を親に持つ refresh token のうち、Revoked=false のものを返す。
-// 子も並行 rotation で revoke されている場合は、さらにその子を再帰的に辿る。
-// 全て revoked ならチェーン上の最末端（誰にも親として参照されていない token）を返す。
+// findLatestChild は parentToChild 副索引で親→子チェーンを O(チェーン長) で辿り、
+// Revoked=false の末端を返す。旧実装は refreshTokens 全件走査で O(N) だった。
 // 呼び出し側で write lock を保持していること。
 func (s *Store) findLatestChild(parent string) *RefreshToken {
 	visited := map[string]bool{parent: true}
 	current := parent
 	for {
-		var next *RefreshToken
-		for _, child := range s.refreshTokens {
-			if child.Parent == current && !visited[child.Token] {
-				next = child
-				break
-			}
+		childToken, ok := s.parentToChild[current]
+		if !ok || visited[childToken] {
+			return nil
 		}
-		if next == nil {
-			break
+		visited[childToken] = true
+		child, ok := s.refreshTokens[childToken]
+		if !ok {
+			return nil
 		}
-		visited[next.Token] = true
-		current = next.Token
-		if !next.Revoked {
-			return next
+		if !child.Revoked {
+			return child
 		}
+		current = childToken
 	}
-	return nil
 }
 
 // RevokeRefreshTokensBySession は logout で呼ばれる。指定sessionの全refresh tokenを失効。
@@ -303,6 +306,7 @@ func (s *Store) Reset() {
 	s.emailIndex = make(map[string]string)
 	s.sessions = make(map[string]*Session)
 	s.refreshTokens = make(map[string]*RefreshToken)
+	s.parentToChild = make(map[string]string)
 }
 
 func (s *Store) Snapshot() Snapshot {

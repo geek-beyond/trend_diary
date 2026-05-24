@@ -14,19 +14,18 @@ go build -o bin/supabase-emulator .
 
 ## アプリ層の結合テストと組み合わせる
 
-vitest 結合テスト（`npm run test:server`）は emulator の起動・ビルドを**行わない**。事前にこのバイナリを別ターミナルで起動しておくこと。
+テスト側スクリプト（vitest globalSetup / Playwright webServer）はいずれも emulator の起動・ビルドを**行わない**。事前にこのバイナリを別ターミナルで起動しておくこと。
 
 ```bash
 # ターミナル1: エミュレータを起動しっぱなしにする
 cd emulator/supabase
 ./bin/supabase-emulator -addr 127.0.0.1:54321
 
-# ターミナル2: 結合テスト
+# ターミナル2: 結合テスト or E2E
 cd application
-npm run test:server
+npm run test:server  # vitest 結合テスト
+npm run e2e          # Playwright E2E
 ```
-
-E2E（`npm run e2e`）だけは Playwright の `webServer` 設定で emulator を自動 build + 起動する。
 
 `application/package.json` には手動ビルド/テスト用のショートカットを用意してある:
 

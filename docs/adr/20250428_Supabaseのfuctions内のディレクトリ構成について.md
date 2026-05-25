@@ -4,7 +4,7 @@ Status: Accepted
 
 Relevant PR:
 
-- https://github.com/Geek-Teck-Mentors/trend_diary/pull/107
+- https://github.com/geek-beyond/trend_diary/pull/107
 
 # Context
 
@@ -13,7 +13,7 @@ Relevant PR:
 
 ## References
 
-- https://github.com/Geek-Teck-Mentors/trend_diary/pull/107#pullrequestreview-2797667986
+- https://github.com/geek-beyond/trend_diary/pull/107#pullrequestreview-2797667986
 
 # Decision
 

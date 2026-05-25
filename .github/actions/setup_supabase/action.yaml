@@ -1,52 +1,38 @@
-name: Setup Supabase Emulator Composite Action
-description: '事前ビルド済みエミュレータバイナリ (emulator-release.yaml が release に upload) を取得して起動する'
+name: Setup Supabase Composite Action
+description: 'SupabaseをセットアップするComposite Action'
 
 runs:
   using: 'composite'
   steps:
-    - name: bin をダウンロード
+    - name: Supabase CLIのセットアップ
+      uses: supabase/setup-cli@b60b5899c73b63a2d2d651b1e90db8d4c9392f51 # v1
+
+    - name: Supabaseの起動
       shell: bash
-      # bin が既に置かれている場合 (PR で emulator/supabase を触っており build job が先に走ったケース) は
-      # それを使い、そうでなければ emulator-latest release から download する。
+      working-directory: ./application
+      # INFO: 認証のみ起動
+      # link: https://supabase.com/docs/reference/cli/supabase-start
+      run: supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+    - name: Supabaseのキーを環境変数に設定
+      id: get-keys
+      shell: bash
+      working-directory: ./application
       run: |
         set -euo pipefail
-        mkdir -p ./emulator/supabase/bin
-        bin=./emulator/supabase/bin/supabase-emulator
-        if [[ ! -x "$bin" ]]; then
-          gh release download emulator-latest \
-            --repo "${{ github.repository }}" \
-            --pattern supabase-emulator-linux-amd64 \
-            --output "$bin"
-          chmod +x "$bin"
+        SUPABASE_ENV="$(supabase status --output env)"
+        SUPABASE_ANON_KEY="$(echo "$SUPABASE_ENV" | sed -n 's/^ANON_KEY=//p' | head -n 1)"
+        SUPABASE_URL="$(echo "$SUPABASE_ENV" | sed -n 's/^API_URL=//p' | head -n 1)"
+
+        if [[ -z "$SUPABASE_URL" ]]; then
+          SUPABASE_URL="http://127.0.0.1:54321"
         fi
-      env:
-        GH_TOKEN: ${{ github.token }}
 
-    - name: Emulator を起動
-      shell: bash
-      working-directory: ./emulator/supabase
-      run: |
-        set -euo pipefail
-        ./bin/supabase-emulator -addr 127.0.0.1:54321 > emulator.log 2>&1 &
-        echo $! > emulator.pid
-        for _ in $(seq 1 50); do
-          if curl -sf http://127.0.0.1:54321/auth/v1/health > /dev/null; then
-            exit 0
-          fi
-          sleep 0.2
-        done
-        echo "::error::supabase-emulator did not become healthy in time"
-        cat emulator.log
-        exit 1
+        if [[ -z "$SUPABASE_ANON_KEY" ]]; then
+          echo "::error::Failed to read SUPABASE_ANON_KEY from 'supabase status --output env'."
+          echo "$SUPABASE_ENV"
+          exit 1
+        fi
 
-    - name: 環境変数を設定
-      shell: bash
-      # SUPABASE_ANON_KEY / SERVICE_ROLE_KEY は config/keys.go の DefaultJWTSecret 由来の
-      # supabase demo 固定鍵と一致。application/src/test/env.ts も同じ値を持っているので
-      # ここでは API_URL だけ揃えれば test ランタイムから到達できる。
-      run: |
-        {
-          echo "SUPABASE_URL=http://127.0.0.1:54321"
-          echo "SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
-          echo "SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
-        } >> "$GITHUB_ENV"
+        echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> "$GITHUB_ENV"
+        echo "SUPABASE_URL=$SUPABASE_URL" >> "$GITHUB_ENV"

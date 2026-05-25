@@ -1,0 +1,34 @@
+name: Setup Supabase Emulator Composite Action
+description: 'リポジトリにコミットされた emulator/supabase/bin/supabase-emulator を起動する'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Emulator を起動
+      shell: bash
+      working-directory: ./emulator/supabase
+      run: |
+        set -euo pipefail
+        chmod +x ./bin/supabase-emulator
+        ./bin/supabase-emulator -addr 127.0.0.1:54321 > emulator.log 2>&1 &
+        for _ in $(seq 1 50); do
+          if curl -sf http://127.0.0.1:54321/auth/v1/health > /dev/null; then
+            exit 0
+          fi
+          sleep 0.2
+        done
+        echo "::error::supabase-emulator did not become healthy in time"
+        cat emulator.log
+        exit 1
+
+    - name: 環境変数を設定
+      shell: bash
+      # SUPABASE_ANON_KEY / SERVICE_ROLE_KEY は config/keys.go の DefaultJWTSecret 由来の
+      # supabase demo 固定鍵と一致。application/src/test/env.ts も同じ値を持っているので
+      # ここでは API_URL だけ揃えれば test ランタイムから到達できる。
+      run: |
+        {
+          echo "SUPABASE_URL=http://127.0.0.1:54321"
+          echo "SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+          echo "SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+        } >> "$GITHUB_ENV"

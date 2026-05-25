@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
 )
 
 func AdminListUsers(h *Handler) {

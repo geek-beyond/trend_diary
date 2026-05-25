@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler/handlertest"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/handler"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/handler/handlertest"
 )
 
 func TestLogout(t *testing.T) {

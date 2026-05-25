@@ -6,7 +6,7 @@ import (
 
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
 )
 
 func unixToTime(sec int64) time.Time { return time.Unix(sec, 0) }

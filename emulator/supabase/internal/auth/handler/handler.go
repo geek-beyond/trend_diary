@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
 )
 
 // supabase-js v2 (2024-01-01 以降) が error_code を typed error にマップする条件として、

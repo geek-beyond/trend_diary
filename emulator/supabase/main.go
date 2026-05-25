@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/config"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/handler"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/config"
 )
 
 func main() {

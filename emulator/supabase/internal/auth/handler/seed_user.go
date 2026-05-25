@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
 )
 
 type seedUserRequest struct {

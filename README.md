@@ -1,6 +1,6 @@
-[![Lint](https://github.com/Geek-Teck-Mentors/trend_diary/actions/workflows/lint.yaml/badge.svg)](https://github.com/Geek-Teck-Mentors/trend_diary/actions/workflows/lint.yaml)
-[![Test](https://github.com/Geek-Teck-Mentors/trend_diary/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/Geek-Teck-Mentors/trend_diary/actions/workflows/test.yaml)
-[![CD](https://github.com/Geek-Teck-Mentors/trend_diary/actions/workflows/cd.yaml/badge.svg)](https://github.com/Geek-Teck-Mentors/trend_diary/actions/workflows/cd.yaml)
+[![Lint](https://github.com/Geek-Beyond/trend_diary/actions/workflows/lint.yaml/badge.svg)](https://github.com/Geek-Beyond/trend_diary/actions/workflows/lint.yaml)
+[![Test](https://github.com/Geek-Beyond/trend_diary/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/Geek-Beyond/trend_diary/actions/workflows/test.yaml)
+[![CD](https://github.com/Geek-Beyond/trend_diary/actions/workflows/cd.yaml/badge.svg)](https://github.com/Geek-Beyond/trend_diary/actions/workflows/cd.yaml)
 
 ## 環境構築
 

@@ -1,4 +1,4 @@
-module github.com/geek-teck-mentors/trend-diary/emulator/supabase
+module github.com/geek-beyond/trend-diary/emulator/supabase
 
 go 1.24
 

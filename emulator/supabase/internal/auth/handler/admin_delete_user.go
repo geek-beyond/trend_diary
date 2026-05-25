@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
 )
 
 func AdminDeleteUser(h *Handler) {

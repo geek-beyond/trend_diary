@@ -9,9 +9,9 @@ import (
 
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler/handlertest"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/config"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/handler/handlertest"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/config"
 )
 
 func TestTokensBuild_AudIsString(t *testing.T) {

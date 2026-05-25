@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/handler"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/auth/store"
-	"github.com/geek-teck-mentors/trend-diary/emulator/supabase/internal/config"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/handler"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
+	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/config"
 )
 
 const Issuer = "http://127.0.0.1:54321/auth/v1"

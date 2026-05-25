@@ -10,7 +10,7 @@ Status: Deprecated
 
 Relevant PR:
 
-https://github.com/Geek-Teck-Mentors/trend_diary/pull/154
+https://github.com/Geek-Beyond/trend_diary/pull/154
 
 <!-- reference できるプルリクがあればそのリンクを貼ってください -->
 

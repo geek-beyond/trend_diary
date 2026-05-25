@@ -8,6 +8,5 @@ runs:
       shell: bash
       working-directory: ./emulator/supabase
       run: |
-        chmod +x ./bin/supabase-emulator
         ./bin/supabase-emulator -addr 127.0.0.1:54321 > emulator.log 2>&1 &
         ./bin/supabase-emulator wait-healthy -addr 127.0.0.1:54321

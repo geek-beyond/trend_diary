@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +18,13 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "wait-healthy" {
+		if err := waitHealthy(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "supabase-emulator: "+err.Error())
+			os.Exit(1)
+		}
+		return
+	}
 	if err := run(os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, "supabase-emulator: "+err.Error())
 		os.Exit(1)
@@ -75,4 +84,31 @@ func run(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return srv.Shutdown(ctx)
+}
+
+// 別プロセスで起動済みのエミュレータに /auth/v1/health で ping し、ready になるまで待つ。
+// CI から `supabase-emulator wait-healthy` を呼ぶことで、起動 → ready 待ちのシェルロジックを
+// バイナリ側に閉じ込められる。
+func waitHealthy(args []string) error {
+	fs := flag.NewFlagSet("wait-healthy", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	addr := fs.String("addr", "127.0.0.1:54321", "listen address (host:port)")
+	timeout := fs.Duration("timeout", 10*time.Second, "max wait duration")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	deadline := time.Now().Add(*timeout)
+	url := "http://" + *addr + "/auth/v1/health"
+	for time.Now().Before(deadline) {
+		resp, err := http.Get(url)
+		if err == nil {
+			resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				return nil
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return fmt.Errorf("emulator at %s did not become healthy within %s", *addr, *timeout)
 }

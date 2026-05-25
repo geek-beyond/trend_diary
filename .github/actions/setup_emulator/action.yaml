@@ -9,4 +9,9 @@ runs:
       working-directory: ./emulator/supabase
       run: |
         ./bin/supabase-emulator -addr 127.0.0.1:54321 > emulator.log 2>&1 &
-        ./bin/supabase-emulator wait-healthy -addr 127.0.0.1:54321
+        for _ in $(seq 1 50); do
+          curl -sf http://127.0.0.1:54321/auth/v1/health > /dev/null && exit 0
+          sleep 0.2
+        done
+        cat emulator.log
+        exit 1

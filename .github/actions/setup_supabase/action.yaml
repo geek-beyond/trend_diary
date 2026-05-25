@@ -1,21 +1,32 @@
 name: Setup Supabase Emulator Composite Action
-description: '自前 Go エミュレータ (emulator/supabase) をビルド・起動する Composite Action'
+description: '事前ビルド済みエミュレータバイナリ (emulator-release.yaml が release に upload) を取得して起動する'
 
 runs:
   using: 'composite'
   steps:
-    - name: Go セットアップ
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: ./emulator/supabase/go.mod
-        cache-dependency-path: ./emulator/supabase/go.sum
+    - name: bin をダウンロード
+      shell: bash
+      # bin が既に置かれている場合 (PR で emulator/supabase を触っており build job が先に走ったケース) は
+      # それを使い、そうでなければ emulator-latest release から download する。
+      run: |
+        set -euo pipefail
+        mkdir -p ./emulator/supabase/bin
+        bin=./emulator/supabase/bin/supabase-emulator
+        if [[ ! -x "$bin" ]]; then
+          gh release download emulator-latest \
+            --repo "${{ github.repository }}" \
+            --pattern supabase-emulator-linux-amd64 \
+            --output "$bin"
+          chmod +x "$bin"
+        fi
+      env:
+        GH_TOKEN: ${{ github.token }}
 
-    - name: Emulator をビルドして起動
+    - name: Emulator を起動
       shell: bash
       working-directory: ./emulator/supabase
       run: |
         set -euo pipefail
-        go build -o bin/supabase-emulator .
         ./bin/supabase-emulator -addr 127.0.0.1:54321 > emulator.log 2>&1 &
         echo $! > emulator.pid
         for _ in $(seq 1 50); do

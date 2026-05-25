@@ -9,17 +9,17 @@ import (
 	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
 )
 
-func AdminListUsers(h *Handler) {
-	page, _ := strconv.Atoi(h.Query("page"))
+func AdminListUsers(c *Context) {
+	page, _ := strconv.Atoi(c.Query("page"))
 	if page <= 0 {
 		page = 1
 	}
-	perPage, _ := strconv.Atoi(h.Query("per_page"))
+	perPage, _ := strconv.Atoi(c.Query("per_page"))
 	if perPage <= 0 {
 		perPage = 50
 	}
 
-	snap := h.store.Snapshot()
+	snap := c.store.Snapshot()
 	sort.Slice(snap.Users, func(i, j int) bool {
 		return snap.Users[i].CreatedAt.Before(snap.Users[j].CreatedAt)
 	})
@@ -41,12 +41,12 @@ func AdminListUsers(h *Handler) {
 	// supabase-js GoTrueAdminApi.listUsers は x-total-count と Link ヘッダから
 	// nextPage / lastPage / total を組み立てる。
 	total := len(snap.Users)
-	h.Header().Set("x-total-count", strconv.Itoa(total))
-	if link := paginationLinkHeader(h.Request(), page, perPage, total); link != "" {
-		h.Header().Set("Link", link)
+	c.Header().Set("x-total-count", strconv.Itoa(total))
+	if link := paginationLinkHeader(c.Request(), page, perPage, total); link != "" {
+		c.Header().Set("Link", link)
 	}
 
-	h.JSON(http.StatusOK, map[string]any{
+	c.JSON(http.StatusOK, map[string]any{
 		"users": users,
 		"aud":   "authenticated",
 	})

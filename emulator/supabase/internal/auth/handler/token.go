@@ -17,79 +17,79 @@ type refreshGrantRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-func Token(h *Handler) {
-	switch h.Query("grant_type") {
+func Token(c *Context) {
+	switch c.Query("grant_type") {
 	case "password":
-		tokenPassword(h)
+		tokenPassword(c)
 	case "refresh_token":
-		tokenRefresh(h)
+		tokenRefresh(c)
 	default:
-		h.OAuth(http.StatusBadRequest, "unsupported_grant_type", "grant_type is required")
+		c.OAuth(http.StatusBadRequest, "unsupported_grant_type", "grant_type is required")
 	}
 }
 
-func tokenPassword(h *Handler) {
+func tokenPassword(c *Context) {
 	var req passwordGrantRequest
-	if err := h.ReadJSON(&req); err != nil {
-		h.OAuth(http.StatusBadRequest, "invalid_request", "invalid request body")
+	if err := c.ReadJSON(&req); err != nil {
+		c.OAuth(http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
 	// signup 側で TrimSpace してから保存するので、login も同じ正規化を行わないと
 	// トレーリングスペース付き email でログインできない非対称が生まれる。
 	req.Email = strings.TrimSpace(req.Email)
 	if req.Email == "" || req.Password == "" {
-		h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		c.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return
 	}
 
-	u, ok := h.store.FindUserByEmail(req.Email)
+	u, ok := c.store.FindUserByEmail(req.Email)
 	if !ok || !store.VerifyPassword(u.PasswordHash, req.Password) {
-		h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		c.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return
 	}
 
-	h.store.UpdateLastSignIn(u.ID)
+	c.store.UpdateLastSignIn(u.ID)
 	// 並行 DeleteUser で消えていたら nil で Issue に渡って panic するため、
 	// FindUserByID の ok を見て invalid_grant にフォールバックする。
-	fresh, ok := h.store.FindUserByID(u.ID)
+	fresh, ok := c.store.FindUserByID(u.ID)
 	if !ok {
-		h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
+		c.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return
 	}
 
-	tr, err := h.tokens.Issue(fresh)
+	tr, err := c.tokens.Issue(fresh)
 	if err != nil {
-		h.Error(http.StatusInternalServerError, err.Error())
+		c.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
-	h.JSON(http.StatusOK, tr)
+	c.JSON(http.StatusOK, tr)
 }
 
-func tokenRefresh(h *Handler) {
+func tokenRefresh(c *Context) {
 	var req refreshGrantRequest
-	if err := h.ReadJSON(&req); err != nil {
-		h.OAuth(http.StatusBadRequest, "invalid_request", "invalid request body")
+	if err := c.ReadJSON(&req); err != nil {
+		c.OAuth(http.StatusBadRequest, "invalid_request", "invalid request body")
 		return
 	}
 	if req.RefreshToken == "" {
-		h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
+		c.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
 		return
 	}
 
-	newRT, u, err := h.store.ConsumeRefreshToken(req.RefreshToken)
+	newRT, u, err := c.store.ConsumeRefreshToken(req.RefreshToken)
 	if err != nil {
 		if errors.Is(err, store.ErrInvalidRefreshToken) {
-			h.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
+			c.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid Refresh Token")
 			return
 		}
-		h.Error(http.StatusInternalServerError, err.Error())
+		c.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	tr, err := h.tokens.Build(u, newRT.SessionID, newRT.Token)
+	tr, err := c.tokens.Build(u, newRT.SessionID, newRT.Token)
 	if err != nil {
-		h.Error(http.StatusInternalServerError, err.Error())
+		c.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
-	h.JSON(http.StatusOK, tr)
+	c.JSON(http.StatusOK, tr)
 }

@@ -1,6 +1,6 @@
 package handler
 
-func Reset(h *Handler) {
-	h.store.Reset()
-	h.NoContent()
+func Reset(c *Context) {
+	c.store.Reset()
+	c.NoContent()
 }

@@ -16,7 +16,7 @@ import (
 // X-Supabase-Api-Version ヘッダを全エラーレスポンスに付与する必要がある。
 const apiVersion = "2024-01-01"
 
-type Func func(*Handler)
+type Func func(*Context)
 
 type Factory struct {
 	store  *store.Store
@@ -29,21 +29,21 @@ func NewFactory(st *store.Store, tk *Tokens) *Factory {
 
 func (f *Factory) Handle(fn Func) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h := &Handler{w: w, r: r, store: f.store, tokens: f.tokens}
+		c := &Context{w: w, r: r, store: f.store, tokens: f.tokens}
 		// handler 内 panic を 500 + JSON エラーに変換し、connection reset を防ぐ。
 		defer func() {
 			if rec := recover(); rec != nil {
 				fmt.Fprintf(os.Stderr, "supabase-emulator: handler panic: %v\n%s\n", rec, debug.Stack())
-				h.ErrorCode(http.StatusInternalServerError, "unexpected_failure", "internal server error")
+				c.ErrorCode(http.StatusInternalServerError, "unexpected_failure", "internal server error")
 			}
 		}()
-		fn(h)
+		fn(c)
 	})
 }
 
 // written フラグで JSON/NoContent/Error 系の二重呼び出しを no-op にし、
 // superfluous WriteHeader / body 連結を防ぐ。
-type Handler struct {
+type Context struct {
 	w       http.ResponseWriter
 	r       *http.Request
 	store   *store.Store
@@ -51,18 +51,18 @@ type Handler struct {
 	written bool
 }
 
-func (h *Handler) Request() *http.Request   { return h.r }
-func (h *Handler) Header() http.Header      { return h.w.Header() }
-func (h *Handler) Path(name string) string  { return h.r.PathValue(name) }
-func (h *Handler) Query(name string) string { return h.r.URL.Query().Get(name) }
+func (c *Context) Request() *http.Request   { return c.r }
+func (c *Context) Header() http.Header      { return c.w.Header() }
+func (c *Context) Path(name string) string  { return c.r.PathValue(name) }
+func (c *Context) Query(name string) string { return c.r.URL.Query().Get(name) }
 
 // supabase-js は gotrue_meta_security 等の追加フィールドを送るため DisallowUnknownFields は付けない。
-func (h *Handler) ReadJSON(dst any) error {
-	return json.NewDecoder(h.r.Body).Decode(dst)
+func (c *Context) ReadJSON(dst any) error {
+	return json.NewDecoder(c.r.Body).Decode(dst)
 }
 
-func (h *Handler) Bearer() string {
-	v := h.r.Header.Get("Authorization")
+func (c *Context) Bearer() string {
+	v := c.r.Header.Get("Authorization")
 	if v == "" {
 		return ""
 	}
@@ -73,31 +73,31 @@ func (h *Handler) Bearer() string {
 	return strings.TrimSpace(v[len(prefix):])
 }
 
-func (h *Handler) JSON(status int, body any) {
-	if h.written {
+func (c *Context) JSON(status int, body any) {
+	if c.written {
 		return
 	}
-	h.written = true
-	h.w.Header().Set("Content-Type", "application/json")
-	h.w.WriteHeader(status)
+	c.written = true
+	c.w.Header().Set("Content-Type", "application/json")
+	c.w.WriteHeader(status)
 	if body == nil {
 		return
 	}
-	if err := json.NewEncoder(h.w).Encode(body); err != nil {
+	if err := json.NewEncoder(c.w).Encode(body); err != nil {
 		// WriteHeader 既送のためレスポンスでは挽回不可。半端 JSON の事実だけ stderr に残す。
 		fmt.Fprintf(os.Stderr, "supabase-emulator: response encode failed: %v\n", err)
 	}
 }
 
 // RFC 7230 §3.3.2 に従い、204 では Content-Type / Content-Length を出さない。
-func (h *Handler) NoContent() {
-	if h.written {
+func (c *Context) NoContent() {
+	if c.written {
 		return
 	}
-	h.written = true
-	h.w.Header().Del("Content-Type")
-	h.w.Header().Del("Content-Length")
-	h.w.WriteHeader(http.StatusNoContent)
+	c.written = true
+	c.w.Header().Del("Content-Type")
+	c.w.Header().Del("Content-Length")
+	c.w.WriteHeader(http.StatusNoContent)
 }
 
 // Error / ErrorCode は同じ apiErrorBody（サインアップ系の {"code","error_code","msg"}）、
@@ -118,17 +118,17 @@ type oauthErrorBody struct {
 	ErrorDescription string `json:"error_description,omitempty"`
 }
 
-func (h *Handler) Error(status int, msg string) {
-	h.w.Header().Set("X-Supabase-Api-Version", apiVersion)
-	h.JSON(status, apiErrorBody{Code: strconv.Itoa(status), Msg: msg})
+func (c *Context) Error(status int, msg string) {
+	c.w.Header().Set("X-Supabase-Api-Version", apiVersion)
+	c.JSON(status, apiErrorBody{Code: strconv.Itoa(status), Msg: msg})
 }
 
-func (h *Handler) ErrorCode(status int, errCode, msg string) {
-	h.w.Header().Set("X-Supabase-Api-Version", apiVersion)
-	h.JSON(status, apiErrorBody{Code: strconv.Itoa(status), ErrorCode: errCode, Msg: msg})
+func (c *Context) ErrorCode(status int, errCode, msg string) {
+	c.w.Header().Set("X-Supabase-Api-Version", apiVersion)
+	c.JSON(status, apiErrorBody{Code: strconv.Itoa(status), ErrorCode: errCode, Msg: msg})
 }
 
-func (h *Handler) OAuth(status int, errCode, description string) {
-	h.w.Header().Set("X-Supabase-Api-Version", apiVersion)
-	h.JSON(status, oauthErrorBody{Error: errCode, ErrorDescription: description})
+func (c *Context) OAuth(status int, errCode, description string) {
+	c.w.Header().Set("X-Supabase-Api-Version", apiVersion)
+	c.JSON(status, oauthErrorBody{Error: errCode, ErrorDescription: description})
 }

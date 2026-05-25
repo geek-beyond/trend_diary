@@ -2,6 +2,6 @@ package handler
 
 import "net/http"
 
-func Snapshot(h *Handler) {
-	h.JSON(http.StatusOK, h.store.Snapshot())
+func Snapshot(c *Context) {
+	c.JSON(http.StatusOK, c.store.Snapshot())
 }

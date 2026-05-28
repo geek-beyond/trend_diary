@@ -55,10 +55,6 @@ export async function validateSession(
       return err(createAuthValidationError('validation_failed', 'Session validation failed'))
     }
 
-    if (!result.value) {
-      return err(createAuthValidationError('user_not_found', 'User not found'))
-    }
-
     // 管理者権限をチェック
     const sessionUser: SessionUser = {
       activeUserId: result.value.activeUserId,

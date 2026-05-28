@@ -9,9 +9,10 @@ runs:
       working-directory: ./emulator/supabase
       run: |
         ./bin/supabase-emulator -addr 127.0.0.1:54321 > emulator.log 2>&1 &
-        for _ in $(seq 1 50); do
+        # 0.05s 間隔で最大 10s ポーリング。bind は数十 ms で済むので細かく刻むほど待ち時間が減る。
+        for _ in $(seq 1 200); do
           curl -sf http://127.0.0.1:54321/auth/v1/health > /dev/null && exit 0
-          sleep 0.2
+          sleep 0.05
         done
         cat emulator.log
         exit 1

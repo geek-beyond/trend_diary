@@ -141,30 +141,19 @@ func (t *Tokens) Verify(token string) (*Claims, error) {
 	return claims, nil
 }
 
-// logout で access_token が期限切れでも session を revoke できるべきなので、
-// exp 検証を伴う Verify ではなくこちらで SessionID を取り出す（署名は VerifySignature で別途確認）。
-func (t *Tokens) DecodeUnverified(token string) (*Claims, error) {
+// logout は access_token が exp 切れでも session を revoke できるべきなので、exp 検証だけ飛ばして
+// 署名と iss を確認し claims を返す。WithoutClaimsValidation が WithIssuer を無効化するため iss は
+// 手動照合する（公開定数 DefaultJWTSecret で署名された anon / service_role JWT の流用を防ぐ）。
+func (t *Tokens) VerifyIgnoringExpiry(token string) (*Claims, error) {
 	claims := &Claims{}
-	if _, _, err := jwtv5.NewParser().ParseUnverified(token, claims); err != nil {
-		return nil, err
-	}
-	return claims, nil
-}
-
-// logout で期限切れトークンも受け入れたいが、署名は偽造防止のため必ず確認する用途。
-// WithoutClaimsValidation は WithIssuer も同時に無効化してしまうため、iss は手動で照合する
-// （公開定数 DefaultJWTSecret で署名された anon / service_role JWT が通らないようにする）。
-func (t *Tokens) VerifySignature(token string) error {
-	claims := &Claims{}
-	_, err := jwtv5.NewParser(
+	if _, err := jwtv5.NewParser(
 		jwtv5.WithoutClaimsValidation(),
 		jwtv5.WithValidMethods([]string{"HS256"}),
-	).ParseWithClaims(token, claims, t.keyFunc)
-	if err != nil {
-		return err
+	).ParseWithClaims(token, claims, t.keyFunc); err != nil {
+		return nil, err
 	}
 	if claims.Issuer != t.issuer {
-		return jwtv5.ErrTokenInvalidIssuer
+		return nil, jwtv5.ErrTokenInvalidIssuer
 	}
-	return nil
+	return claims, nil
 }

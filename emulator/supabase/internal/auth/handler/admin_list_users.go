@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"sort"
 	"strconv"
 )
 
@@ -17,25 +16,10 @@ func AdminListUsers(c *Context) {
 		perPage = 50
 	}
 
-	snap := c.store.Snapshot()
-	sort.Slice(snap.Users, func(i, j int) bool {
-		return snap.Users[i].CreatedAt.Before(snap.Users[j].CreatedAt)
-	})
-
-	start := (page - 1) * perPage
-	end := start + perPage
-	if start > len(snap.Users) {
-		start = len(snap.Users)
-	}
-	if end > len(snap.Users) {
-		end = len(snap.Users)
-	}
-
-	users := snap.Users[start:end]
+	users, total := c.store.ListUsers((page-1)*perPage, perPage)
 
 	// supabase-js GoTrueAdminApi.listUsers は x-total-count と Link ヘッダから
 	// nextPage / lastPage / total を組み立てる。
-	total := len(snap.Users)
 	c.Header().Set("x-total-count", strconv.Itoa(total))
 	if link := paginationLinkHeader(c.Request(), page, perPage, total); link != "" {
 		c.Header().Set("Link", link)

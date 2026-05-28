@@ -1,6 +1,7 @@
 package store
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -101,25 +102,59 @@ func (s *Store) DeleteUser(id string) error {
 // 本物 GoTrue の raw_user_meta_data は merge ではなく置換挙動なので合わせる。
 // cloneAnyMap でネストした map/slice まで複製しないと、呼び出し元の req.Data 経由で
 // ロック外から store の値が書き換えられて Snapshot と並走時 concurrent map fatal を起こす。
-func (s *Store) SetUserMetadata(id string, data map[string]any) {
+// 更新後の clone を返すので、呼び出し側は FindUserByID で読み直さなくてよい。
+func (s *Store) SetUserMetadata(id string, data map[string]any) (*User, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	u, ok := s.users[id]
 	if !ok {
-		return
+		return nil, false
 	}
 	u.UserMetadata = cloneAnyMap(data)
 	u.UpdatedAt = s.clock()
+	return s.cloneUser(u), true
 }
 
-func (s *Store) UpdateLastSignIn(id string) {
+func (s *Store) UpdateLastSignIn(id string) (*User, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	u, ok := s.users[id]
 	if !ok {
-		return
+		return nil, false
 	}
 	now := s.clock()
 	u.LastSignInAt = &now
 	u.UpdatedAt = now
+	return s.cloneUser(u), true
+}
+
+// ListUsers は CreatedAt 昇順で offset から limit 件の user 複製と全件数を返す。
+// Snapshot と違い session / refresh_token は複製せず、要求ページ分の user だけ clone するので
+// seed 件数が増えても複製コストが O(limit) で済む（AdminListUsers 用）。
+func (s *Store) ListUsers(offset, limit int) ([]User, int) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	ordered := make([]*User, 0, len(s.users))
+	for _, u := range s.users {
+		ordered = append(ordered, u)
+	}
+	sort.Slice(ordered, func(i, j int) bool {
+		return ordered[i].CreatedAt.Before(ordered[j].CreatedAt)
+	})
+
+	total := len(ordered)
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	page := ordered[offset:end]
+	users := make([]User, len(page))
+	for i, u := range page {
+		users[i] = *s.cloneUser(u)
+	}
+	return users, total
 }

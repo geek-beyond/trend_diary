@@ -53,8 +53,7 @@ func Signup(c *Context) {
 		return
 	}
 	if len(req.Data) > 0 {
-		c.store.SetUserMetadata(u.ID, req.Data)
-		if fresh, ok := c.store.FindUserByID(u.ID); ok {
+		if fresh, ok := c.store.SetUserMetadata(u.ID, req.Data); ok {
 			u = fresh
 		}
 	}

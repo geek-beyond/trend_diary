@@ -48,10 +48,8 @@ func tokenPassword(c *Context) {
 		return
 	}
 
-	c.store.UpdateLastSignIn(u.ID)
-	// 並行 DeleteUser で消えていたら nil で Issue に渡って panic するため、
-	// FindUserByID の ok を見て invalid_grant にフォールバックする。
-	fresh, ok := c.store.FindUserByID(u.ID)
+	// 並行 DeleteUser で消えていたら ok=false。更新後の clone をそのまま Issue に渡す。
+	fresh, ok := c.store.UpdateLastSignIn(u.ID)
 	if !ok {
 		c.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
 		return

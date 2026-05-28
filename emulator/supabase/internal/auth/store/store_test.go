@@ -115,6 +115,50 @@ func TestSetUserMetadata(t *testing.T) {
 	})
 }
 
+func TestListUsers(t *testing.T) {
+	t.Run("CreatedAt昇順でページ単位に返り、totalは全件数", func(t *testing.T) {
+		base := time.Date(2026, 5, 23, 0, 0, 0, 0, time.UTC)
+		tick := 0
+		s := New(Config{Clock: func() time.Time {
+			tick++
+			return base.Add(time.Duration(tick) * time.Second)
+		}, ReuseInterval: 10 * time.Second})
+		hash, _ := HashPassword("password123")
+		for _, e := range []string{"a@example.com", "b@example.com", "c@example.com"} {
+			if _, err := s.CreateUser(e, hash); err != nil {
+				t.Fatalf("CreateUser: %v", err)
+			}
+		}
+
+		page, total := s.ListUsers(0, 2)
+		if total != 3 {
+			t.Errorf("total: got=%d want=3", total)
+		}
+		if len(page) != 2 || page[0].Email != "a@example.com" || page[1].Email != "b@example.com" {
+			t.Errorf("page1 mismatch: %+v", page)
+		}
+
+		page2, _ := s.ListUsers(2, 2)
+		if len(page2) != 1 || page2[0].Email != "c@example.com" {
+			t.Errorf("page2 mismatch: %+v", page2)
+		}
+	})
+
+	t.Run("offsetが件数を超えても非nilの空スライスを返す", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		_, _ = s.CreateUser("a@example.com", hash)
+
+		page, total := s.ListUsers(50, 10)
+		if total != 1 {
+			t.Errorf("total: got=%d want=1", total)
+		}
+		if page == nil || len(page) != 0 {
+			t.Errorf("expected non-nil empty slice, got %+v", page)
+		}
+	})
+}
+
 func TestRefreshTokenRotation(t *testing.T) {
 	t.Run("Consumeで新tokenを発行し旧tokenを失効させる", func(t *testing.T) {
 		s := newStore()

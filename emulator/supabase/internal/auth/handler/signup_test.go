@@ -14,7 +14,7 @@ func TestSignup(t *testing.T) {
 	t.Run("正常系", func(t *testing.T) {
 		t.Run("200 と access_token / refresh_token / user を返す", func(t *testing.T) {
 			st := handlertest.NewStore(nil)
-			f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+			f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 			rec := httptest.NewRecorder()
 			handlertest.Serve(f, handler.Signup, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", map[string]string{
@@ -36,7 +36,7 @@ func TestSignup(t *testing.T) {
 
 		t.Run("data フィールドが Store に永続化される", func(t *testing.T) {
 			st := handlertest.NewStore(nil)
-			f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+			f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 			rec := httptest.NewRecorder()
 			handlertest.Serve(f, handler.Signup, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", map[string]any{
@@ -57,7 +57,7 @@ func TestSignup(t *testing.T) {
 
 		t.Run("email は lowercase 正規化して保存される", func(t *testing.T) {
 			st := handlertest.NewStore(nil)
-			f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+			f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 			rec := httptest.NewRecorder()
 			handlertest.Serve(f, handler.Signup, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", map[string]string{
@@ -90,7 +90,7 @@ func TestSignup(t *testing.T) {
 		for _, c := range cases {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
-				f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+				f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 				rec := httptest.NewRecorder()
 				handlertest.Serve(f, handler.Signup, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", c.body))
@@ -108,7 +108,7 @@ func TestSignup(t *testing.T) {
 	t.Run("既存email", func(t *testing.T) {
 		t.Run("422 + 'already registered' を返す（アプリ層 isUserAlreadyExistsError 互換）", func(t *testing.T) {
 			st := handlertest.NewStore(nil)
-			f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+			f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 			body := map[string]string{"email": "alice@example.com", "password": "password123"}
 			handlertest.Serve(f, handler.Signup, httptest.NewRecorder(), handlertest.NewRequest(t, http.MethodPost, "/auth/v1/signup", body))
 

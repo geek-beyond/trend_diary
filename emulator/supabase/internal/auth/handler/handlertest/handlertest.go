@@ -22,14 +22,7 @@ func NewStore(clock func() time.Time) *store.Store {
 }
 
 func NewTokens(st *store.Store, clock func() time.Time) *handler.Tokens {
-	if clock == nil {
-		clock = time.Now
-	}
 	return handler.NewTokens(st, config.DefaultJWTSecret, Issuer, time.Hour, clock)
-}
-
-func NewFactory(st *store.Store, tk *handler.Tokens) *handler.Factory {
-	return handler.NewFactory(st, tk)
 }
 
 func Seed(t *testing.T, st *store.Store, tk *handler.Tokens, email, password string) *handler.TokenResponse {

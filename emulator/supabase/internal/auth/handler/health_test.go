@@ -13,7 +13,7 @@ import (
 func TestHealth(t *testing.T) {
 	t.Run("200 + name=GoTrue", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
-		f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+		f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 		rec := httptest.NewRecorder()
 		handlertest.Serve(f, handler.Health, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/health", nil))

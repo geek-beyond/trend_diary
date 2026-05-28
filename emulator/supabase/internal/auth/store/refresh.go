@@ -46,7 +46,7 @@ func (s *Store) createSessionLocked(userID string) (*Session, error) {
 		CreatedAt: s.clock(),
 	}
 	s.sessions[sess.ID] = sess
-	return s.cloneSession(sess), nil
+	return cloneSession(sess), nil
 }
 
 func (s *Store) issueRefreshTokenLocked(userID, sessionID string) (*RefreshToken, error) {
@@ -61,7 +61,7 @@ func (s *Store) issueRefreshTokenLocked(userID, sessionID string) (*RefreshToken
 		IssuedAt:  s.clock(),
 	}
 	s.refreshTokens[rt.Token] = rt
-	return s.cloneRefreshToken(rt), nil
+	return cloneRefreshToken(rt), nil
 }
 
 // Revoked token を reuse_interval 内に再 consume したときに親→子チェーンの末端を返すのは
@@ -84,7 +84,7 @@ func (s *Store) ConsumeRefreshToken(token string) (*RefreshToken, *User, error) 
 		// 対応するため Parent チェーンを末端まで辿る。
 		if s.clock().Sub(rt.IssuedAt) <= s.reuseInterval {
 			if leaf := s.findLatestChild(rt.Token); leaf != nil {
-				return s.cloneRefreshToken(leaf), s.cloneUser(u), nil
+				return cloneRefreshToken(leaf), s.cloneUser(u), nil
 			}
 		}
 		return nil, nil, ErrInvalidRefreshToken
@@ -103,7 +103,7 @@ func (s *Store) ConsumeRefreshToken(token string) (*RefreshToken, *User, error) 
 	}
 	s.refreshTokens[newRT.Token] = newRT
 	s.parentToChild[rt.Token] = newRT.Token
-	return s.cloneRefreshToken(newRT), s.cloneUser(u), nil
+	return cloneRefreshToken(newRT), s.cloneUser(u), nil
 }
 
 // findLatestChild は parentToChild 副索引でチェーンを O(チェーン長) で辿る。write lock 保持前提。

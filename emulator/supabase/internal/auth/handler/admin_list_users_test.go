@@ -40,7 +40,7 @@ func TestAdminListUsers(t *testing.T) {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
 				tk := handlertest.NewTokens(st, nil)
-				f := handlertest.NewFactory(st, tk)
+				f := handler.NewFactory(st, tk)
 				for _, e := range c.seedEmails {
 					handlertest.Seed(t, st, tk, e, "password123")
 				}
@@ -68,7 +68,7 @@ func TestAdminListUsers(t *testing.T) {
 
 	t.Run("空ストアでも users:[] が返る", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
-		f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+		f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 		rec := httptest.NewRecorder()
 		handlertest.Serve(f, handler.AdminListUsers, rec, handlertest.NewRequest(t, http.MethodGet, "/auth/v1/admin/users", nil))

@@ -9,8 +9,6 @@ import (
 	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
 )
 
-func unixToTime(sec int64) time.Time { return time.Unix(sec, 0) }
-
 type Claims struct {
 	Subject string `json:"sub,omitempty"`
 	Issuer  string `json:"iss,omitempty"`
@@ -31,14 +29,14 @@ func (c Claims) GetExpirationTime() (*jwtv5.NumericDate, error) {
 	if c.Expiry == 0 {
 		return nil, nil
 	}
-	return jwtv5.NewNumericDate(unixToTime(c.Expiry)), nil
+	return jwtv5.NewNumericDate(time.Unix(c.Expiry, 0)), nil
 }
 
 func (c Claims) GetIssuedAt() (*jwtv5.NumericDate, error) {
 	if c.IssuedAt == 0 {
 		return nil, nil
 	}
-	return jwtv5.NewNumericDate(unixToTime(c.IssuedAt)), nil
+	return jwtv5.NewNumericDate(time.Unix(c.IssuedAt, 0)), nil
 }
 
 func (c Claims) GetNotBefore() (*jwtv5.NumericDate, error) { return nil, nil }
@@ -79,10 +77,14 @@ func NewTokens(st *store.Store, secret, issuer string, ttl time.Duration, clock 
 	if issuer == "" {
 		issuer = "http://127.0.0.1:54321/auth/v1"
 	}
-	if secret == "" {
-		panic("handler.NewTokens: secret is required")
-	}
 	return &Tokens{store: st, secret: secret, issuer: issuer, ttl: ttl, clock: clock}
+}
+
+func (t *Tokens) keyFunc(tok *jwtv5.Token) (any, error) {
+	if _, ok := tok.Method.(*jwtv5.SigningMethodHMAC); !ok {
+		return nil, errors.New("unexpected signing method")
+	}
+	return []byte(t.secret), nil
 }
 
 // store.IssueSession で CreateSession + IssueRefreshToken を 1 ロックで実行することで、
@@ -130,45 +132,39 @@ func (t *Tokens) Build(u *store.User, sessionID, refreshToken string) (*TokenRes
 // WithIssuer は、公開定数 DefaultJWTSecret で署名された anon / service_role JWT が
 // user token として通ってしまうのを防ぐため必須。
 func (t *Tokens) Verify(token string) (*Claims, error) {
-	parsed, err := jwtv5.ParseWithClaims(token, &Claims{}, func(tok *jwtv5.Token) (any, error) {
-		if _, ok := tok.Method.(*jwtv5.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
-		return []byte(t.secret), nil
-	}, jwtv5.WithTimeFunc(t.clock), jwtv5.WithIssuer(t.issuer), jwtv5.WithValidMethods([]string{"HS256"}))
+	claims := &Claims{}
+	_, err := jwtv5.ParseWithClaims(token, claims, t.keyFunc,
+		jwtv5.WithTimeFunc(t.clock), jwtv5.WithIssuer(t.issuer), jwtv5.WithValidMethods([]string{"HS256"}))
 	if err != nil {
 		return nil, err
 	}
-	c, ok := parsed.Claims.(*Claims)
-	if !ok {
-		return nil, errors.New("invalid token")
-	}
-	return c, nil
+	return claims, nil
 }
 
 // logout で access_token が期限切れでも session を revoke できるべきなので、
 // exp 検証を伴う Verify ではなくこちらで SessionID を取り出す（署名は VerifySignature で別途確認）。
 func (t *Tokens) DecodeUnverified(token string) (*Claims, error) {
-	parser := jwtv5.NewParser()
-	parsed, _, err := parser.ParseUnverified(token, &Claims{})
-	if err != nil {
+	claims := &Claims{}
+	if _, _, err := jwtv5.NewParser().ParseUnverified(token, claims); err != nil {
 		return nil, err
 	}
-	c, ok := parsed.Claims.(*Claims)
-	if !ok {
-		return nil, errors.New("invalid claims")
-	}
-	return c, nil
+	return claims, nil
 }
 
 // logout で期限切れトークンも受け入れたいが、署名は偽造防止のため必ず確認する用途。
+// WithoutClaimsValidation は WithIssuer も同時に無効化してしまうため、iss は手動で照合する
+// （公開定数 DefaultJWTSecret で署名された anon / service_role JWT が通らないようにする）。
 func (t *Tokens) VerifySignature(token string) error {
-	parser := jwtv5.NewParser(jwtv5.WithoutClaimsValidation())
-	_, err := parser.Parse(token, func(tok *jwtv5.Token) (any, error) {
-		if _, ok := tok.Method.(*jwtv5.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
-		return []byte(t.secret), nil
-	})
-	return err
+	claims := &Claims{}
+	_, err := jwtv5.NewParser(
+		jwtv5.WithoutClaimsValidation(),
+		jwtv5.WithValidMethods([]string{"HS256"}),
+	).ParseWithClaims(token, claims, t.keyFunc)
+	if err != nil {
+		return err
+	}
+	if claims.Issuer != t.issuer {
+		return jwtv5.ErrTokenInvalidIssuer
+	}
+	return nil
 }

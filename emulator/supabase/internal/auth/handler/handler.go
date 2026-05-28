@@ -119,16 +119,24 @@ type oauthErrorBody struct {
 }
 
 func (c *Context) Error(status int, msg string) {
-	c.w.Header().Set("X-Supabase-Api-Version", apiVersion)
-	c.JSON(status, apiErrorBody{Code: strconv.Itoa(status), Msg: msg})
+	c.writeError(status, apiErrorBody{Code: strconv.Itoa(status), Msg: msg})
 }
 
 func (c *Context) ErrorCode(status int, errCode, msg string) {
-	c.w.Header().Set("X-Supabase-Api-Version", apiVersion)
-	c.JSON(status, apiErrorBody{Code: strconv.Itoa(status), ErrorCode: errCode, Msg: msg})
+	c.writeError(status, apiErrorBody{Code: strconv.Itoa(status), ErrorCode: errCode, Msg: msg})
 }
 
 func (c *Context) OAuth(status int, errCode, description string) {
+	c.writeError(status, oauthErrorBody{Error: errCode, ErrorDescription: description})
+}
+
+// writeError は X-Supabase-Api-Version の付与と書き出しを 1 箇所に集約する。
+// written チェックを通った後に Header().Set するため、二重呼び出し時に
+// flush 済みヘッダへの no-op Set でデバッグを混乱させない。
+func (c *Context) writeError(status int, body any) {
+	if c.written {
+		return
+	}
 	c.w.Header().Set("X-Supabase-Api-Version", apiVersion)
-	c.JSON(status, oauthErrorBody{Error: errCode, ErrorDescription: description})
+	c.JSON(status, body)
 }

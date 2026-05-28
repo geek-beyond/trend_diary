@@ -21,12 +21,12 @@ func (s *Store) cloneUser(u *User) *User {
 	return &c
 }
 
-func (s *Store) cloneSession(sess *Session) *Session {
+func cloneSession(sess *Session) *Session {
 	c := *sess
 	return &c
 }
 
-func (s *Store) cloneRefreshToken(rt *RefreshToken) *RefreshToken {
+func cloneRefreshToken(rt *RefreshToken) *RefreshToken {
 	c := *rt
 	return &c
 }

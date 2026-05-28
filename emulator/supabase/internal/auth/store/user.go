@@ -99,6 +99,8 @@ func (s *Store) DeleteUser(id string) error {
 }
 
 // 本物 GoTrue の raw_user_meta_data は merge ではなく置換挙動なので合わせる。
+// cloneAnyMap でネストした map/slice まで複製しないと、呼び出し元の req.Data 経由で
+// ロック外から store の値が書き換えられて Snapshot と並走時 concurrent map fatal を起こす。
 func (s *Store) SetUserMetadata(id string, data map[string]any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -106,11 +108,7 @@ func (s *Store) SetUserMetadata(id string, data map[string]any) {
 	if !ok {
 		return
 	}
-	cp := make(map[string]any, len(data))
-	for k, v := range data {
-		cp[k] = v
-	}
-	u.UserMetadata = cp
+	u.UserMetadata = cloneAnyMap(data)
 	u.UpdatedAt = s.clock()
 }
 

@@ -15,7 +15,7 @@ func TestToken(t *testing.T) {
 		t.Run("正しい資格情報で200を返す", func(t *testing.T) {
 			st := handlertest.NewStore(nil)
 			tk := handlertest.NewTokens(st, nil)
-			f := handlertest.NewFactory(st, tk)
+			f := handler.NewFactory(st, tk)
 			handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
 			rec := httptest.NewRecorder()
@@ -40,7 +40,7 @@ func TestToken(t *testing.T) {
 				t.Run(c.name, func(t *testing.T) {
 					st := handlertest.NewStore(nil)
 					tk := handlertest.NewTokens(st, nil)
-					f := handlertest.NewFactory(st, tk)
+					f := handler.NewFactory(st, tk)
 					handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
 					rec := httptest.NewRecorder()
@@ -62,7 +62,7 @@ func TestToken(t *testing.T) {
 		t.Run("有効なrefresh_tokenで rotation した新ペアを返す", func(t *testing.T) {
 			st := handlertest.NewStore(nil)
 			tk := handlertest.NewTokens(st, nil)
-			f := handlertest.NewFactory(st, tk)
+			f := handler.NewFactory(st, tk)
 			seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
 			rec := httptest.NewRecorder()
@@ -90,7 +90,7 @@ func TestToken(t *testing.T) {
 			for _, c := range cases {
 				t.Run(c.name, func(t *testing.T) {
 					st := handlertest.NewStore(nil)
-					f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+					f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 					rec := httptest.NewRecorder()
 					handlertest.Serve(f, handler.Token, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token?grant_type=refresh_token", map[string]string{
@@ -110,7 +110,7 @@ func TestToken(t *testing.T) {
 	t.Run("password grant: email のトレーリングスペースを TrimSpace してログインできる", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
 		tk := handlertest.NewTokens(st, nil)
-		f := handlertest.NewFactory(st, tk)
+		f := handler.NewFactory(st, tk)
 		handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
 		rec := httptest.NewRecorder()
@@ -124,7 +124,7 @@ func TestToken(t *testing.T) {
 
 	t.Run("grant_type 未指定で 400", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
-		f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+		f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 		rec := httptest.NewRecorder()
 		handlertest.Serve(f, handler.Token, rec, handlertest.NewRequest(t, http.MethodPost, "/auth/v1/token", map[string]string{

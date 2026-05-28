@@ -13,7 +13,7 @@ func TestAdminDeleteUser(t *testing.T) {
 	t.Run("有効なIDで200を返す", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
 		tk := handlertest.NewTokens(st, nil)
-		f := handlertest.NewFactory(st, tk)
+		f := handler.NewFactory(st, tk)
 		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
 		rec := httptest.NewRecorder()
@@ -39,7 +39,7 @@ func TestAdminDeleteUser(t *testing.T) {
 		for _, c := range cases {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
-				f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+				f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 				rec := httptest.NewRecorder()
 				handlertest.Serve(f, handler.AdminDeleteUser, rec,

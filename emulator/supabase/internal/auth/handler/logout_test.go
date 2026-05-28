@@ -22,7 +22,7 @@ func TestLogout(t *testing.T) {
 		for _, c := range cases {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
-				f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+				f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 				req := handlertest.NewRequest(t, http.MethodPost, "/auth/v1/logout", nil)
 				c.setHeader(req)
@@ -38,7 +38,7 @@ func TestLogout(t *testing.T) {
 	t.Run("有効な Bearer で 204 + refresh_token 失効", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
 		tk := handlertest.NewTokens(st, nil)
-		f := handlertest.NewFactory(st, tk)
+		f := handler.NewFactory(st, tk)
 		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
 		req := handlertest.NewRequest(t, http.MethodPost, "/auth/v1/logout", nil)
@@ -63,7 +63,7 @@ func TestLogout(t *testing.T) {
 		clock := func() time.Time { return current }
 		st := handlertest.NewStore(clock)
 		tk := handlertest.NewTokens(st, clock)
-		f := handlertest.NewFactory(st, tk)
+		f := handler.NewFactory(st, tk)
 		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
 		current = current.Add(2 * time.Hour)

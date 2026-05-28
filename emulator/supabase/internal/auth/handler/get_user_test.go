@@ -15,7 +15,7 @@ func TestGetUser(t *testing.T) {
 	t.Run("正常系: 有効な Bearer で user を返す", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
 		tk := handlertest.NewTokens(st, nil)
-		f := handlertest.NewFactory(st, tk)
+		f := handler.NewFactory(st, tk)
 		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
 		req := handlertest.NewRequest(t, http.MethodGet, "/auth/v1/user", nil)
@@ -58,7 +58,7 @@ func TestGetUser(t *testing.T) {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
 				tk := handlertest.NewTokens(st, nil)
-				f := handlertest.NewFactory(st, tk)
+				f := handler.NewFactory(st, tk)
 
 				var validToken string
 				if c.deleteUser {
@@ -92,7 +92,7 @@ func TestGetUser(t *testing.T) {
 		clock := func() time.Time { return current }
 		st := handlertest.NewStore(clock)
 		tk := handlertest.NewTokens(st, clock)
-		f := handlertest.NewFactory(st, tk)
+		f := handler.NewFactory(st, tk)
 		seeded := handlertest.Seed(t, st, tk, "alice@example.com", "password123")
 
 		current = current.Add(2 * time.Hour)

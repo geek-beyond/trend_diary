@@ -63,6 +63,12 @@ func Signup(c *Context) {
 	// supabase-js が {data:{user, session}} に再構成する。
 	session, err := c.tokens.Issue(u)
 	if err != nil {
+		// CreateUser と IssueSession の間で DeleteUser が走った race は 422 の "User not found" に倒す
+		// （signup 直後に消えた user の token 発行を 500 で返すと server outage に見えてしまう）。
+		if errors.Is(err, store.ErrUserNotFound) {
+			c.Error(http.StatusUnprocessableEntity, "User not found")
+			return
+		}
 		c.Error(http.StatusInternalServerError, err.Error())
 		return
 	}

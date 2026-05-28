@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
-
-	"github.com/geek-beyond/trend-diary/emulator/supabase/internal/auth/store"
 )
 
 func AdminListUsers(c *Context) {
@@ -34,9 +32,6 @@ func AdminListUsers(c *Context) {
 	}
 
 	users := snap.Users[start:end]
-	if users == nil {
-		users = []store.User{}
-	}
 
 	// supabase-js GoTrueAdminApi.listUsers は x-total-count と Link ヘッダから
 	// nextPage / lastPage / total を組み立てる。
@@ -56,9 +51,6 @@ func AdminListUsers(c *Context) {
 // supabase-js (GoTrueAdminApi.listUsers) は Link が空のとき pagination.total を 0 にしてしまうため、
 // 本物 GoTrue と同じく rel="last" を常時出す。
 func paginationLinkHeader(r *http.Request, page, perPage, total int) string {
-	if perPage <= 0 {
-		return ""
-	}
 	lastPage := (total + perPage - 1) / perPage
 	if lastPage < 1 {
 		lastPage = 1

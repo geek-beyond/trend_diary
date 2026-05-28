@@ -13,7 +13,7 @@ import (
 func TestSnapshot(t *testing.T) {
 	t.Run("空ストアで snake_case の空配列を返す", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
-		f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+		f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 		rec := httptest.NewRecorder()
 		handlertest.Serve(f, handler.Snapshot, rec, handlertest.NewRequest(t, http.MethodGet, "/__emulator/snapshot", nil))

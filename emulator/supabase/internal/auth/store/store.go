@@ -73,10 +73,10 @@ func (s *Store) Snapshot() Snapshot {
 		snap.Users = append(snap.Users, *s.cloneUser(u))
 	}
 	for _, sess := range s.sessions {
-		snap.Sessions = append(snap.Sessions, *s.cloneSession(sess))
+		snap.Sessions = append(snap.Sessions, *cloneSession(sess))
 	}
 	for _, rt := range s.refreshTokens {
-		snap.RefreshTokens = append(snap.RefreshTokens, *s.cloneRefreshToken(rt))
+		snap.RefreshTokens = append(snap.RefreshTokens, *cloneRefreshToken(rt))
 	}
 	return snap
 }

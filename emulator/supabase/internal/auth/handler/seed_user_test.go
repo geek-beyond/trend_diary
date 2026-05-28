@@ -12,7 +12,7 @@ import (
 func TestSeedUser(t *testing.T) {
 	t.Run("正常系: 201", func(t *testing.T) {
 		st := handlertest.NewStore(nil)
-		f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+		f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 
 		rec := httptest.NewRecorder()
 		handlertest.Serve(f, handler.SeedUser, rec, handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
@@ -37,7 +37,7 @@ func TestSeedUser(t *testing.T) {
 		for _, c := range cases {
 			t.Run(c.name, func(t *testing.T) {
 				st := handlertest.NewStore(nil)
-				f := handlertest.NewFactory(st, handlertest.NewTokens(st, nil))
+				f := handler.NewFactory(st, handlertest.NewTokens(st, nil))
 				if c.seed {
 					handlertest.Serve(f, handler.SeedUser, httptest.NewRecorder(), handlertest.NewRequest(t, http.MethodPost, "/__emulator/users", map[string]string{
 						"email": "alice@example.com", "password": "password123",

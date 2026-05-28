@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { handleError } from '@/common/errors'
 import { OffsetPaginationResult, offsetPaginationSchema } from '@/common/pagination'
-import { isFailure } from '@/common/result'
 import { createArticleUseCase, QueryParams } from '@/domain/article'
 import { ARTICLE_MEDIA } from '@/domain/article/media'
 import type { ArticleWithOptionalReadStatus } from '@/domain/article/schema/article-schema'
@@ -73,11 +72,11 @@ export default async function getArticles(c: ZodValidatedQueryContext<ApiQueryPa
     convertApiQueryParams(transformedParams),
     activeUserId,
   )
-  if (isFailure(result)) {
+  if (result.isErr()) {
     throw handleError(result.error, logger)
   }
 
-  const paginationResult = result.data
+  const paginationResult = result.value
   logger.info('articles retrieved successfully', { count: paginationResult.data.length })
   const response: ArticleListResponse = {
     data: paginationResult.data.map(convertToResponse),

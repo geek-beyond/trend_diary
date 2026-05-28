@@ -32,7 +32,7 @@
  *   const { id } = c.req.valid('param')
  *   const parsedJson = c.req.valid('json')
  *   // ... UseCase実行とエラーハンドリング
- *   return c.json({ role: result.data })
+ *   return c.json({ role: result.value })
  * }
  * ```
  *
@@ -57,10 +57,9 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { ContentfulStatusCode, StatusCode } from 'hono/utils/http-status'
+import { type Result } from 'neverthrow'
 import { handleError } from '@/common/errors'
 import type { LoggerType } from '@/common/logger'
-import type { Result } from '@/common/result'
-import { isFailure } from '@/common/result'
 import getRdbClient, { type RdbClient } from '@/infrastructure/rdb'
 import type { Env, SessionUser } from '@/web/env'
 import CONTEXT_KEY from '@/web/middleware/context'
@@ -161,7 +160,7 @@ function executeHandlerLogic<
     const result = await config.execute(useCase, context)
 
     // 2. エラーハンドリング
-    if (isFailure(result)) {
+    if (result.isErr()) {
       throw handleError(result.error, context.logger)
     }
 
@@ -169,10 +168,10 @@ function executeHandlerLogic<
     if (config.logMessage) {
       const message =
         typeof config.logMessage === 'function'
-          ? config.logMessage(result.data, context)
+          ? config.logMessage(result.value, context)
           : config.logMessage
 
-      const payload = config.logPayload ? config.logPayload(result.data, context) : {}
+      const payload = config.logPayload ? config.logPayload(result.value, context) : {}
 
       context.logger.info({ msg: message, ...payload })
     }
@@ -185,7 +184,7 @@ function executeHandlerLogic<
       return c.body(null, 204)
     }
 
-    const responseData = config.transform ? config.transform(result.data) : result.data
+    const responseData = config.transform ? config.transform(result.value) : result.value
     return c.json(responseData, statusCode as ContentfulStatusCode)
   })()
 }

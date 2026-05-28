@@ -5,16 +5,10 @@ import {
   type SupabaseClient,
   type User,
 } from '@supabase/supabase-js'
+import { err, ok, type Result } from 'neverthrow'
 import { AlreadyExistsError, ClientError, ServerError } from '@/common/errors'
 import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
-import {
-  type AsyncResult,
-  failure,
-  isFailure,
-  type Result,
-  success,
-  wrapAsyncCall,
-} from '@/common/result'
+import { wrapAsyncCall } from '@/common/result'
 import type { AuthLoginResult, AuthRepository, AuthSignupResult } from '../repository'
 import type { AuthenticationUser } from '../schema/auth-schema'
 
@@ -56,10 +50,10 @@ export class SupabaseAuthRepository implements AuthRepository {
   ): Result<AuthenticationUser, ServerError> {
     const email = user.email ?? fallbackEmail
     if (!email) {
-      return failure(new ServerError('User email is missing from Supabase response'))
+      return err(new ServerError('User email is missing from Supabase response'))
     }
 
-    return success({
+    return ok({
       id: user.id,
       email,
       emailConfirmedAt: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
@@ -83,45 +77,45 @@ export class SupabaseAuthRepository implements AuthRepository {
   async signup(
     email: string,
     password: string,
-  ): AsyncResult<AuthSignupResult, ClientError | ServerError> {
+  ): Promise<Result<AuthSignupResult, ClientError | ServerError>> {
     const result = await wrapAsyncCall(() =>
       this.client.auth.signUp({
         email,
         password,
       }),
     )
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const { data, error } = result.data
+    const { data, error } = result.value
     if (error) {
       // 既に存在するユーザーの場合は AlreadyExistsError を返す
       // UX上、「既に使用されています」と明示することは一般的であり、
       // セキュリティリスクも比較的小さいと判断
       if (isUserAlreadyExistsError(error)) {
-        return failure(new AlreadyExistsError('User already exists'))
+        return err(new AlreadyExistsError('User already exists'))
       }
 
-      return failure(new ServerError(`Authentication service error: ${error.message}`))
+      return err(new ServerError(`Authentication service error: ${error.message}`))
     }
 
     if (!data.user) {
-      return failure(new ServerError('User registration failed'))
+      return err(new ServerError('User registration failed'))
     }
 
     const userResult = this.toAuthenticationUser(data.user, email)
-    if (isFailure(userResult)) {
-      return userResult
+    if (userResult.isErr()) {
+      return err(userResult.error)
     }
 
     let session: AuthSignupResult['session'] = null
     if (data.session) {
-      session = this.toSessionObject(data.session, userResult.data)
+      session = this.toSessionObject(data.session, userResult.value)
     }
 
-    return success({
-      user: userResult.data,
+    return ok({
+      user: userResult.value,
       session,
     })
   }
@@ -129,77 +123,77 @@ export class SupabaseAuthRepository implements AuthRepository {
   async login(
     email: string,
     password: string,
-  ): AsyncResult<AuthLoginResult, ClientError | ServerError> {
+  ): Promise<Result<AuthLoginResult, ClientError | ServerError>> {
     const result = await wrapAsyncCall(() =>
       this.client.auth.signInWithPassword({
         email,
         password,
       }),
     )
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const { data, error } = result.data
+    const { data, error } = result.value
     if (error) {
       // 認証失敗チェック（instanceofとメッセージの両方で判定）
       if (isInvalidCredentialsError(error)) {
-        return failure(new ClientError('Invalid email or password', 401))
+        return err(new ClientError('Invalid email or password', 401))
       }
 
-      return failure(new ServerError(`Authentication service error: ${error.message}`))
+      return err(new ServerError(`Authentication service error: ${error.message}`))
     }
 
     if (!data.user || !data.session) {
-      return failure(new ServerError('Authentication failed'))
+      return err(new ServerError('Authentication failed'))
     }
 
     const userResult = this.toAuthenticationUser(data.user, email)
-    if (isFailure(userResult)) {
-      return userResult
+    if (userResult.isErr()) {
+      return err(userResult.error)
     }
 
-    const session = this.toSessionObject(data.session, userResult.data)
+    const session = this.toSessionObject(data.session, userResult.value)
 
-    return success({
-      user: userResult.data,
+    return ok({
+      user: userResult.value,
       session,
     })
   }
 
-  async logout(): AsyncResult<void, ServerError> {
+  async logout(): Promise<Result<void, ServerError>> {
     const result = await wrapAsyncCall(() => this.client.auth.signOut())
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const { error } = result.data
+    const { error } = result.value
     if (error) {
-      return failure(new ServerError(`Logout failed: ${error.message}`))
+      return err(new ServerError(`Logout failed: ${error.message}`))
     }
 
-    return success(undefined)
+    return ok(undefined)
   }
 
-  async getCurrentUser(): AsyncResult<AuthenticationUser, ServerError> {
+  async getCurrentUser(): Promise<Result<AuthenticationUser, ServerError>> {
     const result = await wrapAsyncCall(() => this.client.auth.getUser())
-    if (isFailure(result)) {
+    if (result.isErr()) {
       if (result.error instanceof AuthSessionMissingError) {
-        return failure(
+        return err(
           new UnauthorizedError('session not found', {
             sessionExists: false,
           }),
         )
       }
-      return failure(new ServerError(result.error))
+      return err(new ServerError(result.error))
     }
 
     const {
       data: { user },
-    } = result.data
+    } = result.value
 
     if (!user) {
-      return failure(
+      return err(
         new UnauthorizedError('session not found', {
           sessionExists: true,
         }),
@@ -207,49 +201,49 @@ export class SupabaseAuthRepository implements AuthRepository {
     }
 
     const authUserResult = this.toAuthenticationUser(user)
-    if (isFailure(authUserResult)) {
+    if (authUserResult.isErr()) {
       return authUserResult
     }
 
-    return success(authUserResult.data)
+    return ok(authUserResult.value)
   }
 
-  async refreshSession(): AsyncResult<AuthLoginResult, ServerError> {
+  async refreshSession(): Promise<Result<AuthLoginResult, ServerError>> {
     const result = await wrapAsyncCall(() => this.client.auth.refreshSession())
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
     const {
       data: { session },
       error,
-    } = result.data
+    } = result.value
     if (error || !session) {
-      return failure(new ServerError(`Session refresh failed: ${error?.message}`))
+      return err(new ServerError(`Session refresh failed: ${error?.message}`))
     }
 
     const userResult = this.toAuthenticationUser(session.user)
-    if (isFailure(userResult)) {
-      return userResult
+    if (userResult.isErr()) {
+      return err(userResult.error)
     }
 
-    return success({
-      user: userResult.data,
-      session: this.toSessionObject(session, userResult.data),
+    return ok({
+      user: userResult.value,
+      session: this.toSessionObject(session, userResult.value),
     })
   }
 
-  async deleteUser(userId: string): AsyncResult<void, ServerError> {
+  async deleteUser(userId: string): Promise<Result<void, ServerError>> {
     const result = await wrapAsyncCall(() => this.client.auth.admin.deleteUser(userId))
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const { error } = result.data
+    const { error } = result.value
     if (error) {
-      return failure(new ServerError(`User deletion failed: ${error.message}`))
+      return err(new ServerError(`User deletion failed: ${error.message}`))
     }
 
-    return success(undefined)
+    return ok(undefined)
   }
 }

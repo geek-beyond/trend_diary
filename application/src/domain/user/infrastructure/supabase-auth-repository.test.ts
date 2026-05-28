@@ -9,7 +9,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
 import { AlreadyExistsError, ClientError, ServerError } from '@/common/errors'
 import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
-import { isFailure, isSuccess } from '@/common/result'
 import { SupabaseAuthRepository } from './supabase-auth-repository'
 
 const buildSupabaseUser = (overrides: Partial<User> = {}): User => ({
@@ -53,19 +52,19 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
-          expect(result.data.user.id).toBe(supabaseUser.id)
-          expect(result.data.user.email).toBe('test@example.com')
-          expect(result.data.user.createdAt).toBeInstanceOf(Date)
-          expect(result.data.user.emailConfirmedAt).toBeInstanceOf(Date)
-          expect(result.data.user.createdAt.toISOString()).toBe(supabaseUser.created_at)
-          expect(result.data.user.emailConfirmedAt?.toISOString()).toBe(
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.user.id).toBe(supabaseUser.id)
+          expect(result.value.user.email).toBe('test@example.com')
+          expect(result.value.user.createdAt).toBeInstanceOf(Date)
+          expect(result.value.user.emailConfirmedAt).toBeInstanceOf(Date)
+          expect(result.value.user.createdAt.toISOString()).toBe(supabaseUser.created_at)
+          expect(result.value.user.emailConfirmedAt?.toISOString()).toBe(
             supabaseUser.email_confirmed_at,
           )
-          expect(result.data.session?.accessToken).toBe('access-token')
-          expect(result.data.session?.refreshToken).toBe('refresh-token')
-          expect(result.data.session?.expiresIn).toBe(3600)
+          expect(result.value.session?.accessToken).toBe('access-token')
+          expect(result.value.session?.refreshToken).toBe('refresh-token')
+          expect(result.value.session?.expiresIn).toBe(3600)
         }
       })
 
@@ -78,9 +77,9 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
-          expect(result.data.session).toBeNull()
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.session).toBeNull()
         }
       })
 
@@ -93,9 +92,9 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
-          expect(result.data.user.emailConfirmedAt).toBeNull()
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.user.emailConfirmedAt).toBeNull()
         }
       })
 
@@ -109,10 +108,10 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.signup('fallback@example.com', 'Password1!')
 
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
-          expect(result.data.user.email).toBe('fallback@example.com')
-          expect(result.data.session?.expiresIn).toBe(3600)
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.user.email).toBe('fallback@example.com')
+          expect(result.value.session?.expiresIn).toBe(3600)
         }
       })
     })
@@ -123,8 +122,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -137,8 +136,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(AlreadyExistsError)
           expect(result.error.message).toBe('User already exists')
         }
@@ -152,8 +151,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
           expect(result.error.message).toContain('unexpected')
         }
@@ -167,8 +166,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
           expect(result.error.message).toBe('User registration failed')
         }
@@ -183,8 +182,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.signup('', 'Password1!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
           expect(result.error.message).toContain('User email is missing')
         }
@@ -204,10 +203,10 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.login('test@example.com', 'Password1!')
 
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
-          expect(result.data.user.email).toBe('test@example.com')
-          expect(result.data.session.accessToken).toBe('access-token')
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.user.email).toBe('test@example.com')
+          expect(result.value.session.accessToken).toBe('access-token')
         }
       })
     })
@@ -218,8 +217,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.login('test@example.com', 'Password1!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -233,8 +232,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.login('test@example.com', 'WrongPassword!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ClientError)
           expect((result.error as ClientError).statusCode).toBe(401)
           expect(result.error.message).toBe('Invalid email or password')
@@ -249,8 +248,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.login('test@example.com', 'WrongPassword!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ClientError)
           expect((result.error as ClientError).statusCode).toBe(401)
         }
@@ -264,8 +263,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.login('test@example.com', 'WrongPassword!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ClientError)
         }
       })
@@ -278,8 +277,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.login('test@example.com', 'Password1!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -293,8 +292,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.login('test@example.com', 'Password1!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
           expect(result.error.message).toBe('Authentication failed')
         }
@@ -312,8 +311,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.login('', 'Password1!')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
           expect(result.error.message).toContain('User email is missing')
         }
@@ -328,7 +327,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.logout()
 
-        expect(isSuccess(result)).toBe(true)
+        expect(result.isOk()).toBe(true)
       })
     })
 
@@ -338,8 +337,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.logout()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -351,8 +350,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.logout()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
           expect(result.error.message).toContain('Logout failed')
         }
@@ -371,10 +370,10 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.getCurrentUser()
 
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
-          expect(result.data.id).toBe(supabaseUser.id)
-          expect(result.data.email).toBe('test@example.com')
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.id).toBe(supabaseUser.id)
+          expect(result.value.email).toBe('test@example.com')
         }
       })
     })
@@ -385,8 +384,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.getCurrentUser()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(UnauthorizedError)
           const unauthorized = result.error as UnauthorizedError
           expect(unauthorized.context?.sessionExists).toBe(false)
@@ -398,8 +397,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.getCurrentUser()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -412,8 +411,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.getCurrentUser()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(UnauthorizedError)
           const unauthorized = result.error as UnauthorizedError
           expect(unauthorized.context?.sessionExists).toBe(true)
@@ -429,8 +428,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.getCurrentUser()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -449,10 +448,10 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.refreshSession()
 
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
-          expect(result.data.user.id).toBe(supabaseUser.id)
-          expect(result.data.session.accessToken).toBe('access-token')
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.user.id).toBe(supabaseUser.id)
+          expect(result.value.session.accessToken).toBe('access-token')
         }
       })
     })
@@ -463,8 +462,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.refreshSession()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -477,8 +476,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.refreshSession()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -491,8 +490,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.refreshSession()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -509,8 +508,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.refreshSession()
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -527,7 +526,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.deleteUser('auth-user-id-123')
 
-        expect(isSuccess(result)).toBe(true)
+        expect(result.isOk()).toBe(true)
       })
     })
 
@@ -537,8 +536,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.deleteUser('auth-user-id-123')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
@@ -551,8 +550,8 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.deleteUser('auth-user-id-123')
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
           expect(result.error.message).toContain('User deletion failed')
         }

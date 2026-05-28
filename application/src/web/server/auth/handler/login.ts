@@ -1,5 +1,4 @@
 import { handleError } from '@/common/errors'
-import { isFailure } from '@/common/result'
 import { type AuthInput, createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
@@ -15,9 +14,9 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
   const useCase = createAuthUseCase(client, rdb)
 
   const result = await useCase.login(valid.email, valid.password)
-  if (isFailure(result)) throw handleError(result.error, logger)
+  if (result.isErr()) throw handleError(result.error, logger)
 
-  const { activeUser } = result.data
+  const { activeUser } = result.value
   logger.info('login success', { activeUserId: activeUser.activeUserId })
 
   return c.json(

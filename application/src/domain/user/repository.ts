@@ -1,14 +1,16 @@
+import { type Result } from 'neverthrow'
 import { ClientError, ServerError } from '@/common/errors'
-import { AsyncResult } from '@/common/result'
 import { Nullable } from '@/common/types/utility'
 
 import type { CurrentUser } from './schema/active-user-schema'
 import { AuthenticationSession, AuthenticationUser } from './schema/auth-schema'
 
 export interface Query {
-  findActiveById(id: bigint): AsyncResult<Nullable<CurrentUser>, Error>
-  findActiveByEmail(email: string): AsyncResult<Nullable<CurrentUser>, Error>
-  findActiveByAuthenticationId(authenticationId: string): AsyncResult<Nullable<CurrentUser>, Error>
+  findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, Error>>
+  findActiveByEmail(email: string): Promise<Result<Nullable<CurrentUser>, Error>>
+  findActiveByAuthenticationId(
+    authenticationId: string,
+  ): Promise<Result<Nullable<CurrentUser>, Error>>
 }
 
 export interface Command {
@@ -16,7 +18,7 @@ export interface Command {
     email: string,
     authenticationId: string,
     displayName?: string | null,
-  ): AsyncResult<CurrentUser, ServerError>
+  ): Promise<Result<CurrentUser, ServerError>>
 }
 
 /**
@@ -39,30 +41,36 @@ export interface AuthRepository {
   /**
    * ユーザーを作成する
    */
-  signup(email: string, password: string): AsyncResult<AuthSignupResult, ClientError | ServerError>
+  signup(
+    email: string,
+    password: string,
+  ): Promise<Result<AuthSignupResult, ClientError | ServerError>>
 
   /**
    * ログインする
    */
-  login(email: string, password: string): AsyncResult<AuthLoginResult, ClientError | ServerError>
+  login(
+    email: string,
+    password: string,
+  ): Promise<Result<AuthLoginResult, ClientError | ServerError>>
 
   /**
    * ログアウトする
    */
-  logout(): AsyncResult<void, ServerError>
+  logout(): Promise<Result<void, ServerError>>
 
   /**
    * 現在のユーザーを取得する
    */
-  getCurrentUser(): AsyncResult<AuthenticationUser, ServerError>
+  getCurrentUser(): Promise<Result<AuthenticationUser, ServerError>>
 
   /**
    * セッションを更新する
    */
-  refreshSession(): AsyncResult<AuthLoginResult, ServerError>
+  refreshSession(): Promise<Result<AuthLoginResult, ServerError>>
 
   /**
    * ユーザーを削除する（補償トランザクション用）
    */
-  deleteUser(userId: string): AsyncResult<void, ServerError>
+  deleteUser(userId: string): Promise<Result<void, ServerError>>
 }

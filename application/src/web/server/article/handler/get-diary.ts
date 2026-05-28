@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { handleError } from '@/common/errors'
 import { addJstDays, toJstDate, toJstDateString, toTodayJstDateString } from '@/common/locale/date'
 import { MAX_PAGE } from '@/common/pagination'
-import { isFailure } from '@/common/result'
 import { createArticleUseCase } from '@/domain/article'
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@/domain/article/diary'
 import type { DailyDiary, DailyDiaryRangeItem } from '@/domain/article/schema/diary-schema'
@@ -21,7 +20,7 @@ const diaryDateSchema = z
     if (Number.isNaN(parsed.getTime())) return false
 
     const normalized = toJstDateString(parsed)
-    return !isFailure(normalized) && normalized.data === inputDate
+    return !normalized.isErr() && normalized.value === inputDate
   }, DIARY_DATE_MESSAGE)
 
 export const diaryQuerySchema = z
@@ -92,26 +91,26 @@ export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) 
       query.page,
       DIARY_READ_LIMIT,
     )
-    if (isFailure(detailResult)) {
+    if (detailResult.isErr()) {
       throw handleError(detailResult.error, logger)
     }
 
-    const response = toDiaryDetailResponse(detailResult.data)
+    const response = toDiaryDetailResponse(detailResult.value)
     logger.info('daily diary detail retrieved successfully', {
       activeUserId: sessionUser.activeUserId,
       date: fromDate,
       page: query.page,
-      read: detailResult.data.summary.read,
-      skip: detailResult.data.summary.skip,
+      read: detailResult.value.summary.read,
+      skip: detailResult.value.summary.skip,
     })
     return c.json(response, 200)
   }
 
   const result = await useCase.getDailyDiaryRange(sessionUser.activeUserId, fromDate, toDate)
-  if (isFailure(result)) {
+  if (result.isErr()) {
     throw handleError(result.error, logger)
   }
-  const response = toDiaryResponse(result.data)
+  const response = toDiaryResponse(result.value)
   logger.info('daily diary range retrieved successfully', {
     activeUserId: sessionUser.activeUserId,
     from: fromDate,
@@ -124,10 +123,10 @@ export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) 
 
 function resolveTodayJst(): string {
   const todayResult = toTodayJstDateString()
-  if (isFailure(todayResult)) {
+  if (todayResult.isErr()) {
     throw new HTTPException(500, { message: 'Failed to resolve JST date' })
   }
-  return todayResult.data
+  return todayResult.value
 }
 
 function validateDiaryDateRange(fromDate: string, toDate: string, todayJst: string) {
@@ -141,10 +140,10 @@ function validateDiaryDateRange(fromDate: string, toDate: string, todayJst: stri
   }
 
   const earliestResult = addJstDays(todayJst, -(DIARY_DAYS - 1))
-  if (isFailure(earliestResult)) {
+  if (earliestResult.isErr()) {
     throw new HTTPException(500, { message: 'Failed to resolve diary date range' })
   }
-  const earliestDate = earliestResult.data
+  const earliestDate = earliestResult.value
 
   const causes: { from?: string[]; to?: string[] } = {}
   if (fromDate < earliestDate) {

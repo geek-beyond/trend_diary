@@ -9,7 +9,6 @@ import {
   offsetPaginationMobileSchema,
   offsetPaginationSchema,
 } from '@/common/pagination/schema'
-import { isFailure } from '@/common/result'
 import { isArticleMedia } from '@/domain/article/media'
 import type { ArticleOutput } from '@/domain/article/schema/article-schema'
 import { useIsMobile } from '@/web/client/components/shadcn/hooks/use-mobile'
@@ -59,23 +58,23 @@ const isValidDateString = (value: string | null) => !!value && DATE_STRING_REGEX
 
 const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => {
   const fromDateResult = addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset])
-  if (isFailure(fromDateResult)) {
+  if (fromDateResult.isErr()) {
     return { from: todayJstDateString, to: todayJstDateString }
   }
 
   return {
-    from: fromDateResult.data,
+    from: fromDateResult.value,
     to: todayJstDateString,
   }
 }
 
 const getTodayJstDateString = (baseDate: Date): string => {
   const todayJstDateResult = toJstDateString(baseDate)
-  if (isFailure(todayJstDateResult)) {
+  if (todayJstDateResult.isErr()) {
     return baseDate.toISOString().slice(0, 10)
   }
 
-  return todayJstDateResult.data
+  return todayJstDateResult.value
 }
 
 const parseDatePreset = (

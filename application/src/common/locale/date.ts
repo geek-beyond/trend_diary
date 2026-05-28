@@ -1,5 +1,5 @@
+import { err, ok, type Result } from 'neverthrow'
 import { z } from 'zod'
-import { failure, isFailure, type Result, success } from '@/common/result'
 
 const dateSchema = z.union([z.string().datetime(), z.date()])
 const jstDateFormatter = new Intl.DateTimeFormat('ja-JP', {
@@ -17,7 +17,7 @@ const getJstDateParts = (
   rawDate: Date,
 ): Result<{ year: string; month: string; day: string }, Error> => {
   if (Number.isNaN(rawDate.getTime())) {
-    return failure(new Error('無効な日付です'))
+    return err(new Error('無効な日付です'))
   }
 
   const jstParts = jstDateFormatter.formatToParts(rawDate)
@@ -26,26 +26,26 @@ const getJstDateParts = (
   const day = jstParts.find((part) => part.type === 'day')?.value
 
   if (!year || !month || !day) {
-    return failure(new Error('JST日付の取得に失敗しました'))
+    return err(new Error('JST日付の取得に失敗しました'))
   }
 
-  return success({ year, month, day })
+  return ok({ year, month, day })
 }
 
 export const toJstDateString = (rawDate: Date): Result<string, Error> => {
   const jstDatePartsResult = getJstDateParts(rawDate)
-  if (isFailure(jstDatePartsResult)) {
-    return jstDatePartsResult
+  if (jstDatePartsResult.isErr()) {
+    return err(jstDatePartsResult.error)
   }
 
-  const { year, month, day } = jstDatePartsResult.data
-  return success(`${year}-${month}-${day}`)
+  const { year, month, day } = jstDatePartsResult.value
+  return ok(`${year}-${month}-${day}`)
 }
 
 export const addJstDays = (baseDateString: string, days: number): Result<string, Error> => {
   const baseDate = toJstDate(baseDateString)
   if (Number.isNaN(baseDate.getTime())) {
-    return failure(new Error(`不正な日付文字列です: ${baseDateString}`))
+    return err(new Error(`不正な日付文字列です: ${baseDateString}`))
   }
 
   // +09:00 固定の日時を UTC で日付加算すると、JST の暦日をずらした結果と一致する。

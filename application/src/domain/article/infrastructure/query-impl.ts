@@ -1,15 +1,9 @@
 import { Prisma } from '@prisma/client'
+import { err, ok, type Result } from 'neverthrow'
 import { ServerError } from '@/common/errors'
 import { addJstDays, toJstDate } from '@/common/locale/date'
 import { DEFAULT_LIMIT, DEFAULT_PAGE, OffsetPaginationResult } from '@/common/pagination'
-import {
-  type AsyncResult,
-  failure,
-  isFailure,
-  type Result,
-  success,
-  wrapAsyncCall,
-} from '@/common/result'
+import { wrapAsyncCall } from '@/common/result'
 import { Nullable } from '@/common/types/utility'
 import fromPrismaToArticle from '@/domain/article/infrastructure/mapper'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@/domain/article/media'
@@ -85,7 +79,7 @@ export default class QueryImpl implements Query {
   async searchArticles(
     params: QueryParams,
     activeUserId?: bigint,
-  ): AsyncResult<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ServerError> {
+  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ServerError>> {
     const { page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, from, to, ...searchParams } = params
     const dbActiveUserId = activeUserId !== undefined ? toDbId(activeUserId) : undefined
     const whereSql = QueryImpl.buildSqlWhereClause({
@@ -105,8 +99,8 @@ export default class QueryImpl implements Query {
         ${whereSql}
       `),
     )
-    if (isFailure(totalResult)) {
-      return failure(new ServerError(totalResult.error))
+    if (totalResult.isErr()) {
+      return err(new ServerError(totalResult.error))
     }
 
     const readStatusSql = QueryImpl.buildIsReadSelectSql(dbActiveUserId)
@@ -129,15 +123,15 @@ export default class QueryImpl implements Query {
         OFFSET ${(page - 1) * limit}
       `),
     )
-    if (isFailure(articlesResult)) {
-      return failure(new ServerError(articlesResult.error))
+    if (articlesResult.isErr()) {
+      return err(new ServerError(articlesResult.error))
     }
 
-    const total = Number(totalResult.data[0]?.total ?? 0)
-    const mappedArticles = articlesResult.data.map(QueryImpl.mapRawArticleToDomain)
+    const total = Number(totalResult.value[0]?.total ?? 0)
+    const mappedArticles = articlesResult.value.map(QueryImpl.mapRawArticleToDomain)
 
     const totalPages = Math.ceil(total / limit)
-    return success({
+    return ok({
       data: mappedArticles,
       page,
       limit,
@@ -148,27 +142,27 @@ export default class QueryImpl implements Query {
     })
   }
 
-  async findArticleById(articleId: bigint): AsyncResult<Nullable<Article>, ServerError> {
+  async findArticleById(articleId: bigint): Promise<Result<Nullable<Article>, ServerError>> {
     const dbArticleId = toDbId(articleId)
     const result = await wrapAsyncCall(() =>
       this.db.article.findUnique({
         where: { articleId: dbArticleId },
       }),
     )
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const article = result.data
-    if (!article) return success(null)
-    return success(fromPrismaToArticle(article))
+    const article = result.value
+    if (!article) return ok(null)
+    return ok(fromPrismaToArticle(article))
   }
 
   async getUnreadDigestionArticles(
     activeUserId: bigint,
     targetDateJst: string,
     media?: ArticleMedia,
-  ): AsyncResult<Article[], ServerError> {
+  ): Promise<Result<Article[], ServerError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(targetDateJst, targetDateJst)
     const createdAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -203,11 +197,11 @@ export default class QueryImpl implements Query {
         ORDER BY ${QueryImpl.getNormalizedDateTimeSql('created_at')} DESC, article_id DESC
       `),
     )
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    return success(result.data.map(QueryImpl.mapRawArticle))
+    return ok(result.value.map(QueryImpl.mapRawArticle))
   }
 
   async getDailyDiary(
@@ -215,7 +209,7 @@ export default class QueryImpl implements Query {
     targetDateJst: string,
     page: number,
     limit: number,
-  ): AsyncResult<DailyDiary, ServerError> {
+  ): Promise<Result<DailyDiary, ServerError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(targetDateJst, targetDateJst)
     const readAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -285,11 +279,11 @@ export default class QueryImpl implements Query {
       ),
     ])
     const resolvedQueryResults = QueryImpl.unwrapResultTuple(queryResultTuple)
-    if (isFailure(resolvedQueryResults)) {
-      return failure(resolvedQueryResults.error)
+    if (resolvedQueryResults.isErr()) {
+      return err(resolvedQueryResults.error)
     }
 
-    const [sourceRows, readsRows] = resolvedQueryResults.data
+    const [sourceRows, readsRows] = resolvedQueryResults.value
     const { readRows: readSourcesRows, skipRows: skipSourcesRows } =
       QueryImpl.splitDiarySourceRows(sourceRows)
     const readCount = QueryImpl.sumDiarySourceCounts(readSourcesRows)
@@ -297,7 +291,7 @@ export default class QueryImpl implements Query {
     const readsTotal = readCount
     const totalPages = Math.ceil(readsTotal / limit)
 
-    return success({
+    return ok({
       date: targetDateJst,
       summary: {
         read: readCount,
@@ -320,7 +314,7 @@ export default class QueryImpl implements Query {
     activeUserId: bigint,
     fromDateJst: string,
     toDateJst: string,
-  ): AsyncResult<DailyDiaryRangeItem[], ServerError> {
+  ): Promise<Result<DailyDiaryRangeItem[], ServerError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(fromDateJst, toDateJst)
     const readAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -372,17 +366,17 @@ export default class QueryImpl implements Query {
         ) diary_date_sources
       `),
     )
-    if (isFailure(sourceResult)) {
-      return failure(new ServerError(sourceResult.error))
+    if (sourceResult.isErr()) {
+      return err(new ServerError(sourceResult.error))
     }
     const { readRows: readSourceRows, skipRows: skipSourceRows } =
-      QueryImpl.splitDiaryDateSourceRows(sourceResult.data)
+      QueryImpl.splitDiaryDateSourceRows(sourceResult.value)
 
     const readByDate = QueryImpl.groupSourcesByDate(readSourceRows)
     const skipByDate = QueryImpl.groupSourcesByDate(skipSourceRows)
     const dates = QueryImpl.enumerateJstDateRange(fromDateJst, toDateJst)
 
-    return success(
+    return ok(
       dates.map((date) => {
         const sources = QueryImpl.mergeDiarySources(
           readByDate.get(date) ?? [],
@@ -486,13 +480,13 @@ export default class QueryImpl implements Query {
     const unwrapped: unknown[] = []
 
     for (const result of results) {
-      if (isFailure(result)) {
-        return failure(new ServerError(result.error))
+      if (result.isErr()) {
+        return err(new ServerError(result.error))
       }
-      unwrapped.push(result.data)
+      unwrapped.push(result.value)
     }
 
-    return success(unwrapped as unknown as T)
+    return ok(unwrapped as unknown as T)
   }
 
   private static buildLikeConditionSql(column: string, value: string) {
@@ -665,8 +659,8 @@ export default class QueryImpl implements Query {
     while (current <= toDateJst) {
       dates.push(current)
       const next = addJstDays(current, 1)
-      if (isFailure(next)) break
-      current = next.data
+      if (next.isErr()) break
+      current = next.value
     }
     return dates
   }

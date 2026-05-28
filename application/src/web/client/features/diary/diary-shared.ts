@@ -1,5 +1,4 @@
 import { toTodayJstDateString } from '@/common/locale/date'
-import { isFailure } from '@/common/result'
 
 type SourceSummary = {
   read: number
@@ -8,10 +7,10 @@ type SourceSummary = {
 
 export function getTodayJst(): string | null {
   const result = toTodayJstDateString()
-  if (isFailure(result)) {
+  if (result.isErr()) {
     return null
   }
-  return result.data
+  return result.value
 }
 
 export function sumSourceSummary(sources: SourceSummary[]): SourceSummary {

@@ -1,7 +1,7 @@
+import { err, ok, type Result } from 'neverthrow'
 import { NotFoundError, ServerError } from '@/common/errors'
 import { toJstDateString } from '@/common/locale/date'
 import { DEFAULT_LIMIT, DEFAULT_PAGE, OffsetPaginationResult } from '@/common/pagination'
-import { AsyncResult, failure, isFailure, success } from '@/common/result'
 import extractTrimmed from '@/common/sanitization'
 import { isNull } from '@/common/types/utility'
 import type { ArticleMedia } from '@/domain/article/media'
@@ -26,7 +26,7 @@ export class UseCase {
   async searchArticles(
     params: QueryParams,
     activeUserId?: bigint,
-  ): AsyncResult<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ServerError> {
+  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ServerError>> {
     const optimizedParams: QueryParams = {
       title: extractTrimmed(params.title),
       author: extractTrimmed(params.author),
@@ -45,7 +45,7 @@ export class UseCase {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): AsyncResult<ReadHistory, Error> {
+  ): Promise<Result<ReadHistory, Error>> {
     return this.withValidatedArticle(articleId, () =>
       this.command.createReadHistory(activeUserId, articleId, readAt),
     )
@@ -55,13 +55,13 @@ export class UseCase {
     activeUserId: bigint,
     media?: ArticleMedia,
     now: Date = new Date(),
-  ): AsyncResult<Article[], Error> {
+  ): Promise<Result<Article[], Error>> {
     const targetDateJstResult = toJstDateString(now)
-    if (isFailure(targetDateJstResult)) {
-      return failure(new ServerError(targetDateJstResult.error))
+    if (targetDateJstResult.isErr()) {
+      return err(new ServerError(targetDateJstResult.error))
     }
 
-    return this.query.getUnreadDigestionArticles(activeUserId, targetDateJstResult.data, media)
+    return this.query.getUnreadDigestionArticles(activeUserId, targetDateJstResult.value, media)
   }
 
   async getDailyDiary(
@@ -69,7 +69,7 @@ export class UseCase {
     targetDateJst: string,
     page: number,
     limit: number,
-  ): AsyncResult<DailyDiary, Error> {
+  ): Promise<Result<DailyDiary, Error>> {
     return this.query.getDailyDiary(activeUserId, targetDateJst, page, limit)
   }
 
@@ -77,20 +77,23 @@ export class UseCase {
     activeUserId: bigint,
     fromDateJst: string,
     toDateJst: string,
-  ): AsyncResult<DailyDiaryRangeItem[], Error> {
+  ): Promise<Result<DailyDiaryRangeItem[], Error>> {
     return this.query.getDailyDiaryRange(activeUserId, fromDateJst, toDateJst)
   }
 
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): AsyncResult<SkippedArticle, Error> {
+  ): Promise<Result<SkippedArticle, Error>> {
     return this.withValidatedArticle(articleId, (validatedArticleId) =>
       this.command.createSkippedArticle(activeUserId, validatedArticleId),
     )
   }
 
-  async deleteAllReadHistory(activeUserId: bigint, articleId: bigint): AsyncResult<void, Error> {
+  async deleteAllReadHistory(
+    activeUserId: bigint,
+    articleId: bigint,
+  ): Promise<Result<void, Error>> {
     return this.withValidatedArticle(articleId, (validatedArticleId) =>
       this.command.deleteAllReadHistory(activeUserId, validatedArticleId),
     )
@@ -98,22 +101,22 @@ export class UseCase {
 
   private async withValidatedArticle<T>(
     articleId: bigint,
-    action: (validatedArticleId: bigint) => AsyncResult<T, Error>,
-  ): AsyncResult<T, Error> {
+    action: (validatedArticleId: bigint) => Promise<Result<T, Error>>,
+  ): Promise<Result<T, Error>> {
     const articleValidation = await this.validateArticleExists(articleId)
-    if (isFailure(articleValidation)) return articleValidation
+    if (articleValidation.isErr()) return err(articleValidation.error)
 
-    return action(articleValidation.data.articleId)
+    return action(articleValidation.value.articleId)
   }
 
-  private async validateArticleExists(articleId: bigint): AsyncResult<Article, Error> {
+  private async validateArticleExists(articleId: bigint): Promise<Result<Article, Error>> {
     const res = await this.query.findArticleById(articleId)
-    if (isFailure(res)) return res
+    if (res.isErr()) return err(res.error)
 
-    if (isNull(res.data)) {
-      return failure(new NotFoundError(`Article with ID ${articleId} not found`))
+    if (isNull(res.value)) {
+      return err(new NotFoundError(`Article with ID ${articleId} not found`))
     }
 
-    return success(res.data)
+    return ok(res.value)
   }
 }

@@ -1,5 +1,4 @@
 import { createMiddleware } from 'hono/factory'
-import { isSuccess } from '@/common/result'
 import { Env } from '../../env'
 import CONTEXT_KEY from '../context'
 import { validateSession } from './validate'
@@ -12,8 +11,8 @@ import { validateSession } from './validate'
 const optionalAuthenticator = createMiddleware<Env>(async (c, next) => {
   const validationResult = await validateSession(c)
 
-  if (isSuccess(validationResult)) {
-    c.set(CONTEXT_KEY.SESSION_USER, validationResult.data.sessionUser)
+  if (validationResult.isOk()) {
+    c.set(CONTEXT_KEY.SESSION_USER, validationResult.value.sessionUser)
   }
 
   return next()

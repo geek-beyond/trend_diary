@@ -1,5 +1,5 @@
 import Parser from 'rss-parser'
-import { isFailure, wrapAsyncCall } from '@/common/result'
+import { wrapAsyncCall } from '@/common/result'
 import type { ArticleMedia } from '@/domain/article/media'
 import getRdbClient from '@/infrastructure/rdb'
 
@@ -105,10 +105,10 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
     },
     () => db.$disconnect(),
   )
-  if (isFailure(result)) {
+  if (result.isErr()) {
     throw result.error
   }
-  return result.data
+  return result.value
 }
 
 function isUniqueConstraintError(error: unknown): boolean {

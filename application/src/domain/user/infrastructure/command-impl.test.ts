@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { isFailure, isSuccess } from '@/common/result'
 import prisma from '@/test/__mocks__/prisma'
 import CommandImpl from './command-impl'
 
@@ -30,12 +29,12 @@ describe('CommandImpl', () => {
         '表示名',
       )
 
-      expect(isSuccess(result)).toBe(true)
-      if (isSuccess(result)) {
-        expect(result.data.email).toBe('test@example.com')
-        expect(result.data.displayName).toBe('表示名')
-        expect(result.data.activeUserId).toBe(1n)
-        expect(result.data.userId).toBe(2n)
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value.email).toBe('test@example.com')
+        expect(result.value.displayName).toBe('表示名')
+        expect(result.value.activeUserId).toBe(1n)
+        expect(result.value.userId).toBe(2n)
       }
       const activeUserCreateArgs = prisma.activeUser.create.mock.calls[0]?.[0]
       expect(activeUserCreateArgs?.data).toMatchObject({
@@ -55,9 +54,9 @@ describe('CommandImpl', () => {
         'auth-id-123',
       )
 
-      expect(isFailure(result)).toBe(true)
+      expect(result.isErr()).toBe(true)
       expect(prisma.user.delete).not.toHaveBeenCalled()
-      if (isFailure(result)) {
+      if (result.isErr()) {
         expect(result.error.message).toBe('Failed to create active user')
       }
     })

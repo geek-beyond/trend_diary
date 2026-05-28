@@ -4,7 +4,6 @@ import { MemoryRouter } from 'react-router'
 import { SWRConfig } from 'swr'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { addJstDays, toJstDateString } from '@/common/locale/date'
-import { isFailure } from '@/common/result'
 import useAnalytics from './use-analytics'
 import useDiaryApi, { type DiaryRangeItemResponse, type DiaryResponse } from './use-diary-api'
 
@@ -69,15 +68,15 @@ const buildRangeItemResponse = (
 
 const getTodayJst = () => {
   const result = toJstDateString(new Date())
-  if (isFailure(result)) return '1970-01-01'
-  return result.data
+  if (result.isErr()) return '1970-01-01'
+  return result.value
 }
 
 const buildDates = (baseDate: string) =>
   Array.from({ length: 7 }, (_, index) => {
     const dateResult = addJstDays(baseDate, -(6 - index))
-    if (isFailure(dateResult)) return baseDate
-    return dateResult.data
+    if (dateResult.isErr()) return baseDate
+    return dateResult.value
   })
 
 describe('useAnalytics', () => {

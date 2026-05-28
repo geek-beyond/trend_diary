@@ -1,6 +1,5 @@
 import { Article as PrismaArticle } from '@prisma/client'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { isFailure, isSuccess } from '@/common/result'
 import mockDb from '@/test/__mocks__/prisma'
 import QueryImpl from './query-impl'
 
@@ -61,11 +60,11 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.searchArticles({ page: 1, limit: 20 })
 
-      expect(isSuccess(result)).toBe(true)
-      if (isSuccess(result)) {
-        expect(result.data.total).toBe(2)
-        expect(result.data.data).toHaveLength(2)
-        expect(result.data.data[0].isRead).toBeUndefined()
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value.total).toBe(2)
+        expect(result.value.data).toHaveLength(2)
+        expect(result.value.data[0].isRead).toBeUndefined()
       }
     })
 
@@ -95,10 +94,10 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.searchArticles({ page: 1, limit: 20 }, 10n)
 
-      expect(isSuccess(result)).toBe(true)
-      if (isSuccess(result)) {
-        expect(result.data.data[0].isRead).toBe(true)
-        expect(result.data.data[1].isRead).toBe(false)
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value.data[0].isRead).toBe(true)
+        expect(result.value.data[1].isRead).toBe(false)
       }
     })
 
@@ -107,7 +106,7 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.searchArticles({ page: 1, limit: 20 }, 10n)
 
-      expect(isSuccess(result)).toBe(true)
+      expect(result.isOk()).toBe(true)
       expect(mockDb.$queryRaw).toHaveBeenCalledTimes(2)
       const rawSql = mockDb.$queryRaw.mock.calls[0]?.[0] as { strings?: string[] }
       const joinedSql = rawSql?.strings?.join(' ') ?? ''
@@ -119,8 +118,8 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.searchArticles({ page: 1, limit: 20 })
 
-      expect(isFailure(result)).toBe(true)
-      if (isFailure(result)) {
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
         expect(result.error.message).toBe('count failed')
       }
     })
@@ -154,16 +153,16 @@ describe('QueryImpl', () => {
         to: '2026-03-05',
       })
 
-      expect(isSuccess(result)).toBe(true)
+      expect(result.isOk()).toBe(true)
       expect(mockDb.article.count).not.toHaveBeenCalled()
       expect(mockDb.article.findMany).not.toHaveBeenCalled()
       expect(mockDb.$queryRaw).toHaveBeenCalledTimes(2)
 
-      if (isSuccess(result)) {
-        expect(result.data.total).toBe(2)
-        expect(result.data.data).toHaveLength(2)
-        expect(result.data.data[0].title).toBe('対象記事1')
-        expect(result.data.data[1].title).toBe('対象記事2')
+      if (result.isOk()) {
+        expect(result.value.total).toBe(2)
+        expect(result.value.data).toHaveLength(2)
+        expect(result.value.data[0].title).toBe('対象記事1')
+        expect(result.value.data[1].title).toBe('対象記事2')
       }
     })
   })
@@ -174,9 +173,9 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.findArticleById(1n)
 
-      expect(isSuccess(result)).toBe(true)
-      if (isSuccess(result)) {
-        expect(result.data?.articleId).toBe(1n)
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value?.articleId).toBe(1n)
       }
     })
   })
@@ -216,12 +215,12 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.getUnreadDigestionArticles(10n, '2026-03-07', media)
 
-      expect(isSuccess(result)).toBe(true)
-      if (isSuccess(result)) {
-        expect(result.data).toHaveLength(1)
-        expect(result.data[0].articleId).toBe(1n)
-        expect(result.data[0].title).toBe('未読消化対象')
-        expect(result.data[0].createdAt.toISOString()).toBe(expectedIso)
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value).toHaveLength(1)
+        expect(result.value[0].articleId).toBe(1n)
+        expect(result.value[0].title).toBe('未読消化対象')
+        expect(result.value[0].createdAt.toISOString()).toBe(expectedIso)
       }
     })
 
@@ -230,8 +229,8 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.getUnreadDigestionArticles(10n, '2026-03-07')
 
-      expect(isFailure(result)).toBe(true)
-      if (isFailure(result)) {
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
         expect(result.error.message).toBe('unread digestion failed')
       }
     })
@@ -267,20 +266,20 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.getDailyDiary(10n, '2026-03-07', 1, 10)
 
-      expect(isSuccess(result)).toBe(true)
+      expect(result.isOk()).toBe(true)
       expect(mockDb.$queryRaw).toHaveBeenCalledTimes(2)
-      if (isSuccess(result)) {
-        expect(result.data.summary).toEqual({ read: 3, skip: 2 })
-        expect(result.data.sources).toEqual([
+      if (result.isOk()) {
+        expect(result.value.summary).toEqual({ read: 3, skip: 2 })
+        expect(result.value.sources).toEqual([
           { media: 'qiita', read: 2, skip: 1 },
           { media: 'zenn', read: 1, skip: 0 },
           { media: 'hatena', read: 0, skip: 1 },
         ])
-        expect(result.data.reads.total).toBe(3)
-        expect(result.data.reads.data).toHaveLength(2)
-        expect(result.data.reads.data[0].readHistoryId).toBe(10n)
-        expect(result.data.reads.data[0].url).toBe('https://example.com/go-error-handling')
-        expect(result.data.reads.data[1].readHistoryId).toBe(9n)
+        expect(result.value.reads.total).toBe(3)
+        expect(result.value.reads.data).toHaveLength(2)
+        expect(result.value.reads.data[0].readHistoryId).toBe(10n)
+        expect(result.value.reads.data[0].url).toBe('https://example.com/go-error-handling')
+        expect(result.value.reads.data[1].readHistoryId).toBe(9n)
       }
     })
 
@@ -289,8 +288,8 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.getDailyDiary(10n, '2026-03-07', 1, 10)
 
-      expect(isFailure(result)).toBe(true)
-      if (isFailure(result)) {
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
         expect(result.error.message).toBe('daily diary failed')
       }
     })
@@ -306,10 +305,10 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.getDailyDiaryRange(10n, '2026-03-06', '2026-03-07')
 
-      expect(isSuccess(result)).toBe(true)
+      expect(result.isOk()).toBe(true)
       expect(mockDb.$queryRaw).toHaveBeenCalledTimes(1)
-      if (isSuccess(result)) {
-        expect(result.data).toEqual([
+      if (result.isOk()) {
+        expect(result.value).toEqual([
           {
             date: '2026-03-06',
             summary: { read: 2, skip: 0 },
@@ -337,8 +336,8 @@ describe('QueryImpl', () => {
 
       const result = await queryImpl.getDailyDiaryRange(10n, '2026-03-06', '2026-03-07')
 
-      expect(isFailure(result)).toBe(true)
-      if (isFailure(result)) {
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
         expect(result.error.message).toBe('daily diary range failed')
       }
     })

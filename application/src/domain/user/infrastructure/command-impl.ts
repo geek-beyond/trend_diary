@@ -1,5 +1,6 @@
+import { err, ok, type Result } from 'neverthrow'
 import { ServerError } from '@/common/errors'
-import { AsyncResult, failure, isFailure, success, wrapAsyncCall } from '@/common/result'
+import { wrapAsyncCall } from '@/common/result'
 import { RdbClient } from '@/infrastructure/rdb'
 import { Command } from '../repository'
 import type { CurrentUser } from '../schema/active-user-schema'
@@ -12,7 +13,7 @@ export default class CommandImpl implements Command {
     email: string,
     authenticationId: string,
     displayName?: string | null,
-  ): AsyncResult<CurrentUser, ServerError> {
+  ): Promise<Result<CurrentUser, ServerError>> {
     const activeUserResult = await wrapAsyncCall(() =>
       this.db.activeUser.create({
         data: {
@@ -26,10 +27,10 @@ export default class CommandImpl implements Command {
       }),
     )
 
-    if (isFailure(activeUserResult)) {
-      return failure(new ServerError('Failed to create active user'))
+    if (activeUserResult.isErr()) {
+      return err(new ServerError('Failed to create active user'))
     }
 
-    return success(mapToActiveUser(activeUserResult.data))
+    return ok(mapToActiveUser(activeUserResult.value))
   }
 }

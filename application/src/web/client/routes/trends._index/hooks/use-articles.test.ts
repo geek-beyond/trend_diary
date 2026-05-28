@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import type { MockedFunction } from 'vitest'
 import { addJstDays, toJstDateString } from '@/common/locale/date'
-import { isFailure } from '@/common/result'
 import getApiClientForClient from '@/infrastructure/api'
 import useArticles, { type Article } from './use-articles'
 
@@ -76,20 +75,20 @@ const generateFakeResponse = (
 
 const resolveJstDateString = (rawDate: Date): string => {
   const result = toJstDateString(rawDate)
-  if (isFailure(result)) {
+  if (result.isErr()) {
     return '1970-01-01'
   }
 
-  return result.data
+  return result.value
 }
 
 const resolveJstDateWithOffset = (baseDateString: string, days: number): string => {
   const result = addJstDays(baseDateString, days)
-  if (isFailure(result)) {
+  if (result.isErr()) {
     return baseDateString
   }
 
-  return result.data
+  return result.value
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: getApiClientForClientの型が面倒なのでanyを使用

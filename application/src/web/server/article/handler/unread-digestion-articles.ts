@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { handleError } from '@/common/errors'
-import { isFailure } from '@/common/result'
 import { createArticleUseCase } from '@/domain/article'
 import { ARTICLE_MEDIA } from '@/domain/article/media'
 import type { ArticleOutput } from '@/domain/article/schema/article-schema'
@@ -34,7 +33,7 @@ export default async function unreadDigestionArticles(
   const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
   const useCase = createArticleUseCase(rdb)
   const result = await useCase.getUnreadDigestionArticles(sessionUser.activeUserId, query.media)
-  if (isFailure(result)) {
+  if (result.isErr()) {
     throw handleError(result.error, logger)
   }
 

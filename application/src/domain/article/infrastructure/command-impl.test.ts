@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { isFailure, isSuccess } from '@/common/result'
 import mockDb from '@/test/__mocks__/prisma'
 import CommandImpl from './command-impl'
 
@@ -28,8 +27,8 @@ describe('CommandImpl', () => {
       expect(mockDb.readHistory.create).toHaveBeenCalledWith({
         data: { activeUserId: 1, articleId: 100, readAt },
       })
-      expect(isSuccess(result)).toBe(true)
-      if (isSuccess(result)) {
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
         expect(result.value.readHistoryId).toBe(10n)
         expect(result.value.activeUserId).toBe(1n)
         expect(result.value.articleId).toBe(100n)
@@ -47,8 +46,8 @@ describe('CommandImpl', () => {
           new Date('2024-01-15T09:30:00Z'),
         )
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error.message).toBe(errorMessage)
         }
       },
@@ -79,8 +78,8 @@ describe('CommandImpl', () => {
           articleId: 100,
         },
       })
-      expect(isSuccess(result)).toBe(true)
-      if (isSuccess(result)) {
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
         expect(result.value.skippedArticleId).toBe(10n)
         expect(result.value.activeUserId).toBe(1n)
         expect(result.value.articleId).toBe(100n)
@@ -94,8 +93,8 @@ describe('CommandImpl', () => {
 
         const result = await commandImpl.createSkippedArticle(1n, 100n)
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error.message).toBe(errorMessage)
         }
       },
@@ -111,7 +110,7 @@ describe('CommandImpl', () => {
       expect(mockDb.readHistory.deleteMany).toHaveBeenCalledWith({
         where: { activeUserId: 2, articleId: 200 },
       })
-      expect(isSuccess(result)).toBe(true)
+      expect(result.isOk()).toBe(true)
     })
 
     it.each([{ errorMessage: 'Database connection failed' }])(
@@ -121,8 +120,8 @@ describe('CommandImpl', () => {
 
         const result = await commandImpl.deleteAllReadHistory(1n, 100n)
 
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error.message).toBe(errorMessage)
         }
       },

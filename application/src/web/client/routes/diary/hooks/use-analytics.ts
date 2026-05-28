@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
 import { addJstDays } from '@/common/locale/date'
 import { DEFAULT_PAGE, offsetPaginationSchema } from '@/common/pagination/schema'
-import { isFailure } from '@/common/result'
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@/domain/article/media'
 import { getTodayJst, sumSourceSummary } from '@/web/client/features/diary/diary-shared'
@@ -27,7 +26,7 @@ type SummaryRangeData = {
 const buildAvailableDates = (todayJst: string) =>
   Array.from({ length: DIARY_DAYS }, (_, index) => {
     const dateResult = addJstDays(todayJst, -(DIARY_DAYS - 1 - index))
-    if (isFailure(dateResult)) return todayJst
+    if (dateResult.isErr()) return todayJst
     return dateResult.value
   })
 

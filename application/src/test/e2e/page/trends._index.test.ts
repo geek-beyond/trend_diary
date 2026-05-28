@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
 import { addJstDays, toJstDateString } from '@/common/locale/date'
-import { isFailure } from '@/common/result'
 import { ArticleDrawer } from '@/test/e2e/pom/components/article-drawer'
 import { DesktopMediaFilter } from '@/test/e2e/pom/components/desktop-media-filter'
 import { SUPPORTED_ARTICLE_URL_PATTERN } from '@/test/e2e/pom/constants'
@@ -11,9 +10,9 @@ const ARTICLE_COUNT = 10
 
 function getTodayJstNoon(daysOffset = 0): Date {
   const todayResult = toJstDateString(new Date())
-  const today = isFailure(todayResult) ? '1970-01-01' : todayResult.value
+  const today = todayResult.isErr() ? '1970-01-01' : todayResult.value
   const dateResult = addJstDays(today, daysOffset)
-  const dateString = isFailure(dateResult) ? today : dateResult.value
+  const dateString = dateResult.isErr() ? today : dateResult.value
   return new Date(`${dateString}T12:00:00+09:00`)
 }
 

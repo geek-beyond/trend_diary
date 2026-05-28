@@ -1,5 +1,5 @@
+import { err, ok, type Result } from 'neverthrow'
 import { ClientError, ServerError } from '@/common/errors'
-import { type AsyncResult, failure, isFailure, success } from '@/common/result'
 import type { Command, Query } from '@/domain/user/repository'
 import type { CurrentUser } from '@/domain/user/schema/active-user-schema'
 import type { AuthRepository } from './repository'
@@ -31,10 +31,10 @@ export class AuthUseCase {
   async signup(
     email: string,
     password: string,
-  ): AsyncResult<SignupResult, ClientError | ServerError> {
+  ): Promise<Result<SignupResult, ClientError | ServerError>> {
     // 認証でユーザー作成
     const authResult = await this.repository.signup(email, password)
-    if (isFailure(authResult)) return failure(authResult.error)
+    if (authResult.isErr()) return err(authResult.error)
 
     const { user, session } = authResult.value
 
@@ -44,13 +44,13 @@ export class AuthUseCase {
       user.id,
     )
 
-    if (isFailure(activeUserResult)) {
+    if (activeUserResult.isErr()) {
       // Supabase Admin Roleが必要でエラーになるので、コメントアウト
       // // 補償トランザクション: Supabase Authで作成したユーザーを削除
       // const deleteResult = await this.repository.deleteUser(user.id)
-      // if (isFailure(deleteResult)) {
+      // if (deleteResult.isErr()) {
       //   // 補償トランザクション失敗時はExternalServiceErrorを返す
-      //   return failure(
+      //   return err(
       //     new ExternalServiceError(
       //       'Failed to delete Supabase Auth user during compensation',
       //       activeUserResult.error,
@@ -59,10 +59,10 @@ export class AuthUseCase {
       //     ),
       //   )
       // }
-      return failure(activeUserResult.error)
+      return err(activeUserResult.error)
     }
 
-    return success({
+    return ok({
       session,
       activeUser: activeUserResult.value,
     })
@@ -71,48 +71,48 @@ export class AuthUseCase {
   async login(
     email: string,
     password: string,
-  ): AsyncResult<LoginResult, ClientError | ServerError> {
+  ): Promise<Result<LoginResult, ClientError | ServerError>> {
     // 認証でログイン
     const authResult = await this.repository.login(email, password)
-    if (isFailure(authResult)) return failure(authResult.error)
+    if (authResult.isErr()) return err(authResult.error)
 
     const { user, session } = authResult.value
 
     const activeUserResult = await this.findActiveUserByAuthenticationId(user.id)
 
-    if (isFailure(activeUserResult)) return failure(activeUserResult.error)
+    if (activeUserResult.isErr()) return err(activeUserResult.error)
 
-    return success({
+    return ok({
       session,
       activeUser: activeUserResult.value,
     })
   }
 
-  async logout(): AsyncResult<void, ServerError> {
+  async logout(): Promise<Result<void, ServerError>> {
     return this.repository.logout()
   }
 
-  async getCurrentActiveUser(): AsyncResult<CurrentUser, ClientError | ServerError> {
+  async getCurrentActiveUser(): Promise<Result<CurrentUser, ClientError | ServerError>> {
     const authUserResult = await this.repository.getCurrentUser()
-    if (isFailure(authUserResult)) {
-      return failure(authUserResult.error)
+    if (authUserResult.isErr()) {
+      return err(authUserResult.error)
     }
 
     return this.findActiveUserByAuthenticationId(authUserResult.value.id)
   }
 
-  async refreshSession(): AsyncResult<LoginResult, ClientError | ServerError> {
+  async refreshSession(): Promise<Result<LoginResult, ClientError | ServerError>> {
     // 認証でセッション更新
     const authResult = await this.repository.refreshSession()
-    if (isFailure(authResult)) return failure(authResult.error)
+    if (authResult.isErr()) return err(authResult.error)
 
     const { user, session } = authResult.value
 
     const activeUserResult = await this.findActiveUserByAuthenticationId(user.id)
 
-    if (isFailure(activeUserResult)) return failure(activeUserResult.error)
+    if (activeUserResult.isErr()) return err(activeUserResult.error)
 
-    return success({
+    return ok({
       session,
       activeUser: activeUserResult.value,
     })
@@ -120,17 +120,17 @@ export class AuthUseCase {
 
   private async findActiveUserByAuthenticationId(
     authenticationId: string,
-  ): AsyncResult<CurrentUser, ClientError | ServerError> {
+  ): Promise<Result<CurrentUser, ClientError | ServerError>> {
     const activeUserResult = await this.userQuery.findActiveByAuthenticationId(authenticationId)
 
-    if (isFailure(activeUserResult)) {
-      return failure(new ServerError(activeUserResult.error))
+    if (activeUserResult.isErr()) {
+      return err(new ServerError(activeUserResult.error))
     }
 
     if (!activeUserResult.value) {
-      return failure(new ClientError('User not found', 404))
+      return err(new ClientError('User not found', 404))
     }
 
-    return success(activeUserResult.value)
+    return ok(activeUserResult.value)
   }
 }

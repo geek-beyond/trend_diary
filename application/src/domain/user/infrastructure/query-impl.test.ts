@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { isFailure, isSuccess } from '@/common/result'
 import prisma from '@/test/__mocks__/prisma'
 import QueryImpl from './query-impl'
 
@@ -33,8 +32,8 @@ describe('QueryImpl', () => {
         const result = await useCase.findActiveById(activeUserId)
 
         // Assert
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
           expect(result.value?.activeUserId).toBe(1n)
           expect(result.value?.email).toBe('test@example.com')
         }
@@ -52,8 +51,8 @@ describe('QueryImpl', () => {
         const result = await useCase.findActiveById(activeUserId)
 
         // Assert
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
           expect(result.value).toBeNull()
         }
       })
@@ -70,8 +69,8 @@ describe('QueryImpl', () => {
         const result = await useCase.findActiveById(activeUserId)
 
         // Assert
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error.message).toBe('Database connection failed')
         }
       })
@@ -100,8 +99,8 @@ describe('QueryImpl', () => {
         const result = await useCase.findActiveByEmail(email)
 
         // Assert
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
           expect(result.value?.email).toBe(email)
           expect(result.value?.activeUserId).toBe(1n)
         }
@@ -119,8 +118,8 @@ describe('QueryImpl', () => {
         const result = await useCase.findActiveByEmail(email)
 
         // Assert
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
           expect(result.value).toBeNull()
         }
       })
@@ -137,8 +136,8 @@ describe('QueryImpl', () => {
         const result = await useCase.findActiveByEmail(email)
 
         // Assert
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error.message).toBe('Database connection failed')
         }
       })
@@ -167,8 +166,8 @@ describe('QueryImpl', () => {
         const result = await useCase.findActiveByAuthenticationId(authenticationId)
 
         // Assert
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
           expect(result.value?.activeUserId).toBe(1n)
           expect(result.value?.email).toBe('test@example.com')
         }
@@ -188,8 +187,8 @@ describe('QueryImpl', () => {
         const result = await useCase.findActiveByAuthenticationId(authenticationId)
 
         // Assert
-        expect(isSuccess(result)).toBe(true)
-        if (isSuccess(result)) {
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
           expect(result.value).toBeNull()
         }
       })
@@ -206,8 +205,8 @@ describe('QueryImpl', () => {
         const result = await useCase.findActiveByAuthenticationId(authenticationId)
 
         // Assert
-        expect(isFailure(result)).toBe(true)
-        if (isFailure(result)) {
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
           expect(result.error.message).toBe('Database connection failed')
         }
       })

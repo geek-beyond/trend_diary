@@ -1,5 +1,4 @@
 import { ExternalServiceError, handleError } from '@/common/errors'
-import { isFailure } from '@/common/result'
 import { type AuthInput, createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
@@ -15,7 +14,7 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
   const useCase = createAuthUseCase(client, rdb)
 
   const result = await useCase.signup(valid.email, valid.password)
-  if (isFailure(result)) {
+  if (result.isErr()) {
     // 補償トランザクション失敗時のログ出力
     if (result.error instanceof ExternalServiceError) {
       logger.error(

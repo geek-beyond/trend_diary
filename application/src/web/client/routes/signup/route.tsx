@@ -6,7 +6,6 @@ import {
   useNavigation,
 } from 'react-router'
 import Logger from '@/common/logger'
-import { isFailure } from '@/common/result'
 import { createAuthActionUseCase } from '@/web/client/features/authenticate/auth-action-use-case'
 import {
   AUTH_ERROR_MESSAGES,
@@ -58,7 +57,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const { useCase } = createAuthActionUseCase(request, context)
     const result = await useCase.signup(validation.data.email, validation.data.password)
 
-    if (isFailure(result)) {
+    if (result.isErr()) {
       return { formError: resolveSignupErrorMessage(result.error) } satisfies SignupActionData
     }
 

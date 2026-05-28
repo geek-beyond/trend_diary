@@ -1,5 +1,6 @@
+import { err, ok, type Result } from 'neverthrow'
 import { ServerError } from '@/common/errors'
-import { AsyncResult, failure, isFailure, success, wrapAsyncCall } from '@/common/result'
+import { wrapAsyncCall } from '@/common/result'
 import { Command } from '@/domain/article/repository'
 import type { ReadHistory } from '@/domain/article/schema/read-history-schema'
 import type { SkippedArticle } from '@/domain/article/schema/skipped-article-schema'
@@ -13,7 +14,7 @@ export default class CommandImpl implements Command {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): AsyncResult<ReadHistory, Error> {
+  ): Promise<Result<ReadHistory, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
     const result = await wrapAsyncCall(() =>
@@ -25,8 +26,8 @@ export default class CommandImpl implements Command {
         },
       }),
     )
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
     const createdReadHistory = result.value
@@ -37,10 +38,13 @@ export default class CommandImpl implements Command {
       readAt: createdReadHistory.readAt,
       createdAt: createdReadHistory.createdAt,
     }
-    return success(readHistory)
+    return ok(readHistory)
   }
 
-  async deleteAllReadHistory(activeUserId: bigint, articleId: bigint): AsyncResult<void, Error> {
+  async deleteAllReadHistory(
+    activeUserId: bigint,
+    articleId: bigint,
+  ): Promise<Result<void, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
     const result = await wrapAsyncCall(() =>
@@ -51,17 +55,17 @@ export default class CommandImpl implements Command {
         },
       }),
     )
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    return success(undefined)
+    return ok(undefined)
   }
 
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): AsyncResult<SkippedArticle, Error> {
+  ): Promise<Result<SkippedArticle, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
@@ -80,12 +84,12 @@ export default class CommandImpl implements Command {
         },
       }),
     )
-    if (isFailure(result)) {
-      return failure(new ServerError(result.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
     const skippedArticle = result.value
-    return success({
+    return ok({
       skippedArticleId: fromDbId(skippedArticle.skippedArticleId),
       activeUserId: fromDbId(skippedArticle.activeUserId),
       articleId: fromDbId(skippedArticle.articleId),

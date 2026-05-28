@@ -1,6 +1,5 @@
 import type { Context } from 'hono'
 import { handleError } from '@/common/errors'
-import { isFailure } from '@/common/result'
 import { createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
@@ -14,7 +13,7 @@ export default async function me(c: Context) {
   const useCase = createAuthUseCase(client, rdb)
 
   const activeUserResult = await useCase.getCurrentActiveUser()
-  if (isFailure(activeUserResult)) {
+  if (activeUserResult.isErr()) {
     throw handleError(activeUserResult.error, logger)
   }
 

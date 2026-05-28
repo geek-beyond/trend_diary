@@ -1,6 +1,6 @@
+import { err, ok } from 'neverthrow'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as dateModule from '@/common/locale/date'
-import { failure, success } from '@/common/result'
 import { getTodayJst, sumSourceSummary } from './diary-shared'
 
 describe('diary-shared', () => {
@@ -10,14 +10,14 @@ describe('diary-shared', () => {
 
   describe('getTodayJst', () => {
     it('JSTの日付文字列を返す', () => {
-      vi.spyOn(dateModule, 'toTodayJstDateString').mockReturnValue(success('2026-03-08'))
+      vi.spyOn(dateModule, 'toTodayJstDateString').mockReturnValue(ok('2026-03-08'))
 
       expect(getTodayJst()).toBe('2026-03-08')
     })
 
     it('JST解決に失敗したらnullを返す', () => {
       vi.spyOn(dateModule, 'toTodayJstDateString').mockReturnValue(
-        failure(new Error('JST日付の取得に失敗しました')),
+        err(new Error('JST日付の取得に失敗しました')),
       )
 
       expect(getTodayJst()).toBeNull()

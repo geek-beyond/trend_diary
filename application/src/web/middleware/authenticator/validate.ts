@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
+import { err, ok, type Result } from 'neverthrow'
 import { ClientError, ServerError } from '@/common/errors'
 import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
-import { failure, isFailure, type Result, success } from '@/common/result'
 import { createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
@@ -43,20 +43,20 @@ export async function validateSession(
     const useCase = createAuthUseCase(supabaseClient, rdb)
 
     const result = await useCase.getCurrentActiveUser()
-    if (isFailure(result)) {
+    if (result.isErr()) {
       if (result.error instanceof UnauthorizedError) {
-        return failure(createAuthValidationError('no_session', 'No session found'))
+        return err(createAuthValidationError('no_session', 'No session found'))
       }
       if (result.error instanceof ClientError || result.error instanceof ServerError) {
         logger.warn('Session validation failed', { error: result.error })
       } else {
         logger.error('Unexpected error occurred', { error: result.error })
       }
-      return failure(createAuthValidationError('validation_failed', 'Session validation failed'))
+      return err(createAuthValidationError('validation_failed', 'Session validation failed'))
     }
 
     if (!result.value) {
-      return failure(createAuthValidationError('user_not_found', 'User not found'))
+      return err(createAuthValidationError('user_not_found', 'User not found'))
     }
 
     // 管理者権限をチェック
@@ -66,9 +66,9 @@ export async function validateSession(
       email: result.value.email,
     }
 
-    return success({ sessionUser })
+    return ok({ sessionUser })
   } catch (error) {
     logger.warn('Session validation setup failed', { error })
-    return failure(createAuthValidationError('validation_failed', 'Session validation failed'))
+    return err(createAuthValidationError('validation_failed', 'Session validation failed'))
   }
 }

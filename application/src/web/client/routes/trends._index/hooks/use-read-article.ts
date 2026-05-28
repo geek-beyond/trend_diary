@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-import { isFailure, wrapAsyncCall } from '@/common/result'
+import { wrapAsyncCall } from '@/common/result'
 import getApiClientForClient from '../../../infrastructure/api'
 
 const MarkAsReadErrorMessage = '既読に失敗しました'
@@ -30,7 +30,7 @@ export default function useReadArticle() {
 
     setIsLoading(false)
 
-    if (isFailure(result)) {
+    if (result.isErr()) {
       toast.error(MarkAsReadErrorMessage)
       return false
     }
@@ -57,7 +57,7 @@ export default function useReadArticle() {
 
     setIsLoading(false)
 
-    if (isFailure(result)) {
+    if (result.isErr()) {
       toast.error(MarkAsUnreadErrorMessage)
       return false
     }

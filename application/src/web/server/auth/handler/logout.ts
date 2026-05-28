@@ -1,6 +1,5 @@
 import type { Context } from 'hono'
 import { handleError } from '@/common/errors'
-import { isFailure } from '@/common/result'
 import { createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
@@ -19,7 +18,7 @@ export default async function logout(c: Context) {
   // エラーが発生した場合はログに記録し、エラーレスポンスを返す
   // 既にログアウト済みの場合でもSupabaseはエラーを返さないため、
   // エラーが返ってきた場合は実際の問題（ネットワークエラー、サーバーエラーなど）
-  if (isFailure(result)) {
+  if (result.isErr()) {
     logger.error('logout failed', { error: result.error })
     throw handleError(result.error, logger)
   }

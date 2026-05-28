@@ -129,8 +129,7 @@ func (s *Store) UpdateLastSignIn(id string) (*User, bool) {
 }
 
 // ListUsers は CreatedAt 昇順で offset から limit 件の user 複製と全件数を返す。
-// Snapshot と違い session / refresh_token は複製せず、要求ページ分の user だけ clone するので
-// seed 件数が増えても複製コストが O(limit) で済む（AdminListUsers 用）。
+// Snapshot と違い session / refresh_token を複製せず要求ページ分の user だけ clone する。
 func (s *Store) ListUsers(offset, limit int) ([]User, int) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -144,12 +143,15 @@ func (s *Store) ListUsers(offset, limit int) ([]User, int) {
 	})
 
 	total := len(ordered)
-	if offset > total {
-		offset = total
+	// AdminListUsers は (page-1)*perPage を offset に渡すので int オーバーフローで負値になりうる。
+	// 範囲外は空ページとして返し ordered[offset:end] の panic を防ぐ。
+	if offset < 0 || offset >= total {
+		return []User{}, total
 	}
-	end := offset + limit
-	if end > total {
-		end = total
+	// offset+limit はオーバーフローしうるので加算前に残り件数と比較する。
+	end := total
+	if limit < total-offset {
+		end = offset + limit
 	}
 	page := ordered[offset:end]
 	users := make([]User, len(page))

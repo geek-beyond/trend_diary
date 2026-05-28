@@ -157,6 +157,20 @@ func TestListUsers(t *testing.T) {
 			t.Errorf("expected non-nil empty slice, got %+v", page)
 		}
 	})
+
+	t.Run("負のoffset(page由来のオーバーフロー)でもpanicせず空スライス", func(t *testing.T) {
+		s := newStore()
+		hash, _ := HashPassword("password123")
+		_, _ = s.CreateUser("a@example.com", hash)
+
+		page, total := s.ListUsers(-100, 10)
+		if total != 1 {
+			t.Errorf("total: got=%d want=1", total)
+		}
+		if page == nil || len(page) != 0 {
+			t.Errorf("expected non-nil empty slice, got %+v", page)
+		}
+	})
 }
 
 func TestRefreshTokenRotation(t *testing.T) {

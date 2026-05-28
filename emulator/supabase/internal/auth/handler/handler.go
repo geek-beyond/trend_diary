@@ -130,13 +130,9 @@ func (c *Context) OAuth(status int, errCode, description string) {
 	c.writeError(status, oauthErrorBody{Error: errCode, ErrorDescription: description})
 }
 
-// writeError は X-Supabase-Api-Version の付与と書き出しを 1 箇所に集約する。
-// written チェックを通った後に Header().Set するため、二重呼び出し時に
-// flush 済みヘッダへの no-op Set でデバッグを混乱させない。
+// writeError は X-Supabase-Api-Version の付与とエラー JSON 書き出しを 1 箇所に集約する。
+// 二重書き出しの抑止は c.JSON 側の written ガードに任せる。
 func (c *Context) writeError(status int, body any) {
-	if c.written {
-		return
-	}
 	c.w.Header().Set("X-Supabase-Api-Version", apiVersion)
 	c.JSON(status, body)
 }

@@ -57,12 +57,6 @@ func tokenPassword(c *Context) {
 
 	tr, err := c.tokens.Issue(fresh)
 	if err != nil {
-		// FindUserByID と IssueSession の間で DeleteUser が走った race は invalid_grant に倒す
-		// （上の FindUserByID guard と同じ意味合いを揃える）。
-		if errors.Is(err, store.ErrUserNotFound) {
-			c.OAuth(http.StatusBadRequest, "invalid_grant", "Invalid login credentials")
-			return
-		}
 		c.Error(http.StatusInternalServerError, err.Error())
 		return
 	}

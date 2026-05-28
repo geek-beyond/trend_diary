@@ -135,8 +135,8 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
-      - name: Supabaseのセットアップ
-        uses: ./.github/actions/setup_supabase
+      - name: Supabase Emulator のセットアップ
+        uses: ./.github/actions/setup_emulator
 
       - name: DB Migration
         run: npm run db:migrate

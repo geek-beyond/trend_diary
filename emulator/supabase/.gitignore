@@ -1,0 +1,4 @@
+supabase
+*.test
+*.out
+coverage.txt

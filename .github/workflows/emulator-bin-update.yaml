@@ -1,0 +1,45 @@
+name: emulator-bin-update
+
+on:
+  pull_request:
+    paths:
+      - 'emulator/supabase/**.go'
+      - 'emulator/supabase/go.mod'
+      - 'emulator/supabase/go.sum'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    # fork PR では push 権限が無いので skip。同 repo の PR でのみ動かす。
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ github.token }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./emulator/supabase/go.mod
+          cache-dependency-path: ./emulator/supabase/go.sum
+
+      - name: bin をビルド
+        working-directory: ./emulator/supabase
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o bin/supabase-emulator .
+          chmod +x bin/supabase-emulator
+
+      - name: 変更があれば commit + push
+        run: |
+          if git diff --quiet emulator/supabase/bin/supabase-emulator; then
+            echo "no bin changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add emulator/supabase/bin/supabase-emulator
+          git commit -m "chore(emulator): bin を再ビルド"
+          git push

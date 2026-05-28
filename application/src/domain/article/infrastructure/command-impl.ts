@@ -29,7 +29,7 @@ export default class CommandImpl implements Command {
       return failure(new ServerError(result.error))
     }
 
-    const createdReadHistory = result.data
+    const createdReadHistory = result.value
     const readHistory: ReadHistory = {
       readHistoryId: fromDbId(createdReadHistory.readHistoryId),
       activeUserId: fromDbId(createdReadHistory.activeUserId),
@@ -84,7 +84,7 @@ export default class CommandImpl implements Command {
       return failure(new ServerError(result.error))
     }
 
-    const skippedArticle = result.data
+    const skippedArticle = result.value
     return success({
       skippedArticleId: fromDbId(skippedArticle.skippedArticleId),
       activeUserId: fromDbId(skippedArticle.activeUserId),

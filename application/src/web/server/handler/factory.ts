@@ -169,10 +169,10 @@ function executeHandlerLogic<
     if (config.logMessage) {
       const message =
         typeof config.logMessage === 'function'
-          ? config.logMessage(result.data, context)
+          ? config.logMessage(result.value, context)
           : config.logMessage
 
-      const payload = config.logPayload ? config.logPayload(result.data, context) : {}
+      const payload = config.logPayload ? config.logPayload(result.value, context) : {}
 
       context.logger.info({ msg: message, ...payload })
     }
@@ -185,7 +185,7 @@ function executeHandlerLogic<
       return c.body(null, 204)
     }
 
-    const responseData = config.transform ? config.transform(result.data) : result.data
+    const responseData = config.transform ? config.transform(result.value) : result.value
     return c.json(responseData, statusCode as ContentfulStatusCode)
   })()
 }

@@ -21,7 +21,7 @@ export default class QueryImpl implements Query {
       return failure(new ServerError(activeUserResult.error))
     }
 
-    const activeUser = activeUserResult.data
+    const activeUser = activeUserResult.value
     if (!activeUser) {
       return success(null)
     }
@@ -39,7 +39,7 @@ export default class QueryImpl implements Query {
       return failure(new ServerError(activeUserResult.error))
     }
 
-    const activeUser = activeUserResult.data
+    const activeUser = activeUserResult.value
     if (!activeUser) {
       return success(null)
     }
@@ -59,7 +59,7 @@ export default class QueryImpl implements Query {
       return failure(new ServerError(activeUserResult.error))
     }
 
-    const activeUser = activeUserResult.data
+    const activeUser = activeUserResult.value
     if (!activeUser) {
       return success(null)
     }

@@ -35,10 +35,10 @@ const getJstDateParts = (
 export const toJstDateString = (rawDate: Date): Result<string, Error> => {
   const jstDatePartsResult = getJstDateParts(rawDate)
   if (isFailure(jstDatePartsResult)) {
-    return jstDatePartsResult
+    return failure(jstDatePartsResult.error)
   }
 
-  const { year, month, day } = jstDatePartsResult.data
+  const { year, month, day } = jstDatePartsResult.value
   return success(`${year}-${month}-${day}`)
 }
 

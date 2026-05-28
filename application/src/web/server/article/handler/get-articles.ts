@@ -77,7 +77,7 @@ export default async function getArticles(c: ZodValidatedQueryContext<ApiQueryPa
     throw handleError(result.error, logger)
   }
 
-  const paginationResult = result.data
+  const paginationResult = result.value
   logger.info('articles retrieved successfully', { count: paginationResult.data.length })
   const response: ArticleListResponse = {
     data: paginationResult.data.map(convertToResponse),

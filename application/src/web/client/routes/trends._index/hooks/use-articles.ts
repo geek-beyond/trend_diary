@@ -64,7 +64,7 @@ const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: st
   }
 
   return {
-    from: fromDateResult.data,
+    from: fromDateResult.value,
     to: todayJstDateString,
   }
 }
@@ -75,7 +75,7 @@ const getTodayJstDateString = (baseDate: Date): string => {
     return baseDate.toISOString().slice(0, 10)
   }
 
-  return todayJstDateResult.data
+  return todayJstDateResult.value
 }
 
 const parseDatePreset = (

@@ -94,7 +94,7 @@ export class SupabaseAuthRepository implements AuthRepository {
       return failure(new ServerError(result.error))
     }
 
-    const { data, error } = result.data
+    const { data, error } = result.value
     if (error) {
       // 既に存在するユーザーの場合は AlreadyExistsError を返す
       // UX上、「既に使用されています」と明示することは一般的であり、
@@ -112,16 +112,16 @@ export class SupabaseAuthRepository implements AuthRepository {
 
     const userResult = this.toAuthenticationUser(data.user, email)
     if (isFailure(userResult)) {
-      return userResult
+      return failure(userResult.error)
     }
 
     let session: AuthSignupResult['session'] = null
     if (data.session) {
-      session = this.toSessionObject(data.session, userResult.data)
+      session = this.toSessionObject(data.session, userResult.value)
     }
 
     return success({
-      user: userResult.data,
+      user: userResult.value,
       session,
     })
   }
@@ -140,7 +140,7 @@ export class SupabaseAuthRepository implements AuthRepository {
       return failure(new ServerError(result.error))
     }
 
-    const { data, error } = result.data
+    const { data, error } = result.value
     if (error) {
       // 認証失敗チェック（instanceofとメッセージの両方で判定）
       if (isInvalidCredentialsError(error)) {
@@ -156,13 +156,13 @@ export class SupabaseAuthRepository implements AuthRepository {
 
     const userResult = this.toAuthenticationUser(data.user, email)
     if (isFailure(userResult)) {
-      return userResult
+      return failure(userResult.error)
     }
 
-    const session = this.toSessionObject(data.session, userResult.data)
+    const session = this.toSessionObject(data.session, userResult.value)
 
     return success({
-      user: userResult.data,
+      user: userResult.value,
       session,
     })
   }
@@ -173,7 +173,7 @@ export class SupabaseAuthRepository implements AuthRepository {
       return failure(new ServerError(result.error))
     }
 
-    const { error } = result.data
+    const { error } = result.value
     if (error) {
       return failure(new ServerError(`Logout failed: ${error.message}`))
     }
@@ -196,7 +196,7 @@ export class SupabaseAuthRepository implements AuthRepository {
 
     const {
       data: { user },
-    } = result.data
+    } = result.value
 
     if (!user) {
       return failure(
@@ -211,7 +211,7 @@ export class SupabaseAuthRepository implements AuthRepository {
       return authUserResult
     }
 
-    return success(authUserResult.data)
+    return success(authUserResult.value)
   }
 
   async refreshSession(): AsyncResult<AuthLoginResult, ServerError> {
@@ -223,19 +223,19 @@ export class SupabaseAuthRepository implements AuthRepository {
     const {
       data: { session },
       error,
-    } = result.data
+    } = result.value
     if (error || !session) {
       return failure(new ServerError(`Session refresh failed: ${error?.message}`))
     }
 
     const userResult = this.toAuthenticationUser(session.user)
     if (isFailure(userResult)) {
-      return userResult
+      return failure(userResult.error)
     }
 
     return success({
-      user: userResult.data,
-      session: this.toSessionObject(session, userResult.data),
+      user: userResult.value,
+      session: this.toSessionObject(session, userResult.value),
     })
   }
 
@@ -245,7 +245,7 @@ export class SupabaseAuthRepository implements AuthRepository {
       return failure(new ServerError(result.error))
     }
 
-    const { error } = result.data
+    const { error } = result.value
     if (error) {
       return failure(new ServerError(`User deletion failed: ${error.message}`))
     }

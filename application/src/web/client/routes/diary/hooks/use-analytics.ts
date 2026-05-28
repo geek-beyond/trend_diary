@@ -28,7 +28,7 @@ const buildAvailableDates = (todayJst: string) =>
   Array.from({ length: DIARY_DAYS }, (_, index) => {
     const dateResult = addJstDays(todayJst, -(DIARY_DAYS - 1 - index))
     if (isFailure(dateResult)) return todayJst
-    return dateResult.data
+    return dateResult.value
   })
 
 export default function useAnalytics(enabled: boolean) {

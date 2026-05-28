@@ -11,9 +11,9 @@ const ARTICLE_COUNT = 10
 
 function getTodayJstNoon(daysOffset = 0): Date {
   const todayResult = toJstDateString(new Date())
-  const today = isFailure(todayResult) ? '1970-01-01' : todayResult.data
+  const today = isFailure(todayResult) ? '1970-01-01' : todayResult.value
   const dateResult = addJstDays(today, daysOffset)
-  const dateString = isFailure(dateResult) ? today : dateResult.data
+  const dateString = isFailure(dateResult) ? today : dateResult.value
   return new Date(`${dateString}T12:00:00+09:00`)
 }
 

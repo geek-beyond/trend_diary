@@ -14,7 +14,7 @@ const authenticator = createMiddleware<Env>(async (c, next) => {
     throw new HTTPException(statusCode, { message: 'login required' })
   }
 
-  c.set(CONTEXT_KEY.SESSION_USER, validationResult.data.sessionUser)
+  c.set(CONTEXT_KEY.SESSION_USER, validationResult.value.sessionUser)
   return next()
 })
 

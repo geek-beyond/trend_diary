@@ -40,7 +40,7 @@ type DiaryRangeResponse = {
 const getTodayJst = () => {
   const result = toJstDateString(new Date())
   if (isFailure(result)) throw result.error
-  return result.data
+  return result.value
 }
 
 function toJstDateTime(date: string, time: string) {
@@ -205,7 +205,7 @@ describe('GET /api/articles/diary (単日詳細)', () => {
     if (isFailure(tooOldDateResult)) throw tooOldDateResult.error
 
     const response = await requestDiaryRange(
-      `from=${tooOldDateResult.data}&to=${tooOldDateResult.data}&page=1`,
+      `from=${tooOldDateResult.value}&to=${tooOldDateResult.value}&page=1`,
       authCookies,
     )
     expect(response.status).toBe(422)
@@ -216,7 +216,7 @@ describe('GET /api/articles/diary (単日詳細)', () => {
     if (isFailure(tomorrowResult)) throw tomorrowResult.error
 
     const response = await requestDiaryRange(
-      `from=${tomorrowResult.data}&to=${tomorrowResult.data}&page=1`,
+      `from=${tomorrowResult.value}&to=${tomorrowResult.value}&page=1`,
       authCookies,
     )
     expect(response.status).toBe(422)
@@ -227,7 +227,7 @@ describe('GET /api/articles/diary (単日詳細)', () => {
     if (isFailure(yesterdayResult)) throw yesterdayResult.error
 
     const response = await requestDiaryRange(
-      `from=${yesterdayResult.data}&to=${todayJst}&page=1`,
+      `from=${yesterdayResult.value}&to=${todayJst}&page=1`,
       authCookies,
     )
     expect(response.status).toBe(422)
@@ -293,7 +293,7 @@ describe('GET /api/articles/diary', () => {
     const fromResult = addJstDays(todayJst, -6)
     if (isFailure(fromResult)) throw fromResult.error
 
-    const response = await requestDiaryRange(`from=${fromResult.data}&to=${todayJst}`, authCookies)
+    const response = await requestDiaryRange(`from=${fromResult.value}&to=${todayJst}`, authCookies)
 
     expect(response.status).toBe(200)
     const json = (await response.json()) as DiaryRangeResponse
@@ -315,7 +315,7 @@ describe('GET /api/articles/diary', () => {
     const fromResult = addJstDays(todayJst, -1)
     if (isFailure(fromResult)) throw fromResult.error
 
-    const response = await requestDiaryRange(`from=${todayJst}&to=${fromResult.data}`, authCookies)
+    const response = await requestDiaryRange(`from=${todayJst}&to=${fromResult.value}`, authCookies)
     expect(response.status).toBe(422)
   })
 
@@ -323,7 +323,7 @@ describe('GET /api/articles/diary', () => {
     const fromResult = addJstDays(todayJst, -7)
     if (isFailure(fromResult)) throw fromResult.error
 
-    const response = await requestDiaryRange(`from=${fromResult.data}&to=${todayJst}`, authCookies)
+    const response = await requestDiaryRange(`from=${fromResult.value}&to=${todayJst}`, authCookies)
     expect(response.status).toBe(422)
   })
 
@@ -338,7 +338,7 @@ describe('GET /api/articles/diary', () => {
     const toResult = addJstDays(todayJst, 1)
     if (isFailure(toResult)) throw toResult.error
 
-    const response = await requestDiaryRange(`from=${todayJst}&to=${toResult.data}`, authCookies)
+    const response = await requestDiaryRange(`from=${todayJst}&to=${toResult.value}`, authCookies)
     expect(response.status).toBe(422)
   })
 
@@ -346,7 +346,7 @@ describe('GET /api/articles/diary', () => {
     const fromResult = addJstDays(todayJst, -6)
     if (isFailure(fromResult)) throw fromResult.error
 
-    const response = await requestDiaryRange(`from=${fromResult.data}&to=${todayJst}`)
+    const response = await requestDiaryRange(`from=${fromResult.value}&to=${todayJst}`)
     expect(response.status).toBe(401)
   })
 })

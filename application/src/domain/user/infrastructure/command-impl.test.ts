@@ -32,10 +32,10 @@ describe('CommandImpl', () => {
 
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data.email).toBe('test@example.com')
-        expect(result.data.displayName).toBe('表示名')
-        expect(result.data.activeUserId).toBe(1n)
-        expect(result.data.userId).toBe(2n)
+        expect(result.value.email).toBe('test@example.com')
+        expect(result.value.displayName).toBe('表示名')
+        expect(result.value.activeUserId).toBe(1n)
+        expect(result.value.userId).toBe(2n)
       }
       const activeUserCreateArgs = prisma.activeUser.create.mock.calls[0]?.[0]
       expect(activeUserCreateArgs?.data).toMatchObject({

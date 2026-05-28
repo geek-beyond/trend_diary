@@ -133,8 +133,8 @@ export default class QueryImpl implements Query {
       return failure(new ServerError(articlesResult.error))
     }
 
-    const total = Number(totalResult.data[0]?.total ?? 0)
-    const mappedArticles = articlesResult.data.map(QueryImpl.mapRawArticleToDomain)
+    const total = Number(totalResult.value[0]?.total ?? 0)
+    const mappedArticles = articlesResult.value.map(QueryImpl.mapRawArticleToDomain)
 
     const totalPages = Math.ceil(total / limit)
     return success({
@@ -159,7 +159,7 @@ export default class QueryImpl implements Query {
       return failure(new ServerError(result.error))
     }
 
-    const article = result.data
+    const article = result.value
     if (!article) return success(null)
     return success(fromPrismaToArticle(article))
   }
@@ -207,7 +207,7 @@ export default class QueryImpl implements Query {
       return failure(new ServerError(result.error))
     }
 
-    return success(result.data.map(QueryImpl.mapRawArticle))
+    return success(result.value.map(QueryImpl.mapRawArticle))
   }
 
   async getDailyDiary(
@@ -289,7 +289,7 @@ export default class QueryImpl implements Query {
       return failure(resolvedQueryResults.error)
     }
 
-    const [sourceRows, readsRows] = resolvedQueryResults.data
+    const [sourceRows, readsRows] = resolvedQueryResults.value
     const { readRows: readSourcesRows, skipRows: skipSourcesRows } =
       QueryImpl.splitDiarySourceRows(sourceRows)
     const readCount = QueryImpl.sumDiarySourceCounts(readSourcesRows)
@@ -376,7 +376,7 @@ export default class QueryImpl implements Query {
       return failure(new ServerError(sourceResult.error))
     }
     const { readRows: readSourceRows, skipRows: skipSourceRows } =
-      QueryImpl.splitDiaryDateSourceRows(sourceResult.data)
+      QueryImpl.splitDiaryDateSourceRows(sourceResult.value)
 
     const readByDate = QueryImpl.groupSourcesByDate(readSourceRows)
     const skipByDate = QueryImpl.groupSourcesByDate(skipSourceRows)
@@ -489,7 +489,7 @@ export default class QueryImpl implements Query {
       if (isFailure(result)) {
         return failure(new ServerError(result.error))
       }
-      unwrapped.push(result.data)
+      unwrapped.push(result.value)
     }
 
     return success(unwrapped as unknown as T)
@@ -666,7 +666,7 @@ export default class QueryImpl implements Query {
       dates.push(current)
       const next = addJstDays(current, 1)
       if (isFailure(next)) break
-      current = next.data
+      current = next.value
     }
     return dates
   }

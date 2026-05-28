@@ -80,7 +80,7 @@ const resolveJstDateString = (rawDate: Date): string => {
     return '1970-01-01'
   }
 
-  return result.data
+  return result.value
 }
 
 const resolveJstDateWithOffset = (baseDateString: string, days: number): string => {
@@ -89,7 +89,7 @@ const resolveJstDateWithOffset = (baseDateString: string, days: number): string 
     return baseDateString
   }
 
-  return result.data
+  return result.value
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: getApiClientForClientの型が面倒なのでanyを使用

@@ -70,14 +70,14 @@ const buildRangeItemResponse = (
 const getTodayJst = () => {
   const result = toJstDateString(new Date())
   if (isFailure(result)) return '1970-01-01'
-  return result.data
+  return result.value
 }
 
 const buildDates = (baseDate: string) =>
   Array.from({ length: 7 }, (_, index) => {
     const dateResult = addJstDays(baseDate, -(6 - index))
     if (isFailure(dateResult)) return baseDate
-    return dateResult.data
+    return dateResult.value
   })
 
 describe('useAnalytics', () => {

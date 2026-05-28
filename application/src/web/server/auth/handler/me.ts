@@ -18,7 +18,7 @@ export default async function me(c: Context) {
     throw handleError(activeUserResult.error, logger)
   }
 
-  const activeUser = activeUserResult.data
+  const activeUser = activeUserResult.value
 
   logger.info('get current user success', { userId: activeUser.userId })
 

@@ -33,7 +33,7 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
     throw handleError(result.error, logger)
   }
 
-  const { activeUser } = result.data
+  const { activeUser } = result.value
   logger.info('signup success', { activeUserId: activeUser.activeUserId })
 
   return c.json({}, 201)

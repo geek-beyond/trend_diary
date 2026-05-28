@@ -13,7 +13,7 @@ const optionalAuthenticator = createMiddleware<Env>(async (c, next) => {
   const validationResult = await validateSession(c)
 
   if (isSuccess(validationResult)) {
-    c.set(CONTEXT_KEY.SESSION_USER, validationResult.data.sessionUser)
+    c.set(CONTEXT_KEY.SESSION_USER, validationResult.value.sessionUser)
   }
 
   return next()

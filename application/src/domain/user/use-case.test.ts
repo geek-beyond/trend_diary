@@ -60,8 +60,8 @@ describe('AuthUseCase', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.session).toEqual(mockSession)
-          expect(result.data.activeUser).toEqual(mockActiveUser)
+          expect(result.value.session).toEqual(mockSession)
+          expect(result.value.activeUser).toEqual(mockActiveUser)
         }
         expect(repositoryMock.signup).toHaveBeenCalledWith('test@example.com', 'Password1!')
         expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
@@ -156,8 +156,8 @@ describe('AuthUseCase', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.session).toEqual(mockSession)
-          expect(result.data.activeUser).toEqual(mockActiveUser)
+          expect(result.value.session).toEqual(mockSession)
+          expect(result.value.activeUser).toEqual(mockActiveUser)
         }
         expect(repositoryMock.login).toHaveBeenCalledWith('test@example.com', 'Password1!')
         expect(queryMock.findActiveByAuthenticationId).toHaveBeenCalledWith(mockAuthUser.id)
@@ -270,7 +270,7 @@ describe('AuthUseCase', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data).toEqual(mockActiveUser)
+          expect(result.value).toEqual(mockActiveUser)
         }
         expect(repositoryMock.getCurrentUser).toHaveBeenCalled()
         expect(queryMock.findActiveByAuthenticationId).toHaveBeenCalledWith(mockAuthUser.id)
@@ -355,8 +355,8 @@ describe('AuthUseCase', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.session).toEqual(newSession)
-          expect(result.data.activeUser).toEqual(mockActiveUser)
+          expect(result.value.session).toEqual(newSession)
+          expect(result.value.activeUser).toEqual(mockActiveUser)
         }
         expect(repositoryMock.refreshSession).toHaveBeenCalled()
         expect(queryMock.findActiveByAuthenticationId).toHaveBeenCalledWith(mockAuthUser.id)

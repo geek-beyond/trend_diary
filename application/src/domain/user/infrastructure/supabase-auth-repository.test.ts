@@ -55,17 +55,17 @@ describe('SupabaseAuthRepository', () => {
 
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.user.id).toBe(supabaseUser.id)
-          expect(result.data.user.email).toBe('test@example.com')
-          expect(result.data.user.createdAt).toBeInstanceOf(Date)
-          expect(result.data.user.emailConfirmedAt).toBeInstanceOf(Date)
-          expect(result.data.user.createdAt.toISOString()).toBe(supabaseUser.created_at)
-          expect(result.data.user.emailConfirmedAt?.toISOString()).toBe(
+          expect(result.value.user.id).toBe(supabaseUser.id)
+          expect(result.value.user.email).toBe('test@example.com')
+          expect(result.value.user.createdAt).toBeInstanceOf(Date)
+          expect(result.value.user.emailConfirmedAt).toBeInstanceOf(Date)
+          expect(result.value.user.createdAt.toISOString()).toBe(supabaseUser.created_at)
+          expect(result.value.user.emailConfirmedAt?.toISOString()).toBe(
             supabaseUser.email_confirmed_at,
           )
-          expect(result.data.session?.accessToken).toBe('access-token')
-          expect(result.data.session?.refreshToken).toBe('refresh-token')
-          expect(result.data.session?.expiresIn).toBe(3600)
+          expect(result.value.session?.accessToken).toBe('access-token')
+          expect(result.value.session?.refreshToken).toBe('refresh-token')
+          expect(result.value.session?.expiresIn).toBe(3600)
         }
       })
 
@@ -80,7 +80,7 @@ describe('SupabaseAuthRepository', () => {
 
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.session).toBeNull()
+          expect(result.value.session).toBeNull()
         }
       })
 
@@ -95,7 +95,7 @@ describe('SupabaseAuthRepository', () => {
 
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.user.emailConfirmedAt).toBeNull()
+          expect(result.value.user.emailConfirmedAt).toBeNull()
         }
       })
 
@@ -111,8 +111,8 @@ describe('SupabaseAuthRepository', () => {
 
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.user.email).toBe('fallback@example.com')
-          expect(result.data.session?.expiresIn).toBe(3600)
+          expect(result.value.user.email).toBe('fallback@example.com')
+          expect(result.value.session?.expiresIn).toBe(3600)
         }
       })
     })
@@ -206,8 +206,8 @@ describe('SupabaseAuthRepository', () => {
 
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.user.email).toBe('test@example.com')
-          expect(result.data.session.accessToken).toBe('access-token')
+          expect(result.value.user.email).toBe('test@example.com')
+          expect(result.value.session.accessToken).toBe('access-token')
         }
       })
     })
@@ -373,8 +373,8 @@ describe('SupabaseAuthRepository', () => {
 
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.id).toBe(supabaseUser.id)
-          expect(result.data.email).toBe('test@example.com')
+          expect(result.value.id).toBe(supabaseUser.id)
+          expect(result.value.email).toBe('test@example.com')
         }
       })
     })
@@ -451,8 +451,8 @@ describe('SupabaseAuthRepository', () => {
 
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data.user.id).toBe(supabaseUser.id)
-          expect(result.data.session.accessToken).toBe('access-token')
+          expect(result.value.user.id).toBe(supabaseUser.id)
+          expect(result.value.session.accessToken).toBe('access-token')
         }
       })
     })

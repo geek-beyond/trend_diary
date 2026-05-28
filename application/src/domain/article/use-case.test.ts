@@ -340,9 +340,9 @@ describe('ArticleUseCase', () => {
 
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data.activeUserId).toBe(userId)
-        expect(result.data.articleId).toBe(articleId)
-        expect(result.data.readAt).toBe(readAt)
+        expect(result.value.activeUserId).toBe(userId)
+        expect(result.value.articleId).toBe(articleId)
+        expect(result.value.readAt).toBe(readAt)
       }
 
       expect(queryMock.findArticleById).toHaveBeenCalledWith(articleId)
@@ -450,7 +450,7 @@ describe('ArticleUseCase', () => {
       expect(isSuccess(result)).toBe(true)
       expect(queryMock.getDailyDiary).toHaveBeenCalledWith(100n, '2026-03-07', 1, 10)
       if (isSuccess(result)) {
-        expect(result.data.summary.read).toBe(8)
+        expect(result.value.summary.read).toBe(8)
       }
     })
   })

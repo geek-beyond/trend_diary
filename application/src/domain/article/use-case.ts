@@ -61,7 +61,7 @@ export class UseCase {
       return failure(new ServerError(targetDateJstResult.error))
     }
 
-    return this.query.getUnreadDigestionArticles(activeUserId, targetDateJstResult.data, media)
+    return this.query.getUnreadDigestionArticles(activeUserId, targetDateJstResult.value, media)
   }
 
   async getDailyDiary(
@@ -101,19 +101,19 @@ export class UseCase {
     action: (validatedArticleId: bigint) => AsyncResult<T, Error>,
   ): AsyncResult<T, Error> {
     const articleValidation = await this.validateArticleExists(articleId)
-    if (isFailure(articleValidation)) return articleValidation
+    if (isFailure(articleValidation)) return failure(articleValidation.error)
 
-    return action(articleValidation.data.articleId)
+    return action(articleValidation.value.articleId)
   }
 
   private async validateArticleExists(articleId: bigint): AsyncResult<Article, Error> {
     const res = await this.query.findArticleById(articleId)
-    if (isFailure(res)) return res
+    if (isFailure(res)) return failure(res.error)
 
-    if (isNull(res.data)) {
+    if (isNull(res.value)) {
       return failure(new NotFoundError(`Article with ID ${articleId} not found`))
     }
 
-    return success(res.data)
+    return success(res.value)
   }
 }

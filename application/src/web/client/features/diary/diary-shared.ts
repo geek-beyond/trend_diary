@@ -11,7 +11,7 @@ export function getTodayJst(): string | null {
   if (isFailure(result)) {
     return null
   }
-  return result.data
+  return result.value
 }
 
 export function sumSourceSummary(sources: SourceSummary[]): SourceSummary {

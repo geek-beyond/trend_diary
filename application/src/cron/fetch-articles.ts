@@ -108,7 +108,7 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
   if (isFailure(result)) {
     throw result.error
   }
-  return result.data
+  return result.value
 }
 
 function isUniqueConstraintError(error: unknown): boolean {

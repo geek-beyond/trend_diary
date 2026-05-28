@@ -3,35 +3,45 @@ import { failure, isFailure, isSuccess, success, wrapAsyncCall } from './index'
 
 describe('Result', () => {
   describe('success', () => {
-    it('dataを保持したResultを返すこと', () => {
+    it('valueを保持したOkを返すこと', () => {
       const result = success(42)
-      expect(result.data).toBe(42)
-      expect(result.error).toBeUndefined()
+      expect(result.isOk()).toBe(true)
+      if (isSuccess(result)) {
+        expect(result.value).toBe(42)
+      }
     })
 
-    it('nullをデータとして保持できること', () => {
+    it('nullをvalueとして保持できること', () => {
       const result = success(null)
-      expect(result.data).toBeNull()
+      if (isSuccess(result)) {
+        expect(result.value).toBeNull()
+      }
     })
 
-    it('オブジェクトをデータとして保持できること', () => {
+    it('オブジェクトをvalueとして保持できること', () => {
       const value = { id: 1, name: 'test' }
       const result = success(value)
-      expect(result.data).toEqual(value)
+      if (isSuccess(result)) {
+        expect(result.value).toEqual(value)
+      }
     })
   })
 
   describe('failure', () => {
-    it('errorを保持したResultを返すこと', () => {
+    it('errorを保持したErrを返すこと', () => {
       const error = new Error('something went wrong')
       const result = failure(error)
-      expect(result.error).toBe(error)
-      expect(result.data).toBeUndefined()
+      expect(result.isErr()).toBe(true)
+      if (isFailure(result)) {
+        expect(result.error).toBe(error)
+      }
     })
 
     it('Error以外のエラー値も保持できること', () => {
       const result = failure('error string')
-      expect(result.error).toBe('error string')
+      if (isFailure(result)) {
+        expect(result.error).toBe('error string')
+      }
     })
   })
 
@@ -44,10 +54,10 @@ describe('Result', () => {
       expect(isSuccess(failure(new Error('e')))).toBe(false)
     })
 
-    it('型ガードとしてdataにアクセスできること', () => {
+    it('型ガードとしてvalueにアクセスできること', () => {
       const result = success('value')
       if (isSuccess(result)) {
-        expect(result.data).toBe('value')
+        expect(result.value).toBe('value')
       }
     })
   })
@@ -75,7 +85,7 @@ describe('Result', () => {
       const result = await wrapAsyncCall(async () => 'ok')
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data).toBe('ok')
+        expect(result.value).toBe('ok')
       }
     })
 

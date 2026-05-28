@@ -38,7 +38,7 @@ export default async function unreadDigestionArticles(
     throw handleError(result.error, logger)
   }
 
-  const response: UnreadDigestionArticlesResponse = { data: result.data.map(toArticleResponse) }
+  const response: UnreadDigestionArticlesResponse = { data: result.value.map(toArticleResponse) }
 
   logger.info('unread digestion articles retrieved successfully', { count: response.data.length })
   return c.json(response, 200)

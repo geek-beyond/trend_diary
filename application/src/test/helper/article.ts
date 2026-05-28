@@ -7,7 +7,7 @@ import { getTestRdb } from './rdb'
 
 function getTodayJstNoon(): Date {
   const todayJstResult = toJstDateString(new Date())
-  const todayJst = isFailure(todayJstResult) ? '1970-01-01' : todayJstResult.data
+  const todayJst = isFailure(todayJstResult) ? '1970-01-01' : todayJstResult.value
   // INFO: trends APIは日付フィルタをJSTで評価するため、E2EデータもJST当日内に固定する
   return new Date(`${todayJst}T12:00:00+09:00`)
 }

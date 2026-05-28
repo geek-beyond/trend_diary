@@ -21,7 +21,7 @@ const diaryDateSchema = z
     if (Number.isNaN(parsed.getTime())) return false
 
     const normalized = toJstDateString(parsed)
-    return !isFailure(normalized) && normalized.data === inputDate
+    return !isFailure(normalized) && normalized.value === inputDate
   }, DIARY_DATE_MESSAGE)
 
 export const diaryQuerySchema = z
@@ -96,13 +96,13 @@ export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) 
       throw handleError(detailResult.error, logger)
     }
 
-    const response = toDiaryDetailResponse(detailResult.data)
+    const response = toDiaryDetailResponse(detailResult.value)
     logger.info('daily diary detail retrieved successfully', {
       activeUserId: sessionUser.activeUserId,
       date: fromDate,
       page: query.page,
-      read: detailResult.data.summary.read,
-      skip: detailResult.data.summary.skip,
+      read: detailResult.value.summary.read,
+      skip: detailResult.value.summary.skip,
     })
     return c.json(response, 200)
   }
@@ -111,7 +111,7 @@ export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) 
   if (isFailure(result)) {
     throw handleError(result.error, logger)
   }
-  const response = toDiaryResponse(result.data)
+  const response = toDiaryResponse(result.value)
   logger.info('daily diary range retrieved successfully', {
     activeUserId: sessionUser.activeUserId,
     from: fromDate,
@@ -127,7 +127,7 @@ function resolveTodayJst(): string {
   if (isFailure(todayResult)) {
     throw new HTTPException(500, { message: 'Failed to resolve JST date' })
   }
-  return todayResult.data
+  return todayResult.value
 }
 
 function validateDiaryDateRange(fromDate: string, toDate: string, todayJst: string) {
@@ -144,7 +144,7 @@ function validateDiaryDateRange(fromDate: string, toDate: string, todayJst: stri
   if (isFailure(earliestResult)) {
     throw new HTTPException(500, { message: 'Failed to resolve diary date range' })
   }
-  const earliestDate = earliestResult.data
+  const earliestDate = earliestResult.value
 
   const causes: { from?: string[]; to?: string[] } = {}
   if (fromDate < earliestDate) {

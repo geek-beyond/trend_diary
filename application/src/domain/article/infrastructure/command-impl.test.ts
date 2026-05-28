@@ -30,9 +30,9 @@ describe('CommandImpl', () => {
       })
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data.readHistoryId).toBe(10n)
-        expect(result.data.activeUserId).toBe(1n)
-        expect(result.data.articleId).toBe(100n)
+        expect(result.value.readHistoryId).toBe(10n)
+        expect(result.value.activeUserId).toBe(1n)
+        expect(result.value.articleId).toBe(100n)
       }
     })
 
@@ -81,9 +81,9 @@ describe('CommandImpl', () => {
       })
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data.skippedArticleId).toBe(10n)
-        expect(result.data.activeUserId).toBe(1n)
-        expect(result.data.articleId).toBe(100n)
+        expect(result.value.skippedArticleId).toBe(10n)
+        expect(result.value.activeUserId).toBe(1n)
+        expect(result.value.articleId).toBe(100n)
       }
     })
 

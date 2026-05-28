@@ -63,9 +63,9 @@ describe('QueryImpl', () => {
 
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data.total).toBe(2)
-        expect(result.data.data).toHaveLength(2)
-        expect(result.data.data[0].isRead).toBeUndefined()
+        expect(result.value.total).toBe(2)
+        expect(result.value.data).toHaveLength(2)
+        expect(result.value.data[0].isRead).toBeUndefined()
       }
     })
 
@@ -97,8 +97,8 @@ describe('QueryImpl', () => {
 
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data.data[0].isRead).toBe(true)
-        expect(result.data.data[1].isRead).toBe(false)
+        expect(result.value.data[0].isRead).toBe(true)
+        expect(result.value.data[1].isRead).toBe(false)
       }
     })
 
@@ -160,10 +160,10 @@ describe('QueryImpl', () => {
       expect(mockDb.$queryRaw).toHaveBeenCalledTimes(2)
 
       if (isSuccess(result)) {
-        expect(result.data.total).toBe(2)
-        expect(result.data.data).toHaveLength(2)
-        expect(result.data.data[0].title).toBe('対象記事1')
-        expect(result.data.data[1].title).toBe('対象記事2')
+        expect(result.value.total).toBe(2)
+        expect(result.value.data).toHaveLength(2)
+        expect(result.value.data[0].title).toBe('対象記事1')
+        expect(result.value.data[1].title).toBe('対象記事2')
       }
     })
   })
@@ -176,7 +176,7 @@ describe('QueryImpl', () => {
 
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data?.articleId).toBe(1n)
+        expect(result.value?.articleId).toBe(1n)
       }
     })
   })
@@ -218,10 +218,10 @@ describe('QueryImpl', () => {
 
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data).toHaveLength(1)
-        expect(result.data[0].articleId).toBe(1n)
-        expect(result.data[0].title).toBe('未読消化対象')
-        expect(result.data[0].createdAt.toISOString()).toBe(expectedIso)
+        expect(result.value).toHaveLength(1)
+        expect(result.value[0].articleId).toBe(1n)
+        expect(result.value[0].title).toBe('未読消化対象')
+        expect(result.value[0].createdAt.toISOString()).toBe(expectedIso)
       }
     })
 
@@ -270,17 +270,17 @@ describe('QueryImpl', () => {
       expect(isSuccess(result)).toBe(true)
       expect(mockDb.$queryRaw).toHaveBeenCalledTimes(2)
       if (isSuccess(result)) {
-        expect(result.data.summary).toEqual({ read: 3, skip: 2 })
-        expect(result.data.sources).toEqual([
+        expect(result.value.summary).toEqual({ read: 3, skip: 2 })
+        expect(result.value.sources).toEqual([
           { media: 'qiita', read: 2, skip: 1 },
           { media: 'zenn', read: 1, skip: 0 },
           { media: 'hatena', read: 0, skip: 1 },
         ])
-        expect(result.data.reads.total).toBe(3)
-        expect(result.data.reads.data).toHaveLength(2)
-        expect(result.data.reads.data[0].readHistoryId).toBe(10n)
-        expect(result.data.reads.data[0].url).toBe('https://example.com/go-error-handling')
-        expect(result.data.reads.data[1].readHistoryId).toBe(9n)
+        expect(result.value.reads.total).toBe(3)
+        expect(result.value.reads.data).toHaveLength(2)
+        expect(result.value.reads.data[0].readHistoryId).toBe(10n)
+        expect(result.value.reads.data[0].url).toBe('https://example.com/go-error-handling')
+        expect(result.value.reads.data[1].readHistoryId).toBe(9n)
       }
     })
 
@@ -309,7 +309,7 @@ describe('QueryImpl', () => {
       expect(isSuccess(result)).toBe(true)
       expect(mockDb.$queryRaw).toHaveBeenCalledTimes(1)
       if (isSuccess(result)) {
-        expect(result.data).toEqual([
+        expect(result.value).toEqual([
           {
             date: '2026-03-06',
             summary: { read: 2, skip: 0 },

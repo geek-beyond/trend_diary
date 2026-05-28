@@ -34,9 +34,9 @@ export class AuthUseCase {
   ): AsyncResult<SignupResult, ClientError | ServerError> {
     // 認証でユーザー作成
     const authResult = await this.repository.signup(email, password)
-    if (isFailure(authResult)) return authResult
+    if (isFailure(authResult)) return failure(authResult.error)
 
-    const { user, session } = authResult.data
+    const { user, session } = authResult.value
 
     // active_userを作成
     const activeUserResult = await this.userCommand.createActiveWithAuthenticationId(
@@ -64,7 +64,7 @@ export class AuthUseCase {
 
     return success({
       session,
-      activeUser: activeUserResult.data,
+      activeUser: activeUserResult.value,
     })
   }
 
@@ -74,17 +74,17 @@ export class AuthUseCase {
   ): AsyncResult<LoginResult, ClientError | ServerError> {
     // 認証でログイン
     const authResult = await this.repository.login(email, password)
-    if (isFailure(authResult)) return authResult
+    if (isFailure(authResult)) return failure(authResult.error)
 
-    const { user, session } = authResult.data
+    const { user, session } = authResult.value
 
     const activeUserResult = await this.findActiveUserByAuthenticationId(user.id)
 
-    if (isFailure(activeUserResult)) return activeUserResult
+    if (isFailure(activeUserResult)) return failure(activeUserResult.error)
 
     return success({
       session,
-      activeUser: activeUserResult.data,
+      activeUser: activeUserResult.value,
     })
   }
 
@@ -95,26 +95,26 @@ export class AuthUseCase {
   async getCurrentActiveUser(): AsyncResult<CurrentUser, ClientError | ServerError> {
     const authUserResult = await this.repository.getCurrentUser()
     if (isFailure(authUserResult)) {
-      return authUserResult
+      return failure(authUserResult.error)
     }
 
-    return this.findActiveUserByAuthenticationId(authUserResult.data.id)
+    return this.findActiveUserByAuthenticationId(authUserResult.value.id)
   }
 
   async refreshSession(): AsyncResult<LoginResult, ClientError | ServerError> {
     // 認証でセッション更新
     const authResult = await this.repository.refreshSession()
-    if (isFailure(authResult)) return authResult
+    if (isFailure(authResult)) return failure(authResult.error)
 
-    const { user, session } = authResult.data
+    const { user, session } = authResult.value
 
     const activeUserResult = await this.findActiveUserByAuthenticationId(user.id)
 
-    if (isFailure(activeUserResult)) return activeUserResult
+    if (isFailure(activeUserResult)) return failure(activeUserResult.error)
 
     return success({
       session,
-      activeUser: activeUserResult.data,
+      activeUser: activeUserResult.value,
     })
   }
 
@@ -127,10 +127,10 @@ export class AuthUseCase {
       return failure(new ServerError(activeUserResult.error))
     }
 
-    if (!activeUserResult.data) {
+    if (!activeUserResult.value) {
       return failure(new ClientError('User not found', 404))
     }
 
-    return success(activeUserResult.data)
+    return success(activeUserResult.value)
   }
 }

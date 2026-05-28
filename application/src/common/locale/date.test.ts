@@ -48,7 +48,7 @@ describe('Common Date Module', () => {
       const result = toJstDateString(new Date('2024-01-01T00:00:00Z'))
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data).toBe('2024-01-01')
+        expect(result.value).toBe('2024-01-01')
       }
     })
 
@@ -101,7 +101,7 @@ describe('Common Date Module', () => {
       const result = toTodayJstDateString()
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data).toBe('2024-01-02')
+        expect(result.value).toBe('2024-01-02')
       }
     })
   })
@@ -111,7 +111,7 @@ describe('Common Date Module', () => {
       const result = addJstDays('2024-01-01', -1)
       expect(isSuccess(result)).toBe(true)
       if (isSuccess(result)) {
-        expect(result.data).toBe('2023-12-31')
+        expect(result.value).toBe('2023-12-31')
       }
     })
 

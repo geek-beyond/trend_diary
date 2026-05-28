@@ -30,6 +30,6 @@ export default class CommandImpl implements Command {
       return failure(new ServerError('Failed to create active user'))
     }
 
-    return success(mapToActiveUser(activeUserResult.data))
+    return success(mapToActiveUser(activeUserResult.value))
   }
 }

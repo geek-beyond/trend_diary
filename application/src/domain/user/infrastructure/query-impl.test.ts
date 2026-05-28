@@ -35,8 +35,8 @@ describe('QueryImpl', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data?.activeUserId).toBe(1n)
-          expect(result.data?.email).toBe('test@example.com')
+          expect(result.value?.activeUserId).toBe(1n)
+          expect(result.value?.email).toBe('test@example.com')
         }
         expect(prisma.activeUser.findUnique).toHaveBeenCalled()
       })
@@ -54,7 +54,7 @@ describe('QueryImpl', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data).toBeNull()
+          expect(result.value).toBeNull()
         }
       })
     })
@@ -102,8 +102,8 @@ describe('QueryImpl', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data?.email).toBe(email)
-          expect(result.data?.activeUserId).toBe(1n)
+          expect(result.value?.email).toBe(email)
+          expect(result.value?.activeUserId).toBe(1n)
         }
         expect(prisma.activeUser.findUnique).toHaveBeenCalled()
       })
@@ -121,7 +121,7 @@ describe('QueryImpl', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data).toBeNull()
+          expect(result.value).toBeNull()
         }
       })
     })
@@ -169,8 +169,8 @@ describe('QueryImpl', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data?.activeUserId).toBe(1n)
-          expect(result.data?.email).toBe('test@example.com')
+          expect(result.value?.activeUserId).toBe(1n)
+          expect(result.value?.email).toBe('test@example.com')
         }
         expect(prisma.activeUser.findUnique).toHaveBeenCalledWith({
           where: { authenticationId },
@@ -190,7 +190,7 @@ describe('QueryImpl', () => {
         // Assert
         expect(isSuccess(result)).toBe(true)
         if (isSuccess(result)) {
-          expect(result.data).toBeNull()
+          expect(result.value).toBeNull()
         }
       })
     })

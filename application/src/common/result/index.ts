@@ -1,27 +1,25 @@
-type Success<T> = { data: T; error?: never }
-type Failure<E> = { data?: never; error: E }
+import { type Err, err, type Result as NeverthrowResult, type Ok, ok } from 'neverthrow'
 
-export type Result<T, E> = Success<T> | Failure<E>
+export type { Err, Ok }
+export type Result<T, E> = NeverthrowResult<T, E>
 export type AsyncResult<T, E> = Promise<Result<T, E>>
 
-export const success = <T>(data: T): Result<T, never> => ({ data })
+export const success = ok
 
-export const failure = <E>(error: E): Result<never, E> => ({ error })
+export const failure = err
 
-export const isSuccess = <T, E>(result: Result<T, E>): result is Success<T> =>
-  result.error === undefined
+export const isSuccess = <T, E>(result: Result<T, E>): result is Ok<T, E> => result.isOk()
 
-export const isFailure = <T, E>(result: Result<T, E>): result is Failure<E> =>
-  result.error !== undefined
+export const isFailure = <T, E>(result: Result<T, E>): result is Err<T, E> => result.isErr()
 
 export const wrapAsyncCall = async <T>(
   fn: () => Promise<T>,
   cleanup?: () => unknown | Promise<unknown>,
 ): AsyncResult<T, Error> => {
   try {
-    return success(await fn())
+    return ok(await fn())
   } catch (e) {
-    return failure(e instanceof Error ? e : new Error(String(e)))
+    return err(e instanceof Error ? e : new Error(String(e)))
   } finally {
     if (cleanup) await cleanup()
   }

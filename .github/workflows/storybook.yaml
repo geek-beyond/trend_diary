@@ -44,9 +44,32 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Playwrightのセットアップ
+      - name: Playwrightのセットアップ(キャッシュミス)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install chromium --with-deps
+
+      # キャッシュヒット時はブラウザ本体の再DLは不要だが、システム依存(apt)は
+      # ランナーごとに必要なため毎回インストールする
+      - name: Playwright依存のセットアップ(キャッシュヒット)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: ブラウザ起動の事前確認(調査用)
+        run: |
+          set +e
+          node -e "
+            const { chromium } = require('playwright');
+            (async () => {
+              try {
+                const b = await chromium.launch({ headless: true });
+                console.log('BROWSER_LAUNCH_OK');
+                await b.close();
+              } catch (e) {
+                console.log('::error::BROWSER_LAUNCH_FAIL ' + String(e && e.message || e).split('\n').slice(0,3).join(' | '));
+                process.exit(7);
+              }
+            })();
+          "
 
       - name: Storybookテストの実行
         run: |

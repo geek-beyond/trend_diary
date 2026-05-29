@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect } from 'storybook/test'
+import { useLocation } from 'react-router'
+import { expect, userEvent } from 'storybook/test'
 import { AnchorLink, LinkAsButton } from './link'
 
 const meta: Meta<typeof AnchorLink> = {
@@ -9,38 +10,47 @@ export default meta
 
 type Story = StoryObj<typeof AnchorLink>
 
+// 現在地を可視化し、クリックでSPAルーティングが起きたか（=内部リンクの振る舞い）を検証する。
+function CurrentPath() {
+  const { pathname } = useLocation()
+  return <p>現在地: {pathname}</p>
+}
+
 export const Internal: Story = {
-  args: {
-    to: '/trends',
-    children: '内部リンク',
-  },
+  render: () => (
+    <div>
+      <AnchorLink to='/login'>ログインへ</AnchorLink>
+      <CurrentPath />
+    </div>
+  ),
   play: async ({ canvas }) => {
-    // 内部リンクがアクセシブルネームで辿れる操作可能なリンクとして提示される
-    await expect(canvas.getByRole('link', { name: '内部リンク' })).toBeInTheDocument()
+    // 内部リンクのクリックでSPA内ルーティングが発生し、現在地が変わる
+    await expect(canvas.getByText('現在地: /')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('link', { name: 'ログインへ' }))
+    await expect(await canvas.findByText('現在地: /login')).toBeInTheDocument()
   },
 }
 
 export const External: Story = {
-  args: {
-    to: 'https://example.com',
-    children: '外部リンク',
-  },
+  render: () => <AnchorLink to='https://example.com'>外部サイトへ</AnchorLink>,
   play: async ({ canvas }) => {
-    // 外部リンクもアクセシブルネームで辿れる操作可能なリンクとして提示される
-    await expect(canvas.getByRole('link', { name: '外部リンク' })).toBeInTheDocument()
+    // 外部リンクは新規タブ遷移のため遷移自体は検証せず、操作可能なリンクとして提示されることを確認する
+    await expect(canvas.getByRole('link', { name: '外部サイトへ' })).toBeInTheDocument()
   },
 }
 
 type ButtonStory = StoryObj<typeof LinkAsButton>
 
-// LinkAsButton 自体には内部/外部の分岐がなく AnchorLink に委譲するため、代表ケースのみ検証する。
 export const AsButton: ButtonStory = {
-  render: (args) => <LinkAsButton {...args} />,
-  args: {
-    to: '/login',
-    children: 'ボタン風リンク',
-  },
+  render: () => (
+    <div>
+      <LinkAsButton to='/signup'>登録へ</LinkAsButton>
+      <CurrentPath />
+    </div>
+  ),
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole('link', { name: 'ボタン風リンク' })).toBeInTheDocument()
+    // ボタン外観でも内部リンクとしてSPAルーティングが機能する
+    await userEvent.click(canvas.getByRole('link', { name: '登録へ' }))
+    await expect(await canvas.findByText('現在地: /signup')).toBeInTheDocument()
   },
 }

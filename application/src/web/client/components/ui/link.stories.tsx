@@ -34,8 +34,12 @@ export const Internal: Story = {
 export const External: Story = {
   render: () => <AnchorLink to='https://example.com'>外部サイトへ</AnchorLink>,
   play: async ({ canvas }) => {
-    // 外部リンクは新規タブ遷移のため遷移自体は検証せず、操作可能なリンクとして提示されることを確認する
-    await expect(canvas.getByRole('link', { name: '外部サイトへ' })).toBeInTheDocument()
+    // 外部リンクは外部URLを指す a 要素として描画され、新規タブ(target=_blank)かつ
+    // rel で安全性(noopener/noreferrer)を担保した状態で開かれる
+    const link = canvas.getByRole('link', { name: '外部サイトへ' })
+    await expect(link).toHaveAttribute('href', 'https://example.com')
+    await expect(link).toHaveAttribute('target', '_blank')
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow')
   },
 }
 

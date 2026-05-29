@@ -4,16 +4,11 @@ import { playwright } from '@vitest/browser-playwright'
 import { defineConfig, loadEnv } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 
-// CIでは `.github/workflows/test.yaml` の component ジョブでこの設定を使ってテストを実行する
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   process.env = { ...process.env, ...env }
   return {
     plugins: [tailwindcss(), tsconfigPaths(), storybookTest()],
-    // CI(コールドスタート)では vite:dep-scan が依存最適化によるサーバー再起動と競合し、
-    // 「The server is being restarted or closed」で起動に失敗する。
-    // noDiscovery で起動時の依存スキャン自体を無効化し、stories から辿る依存は
-    // include で明示してプリバンドルする(スキャンが走らないので競合しない)。
     optimizeDeps: {
       noDiscovery: true,
       include: [

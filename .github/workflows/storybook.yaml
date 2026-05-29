@@ -54,10 +54,11 @@ jobs:
           npm run test-storybook -- --reporter=default --reporter=github-actions 2>&1 | tee /tmp/storybook-test.log
           code=${PIPESTATUS[0]}
           if [ "$code" -ne 0 ]; then
-            echo "::group::Storybook テスト失敗ログ (末尾)"
-            tail -n 80 /tmp/storybook-test.log
+            echo "::group::Storybook テスト失敗ログ (全文)"
+            cat /tmp/storybook-test.log
             echo "::endgroup::"
-            tail -n 60 /tmp/storybook-test.log | sed 's/%/%25/g; s/\r//g' | while IFS= read -r line; do
+            grep -niE "could not resolve|cannot find|vite:dep-scan|triggered by this import|Build failed|failed to (load|resolve)|Error:|✘ \[ERROR\]|\.tsx?:[0-9]" /tmp/storybook-test.log \
+              | sed 's/\x1b\[[0-9;]*m//g; s/%/%25/g; s/\r//g' | head -50 | while IFS= read -r line; do
               echo "::error::${line}"
             done
           fi

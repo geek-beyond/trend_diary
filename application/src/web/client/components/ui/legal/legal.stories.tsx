@@ -21,12 +21,9 @@ export const AllElements: Story = {
     </article>
   ),
   play: async ({ canvas }) => {
-    // 各見出しレベルが適切なロールでレンダリングされることを確認
     await expect(canvas.getByRole('heading', { level: 1, name: '利用規約' })).toBeInTheDocument()
     await expect(canvas.getByRole('heading', { level: 2, name: '第1条 適用' })).toBeInTheDocument()
     await expect(canvas.getByRole('heading', { level: 3, name: '1.1 補足' })).toBeInTheDocument()
-
-    // 段落テキストが表示されることを確認
     await expect(
       canvas.getByText('本規約は、サービスの利用条件を定めるものです。'),
     ).toBeInTheDocument()
@@ -36,7 +33,6 @@ export const AllElements: Story = {
 export const ParagraphWithClassName: Story = {
   render: () => <Paragraph className='text-red-500'>注意書きの段落です。</Paragraph>,
   play: async ({ canvas }) => {
-    // className が既定クラスとマージされて適用されることを確認
     const paragraph = canvas.getByText('注意書きの段落です。')
     await expect(paragraph).toHaveClass('text-red-500')
     await expect(paragraph).toHaveClass('mb-6', 'leading-relaxed')

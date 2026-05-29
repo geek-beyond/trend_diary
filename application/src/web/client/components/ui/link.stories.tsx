@@ -15,12 +15,9 @@ export const Internal: Story = {
     children: '内部リンク',
   },
   play: async ({ canvas }) => {
-    // 内部リンクはReact RouterのLinkとしてレンダリングされることを確認
     const link = canvas.getByRole('link', { name: '内部リンク' })
     await expect(link).toBeInTheDocument()
     await expect(link).toHaveAttribute('href', '/trends')
-
-    // 内部リンクは新しいタブで開かないことを確認
     await expect(link).not.toHaveAttribute('target', '_blank')
   },
 }
@@ -31,11 +28,8 @@ export const External: Story = {
     children: '外部リンク',
   },
   play: async ({ canvas }) => {
-    // 外部リンクはaタグとしてレンダリングされることを確認
     const link = canvas.getByRole('link', { name: '外部リンク' })
     await expect(link).toHaveAttribute('href', 'https://example.com')
-
-    // 外部リンクは新しいタブで開き、安全な rel 属性が付与されることを確認
     await expect(link).toHaveAttribute('target', '_blank')
     await expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow')
   },
@@ -48,7 +42,6 @@ export const WithClassName: Story = {
     children: 'スタイル付きリンク',
   },
   play: async ({ canvas }) => {
-    // className が正しく適用されることを確認
     const link = canvas.getByRole('link', { name: 'スタイル付きリンク' })
     await expect(link).toHaveClass('text-blue-600', 'underline')
   },
@@ -65,7 +58,6 @@ export const AsButton: ButtonStory = {
     children: 'ボタン風リンク',
   },
   play: async ({ canvas }) => {
-    // ボタン風リンクが内部リンクとしてレンダリングされることを確認
     const link = canvas.getByRole('link', { name: 'ボタン風リンク' })
     await expect(link).toHaveAttribute('href', '/login')
   },

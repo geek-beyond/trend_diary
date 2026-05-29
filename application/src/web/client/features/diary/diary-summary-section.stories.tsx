@@ -22,13 +22,10 @@ type Story = StoryObj<typeof DiarySummarySection>
 
 export const Default: Story = {
   play: async ({ canvas }) => {
-    // 見出しと媒体ラベルが表示されることを確認
     await expect(canvas.getByText('集計')).toBeInTheDocument()
     await expect(canvas.getByText('Qiita')).toBeInTheDocument()
     await expect(canvas.getByText('Zenn')).toBeInTheDocument()
     await expect(canvas.getByText('はてブ')).toBeInTheDocument()
-
-    // 合計行が表示されることを確認
     await expect(canvas.getByText('合計')).toBeInTheDocument()
     await expect(canvas.getByText('6件')).toBeInTheDocument()
   },
@@ -39,7 +36,6 @@ export const WithTargetDate: Story = {
     targetDate: '2026-05-29',
   },
   play: async ({ canvas }) => {
-    // 対象日が指定された場合に日付が表示されることを確認
     const targetDate = canvas.getByText(/対象日:/)
     await expect(targetDate).toBeInTheDocument()
   },

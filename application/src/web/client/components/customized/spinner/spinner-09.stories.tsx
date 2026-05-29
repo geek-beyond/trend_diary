@@ -11,7 +11,6 @@ type Story = StoryObj<typeof SpinnerCircle3>
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {
-    // スピナー要素がレンダリングされ、アニメーションクラスが付与されることを確認
     const spinner = canvasElement.querySelector('.animate-spin')
     await expect(spinner).toBeInTheDocument()
     await expect(spinner).toHaveClass('rounded-full', 'border-t-primary')

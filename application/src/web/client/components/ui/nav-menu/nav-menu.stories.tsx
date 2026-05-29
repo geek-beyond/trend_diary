@@ -33,7 +33,6 @@ export const SidebarVariant: Story = {
     ),
   ],
   play: async ({ canvas }) => {
-    // sidebar バリアントで各メニュー項目がリンクとして表示されることを確認
     const trendsLink = canvas.getByRole('link', { name: 'トレンド記事' })
     await expect(trendsLink).toHaveAttribute('href', '/trends')
 
@@ -56,7 +55,6 @@ export const SheetVariant: Story = {
     ),
   ],
   play: async ({ canvas }) => {
-    // sheet バリアントでアプリケーション見出しとメニュー項目が表示されることを確認
     await expect(canvas.getByText('Application')).toBeInTheDocument()
 
     const trendsLink = canvas.getByRole('link', { name: 'トレンド記事' })

@@ -26,7 +26,6 @@ export const SidebarVariant: Story = {
     ),
   ],
   play: async ({ canvas, args }) => {
-    // ログアウトボタンが表示され、クリックで onLogout が呼ばれることを確認
     const button = canvas.getByText('ログアウト')
     await expect(button).toBeInTheDocument()
 
@@ -40,7 +39,6 @@ export const SheetVariant: Story = {
     variant: 'sheet',
   },
   play: async ({ canvas, args }) => {
-    // sheet バリアントでもログアウトボタンが動作することを確認
     const button = canvas.getByRole('button', { name: 'ログアウト' })
     await expect(button).toBeInTheDocument()
 
@@ -55,7 +53,6 @@ export const Loading: Story = {
     isLoading: true,
   },
   play: async ({ canvas }) => {
-    // ローディング中はラベルが変化し、ボタンが無効化されることを確認
     const button = canvas.getByRole('button', { name: 'ログアウト中...' })
     await expect(button).toBeDisabled()
   },

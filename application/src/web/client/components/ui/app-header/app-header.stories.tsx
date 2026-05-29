@@ -30,17 +30,14 @@ export const LoggedOut: Story = {
     isLoggedIn: false,
   },
   play: async ({ canvas }) => {
-    // ヘッダーとサイトタイトルが描画されることを確認
     await expect(canvas.getByRole('banner', { hidden: true })).toBeInTheDocument()
     await expect(canvas.getByText('TrendDiary')).toBeInTheDocument()
 
-    // TOPページへのリンクが存在することを確認
     const homeLink = canvas
       .getAllByRole('link', { hidden: true })
       .find((link) => link.getAttribute('href') === '/')
     await expect(homeLink).toBeInTheDocument()
 
-    // メニューを開くボタンが存在することを確認
     await expect(
       canvas.getByRole('button', { name: 'メニューを開く', hidden: true }),
     ).toBeInTheDocument()
@@ -52,8 +49,7 @@ export const LoggedIn: Story = {
     isLoggedIn: true,
   },
   play: async ({ canvas }) => {
-    // ログイン状態でもヘッダーが正しく描画されることを確認
-    // (ログイン分岐を通すことでメニュー項目生成・UserSection 生成のコードを網羅する)
+    // ログイン分岐を通すことでメニュー項目生成・UserSection 生成のコードを網羅する
     await expect(canvas.getByRole('banner', { hidden: true })).toBeInTheDocument()
     await expect(
       canvas.getByRole('button', { name: 'メニューを開く', hidden: true }),

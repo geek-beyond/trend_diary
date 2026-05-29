@@ -22,10 +22,8 @@ type Story = StoryObj<typeof DiaryReadPagination>
 
 export const Default: Story = {
   play: async ({ canvas, args }) => {
-    // ページ番号ラベルが表示されることを確認
     await expect(canvas.getByText('2 / 5')).toBeInTheDocument()
 
-    // 前へ・次へボタンが有効でクリックハンドラが呼ばれることを確認
     const prev = canvas.getByRole('button', { name: '前へ' })
     const next = canvas.getByRole('button', { name: '次へ' })
     await expect(prev).toBeEnabled()
@@ -49,7 +47,6 @@ export const FirstPage: Story = {
     },
   },
   play: async ({ canvas }) => {
-    // 最初のページでは前へボタンが無効化されることを確認
     await expect(canvas.getByRole('button', { name: '前へ' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: '次へ' })).toBeEnabled()
   },
@@ -66,7 +63,6 @@ export const NoDailyDetails: Story = {
     },
   },
   play: async ({ canvas }) => {
-    // 日次詳細が無い場合はプレースホルダーラベルが表示され、両ボタンが無効化されることを確認
     await expect(canvas.getByText('- / -')).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: '前へ' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: '次へ' })).toBeDisabled()

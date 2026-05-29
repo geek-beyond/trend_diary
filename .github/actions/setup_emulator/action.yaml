@@ -57,7 +57,7 @@ runs:
       run: |
         set -euo pipefail
         "$EMULATOR_BIN" -addr 127.0.0.1:54321 > "$RUNNER_TEMP/emulator.log" 2>&1 &
-        for _ in {1..200}; do
+        for i in {1..200}; do
           curl -sf http://127.0.0.1:54321/auth/v1/health > /dev/null && exit 0
           sleep 0.05
         done

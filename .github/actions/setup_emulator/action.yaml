@@ -35,6 +35,8 @@ runs:
         esac
 
         work="$RUNNER_TEMP/supa-emu"
+        # セルフホストランナーでの前回ジョブの残骸を排除して状態を初期化する
+        rm -rf "$work"
         mkdir -p "$work"
         # GoReleaser のアセット名: supabase-emulator_<version>_<os>_<arch>.tar.gz
         # バージョンを問わず glob で一致させる
@@ -43,7 +45,8 @@ runs:
           --pattern "supabase-emulator_*_${os}_${arch}.tar.gz" \
           --dir "$work" --clobber
 
-        tar -xzf "$work"/supabase-emulator_*_"${os}"_"${arch}".tar.gz -C "$work"
+        # pattern で 1 ファイルだけ DL されるため glob は *.tar.gz で十分
+        tar -xzf "$work"/*.tar.gz -C "$work"
         chmod +x "$work/supabase-emulator"
         echo "EMULATOR_BIN=$work/supabase-emulator" >> "$GITHUB_ENV"
 
@@ -52,7 +55,7 @@ runs:
       run: |
         set -euo pipefail
         "$EMULATOR_BIN" -addr 127.0.0.1:54321 > "$RUNNER_TEMP/emulator.log" 2>&1 &
-        for _ in $(seq 1 200); do
+        for _ in {1..200}; do
           curl -sf http://127.0.0.1:54321/auth/v1/health > /dev/null && exit 0
           sleep 0.05
         done

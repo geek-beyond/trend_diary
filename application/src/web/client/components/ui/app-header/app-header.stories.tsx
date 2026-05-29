@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect } from 'storybook/test'
 import { vi } from 'vitest'
-import useSidebar from '../sidebar/use-sidebar'
 import AppHeader from './index'
 
-// useSidebar フックをモックし、ログアウト処理の副作用を無効化する
+// useSidebar フックをモックし、ログアウト処理の副作用（ログアウトAPI呼び出し）を無効化する
 vi.mock('../sidebar/use-sidebar', () => ({
   default: vi.fn(() => ({
     handleLogout: vi.fn(),
@@ -12,19 +11,11 @@ vi.mock('../sidebar/use-sidebar', () => ({
   })),
 }))
 
-const setDefaultMock = () => {
-  vi.mocked(useSidebar).mockReturnValue({
-    handleLogout: vi.fn(),
-    isLoading: false,
-  })
-}
-
 const meta: Meta<typeof AppHeader> = {
   component: AppHeader,
   parameters: {
     layout: 'fullscreen',
   },
-  beforeEach: setDefaultMock,
 }
 export default meta
 

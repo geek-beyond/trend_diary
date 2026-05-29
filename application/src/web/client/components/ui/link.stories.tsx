@@ -56,29 +56,17 @@ export const WithClassName: Story = {
 
 type ButtonStory = StoryObj<typeof LinkAsButton>
 
-export const AsButtonInternal: ButtonStory = {
+// LinkAsButton 自体には内部/外部の分岐がない（AnchorLink に委譲）ため、
+// 代表として内部リンクのケースのみ検証する。外部リンクの分岐は上記 External で網羅済み。
+export const AsButton: ButtonStory = {
   render: (args) => <LinkAsButton {...args} />,
   args: {
     to: '/login',
-    children: 'ボタン風内部リンク',
+    children: 'ボタン風リンク',
   },
   play: async ({ canvas }) => {
     // ボタン風リンクが内部リンクとしてレンダリングされることを確認
-    const link = canvas.getByRole('link', { name: 'ボタン風内部リンク' })
+    const link = canvas.getByRole('link', { name: 'ボタン風リンク' })
     await expect(link).toHaveAttribute('href', '/login')
-  },
-}
-
-export const AsButtonExternal: ButtonStory = {
-  render: (args) => <LinkAsButton {...args} />,
-  args: {
-    to: 'https://example.com/docs',
-    children: 'ボタン風外部リンク',
-  },
-  play: async ({ canvas }) => {
-    // ボタン風リンクが外部リンクとして新しいタブで開くことを確認
-    const link = canvas.getByRole('link', { name: 'ボタン風外部リンク' })
-    await expect(link).toHaveAttribute('href', 'https://example.com/docs')
-    await expect(link).toHaveAttribute('target', '_blank')
   },
 }

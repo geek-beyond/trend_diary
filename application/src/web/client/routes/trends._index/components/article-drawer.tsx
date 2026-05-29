@@ -81,7 +81,9 @@ export default function ArticleDrawer({
             </DrawerTitle>
             {/* スクリーンリーダー向けの説明。Radix Dialog の aria-describedby 警告も解消する */}
             <DrawerDescription className='sr-only'>
-              {`${article.author}による記事「${article.title}」の概要`}
+              {article.author
+                ? `${article.author}による記事「${article.title}」の概要`
+                : `記事「${article.title}」の概要`}
             </DrawerDescription>
             {isRead && (
               <span

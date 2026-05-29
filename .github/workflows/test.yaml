@@ -136,7 +136,10 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: Supabase Emulator のセットアップ
-        uses: ./.github/actions/setup_emulator
+        uses: rin2yh/supa-emu@002534b987244b792d8a075163abc754462cd44e # v0.1.1
+        with:
+          version: v0.1.1
+          addr: 127.0.0.1:54321
 
       - name: DB Migration
         run: npm run db:migrate

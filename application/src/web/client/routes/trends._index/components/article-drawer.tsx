@@ -7,6 +7,7 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from '@/web/client/components/shadcn/drawer'
@@ -78,6 +79,10 @@ export default function ArticleDrawer({
             <DrawerTitle className='text-xl leading-relaxed font-bold text-gray-900'>
               {article.title}
             </DrawerTitle>
+            {/* スクリーンリーダー向けの説明。Radix Dialog の aria-describedby 警告も解消する */}
+            <DrawerDescription className='sr-only'>
+              {`${article.author}による記事「${article.title}」の概要`}
+            </DrawerDescription>
             {isRead && (
               <span
                 data-testid='drawer-read-indicator'

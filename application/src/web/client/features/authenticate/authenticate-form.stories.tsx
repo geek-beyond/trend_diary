@@ -47,7 +47,7 @@ export const EmptyForm: Story = {
 
 // 送信中（isSubmitting）の表示を検証する。
 // AuthenticateForm は表示専用コンポーネントのため、送信中状態は props で渡す。
-export const FilledForm: Story = {
+export const Submitting: Story = {
   args: {
     ...defaultArgs,
     isSubmitting: true,

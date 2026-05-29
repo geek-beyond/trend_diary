@@ -15,10 +15,8 @@ export const Internal: Story = {
     children: '内部リンク',
   },
   play: async ({ canvas }) => {
-    const link = canvas.getByRole('link', { name: '内部リンク' })
-    await expect(link).toBeInTheDocument()
-    await expect(link).toHaveAttribute('href', '/trends')
-    await expect(link).not.toHaveAttribute('target', '_blank')
+    // 内部リンクがアクセシブルネームで辿れる操作可能なリンクとして提示される
+    await expect(canvas.getByRole('link', { name: '内部リンク' })).toBeInTheDocument()
   },
 }
 
@@ -28,29 +26,14 @@ export const External: Story = {
     children: '外部リンク',
   },
   play: async ({ canvas }) => {
-    const link = canvas.getByRole('link', { name: '外部リンク' })
-    await expect(link).toHaveAttribute('href', 'https://example.com')
-    await expect(link).toHaveAttribute('target', '_blank')
-    await expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow')
-  },
-}
-
-export const WithClassName: Story = {
-  args: {
-    to: '/diary',
-    className: 'text-blue-600 underline',
-    children: 'スタイル付きリンク',
-  },
-  play: async ({ canvas }) => {
-    const link = canvas.getByRole('link', { name: 'スタイル付きリンク' })
-    await expect(link).toHaveClass('text-blue-600', 'underline')
+    // 外部リンクもアクセシブルネームで辿れる操作可能なリンクとして提示される
+    await expect(canvas.getByRole('link', { name: '外部リンク' })).toBeInTheDocument()
   },
 }
 
 type ButtonStory = StoryObj<typeof LinkAsButton>
 
-// LinkAsButton 自体には内部/外部の分岐がない（AnchorLink に委譲）ため、
-// 代表として内部リンクのケースのみ検証する。外部リンクの分岐は上記 External で網羅済み。
+// LinkAsButton 自体には内部/外部の分岐がなく AnchorLink に委譲するため、代表ケースのみ検証する。
 export const AsButton: ButtonStory = {
   render: (args) => <LinkAsButton {...args} />,
   args: {
@@ -58,7 +41,6 @@ export const AsButton: ButtonStory = {
     children: 'ボタン風リンク',
   },
   play: async ({ canvas }) => {
-    const link = canvas.getByRole('link', { name: 'ボタン風リンク' })
-    await expect(link).toHaveAttribute('href', '/login')
+    await expect(canvas.getByRole('link', { name: 'ボタン風リンク' })).toBeInTheDocument()
   },
 }

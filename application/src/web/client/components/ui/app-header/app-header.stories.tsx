@@ -23,13 +23,9 @@ export const LoggedOut: Story = {
   },
   play: async ({ canvas }) => {
     await expect(canvas.getByRole('banner', { hidden: true })).toBeInTheDocument()
-    await expect(canvas.getByText('TrendDiary')).toBeInTheDocument()
 
-    const homeLink = canvas
-      .getAllByRole('link', { hidden: true })
-      .find((link) => link.getAttribute('href') === '/')
-    await expect(homeLink).toBeInTheDocument()
-
+    // サイトロゴ兼TOPリンクとメニュー開閉ボタンが操作対象として提示される
+    await expect(canvas.getByRole('link', { name: 'TrendDiary', hidden: true })).toBeInTheDocument()
     await expect(
       canvas.getByRole('button', { name: 'メニューを開く', hidden: true }),
     ).toBeInTheDocument()

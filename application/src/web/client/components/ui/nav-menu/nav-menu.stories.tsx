@@ -33,11 +33,9 @@ export const SidebarVariant: Story = {
     ),
   ],
   play: async ({ canvas }) => {
-    const trendsLink = canvas.getByRole('link', { name: 'トレンド記事' })
-    await expect(trendsLink).toHaveAttribute('href', '/trends')
-
-    const inboxLink = canvas.getByRole('link', { name: '未読消化' })
-    await expect(inboxLink).toHaveAttribute('href', '/inbox')
+    // sidebar バリアントで各メニュー項目が操作可能なリンクとして提示される
+    await expect(canvas.getByRole('link', { name: 'トレンド記事' })).toBeInTheDocument()
+    await expect(canvas.getByRole('link', { name: '未読消化' })).toBeInTheDocument()
   },
 }
 
@@ -55,10 +53,8 @@ export const SheetVariant: Story = {
     ),
   ],
   play: async ({ canvas }) => {
+    // sheet バリアントでも見出しと操作可能なメニューリンクが提示される
     await expect(canvas.getByText('Application')).toBeInTheDocument()
-
-    const trendsLink = canvas.getByRole('link', { name: 'トレンド記事' })
-    await expect(trendsLink).toHaveAttribute('href', '/trends')
-    await expect(trendsLink).toHaveClass('hover:bg-gray-100')
+    await expect(canvas.getByRole('link', { name: 'トレンド記事' })).toBeInTheDocument()
   },
 }

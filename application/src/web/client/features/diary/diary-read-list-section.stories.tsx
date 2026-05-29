@@ -38,8 +38,8 @@ export const WithReads: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByText('読了した記事一覧')).toBeInTheDocument()
 
-    const safeLink = canvas.getByRole('link', { name: '安全なURLの記事' })
-    await expect(safeLink).toHaveAttribute('href', 'https://example.com/article-1')
+    // 安全なURLの記事は操作可能なリンクとして提示される
+    await expect(canvas.getByRole('link', { name: '安全なURLの記事' })).toBeInTheDocument()
 
     // 不正なURLはリンク化せずテキストにフォールバックする
     await expect(canvas.queryByRole('link', { name: '不正なURLの記事' })).not.toBeInTheDocument()

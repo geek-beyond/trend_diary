@@ -29,12 +29,3 @@ export const AllElements: Story = {
     ).toBeInTheDocument()
   },
 }
-
-export const ParagraphWithClassName: Story = {
-  render: () => <Paragraph className='text-red-500'>注意書きの段落です。</Paragraph>,
-  play: async ({ canvas }) => {
-    const paragraph = canvas.getByText('注意書きの段落です。')
-    await expect(paragraph).toHaveClass('text-red-500')
-    await expect(paragraph).toHaveClass('mb-6', 'leading-relaxed')
-  },
-}

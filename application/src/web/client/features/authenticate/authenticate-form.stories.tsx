@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, waitFor } from 'storybook/test'
+import { expect } from 'storybook/test'
 import { AuthenticateForm } from './authenticate-form'
 
 const meta: Meta<typeof AuthenticateForm> = {
@@ -12,11 +12,7 @@ type Story = StoryObj<typeof AuthenticateForm>
 const defaultArgs = {
   loadingSubmitButtonText: 'ログイン中...',
   submitButtonText: 'ログイン',
-  async handleSubmit() {
-    await new Promise((resolve) => {
-      setTimeout(resolve, 300)
-    })
-  },
+  isSubmitting: false,
 }
 
 export const EmptyForm: Story = {
@@ -49,40 +45,44 @@ export const EmptyForm: Story = {
   },
 }
 
+// 送信中（isSubmitting）の表示を検証する。
+// AuthenticateForm は表示専用コンポーネントのため、送信中状態は props で渡す。
 export const FilledForm: Story = {
-  args: defaultArgs,
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText('メールアドレス'), 'email@provider.com')
+  args: {
+    ...defaultArgs,
+    isSubmitting: true,
+  },
+  play: async ({ canvas }) => {
+    // ローディング用のボタンテキストが表示されることを確認
+    await expect(canvas.getByRole('button')).toHaveTextContent('ログイン中...')
 
-    await userEvent.type(canvas.getByLabelText('パスワード'), 'Password1!')
-
-    await userEvent.click(canvas.getByRole('button'))
-
-    await waitFor(() => {
-      expect(canvas.getByRole('button')).toHaveTextContent('ログイン中...')
-    })
+    // 送信中はボタンと入力欄が disabled になることを確認
+    await expect(canvas.getByRole('button')).toBeDisabled()
+    await expect(canvas.getByLabelText('メールアドレス')).toBeDisabled()
+    await expect(canvas.getByLabelText('パスワード')).toBeDisabled()
   },
 }
 
+// バリデーションエラーの表示を検証する。
+// バリデーション結果（errors）は props で渡される設計のため、ここでは errors を直接与える。
 export const FormValidationError: Story = {
-  args: defaultArgs,
-  play: async ({ canvas, userEvent }) => {
-    // 有効なメールアドレスを入力
-    await userEvent.type(canvas.getByLabelText('メールアドレス'), 'user@example.com')
-
-    // 短すぎるパスワードを入力（7文字）
-    await userEvent.type(canvas.getByLabelText('パスワード'), '1234567')
-
-    // Submitしてバリデーションエラーを発生させる
-    await userEvent.click(canvas.getByRole('button'))
-
+  args: {
+    ...defaultArgs,
+    errors: {
+      password: ['パスワードは8文字以上必要です'],
+    },
+  },
+  play: async ({ canvas }) => {
     // バリデーションエラーメッセージが表示されることを確認
     await expect(canvas.getByText('パスワードは8文字以上必要です')).toBeInTheDocument()
 
-    // aria-invalid属性が正しく設定されることを確認
+    // エラーのあるフィールドに aria-invalid 属性が設定されることを確認
     await expect(canvas.getByLabelText('パスワード')).toHaveAttribute('aria-invalid', 'true')
 
-    // Submitボタンがローディング状態にならないことを確認（バリデーションエラーのため）
+    // エラーのないフィールドには aria-invalid が設定されないことを確認
+    await expect(canvas.getByLabelText('メールアドレス')).not.toHaveAttribute('aria-invalid')
+
+    // ローディング状態ではないため、通常のボタンテキストが表示されることを確認
     await expect(canvas.getByRole('button')).toHaveTextContent('ログイン')
   },
 }

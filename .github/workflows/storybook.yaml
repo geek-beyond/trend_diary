@@ -57,8 +57,7 @@ jobs:
             echo "::group::Storybook テスト失敗ログ (全文)"
             cat /tmp/storybook-test.log
             echo "::endgroup::"
-            grep -niE "could not resolve|cannot find|vite:dep-scan|triggered by this import|Build failed|failed to (load|resolve)|Error:|✘ \[ERROR\]|\.tsx?:[0-9]" /tmp/storybook-test.log \
-              | sed 's/\x1b\[[0-9;]*m//g; s/%/%25/g; s/\r//g' | head -50 | while IFS= read -r line; do
+            sed 's/\x1b\[[0-9;]*m//g; s/%/%25/g; s/\r//g' /tmp/storybook-test.log | tail -n 120 | while IFS= read -r line; do
               echo "::error::${line}"
             done
           fi

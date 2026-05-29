@@ -4,7 +4,7 @@ import { playwright } from '@vitest/browser-playwright'
 import { defineConfig, loadEnv } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 
-// playwright周りの調整がやばいので、CIはなし(多分最新のplaywrightを使っていないことが原因)
+// CIでは `.github/workflows/storybook.yaml` でこの設定を使ってStorybookのテストを実行する
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   process.env = { ...process.env, ...env }

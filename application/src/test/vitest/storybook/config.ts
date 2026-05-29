@@ -11,9 +11,11 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [tailwindcss(), tsconfigPaths(), storybookTest()],
     // CI(コールドスタート)では vite:dep-scan が依存最適化によるサーバー再起動と競合し、
-    // 「The server is being restarted or closed」で起動に失敗することがある。
-    // stories から辿るアプリ依存を事前に列挙し、依存最適化を1パスで完了させて回避する。
+    // 「The server is being restarted or closed」で起動に失敗する。
+    // noDiscovery で起動時の依存スキャン自体を無効化し、stories から辿る依存は
+    // include で明示してプリバンドルする(スキャンが走らないので競合しない)。
     optimizeDeps: {
+      noDiscovery: true,
       include: [
         'react',
         'react-dom',
@@ -36,6 +38,10 @@ export default defineConfig(({ mode }) => {
         'zod',
         'swr/mutation',
         'hono/client',
+        'storybook/test',
+        'storybook/preview-api',
+        '@storybook/react-vite',
+        'react-dom/test-utils',
       ],
     },
     test: {

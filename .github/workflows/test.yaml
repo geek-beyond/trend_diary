@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - '.github/workflows/test.yaml'
+      - 'application/.storybook/**'
       - 'application/src/**'
       - 'application/package.json'
       - 'application/package-lock.json'
@@ -14,6 +15,7 @@ on:
       - main
     paths:
       - '.github/workflows/test.yaml'
+      - 'application/.storybook/**'
       - 'application/src/**'
       - 'application/package.json'
       - 'application/package-lock.json'
@@ -42,6 +44,7 @@ jobs:
       run_domain_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-domain.outputs.diff-count != 0 }}
       run_server_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-server.outputs.diff-count != 0 }}
       run_common_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-common.outputs.diff-count != 0 }}
+      run_component_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-client.outputs.diff-count != 0 || steps.check-storybook.outputs.diff-count != 0 }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -76,6 +79,12 @@ jobs:
         with:
           subdir: 'application/src/common'
 
+      - name: Storybook設定の差分チェック
+        id: check-storybook
+        uses: ./.github/actions/diff
+        with:
+          subdir: 'application/.storybook'
+
       - name: 差分結果の表示
         run: |
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
@@ -85,6 +94,7 @@ jobs:
             echo "クライアント差分: ${{ steps.check-client.outputs.diff-count }} ファイル"
             echo "ドメイン差分: ${{ steps.check-domain.outputs.diff-count }} ファイル"
             echo "サーバー差分: ${{ steps.check-server.outputs.diff-count }} ファイル"
+            echo "Storybook設定差分: ${{ steps.check-storybook.outputs.diff-count }} ファイル"
             if [[ "${{ steps.check-test-config.outputs.diff-count }}" != "0" ]]; then
               echo "テスト設定ファイルに変更があるため、全テストを実行"
             fi
@@ -164,3 +174,33 @@ jobs:
         uses: ./.github/actions/test_cov
         with:
           target: common
+
+  component:
+    needs: setup
+    runs-on: ${{ needs.setup.outputs.test_runner }}
+    if: ${{ needs.setup.outputs.run_component_test == 'true' }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: Playwrightブラウザのキャッシュ
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-storybook-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Playwrightのセットアップ(キャッシュミス)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: node node_modules/playwright/cli.js install chromium --with-deps
+
+      - name: Playwright依存のセットアップ(キャッシュヒット)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: node node_modules/playwright/cli.js install-deps chromium
+
+      - name: コンポーネントのテスト
+        run: npm run test-storybook -- --coverage

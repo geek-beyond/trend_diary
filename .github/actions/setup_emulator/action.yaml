@@ -34,6 +34,8 @@ runs:
           *) echo "::error::unsupported arch: $arch"; exit 1 ;;
         esac
 
+        # RUNNER_TEMP が空だと work が /supa-emu になり rm -rf が危険なため事前にガードする
+        : "${RUNNER_TEMP:?RUNNER_TEMP is empty or unset}"
         work="$RUNNER_TEMP/supa-emu"
         # セルフホストランナーでの前回ジョブの残骸を排除して状態を初期化する
         rm -rf "$work"

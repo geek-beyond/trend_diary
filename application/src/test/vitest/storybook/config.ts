@@ -51,7 +51,6 @@ export default defineConfig(({ mode }) => {
           },
         ],
       },
-      setupFiles: ['.storybook/vitest.setup.ts'],
       coverage: {
         include: ['src/web/client/components/**/*.tsx', 'src/web/client/features/**/*.tsx'],
         exclude: ['src/web/client/components/shadcn'],

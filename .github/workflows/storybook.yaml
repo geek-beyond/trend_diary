@@ -37,22 +37,25 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
+      # @vitest/browser-playwright は `playwright` パッケージ(1.60系)を使用し、
+      # `npx playwright`(= @playwright/test 1.57系)とは必要なブラウザビルドが異なる。
+      # そのため e2e とはキャッシュキーを分け、`playwright` パッケージのCLIで導入する。
       - name: Playwrightブラウザのキャッシュ
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-playwright-storybook-${{ hashFiles('**/package-lock.json') }}
 
       - name: Playwrightのセットアップ(キャッシュミス)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install chromium --with-deps
+        run: node node_modules/playwright/cli.js install chromium --with-deps
 
       # キャッシュヒット時はブラウザ本体の再DLは不要だが、システム依存(apt)は
       # ランナーごとに必要なため毎回インストールする
       - name: Playwright依存のセットアップ(キャッシュヒット)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: node node_modules/playwright/cli.js install-deps chromium
 
       - name: ブラウザ起動の事前確認(調査用)
         run: |

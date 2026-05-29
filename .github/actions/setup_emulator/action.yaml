@@ -1,18 +1,60 @@
 name: Setup Supabase Emulator Composite Action
-description: 'リポジトリにコミットされた emulator/supabase/bin/supabase-emulator を起動する'
+description: 'rin2yh/supa-emu の GitHub Releases からバイナリを取得して起動する'
+
+inputs:
+  version:
+    description: '取得する supa-emu のリリースタグ (例: v0.1.0)'
+    required: false
+    default: 'v0.1.0'
+  repo:
+    description: 'バイナリ取得元リポジトリ'
+    required: false
+    default: 'rin2yh/supa-emu'
+  github-token:
+    description: 'GitHub Releases 取得用トークン'
+    required: false
+    default: ${{ github.token }}
 
 runs:
   using: 'composite'
   steps:
+    - name: バイナリを取得
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        VERSION: ${{ inputs.version }}
+        REPO: ${{ inputs.repo }}
+      run: |
+        set -euo pipefail
+        os="$(uname -s | tr '[:upper:]' '[:lower:]')"   # linux / darwin
+        arch="$(uname -m)"
+        case "$arch" in
+          x86_64|amd64) arch=amd64 ;;
+          arm64|aarch64) arch=arm64 ;;
+          *) echo "::error::unsupported arch: $arch"; exit 1 ;;
+        esac
+
+        work="$RUNNER_TEMP/supa-emu"
+        mkdir -p "$work"
+        # GoReleaser のアセット名: supabase-emulator_<version>_<os>_<arch>.tar.gz
+        # バージョンを問わず glob で一致させる
+        gh release download "$VERSION" \
+          --repo "$REPO" \
+          --pattern "supabase-emulator_*_${os}_${arch}.tar.gz" \
+          --dir "$work" --clobber
+
+        tar -xzf "$work"/supabase-emulator_*_"${os}"_"${arch}".tar.gz -C "$work"
+        chmod +x "$work/supabase-emulator"
+        echo "EMULATOR_BIN=$work/supabase-emulator" >> "$GITHUB_ENV"
+
     - name: Emulator を起動
       shell: bash
-      working-directory: ./emulator/supabase
       run: |
-        ./bin/supabase-emulator -addr 127.0.0.1:54321 > emulator.log 2>&1 &
-        # 0.05s 間隔で最大 10s ポーリング。bind は数十 ms で済むので細かく刻むほど待ち時間が減る。
+        set -euo pipefail
+        "$EMULATOR_BIN" -addr 127.0.0.1:54321 > "$RUNNER_TEMP/emulator.log" 2>&1 &
         for _ in $(seq 1 200); do
           curl -sf http://127.0.0.1:54321/auth/v1/health > /dev/null && exit 0
           sleep 0.05
         done
-        cat emulator.log
+        cat "$RUNNER_TEMP/emulator.log"
         exit 1

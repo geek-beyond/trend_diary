@@ -53,12 +53,19 @@ export default defineConfig(({ mode }) => {
       },
       coverage: {
         include: ['src/web/client/components/**/*.tsx', 'src/web/client/features/**/*.tsx'],
-        exclude: ['src/web/client/components/shadcn'],
+        exclude: [
+          'src/web/client/components/shadcn',
+          // 分岐や振る舞いを持たない純粋なラッパーは結合検証の対象が無いためStory・カバレッジ対象外とする
+          'src/web/client/components/ui/legal',
+          'src/web/client/components/ui/link.tsx',
+          'src/web/client/components/customized/spinner',
+          'src/web/client/features/diary/diary-login-required.tsx',
+        ],
         thresholds: {
-          statements: 55,
-          branches: 33,
-          functions: 51,
-          lines: 55,
+          statements: 75,
+          branches: 75,
+          functions: 75,
+          lines: 75,
         },
       },
     },

@@ -80,7 +80,7 @@
     "@chromatic-com/storybook": "^5.2.1",
     "@cloudflare/workers-types": "^4.20260507.1",
     "@faker-js/faker": "^10.4.0",
-    "@hono/vite-dev-server": "^0.25.0",
+    "@hono/vite-dev-server": "^0.26.0",
     "@playwright/test": "^1.60.0",
     "@react-router/dev": "^7.16.0",
     "@storybook/addon-a11y": "^10.4.1",

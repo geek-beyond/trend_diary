@@ -1,8 +1,3 @@
-# https://pnpm.io/settings
-
-# 依存パッケージのビルドスクリプトは全て拒否（旧 .npmrc の ignore-scripts=true を踏襲した
-# サプライチェーン対策）。新たにビルドスクリプトを持つ依存は install がエラーになり明示判断を促す。
-# prisma はエンジン取得が prisma generate 側で完結するため許可不要（CIで確認済み）。
 allowBuilds:
   '@prisma/client': false
   '@prisma/engines': false
@@ -11,7 +6,6 @@ allowBuilds:
   sharp: false
   workerd: false
 
-# 公開直後のパッケージを避けサプライチェーン攻撃リスクを低減（4320分=3日、旧 .npmrc 相当）
 minimumReleaseAge: 4320
 
 overrides:

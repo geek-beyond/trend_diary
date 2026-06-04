@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Biome
-        uses: biomejs/setup-biome@a05c02a1304287da45f13648675a70d5841acdbc # v2
+        uses: biomejs/setup-biome@4c91541eaada48f67d7dbd7833600ce162b68f51 # v2
         with:
           version: ${{ env.BIOME_VERSION }}
 

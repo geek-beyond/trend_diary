@@ -27,4 +27,4 @@ D1向けSQLを作成・適用する場合:
 
 ## マイグレーション後の作業
 
-1. `pnpm run db:gen` で `@prisma/client` の更新
+1. `pnpm run setup` で `@prisma/client` の更新

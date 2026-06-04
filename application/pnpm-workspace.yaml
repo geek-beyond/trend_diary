@@ -2,10 +2,16 @@
 # .npmrcではなく、このファイルで管理する
 # https://pnpm.io/settings
 
-# 旧 .npmrc の ignore-scripts=true 相当
-# 依存パッケージ・自身のライフサイクルスクリプトを実行しない
-# （Prismaクライアントの生成は `pnpm run setup` で明示的に行う）
-ignoreScripts: true
+# 依存パッケージのビルドスクリプトは既定でブロックする（旧 .npmrc の ignore-scripts=true の
+# セキュリティ意図を踏襲）。一方でプロジェクト自身の postinstall（prisma generate）は実行する。
+# 新たにビルドスクリプトを持つ依存が増えた場合はインストールがエラーになり、ここでの明示判断を促す。
+allowBuilds:
+  '@prisma/client': false
+  '@prisma/engines': false
+  esbuild: false
+  prisma: false
+  sharp: false
+  workerd: false
 
 # 旧 .npmrc の min-release-age=3 days 相当（分単位: 3日 = 4320分）
 # 公開直後のパッケージを解決しないことでサプライチェーン攻撃リスクを低減

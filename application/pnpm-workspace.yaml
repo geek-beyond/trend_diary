@@ -1,16 +1,8 @@
-# pnpm 11以降、registry/auth以外の設定はpackage.jsonのpnpmフィールドや
-# .npmrcではなく、このファイルで管理する
 # https://pnpm.io/settings
 
-# ビルドスクリプトのホワイトリスト（deny-by-default）。
-# - allowBuilds が制御するのは「依存パッケージ自身のスクリプト(postinstall等)」のみ。
-#     true        = その依存のビルドスクリプト実行を許可
-#     false       = 実行を拒否（レビュー済みで無効化）
-#     未記載+有り  = install がエラー（許可/拒否の明示判断を強制）
-# - 本プロジェクト自身の postinstall（prisma generate）はこの制御の対象外で常に実行される。
-# 方針: 依存のビルドスクリプトは全て拒否（旧 .npmrc の ignore-scripts=true のセキュリティ意図）。
-#   下記は pnpm がビルドスクリプトありと検出した依存で、レビューのうえ false に固定している。
-#   prisma のエンジン取得等は prisma generate 側で完結するため依存側の許可は不要（CIで動作確認済み）。
+# 依存パッケージのビルドスクリプトは全て拒否（旧 .npmrc の ignore-scripts=true を踏襲した
+# サプライチェーン対策）。新たにビルドスクリプトを持つ依存は install がエラーになり明示判断を促す。
+# prisma はエンジン取得が prisma generate 側で完結するため許可不要（CIで確認済み）。
 allowBuilds:
   '@prisma/client': false
   '@prisma/engines': false
@@ -19,8 +11,7 @@ allowBuilds:
   sharp: false
   workerd: false
 
-# 旧 .npmrc の min-release-age=3 days 相当（分単位: 3日 = 4320分）
-# 公開直後のパッケージを解決しないことでサプライチェーン攻撃リスクを低減
+# 公開直後のパッケージを避けサプライチェーン攻撃リスクを低減（4320分=3日、旧 .npmrc 相当）
 minimumReleaseAge: 4320
 
 overrides:

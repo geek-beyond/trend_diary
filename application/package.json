@@ -106,6 +106,6 @@
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.8",
     "vitest-mock-extended": "^4.0.0",
-    "wrangler": "^4.80.0"
+    "wrangler": "^4.95.0"
   }
 }

@@ -4,8 +4,8 @@ description: t_wadaのTDDプラクティスに従ってRed→Green→Refactorサ
 disable-model-invocation: true
 argument-hint: "[実装したい機能の説明 or ファイルパス]"
 allowed-tools:
-  - Bash(npm run test:*)
-  - Bash(npx vitest*)
+  - Bash(pnpm run test:*)
+  - Bash(pnpm exec vitest*)
   - Read
   - Edit
   - Write
@@ -50,7 +50,7 @@ TODOリスト例:
    - テストケース名は日本語で記述する
    - `describe`で正常系・異常系を分類する
 3. **テストを実行し、失敗することを確認する**
-   - `npm run test:domain`、`npm run test:server`、`npm run test:client` のうち適切なものを使用
+   - `pnpm run test:domain`、`pnpm run test:server`、`pnpm run test:client` のうち適切なものを使用
    - 失敗理由が意図通りか確認する（コンパイルエラーではなくアサーション失敗が理想）
 4. 失敗を確認できたら次のフェーズへ進む
 
@@ -99,7 +99,7 @@ getDisplayName(): string {
 2. テストコードの重複を除去する（テストコードもリファクタリング対象）
 3. 命名を改善する
 4. **リファクタリング後、テストを実行してグリーンを確認する**
-5. 必要に応じて`npm run lint`を実行する
+5. 必要に応じて`pnpm run lint`を実行する
 
 **重要**: リファクタリング中に新しい機能を追加しない。振る舞いを変えずに構造を改善する。
 
@@ -127,10 +127,10 @@ getDisplayName(): string {
 
 対象に応じて適切なコマンドを使う:
 
-- `npm run test:domain` - ドメイン層
-- `npm run test:server` - API/サーバー層
-- `npm run test:client` - フロントエンド層
-- `npm run test:common` - 共通層
+- `pnpm run test:domain` - ドメイン層
+- `pnpm run test:server` - API/サーバー層
+- `pnpm run test:client` - フロントエンド層
+- `pnpm run test:common` - 共通層
 
 ## 各フェーズの確認ポイント
 

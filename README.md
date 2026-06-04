@@ -7,20 +7,27 @@
 ### 必要なもの
 
 - ローカルでのNodeの実行環境
+- パッケージマネージャーにpnpmを使用（`corepack enable`で有効化、バージョンは`package.json`の`packageManager`に従う）
 - Docker実行環境（Macの場合はOrbStack推奨）
 
 ### 手順
 
+pnpmの有効化（初回のみ）
+
+```sh
+corepack enable
+```
+
 Nodeモジュールのインストール
 
 ```sh
-npm ci
+pnpm install --frozen-lockfile
 ```
 
 Prismaクライアントの生成
 
 ```sh
-npm run setup
+pnpm run setup
 ```
 
 Supabaseを起動（Auth用途）
@@ -38,21 +45,21 @@ cp .dev.vars.example .dev.vars
 ローカル開発用DB(SQLite: `dev.db`)にマイグレーションを適用
 
 ```sh
-npm run db:migrate:dev
+pnpm run db:migrate:dev
 ```
 
-`DATABASE_URL`を指定した環境（例: CIの`test.db`）に適用する場合は`npm run db:migrate`を使う
+`DATABASE_URL`を指定した環境（例: CIの`test.db`）に適用する場合は`pnpm run db:migrate`を使う
 
 Cloudflare D1ローカルマイグレーション適用（必要な場合）
 
 ```sh
-npm run d1:apply:local
+pnpm run d1:apply:local
 ```
 
 サーバの起動（Hono上でAPIとRemixが起動する）
 
 ```sh
-npm start
+pnpm start
 ```
 
 ## 他ドキュメント

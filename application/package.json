@@ -1,6 +1,7 @@
 {
   "name": "my-app",
   "type": "module",
+  "packageManager": "pnpm@11.5.1",
   "engines": {
     "node": "^20.19.0 || >=22.13.0"
   },
@@ -19,7 +20,7 @@
     "e2e:report": "playwright show-report src/test/e2e/playwright-report",
     "e2e:gen": "playwright codegen --config=src/test/e2e/playwright.config.ts",
     "typecheck": "tsgo --noEmit",
-    "lint": "biome ci . && npm run typecheck",
+    "lint": "biome ci . && pnpm run typecheck",
     "check": "biome check .",
     "check:fix": "biome check --write . --unsafe",
     "db:migrate": "prisma db push",
@@ -77,7 +78,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.0.6",
     "@chromatic-com/storybook": "^5.2.1",
-    "@cloudflare/workers-types": "^4.20260604.1",
+    "@cloudflare/workers-types": "^4.20260507.1",
     "@faker-js/faker": "^10.4.0",
     "@hono/vite-dev-server": "^0.25.0",
     "@playwright/test": "^1.60.0",
@@ -92,8 +93,8 @@
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@typescript/native-preview": "^7.0.0-dev.20251209.1",
-    "@vitest/browser-playwright": "^4.1.5",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/browser-playwright": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.8",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^26.1.0",
     "playwright": "^1.60.0",
@@ -106,13 +107,5 @@
     "vitest": "^4.1.8",
     "vitest-mock-extended": "^4.0.0",
     "wrangler": "^4.80.0"
-  },
-  "overrides": {
-    "@hono/node-server": "^1.19.13",
-    "brace-expansion": "^2.0.3",
-    "defu": "^6.1.5",
-    "effect": "^3.20.0",
-    "lodash": "^4.18.1",
-    "picomatch": "^4.0.4"
   }
 }

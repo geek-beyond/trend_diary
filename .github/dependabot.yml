@@ -9,6 +9,10 @@ updates:
     directory: "/application" # Location of package manifests
     schedule:
       interval: "weekly"
+    # pnpm の minimumReleaseAge(3日) と揃え、公開直後のパッケージを提案しない。
+    # CVE等のセキュリティ更新はクールダウン対象外で即時PRが作成される。
+    cooldown:
+      default-days: 3
     ignore:
       # Prisma 7 は workerd(Cloudflare Workers) 上で実行時 WASM コンパイルが
       # ブロックされクラッシュする未解決の不具合があるため、メジャー更新を抑止する。
@@ -22,3 +26,5 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 3

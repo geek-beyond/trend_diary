@@ -4,14 +4,14 @@
 
 ### アプリケーション起動
 ```bash
-npm start
+pnpm start
 ```
 - React Routerで開発サーバーを起動
 - 内部でSupabaseも自動起動（prestart/poststart）
 
 ### ビルド
 ```bash
-npm run build
+pnpm run build
 ```
 - 本番用ビルド生成
 
@@ -20,25 +20,25 @@ npm run build
 ### 全テストタイプ
 ```bash
 # ドメイン層のテスト（モックPrismaクライアント使用）
-npm run test:domain
+pnpm run test:domain
 
 # API層のテスト（実際のデータベース使用）
-npm run test:api
+pnpm run test:api
 
 # フロントエンドのテスト（コンポーネント・フック）
-npm run test:client
+pnpm run test:client
 
 # Storybookのテスト（UIコンポーネントのビジュアルテスト）
-npm run test-storybook
+pnpm run test-storybook
 
 # E2Eテスト（Playwright）
-npm run e2e
+pnpm run e2e
 
 # E2Eテストレポート表示
-npm run e2e:report
+pnpm run e2e:report
 
 # E2Eテストコード生成
-npm run e2e:gen
+pnpm run e2e:gen
 ```
 
 ## データベース
@@ -46,27 +46,27 @@ npm run e2e:gen
 ### マイグレーション
 ```bash
 # 開発用マイグレーション実行
-npm run db:migrate
+pnpm run db:migrate
 
 # SQLのみのマイグレーション（シードなし）
-npm run db:migrate:sql-only
+pnpm run db:migrate:sql-only
 
 # 本番用マイグレーション適用
-npm run db:deploy
+pnpm run db:deploy
 ```
 
 ### リセット・シード
 ```bash
 # データベースリセット
-npm run db:reset
+pnpm run db:reset
 
 # シードデータ投入
-npm run db:seed
+pnpm run db:seed
 ```
 
 ### Supabase型生成
 ```bash
-npm run supabase:db:type-gen
+pnpm run supabase:db:type-gen
 ```
 
 ## コード品質
@@ -74,16 +74,16 @@ npm run supabase:db:type-gen
 ### Lint・フォーマット
 ```bash
 # Biome CI + TypeScript型チェック（推奨）
-npm run lint
+pnpm run lint
 
 # TypeScript型チェックのみ
-npm run typecheck
+pnpm run typecheck
 
 # Biomeチェック
-npm run check
+pnpm run check
 
 # Biome自動修正（--unsafe含む）
-npm run check:fix
+pnpm run check:fix
 ```
 
 ## Supabase
@@ -91,9 +91,9 @@ npm run check:fix
 ### Supabase起動・停止
 ```bash
 # Supabase起動（一部サービス除外）
-npm run supabase:start
+pnpm run supabase:start
 
-# Supabase停止（npm startのpoststart内で自動実行）
+# Supabase停止（pnpm startのpoststart内で自動実行）
 supabase stop
 
 # Supabaseステータス確認
@@ -104,40 +104,40 @@ supabase status
 
 ```bash
 # Storybookサーバー起動
-npm run storybook
+pnpm run storybook
 ```
 
 ## インストール
 
 ```bash
 # パッケージインストール（postinstall内でprisma generate実行）
-npm ci
+pnpm install --frozen-lockfile
 ```
 
 ## よく使うワークフロー
 
 ### 新機能開発時
-1. `npm start` - 開発サーバー起動
+1. `pnpm start` - 開発サーバー起動
 2. コード編集
-3. `npm run lint` - Lint + 型チェック
-4. 該当層のテスト実行（例: `npm run test:domain`）
+3. `pnpm run lint` - Lint + 型チェック
+4. 該当層のテスト実行（例: `pnpm run test:domain`）
 5. コミット
 
 ### リファクタリング時
 1. コード編集
-2. `npm run lint` - Lint + 型チェック
-3. `npm run check:fix` - 自動修正
+2. `pnpm run lint` - Lint + 型チェック
+3. `pnpm run check:fix` - 自動修正
 4. 全てのテスト実行
 5. コミット
 
 ### データベーススキーマ変更時
 1. Prismaスキーマ編集（`src/infrastructure/prisma-orm/`）
-2. `npm run db:migrate` - マイグレーション生成・適用
-3. `npm run supabase:db:type-gen` - 型生成
+2. `pnpm run db:migrate` - マイグレーション生成・適用
+3. `pnpm run supabase:db:type-gen` - 型生成
 4. コミット
 
 ### PR作成前
-1. `npm run build` - ビルド確認
-2. `npm run lint` - 最終Lint
+1. `pnpm run build` - ビルド確認
+2. `pnpm run lint` - 最終Lint
 3. 全テスト実行
 4. PR作成

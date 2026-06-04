@@ -102,7 +102,7 @@ sysctl hw.memsize
 ### 初回セットアップ
 ```bash
 # Nodeモジュールインストール
-npm ci
+pnpm install --frozen-lockfile
 
 # Supabase起動
 supabase start
@@ -111,10 +111,10 @@ supabase start
 cp .dev.vars.example .dev.vars
 
 # DBマイグレーション適用
-npm run db:migrate
+pnpm run db:migrate
 
 # 開発サーバー起動
-npm start
+pnpm start
 ```
 
 ### 日常的な操作
@@ -129,11 +129,11 @@ git add .
 git commit -m "feat: add user authentication"
 
 # テスト実行
-npm run test:domain
-npm run test:api
+pnpm run test:domain
+pnpm run test:api
 
 # Lint実行
-npm run lint
+pnpm run lint
 ```
 
 ## トラブルシューティング
@@ -149,15 +149,15 @@ kill -9 <pid>
 
 ### Nodeモジュールのクリーンインストール
 ```bash
-rm -rf node_modules package-lock.json
-npm ci
+rm -rf node_modules pnpm-lock.yaml
+pnpm install --frozen-lockfile
 ```
 
 ### Supabaseのリセット
 ```bash
 supabase stop
 supabase start
-npm run db:reset
+pnpm run db:reset
 ```
 
 ## macOS BSD vs GNU Linux の主な違い

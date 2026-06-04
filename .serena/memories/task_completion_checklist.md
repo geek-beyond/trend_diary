@@ -5,14 +5,14 @@
 
 1. **Lint実行**
    ```bash
-   npm run lint
+   pnpm run lint
    ```
    - Biome CI実行
    - TypeScript型チェック（tsc --noEmit）
 
 2. **フォーマット実行**
    ```bash
-   npm run check:fix
+   pnpm run check:fix
    ```
    - Biomeによるコード修正（--unsafe含む）
 
@@ -21,27 +21,27 @@
    
    - **ドメイン層変更時**:
      ```bash
-     npm run test:domain
+     pnpm run test:domain
      ```
    
    - **API層変更時**:
      ```bash
-     npm run test:api
+     pnpm run test:api
      ```
    
    - **フロントエンド変更時**:
      ```bash
-     npm run test:client
+     pnpm run test:client
      ```
    
    - **Storybookコンポーネント変更時**:
      ```bash
-     npm run test-storybook
+     pnpm run test-storybook
      ```
    
    - **E2Eテストが必要な場合**:
      ```bash
-     npm run e2e
+     pnpm run e2e
      ```
 
 ## コミット前のチェック項目
@@ -53,7 +53,7 @@
 - [ ] 環境変数やシークレットがコードに直接書かれていない
 
 ## プルリクエスト前のチェック項目
-- [ ] ビルドが成功する (`npm run build`)
+- [ ] ビルドが成功する (`pnpm run build`)
 - [ ] 全てのテスト層でテストがパスしている
 - [ ] コードレビュー用の適切な説明がある
 - [ ] 破壊的変更がある場合は明示されている
@@ -61,6 +61,6 @@
 
 ## データベース変更時の追加チェック
 - [ ] Prismaマイグレーションファイルが正しく生成されている
-- [ ] マイグレーションが適用できる (`npm run db:migrate`)
+- [ ] マイグレーションが適用できる (`pnpm run db:migrate`)
 - [ ] シードデータが更新されている（必要な場合）
-- [ ] 型生成が正しく行われている (`npm run supabase:db:type-gen`)
+- [ ] 型生成が正しく行われている (`pnpm run supabase:db:type-gen`)

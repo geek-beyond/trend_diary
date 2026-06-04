@@ -12,7 +12,7 @@ runs:
     - name: テストの実行
       shell: bash
       working-directory: ./application
-      run: npm run test:${{ inputs.target }} -- --coverage
+      run: pnpm run test:${{ inputs.target }} --coverage
 
     - name: カバレッジの可視化
       if: github.event_name == 'pull_request'

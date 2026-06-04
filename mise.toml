@@ -1,5 +1,6 @@
 [tools]
 node = "22.13.0"
+pnpm = "11.5.1"
 
 [env]
 DISCORD_WEBHOOK_URL = ""

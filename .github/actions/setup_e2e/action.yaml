@@ -19,15 +19,15 @@ runs:
       id: playwright-cache
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+        key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
 
     - name: Playwrightのセットアップ
       if: steps.playwright-cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: ./application
-      run: npx playwright install chromium --with-deps
+      run: pnpm exec playwright install chromium --with-deps
 
     - name: DB Migration
       shell: bash
       working-directory: ./application
-      run: npm run db:migrate
+      run: pnpm run db:migrate

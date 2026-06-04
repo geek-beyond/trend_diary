@@ -1,0 +1,20 @@
+# pnpm 11以降、registry/auth以外の設定はpackage.jsonのpnpmフィールドや
+# .npmrcではなく、このファイルで管理する
+# https://pnpm.io/settings
+
+# 旧 .npmrc の ignore-scripts=true 相当
+# 依存パッケージ・自身のライフサイクルスクリプトを実行しない
+# （Prismaクライアントの生成は `pnpm run setup` で明示的に行う）
+ignoreScripts: true
+
+# 旧 .npmrc の min-release-age=3 days 相当（分単位: 3日 = 4320分）
+# 公開直後のパッケージを解決しないことでサプライチェーン攻撃リスクを低減
+minimumReleaseAge: 4320
+
+overrides:
+  '@hono/node-server': ^1.19.13
+  brace-expansion: ^2.0.3
+  defu: ^6.1.5
+  effect: ^3.20.0
+  lodash: ^4.18.1
+  picomatch: ^4.0.4

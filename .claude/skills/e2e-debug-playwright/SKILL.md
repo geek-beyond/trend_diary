@@ -16,14 +16,14 @@ Playwright E2Eの「落ちるべきときに落ちる」状態を担保しなが
 
 ```bash
 cd application
-npm run lint
-npm run check
+pnpm run lint
+pnpm run check
 ```
 
 次にCI相当コマンドを実行する:
 
 ```bash
-npm run e2e -- \
+pnpm run e2e -- \
   --reporter=line \
   --only-changed=origin/main \
   --pass-with-no-tests \
@@ -33,7 +33,7 @@ npm run e2e -- \
 失敗シナリオを絞って連続実行する:
 
 ```bash
-npm run e2e -- src/test/e2e/scenario/signup-basic.test.ts \
+pnpm run e2e -- src/test/e2e/scenario/signup-basic.test.ts \
   --project=chromium \
   --repeat-each=5 \
   --retries=0 \
@@ -90,8 +90,8 @@ unzip -p <trace.zip> 0-trace.network | rg "/api/v2/auth/"
 ## 5. 修正ループを回す
 
 毎ループで実行する:
-1. `npm run lint`
-2. `npm run check`
+1. `pnpm run lint`
+2. `pnpm run check`
 3. CI相当の差分E2Eコマンド
 4. 必要なら対象シナリオの`--repeat-each`
 5. commit/push

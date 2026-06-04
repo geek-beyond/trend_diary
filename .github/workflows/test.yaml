@@ -9,7 +9,7 @@ on:
       - 'application/.storybook/**'
       - 'application/src/**'
       - 'application/package.json'
-      - 'application/package-lock.json'
+      - 'application/pnpm-lock.yaml'
   pull_request:
     branches:
       - main
@@ -18,7 +18,7 @@ on:
       - 'application/.storybook/**'
       - 'application/src/**'
       - 'application/package.json'
-      - 'application/package-lock.json'
+      - 'application/pnpm-lock.yaml'
 
 # カバレッジの可視化で、コメントを残すための権限
 permissions:
@@ -152,7 +152,7 @@ jobs:
           addr: 127.0.0.1:54321
 
       - name: DB Migration
-        run: npm run db:migrate
+        run: pnpm run db:migrate
 
       - name: サーバーのテスト
         uses: ./.github/actions/test_cov
@@ -192,7 +192,7 @@ jobs:
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-storybook-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-playwright-storybook-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Playwrightのセットアップ(キャッシュミス)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
@@ -203,4 +203,4 @@ jobs:
         run: node node_modules/playwright/cli.js install-deps chromium
 
       - name: コンポーネントのテスト
-        run: npm run test-storybook -- --coverage
+        run: pnpm run test-storybook -- --coverage

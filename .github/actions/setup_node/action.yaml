@@ -15,12 +15,16 @@ runs:
       with:
         node-version-file: ${{ inputs.node-version-file }}
 
+    - name: pnpmの有効化
+      shell: bash
+      run: corepack enable
+
     - name: ライブラリのインストール
       shell: bash
       working-directory: ${{ github.workspace }}/application
-      run: npm ci
+      run: pnpm install --frozen-lockfile
 
     - name: Prismaクライアントの生成
       shell: bash
       working-directory: ${{ github.workspace }}/application
-      run: npm run setup
+      run: pnpm run setup

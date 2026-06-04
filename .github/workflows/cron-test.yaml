@@ -10,7 +10,7 @@ on:
       - '.github/actions/setup_node/action.yaml'
       - 'application/wrangler.cron.toml'
       - 'application/package.json'
-      - 'application/package-lock.json'
+      - 'application/pnpm-lock.yaml'
       - 'application/src/cron/**'
       - 'application/src/common/**'
       - 'application/src/infrastructure/**'
@@ -23,7 +23,7 @@ on:
       - '.github/actions/setup_node/action.yaml'
       - 'application/wrangler.cron.toml'
       - 'application/package.json'
-      - 'application/package-lock.json'
+      - 'application/pnpm-lock.yaml'
       - 'application/src/cron/**'
       - 'application/src/common/**'
       - 'application/src/infrastructure/**'
@@ -51,4 +51,4 @@ jobs:
           node-version-file: .node-version
 
       - name: Cronテスト
-        run: npm run test:cron
+        run: pnpm run test:cron

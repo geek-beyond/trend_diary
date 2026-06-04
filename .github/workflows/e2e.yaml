@@ -10,7 +10,7 @@ on:
       - "application/src/test/e2e/**"
       - "application/src/web/client/routes/**"
       - "application/package.json"
-      - "application/package-lock.json"
+      - "application/pnpm-lock.yaml"
 
 # カバレッジの可視化で、コメントを残すための権限
 permissions:
@@ -56,7 +56,7 @@ jobs:
           EOF
           
       - name: E2Eテストの実行
-        run: npm run e2e -- --fail-on-flaky-tests
+        run: pnpm run e2e -- --fail-on-flaky-tests
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -111,7 +111,7 @@ jobs:
           EOF
 
       - name: E2Eテストの差分実行
-        run: npm run e2e -- --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
+        run: pnpm run e2e -- --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

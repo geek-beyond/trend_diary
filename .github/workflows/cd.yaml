@@ -42,7 +42,7 @@ jobs:
           node-version-file: .node-version
 
       - name: ビルド
-        run: npm run build
+        run: pnpm run build
 
       - name: デプロイ
         id: deploy

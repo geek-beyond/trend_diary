@@ -20,7 +20,7 @@
 
 **実行コマンド**:
 ```bash
-npm run test:domain
+pnpm run test:domain
 ```
 
 **用途**:
@@ -44,7 +44,7 @@ npm run test:domain
 
 **実行コマンド**:
 ```bash
-npm run test:api
+pnpm run test:api
 ```
 
 **用途**:
@@ -70,7 +70,7 @@ npm run test:api
 
 **実行コマンド**:
 ```bash
-npm run test:client
+pnpm run test:client
 ```
 
 **用途**:
@@ -94,7 +94,7 @@ npm run test:client
 
 **実行コマンド**:
 ```bash
-npm run test-storybook
+pnpm run test-storybook
 ```
 
 **用途**:
@@ -118,9 +118,9 @@ npm run test-storybook
 
 **実行コマンド**:
 ```bash
-npm run e2e           # E2E実行
-npm run e2e:report    # レポート表示
-npm run e2e:gen       # テストコード生成
+pnpm run e2e           # E2E実行
+pnpm run e2e:report    # レポート表示
+pnpm run e2e:gen       # テストコード生成
 ```
 
 **用途**:
@@ -134,7 +134,7 @@ npm run e2e:gen       # テストコード生成
 
 ### 開発時
 - 変更した層のテストを実行
-- 例: ドメイン層変更時は `npm run test:domain`
+- 例: ドメイン層変更時は `pnpm run test:domain`
 
 ### リファクタリング時
 - 影響範囲に応じて複数層のテストを実行

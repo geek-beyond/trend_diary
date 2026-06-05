@@ -21,10 +21,6 @@ function logInfo(message) {
   process.stdout.write(`${message}\n`)
 }
 
-function logError(message) {
-  process.stderr.write(`${message}\n`)
-}
-
 function resolveDatabaseUrl() {
   const databaseUrl = process.env.DATABASE_URL
   if (!databaseUrl) {
@@ -49,22 +45,13 @@ function containsPragma(sql) {
 }
 
 // PRAGMA は tx 内で効かないため tx 外で適用する。それ以外は tx で包み半適用を防ぐ。
+// 失敗時は接続クローズ時に未コミット tx が自動ロールバックされる。
 async function applyMigrationFile(client, sql) {
   if (containsPragma(sql)) {
     await client.executeMultiple(sql)
     return
   }
-
-  try {
-    await client.executeMultiple(`BEGIN TRANSACTION;\n${sql}\nCOMMIT;`)
-  } catch (error) {
-    try {
-      await client.execute('ROLLBACK;')
-    } catch {
-      // 既にトランザクションが無効（自動ロールバック済み）の場合は無視する。
-    }
-    throw error
-  }
+  await client.executeMultiple(`BEGIN TRANSACTION;\n${sql}\nCOMMIT;`)
 }
 
 async function main() {
@@ -92,27 +79,12 @@ async function main() {
 
     for (const name of unapplied) {
       const sql = readFileSync(join(MIGRATIONS_DIR, name), 'utf8')
-      try {
-        await applyMigrationFile(client, sql)
-        await client.execute({
-          sql: `INSERT INTO ${MIGRATIONS_TABLE} (name) VALUES (?);`,
-          args: [name],
-        })
-        logInfo(`適用しました: ${name}`)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        const pragmaNote = containsPragma(sql)
-          ? `\nこのファイルは PRAGMA を含むためトランザクション外で適用されます。部分適用の可能性があります。`
-          : ''
-        throw new Error(
-          `マイグレーション適用に失敗しました: ${name}\n${message}${pragmaNote}\n` +
-            `対処: ${name} の DDL が部分適用されている可能性があります。テスト/ローカルDBの場合は ` +
-            `DATABASE_URL が指すDBファイルを削除して再実行してください。`,
-          {
-            cause: error,
-          },
-        )
-      }
+      await applyMigrationFile(client, sql)
+      await client.execute({
+        sql: `INSERT INTO ${MIGRATIONS_TABLE} (name) VALUES (?);`,
+        args: [name],
+      })
+      logInfo(`適用しました: ${name}`)
     }
 
     logInfo(`完了: ${unapplied.length} 件のマイグレーションを適用しました`)
@@ -121,8 +93,4 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  const message = error instanceof Error ? error.message : String(error)
-  logError(`エラー: ${message}`)
-  process.exitCode = 1
-})
+await main()

@@ -196,8 +196,4 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  const message = error instanceof Error ? error.message : String(error)
-  logError(`エラー: ${message}`)
-  process.exitCode = 1
-})
+await main()

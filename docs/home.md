@@ -13,7 +13,7 @@
 - **ランタイム**: Cloudflare Workers
 - **バックエンド**: Hono + React Router v7
 - **フロントエンド**: React + TailwindCSS v4 + shadcn/ui
-- **データベース**: PostgreSQL + Prisma ORM
+- **データベース**: Cloudflare D1 (SQLite) + Drizzle ORM
 - **テスト**: Vitest + Playwright
 - **コード品質**: Biome + TypeScript
 
@@ -65,12 +65,11 @@
 │       └── use-case.ts # ビジネスロジック
 ├── infrastructure # インフラストラクチャ層
 │   ├── notification # 通知機能
-│   ├── prisma-orm # Prisma ORM設定
-│   │   ├── models # Prismaモデル
-│   │   ├── migrations # マイグレーション
-│   │   └── main.prisma
+│   ├── drizzle-orm # Drizzle ORM設定
+│   │   └── schema.ts # Drizzleスキーマ（スキーマの正本）
 │   ├── api.ts # API接続
 │   ├── rdb.ts # RDB接続
+│   ├── rdb-id.ts # ID生成
 │   └── supabase.ts # Supabase接続
 ├── test # テスト関連
 │   ├── __mocks__ # モック

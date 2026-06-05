@@ -1,0 +1,182 @@
+import { relations, sql } from 'drizzle-orm'
+import { customType, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+
+// 既存D1本番データには（Prisma時代に書き込まれた）ISO-8601 文字列、CURRENT_TIMESTAMP 由来の
+// "YYYY-MM-DD HH:MM:SS"(UTC・TZなし)、過去の epochミリ秒(integer) が混在しうる。
+// TZなし形式は末尾Zを補ってUTC解釈しないと、非UTC環境で Date がずれる。
+export function normalizeDateTime(value: string | number | bigint): Date {
+  if (typeof value === 'number' || typeof value === 'bigint') {
+    return new Date(Number(value))
+  }
+  const hasTimezone = /[Zz]|[+-]\d{2}:?\d{2}$/.test(value)
+  if (!hasTimezone && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/.test(value)) {
+    return new Date(`${value.replace(' ', 'T')}Z`)
+  }
+  return new Date(value)
+}
+
+const dateTime = customType<{
+  data: Date
+  driverData: string | number | bigint
+}>({
+  dataType() {
+    return 'DATETIME'
+  },
+  toDriver(value: Date): string {
+    return value.toISOString()
+  },
+  fromDriver(value: string | number | bigint): Date {
+    return normalizeDateTime(value)
+  },
+})
+
+export const users = sqliteTable('users', {
+  userId: integer('user_id').primaryKey({ autoIncrement: true }),
+  createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+})
+
+export const activeUsers = sqliteTable(
+  'active_users',
+  {
+    activeUserId: integer('active_user_id').primaryKey({ autoIncrement: true }),
+    email: text('email').notNull(),
+    displayName: text('display_name'),
+    authenticationId: text('authentication_id'),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: dateTime('updated_at').notNull(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.userId, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  },
+  (table) => [
+    uniqueIndex('active_users_email_key').on(table.email),
+    uniqueIndex('active_users_authentication_id_key').on(table.authenticationId),
+    uniqueIndex('active_users_user_id_key').on(table.userId),
+  ],
+)
+
+export const articles = sqliteTable(
+  'articles',
+  {
+    articleId: integer('article_id').primaryKey({ autoIncrement: true }),
+    media: text('media').notNull(),
+    title: text('title').notNull(),
+    author: text('author').notNull(),
+    description: text('description').notNull(),
+    url: text('url').notNull(),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [uniqueIndex('articles_url_key').on(table.url)],
+)
+
+export const bannedUsers = sqliteTable(
+  'banned_users',
+  {
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.userId, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    bannedAt: dateTime('banned_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    reason: text('reason'),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [uniqueIndex('banned_users_user_id_key').on(table.userId)],
+)
+
+export const leavedUsers = sqliteTable(
+  'leaved_users',
+  {
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.userId, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    reason: text('reason'),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [uniqueIndex('leaved_users_user_id_key').on(table.userId)],
+)
+
+export const readHistories = sqliteTable(
+  'read_histories',
+  {
+    readHistoryId: integer('read_history_id').primaryKey({ autoIncrement: true }),
+    readAt: dateTime('read_at').notNull(),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    // INFO: 記事IDは外部制約なし（記事削除後も履歴を保持するための意図的設計）
+    articleId: integer('article_id').notNull(),
+    activeUserId: integer('active_user_id')
+      .notNull()
+      .references(() => activeUsers.activeUserId, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  },
+  (table) => [index('idx_read_histories_article_user').on(table.articleId, table.activeUserId)],
+)
+
+export const skippedArticles = sqliteTable(
+  'skipped_articles',
+  {
+    skippedArticleId: integer('skipped_article_id').primaryKey({ autoIncrement: true }),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    // INFO: 記事IDは外部制約なし（記事削除後もskip履歴を保持するための意図的設計）
+    articleId: integer('article_id').notNull(),
+    activeUserId: integer('active_user_id')
+      .notNull()
+      .references(() => activeUsers.activeUserId, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  },
+  (table) => [
+    uniqueIndex('uq_skipped_articles_article_user').on(table.articleId, table.activeUserId),
+    index('idx_skipped_articles_article_user').on(table.articleId, table.activeUserId),
+  ],
+)
+
+export const usersRelations = relations(users, ({ one }) => ({
+  activeUser: one(activeUsers, {
+    fields: [users.userId],
+    references: [activeUsers.userId],
+  }),
+  bannedUser: one(bannedUsers, {
+    fields: [users.userId],
+    references: [bannedUsers.userId],
+  }),
+  leavedUser: one(leavedUsers, {
+    fields: [users.userId],
+    references: [leavedUsers.userId],
+  }),
+}))
+
+export const activeUsersRelations = relations(activeUsers, ({ one, many }) => ({
+  user: one(users, {
+    fields: [activeUsers.userId],
+    references: [users.userId],
+  }),
+  readHistories: many(readHistories),
+  skippedArticles: many(skippedArticles),
+}))
+
+export const bannedUsersRelations = relations(bannedUsers, ({ one }) => ({
+  user: one(users, {
+    fields: [bannedUsers.userId],
+    references: [users.userId],
+  }),
+}))
+
+export const leavedUsersRelations = relations(leavedUsers, ({ one }) => ({
+  user: one(users, {
+    fields: [leavedUsers.userId],
+    references: [users.userId],
+  }),
+}))
+
+export const readHistoriesRelations = relations(readHistories, ({ one }) => ({
+  activeUser: one(activeUsers, {
+    fields: [readHistories.activeUserId],
+    references: [activeUsers.activeUserId],
+  }),
+}))
+
+export const skippedArticlesRelations = relations(skippedArticles, ({ one }) => ({
+  activeUser: one(activeUsers, {
+    fields: [skippedArticles.activeUserId],
+    references: [activeUsers.activeUserId],
+  }),
+}))
+
+export type ActiveUser = typeof activeUsers.$inferSelect
+export type Article = typeof articles.$inferSelect

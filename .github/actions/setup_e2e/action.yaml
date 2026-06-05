@@ -26,8 +26,3 @@ runs:
       shell: bash
       working-directory: ./application
       run: pnpm exec playwright install chromium --with-deps
-
-    - name: DB Migration
-      shell: bash
-      working-directory: ./application
-      run: pnpm run db:migrate

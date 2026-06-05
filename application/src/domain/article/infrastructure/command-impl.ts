@@ -1,10 +1,11 @@
+import { and, eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import { ServerError } from '@/common/errors'
-import { wrapAsyncCall } from '@/common/result'
 import { Command } from '@/domain/article/repository'
 import type { ReadHistory } from '@/domain/article/schema/read-history-schema'
 import type { SkippedArticle } from '@/domain/article/schema/skipped-article-schema'
-import { RdbClient } from '@/infrastructure/rdb'
+import { readHistories, skippedArticles } from '@/infrastructure/drizzle-orm/schema'
+import { RdbClient, wrapDbCall } from '@/infrastructure/rdb'
 import { fromDbId, toDbId } from '@/infrastructure/rdb-id'
 
 export default class CommandImpl implements Command {
@@ -17,20 +18,24 @@ export default class CommandImpl implements Command {
   ): Promise<Result<ReadHistory, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
-    const result = await wrapAsyncCall(() =>
-      this.db.readHistory.create({
-        data: {
+    const result = await wrapDbCall(() =>
+      this.db
+        .insert(readHistories)
+        .values({
           activeUserId: dbActiveUserId,
           articleId: dbArticleId,
           readAt,
-        },
-      }),
+        })
+        .returning(),
     )
     if (result.isErr()) {
       return err(new ServerError(result.error))
     }
 
-    const createdReadHistory = result.value
+    const createdReadHistory = result.value[0]
+    if (!createdReadHistory) {
+      return err(new ServerError(new Error('insert read_histories returned no row')))
+    }
     const readHistory: ReadHistory = {
       readHistoryId: fromDbId(createdReadHistory.readHistoryId),
       activeUserId: fromDbId(createdReadHistory.activeUserId),
@@ -47,13 +52,15 @@ export default class CommandImpl implements Command {
   ): Promise<Result<void, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
-    const result = await wrapAsyncCall(() =>
-      this.db.readHistory.deleteMany({
-        where: {
-          activeUserId: dbActiveUserId,
-          articleId: dbArticleId,
-        },
-      }),
+    const result = await wrapDbCall(() =>
+      this.db
+        .delete(readHistories)
+        .where(
+          and(
+            eq(readHistories.activeUserId, dbActiveUserId),
+            eq(readHistories.articleId, dbArticleId),
+          ),
+        ),
     )
     if (result.isErr()) {
       return err(new ServerError(result.error))
@@ -69,26 +76,28 @@ export default class CommandImpl implements Command {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
-    const result = await wrapAsyncCall(() =>
-      this.db.skippedArticle.upsert({
-        where: {
-          articleIdActiveUserId: {
-            articleId: dbArticleId,
-            activeUserId: dbActiveUserId,
-          },
-        },
-        update: {},
-        create: {
+    const result = await wrapDbCall(() =>
+      this.db
+        .insert(skippedArticles)
+        .values({
           activeUserId: dbActiveUserId,
           articleId: dbArticleId,
-        },
-      }),
+        })
+        // INFO: 競合時も returning が行を返すよう、既存行に対しダミー更新(値不変)を行う
+        .onConflictDoUpdate({
+          target: [skippedArticles.articleId, skippedArticles.activeUserId],
+          set: { activeUserId: dbActiveUserId },
+        })
+        .returning(),
     )
     if (result.isErr()) {
       return err(new ServerError(result.error))
     }
 
-    const skippedArticle = result.value
+    const skippedArticle = result.value[0]
+    if (!skippedArticle) {
+      return err(new ServerError(new Error('insert skipped_articles returned no row')))
+    }
     return ok({
       skippedArticleId: fromDbId(skippedArticle.skippedArticleId),
       activeUserId: fromDbId(skippedArticle.activeUserId),

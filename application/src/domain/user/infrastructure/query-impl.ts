@@ -1,8 +1,9 @@
+import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import { ServerError } from '@/common/errors'
-import { wrapAsyncCall } from '@/common/result'
 import { Nullable } from '@/common/types/utility'
-import { RdbClient } from '@/infrastructure/rdb'
+import { activeUsers } from '@/infrastructure/drizzle-orm/schema'
+import { RdbClient, wrapDbCall } from '@/infrastructure/rdb'
 import { toDbId } from '@/infrastructure/rdb-id'
 import { Query } from '../repository'
 import type { CurrentUser } from '../schema/active-user-schema'
@@ -13,16 +14,14 @@ export default class QueryImpl implements Query {
 
   async findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, Error>> {
     const dbId = toDbId(id)
-    const activeUserResult = await wrapAsyncCall(() =>
-      this.db.activeUser.findUnique({
-        where: { activeUserId: dbId },
-      }),
+    const activeUserResult = await wrapDbCall(() =>
+      this.db.select().from(activeUsers).where(eq(activeUsers.activeUserId, dbId)).limit(1),
     )
     if (activeUserResult.isErr()) {
       return err(new ServerError(activeUserResult.error))
     }
 
-    const activeUser = activeUserResult.value
+    const activeUser = activeUserResult.value[0]
     if (!activeUser) {
       return ok(null)
     }
@@ -31,16 +30,14 @@ export default class QueryImpl implements Query {
   }
 
   async findActiveByEmail(email: string): Promise<Result<Nullable<CurrentUser>, Error>> {
-    const activeUserResult = await wrapAsyncCall(() =>
-      this.db.activeUser.findUnique({
-        where: { email },
-      }),
+    const activeUserResult = await wrapDbCall(() =>
+      this.db.select().from(activeUsers).where(eq(activeUsers.email, email)).limit(1),
     )
     if (activeUserResult.isErr()) {
       return err(new ServerError(activeUserResult.error))
     }
 
-    const activeUser = activeUserResult.value
+    const activeUser = activeUserResult.value[0]
     if (!activeUser) {
       return ok(null)
     }
@@ -51,16 +48,18 @@ export default class QueryImpl implements Query {
   async findActiveByAuthenticationId(
     authenticationId: string,
   ): Promise<Result<Nullable<CurrentUser>, Error>> {
-    const activeUserResult = await wrapAsyncCall(() =>
-      this.db.activeUser.findUnique({
-        where: { authenticationId },
-      }),
+    const activeUserResult = await wrapDbCall(() =>
+      this.db
+        .select()
+        .from(activeUsers)
+        .where(eq(activeUsers.authenticationId, authenticationId))
+        .limit(1),
     )
     if (activeUserResult.isErr()) {
       return err(new ServerError(activeUserResult.error))
     }
 
-    const activeUser = activeUserResult.value
+    const activeUser = activeUserResult.value[0]
     if (!activeUser) {
       return ok(null)
     }

@@ -1,11 +1,17 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
+import { TEST_DATABASE_URL } from '../../env'
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globals: true,
+    globalSetup: ['src/test/setup/apply-migrations.ts'],
+    env: {
+      NODE_ENV: 'test',
+      DATABASE_URL: TEST_DATABASE_URL,
+    },
     include: ['src/cron/**/*.test.ts'],
     pool: 'threads',
     maxWorkers: 1,

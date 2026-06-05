@@ -1,5 +1,5 @@
-import { ActiveUser as RdbActiveUser } from '@prisma/client'
 import { describe, expect, it } from 'vitest'
+import type { ActiveUser as RdbActiveUser } from '@/infrastructure/drizzle-orm/schema'
 import { mapToActiveUser } from './mapper'
 
 describe('mapToActiveUser', () => {
@@ -103,28 +103,26 @@ describe('mapToActiveUser', () => {
           name: '非常に大きなbigint値での処理',
           activeUserId: 123456789012345678901234567890n,
           userId: 987654321098765432109876543210n,
-          description: 'PostgreSQL bigintの上限に近い非常に大きな値での正確なマッピング',
+          description: '非常に大きなbigint値での正確なマッピング',
         },
       ]
 
-      bigintTestCases.forEach(({ name, activeUserId, userId }) => {
-        it(`${name}`, () => {
-          const rdbActiveUser = createMockRdbActiveUser({
-            activeUserId,
-            userId,
-          })
-
-          const result = mapToActiveUser(rdbActiveUser)
-
-          expect(result.activeUserId).toBe(activeUserId)
-          expect(result.userId).toBe(userId)
-          expect(typeof result.activeUserId).toBe('bigint')
-          expect(typeof result.userId).toBe('bigint')
-
-          // 数値の正確性確認（文字列変換で比較）
-          expect(result.activeUserId.toString()).toBe(activeUserId.toString())
-          expect(result.userId.toString()).toBe(userId.toString())
+      it.each(bigintTestCases)('$name', ({ activeUserId, userId }) => {
+        const rdbActiveUser = createMockRdbActiveUser({
+          activeUserId,
+          userId,
         })
+
+        const result = mapToActiveUser(rdbActiveUser)
+
+        expect(result.activeUserId).toBe(activeUserId)
+        expect(result.userId).toBe(userId)
+        expect(typeof result.activeUserId).toBe('bigint')
+        expect(typeof result.userId).toBe('bigint')
+
+        // 数値の正確性確認（文字列変換で比較）
+        expect(result.activeUserId.toString()).toBe(activeUserId.toString())
+        expect(result.userId.toString()).toBe(userId.toString())
       })
     })
 
@@ -140,14 +138,13 @@ describe('mapToActiveUser', () => {
           name: 'email最大長(1024文字)での境界値処理',
           email: `${'a'.repeat(1011)}@example.com`,
           displayName: '正常な表示名',
-          description: 'emailがPrismaスキーマの最大長制限での正確なマッピング',
+          description: 'email最大長(1024文字)での正確なマッピング',
         },
         {
           name: 'displayName最大長(1024文字)での境界値処理',
           email: 'test@example.com',
           displayName: 'あ'.repeat(1024),
-          description:
-            'displayNameがPrismaスキーマの最大長制限（マルチバイト文字）での正確なマッピング',
+          description: 'displayName最大長(1024文字・マルチバイト文字)での正確なマッピング',
         },
         {
           name: '現実的な日本語メールアドレスでの処理',
@@ -157,24 +154,22 @@ describe('mapToActiveUser', () => {
         },
       ]
 
-      stringConstraintTestCases.forEach(({ name, email, displayName }) => {
-        it(`${name}`, () => {
-          const rdbActiveUser = createMockRdbActiveUser({
-            email,
-            displayName,
-          })
-
-          const result = mapToActiveUser(rdbActiveUser)
-
-          expect(result.email).toBe(email)
-          expect(result.displayName).toBe(displayName)
-
-          // 文字列長制約の確認（1024文字以内）
-          expect(result.email.length).toBeLessThanOrEqual(1024)
-          if (result.displayName) {
-            expect(result.displayName.length).toBeLessThanOrEqual(1024)
-          }
+      it.each(stringConstraintTestCases)('$name', ({ email, displayName }) => {
+        const rdbActiveUser = createMockRdbActiveUser({
+          email,
+          displayName,
         })
+
+        const result = mapToActiveUser(rdbActiveUser)
+
+        expect(result.email).toBe(email)
+        expect(result.displayName).toBe(displayName)
+
+        // 文字列長制約の確認（1024文字以内）
+        expect(result.email.length).toBeLessThanOrEqual(1024)
+        if (result.displayName) {
+          expect(result.displayName.length).toBeLessThanOrEqual(1024)
+        }
       })
     })
 
@@ -212,28 +207,26 @@ describe('mapToActiveUser', () => {
         },
       ]
 
-      dateTestCases.forEach(({ name, createdAt, updatedAt }) => {
-        it(`${name}`, () => {
-          const rdbActiveUser = createMockRdbActiveUser({
-            createdAt,
-            updatedAt,
-          })
-
-          const result = mapToActiveUser(rdbActiveUser)
-
-          expect(result.createdAt).toEqual(createdAt)
-          expect(result.updatedAt).toEqual(updatedAt)
-          expect(result.createdAt).toBeInstanceOf(Date)
-          expect(result.updatedAt).toBeInstanceOf(Date)
-
-          // Dateオブジェクトの参照共有（mapperの実装仕様）
-          expect(result.createdAt).toBe(createdAt)
-          expect(result.updatedAt).toBe(updatedAt)
-
-          // タイムスタンプ値の正確性確認
-          expect(result.createdAt.getTime()).toBe(createdAt.getTime())
-          expect(result.updatedAt.getTime()).toBe(updatedAt.getTime())
+      it.each(dateTestCases)('$name', ({ createdAt, updatedAt }) => {
+        const rdbActiveUser = createMockRdbActiveUser({
+          createdAt,
+          updatedAt,
         })
+
+        const result = mapToActiveUser(rdbActiveUser)
+
+        expect(result.createdAt).toEqual(createdAt)
+        expect(result.updatedAt).toEqual(updatedAt)
+        expect(result.createdAt).toBeInstanceOf(Date)
+        expect(result.updatedAt).toBeInstanceOf(Date)
+
+        // Dateオブジェクトの参照共有（mapperの実装仕様）
+        expect(result.createdAt).toBe(createdAt)
+        expect(result.updatedAt).toBe(updatedAt)
+
+        // タイムスタンプ値の正確性確認
+        expect(result.createdAt.getTime()).toBe(createdAt.getTime())
+        expect(result.updatedAt.getTime()).toBe(updatedAt.getTime())
       })
     })
 
@@ -344,7 +337,7 @@ describe('mapToActiveUser', () => {
     })
 
     describe('極限値でのマッピング安定性テスト', () => {
-      it('PostgreSQL bigint上限に近い値でのマッピング精度テスト', () => {
+      it('64bit整数上限に近い値でのマッピング精度テスト', () => {
         const nearMaxBigInt = 9223372036854775806n
         const rdbActiveUser = createMockRdbActiveUser({
           activeUserId: nearMaxBigInt,

@@ -8,7 +8,8 @@
       "!**/.vscode/",
       "!src/web/client/components/shadcn",
       "!src/web/client/components/customized",
-      "!**/supabase"
+      "!**/supabase",
+      "!migrations/meta"
     ]
   },
   "formatter": {

@@ -1,9 +1,8 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
+import { TEST_DATABASE_URL } from '../../env'
 import { coverageReporter, generateIncludes } from '../generate'
-
-const dbUrl = 'file:./test.db'
 
 const { testInclude, coverageInclude } = generateIncludes('src/web/server')
 
@@ -11,9 +10,9 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globals: true,
-    globalSetup: ['src/test/vitest/server/globalSetup.ts'],
+    globalSetup: ['src/test/setup/apply-migrations.ts'],
     env: {
-      DATABASE_URL: dbUrl,
+      DATABASE_URL: TEST_DATABASE_URL,
     },
     // テスト間の影響が無いようにする
     // 参考: https://zenn.dev/microcms/articles/c3b9d48b5647b4#%E8%A8%AD%E5%AE%9A%E6%96%B9%E6%B3%95

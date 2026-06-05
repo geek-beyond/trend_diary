@@ -8,6 +8,7 @@ on:
       - '.github/workflows/test.yaml'
       - 'application/.storybook/**'
       - 'application/src/**'
+      - 'application/migrations/**'
       - 'application/package.json'
       - 'application/pnpm-lock.yaml'
   pull_request:
@@ -17,6 +18,7 @@ on:
       - '.github/workflows/test.yaml'
       - 'application/.storybook/**'
       - 'application/src/**'
+      - 'application/migrations/**'
       - 'application/package.json'
       - 'application/pnpm-lock.yaml'
 
@@ -71,7 +73,7 @@ jobs:
         id: check-server
         uses: ./.github/actions/diff
         with:
-          subdir: 'application/src/web/server'
+          subdir: 'application/src/web/server application/migrations'
 
       - name: 共通モジュールの差分チェック
         id: check-common
@@ -150,9 +152,6 @@ jobs:
         with:
           version: v0.1.1
           addr: 127.0.0.1:54321
-
-      - name: DB Migration
-        run: pnpm run db:migrate
 
       - name: サーバーのテスト
         uses: ./.github/actions/test_cov

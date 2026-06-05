@@ -1,215 +1,176 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import prisma from '@/test/__mocks__/prisma'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { ServerError } from '@/common/errors'
+import getRdbClient, { mockRdbExecutor } from '@/test/__mocks__/rdb'
 import QueryImpl from './query-impl'
 
 describe('QueryImpl', () => {
   let useCase: QueryImpl
 
+  // INFO: Drizzleのselectは「カラム順の配列」で行を返す
+  // 並び順: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
+  const buildActiveUserRow = (
+    overrides: Partial<{
+      activeUserId: number
+      email: string
+      displayName: string | null
+      authenticationId: string | null
+      createdAt: string
+      updatedAt: string
+      userId: number
+    }> = {},
+  ): unknown[] => {
+    const data = {
+      activeUserId: 1,
+      email: 'test@example.com',
+      displayName: 'テストユーザー',
+      authenticationId: null,
+      createdAt: '2024-01-15T09:30:00.000Z',
+      updatedAt: '2024-01-15T09:30:00.000Z',
+      userId: 2,
+      ...overrides,
+    }
+    return [
+      data.activeUserId,
+      data.email,
+      data.displayName,
+      data.authenticationId,
+      data.createdAt,
+      data.updatedAt,
+      data.userId,
+    ]
+  }
+
   beforeEach(() => {
-    vi.clearAllMocks()
-    useCase = new QueryImpl(prisma)
+    useCase = new QueryImpl(getRdbClient('file::memory:'))
   })
 
   describe('findActiveById', () => {
-    describe('基本動作', () => {
-      it('ActiveUserをIDで検索できる', async () => {
-        // Arrange
-        const activeUserId = 1n
+    it('ActiveUserをIDで検索できる', async () => {
+      mockRdbExecutor.mockResolvedValue({ rows: [buildActiveUserRow()] })
 
-        const mockActiveUserData = {
-          activeUserId: 1,
-          userId: 2,
-          email: 'test@example.com',
-          displayName: 'テストユーザー',
-          authenticationId: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
+      const result = await useCase.findActiveById(1n)
 
-        prisma.activeUser.findUnique.mockResolvedValue(mockActiveUserData)
-
-        // Act
-        const result = await useCase.findActiveById(activeUserId)
-
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value?.activeUserId).toBe(1n)
-          expect(result.value?.email).toBe('test@example.com')
-        }
-        expect(prisma.activeUser.findUnique).toHaveBeenCalled()
-      })
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value?.activeUserId).toBe(1n)
+        expect(result.value?.email).toBe('test@example.com')
+      }
+      expect(mockRdbExecutor).toHaveBeenCalled()
+      const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
+      expect(sql).toContain('select')
+      expect(sql).toContain('"active_user_id" = ?')
+      expect(params).toContain(1)
     })
 
-    describe('境界値・特殊値', () => {
-      it('存在しないActiveUserの場合nullを返す', async () => {
-        // Arrange
-        const activeUserId = 999n
-        prisma.activeUser.findUnique.mockResolvedValue(null)
+    it('存在しないIDの場合nullを返す', async () => {
+      mockRdbExecutor.mockResolvedValue({ rows: [] })
 
-        // Act
-        const result = await useCase.findActiveById(activeUserId)
+      const result = await useCase.findActiveById(999n)
 
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toBeNull()
-        }
-      })
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value).toBeNull()
+      }
     })
 
-    describe('例外・制約違反', () => {
-      it('データベースエラー時は適切にエラーを返す', async () => {
-        // Arrange
-        const activeUserId = 1n
-        const dbError = new Error('Database connection failed')
-        prisma.activeUser.findUnique.mockRejectedValue(dbError)
+    it('データベースエラー時は適切にエラーを返す', async () => {
+      mockRdbExecutor.mockRejectedValue(new Error('Database connection failed'))
 
-        // Act
-        const result = await useCase.findActiveById(activeUserId)
+      const result = await useCase.findActiveById(1n)
 
-        // Assert
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error.message).toBe('Database connection failed')
-        }
-      })
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error.message).toBe('Database connection failed')
+      }
     })
   })
 
   describe('findActiveByEmail', () => {
-    describe('基本動作', () => {
-      it('ActiveUserをメールアドレスで検索できる', async () => {
-        // Arrange
-        const email = 'test@example.com'
-
-        const mockActiveUserData = {
-          activeUserId: 1,
-          userId: 2,
-          email,
-          displayName: 'テストユーザー',
-          authenticationId: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-
-        prisma.activeUser.findUnique.mockResolvedValue(mockActiveUserData)
-
-        // Act
-        const result = await useCase.findActiveByEmail(email)
-
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value?.email).toBe(email)
-          expect(result.value?.activeUserId).toBe(1n)
-        }
-        expect(prisma.activeUser.findUnique).toHaveBeenCalled()
+    it('ActiveUserをメールアドレスで検索できる', async () => {
+      mockRdbExecutor.mockResolvedValue({
+        rows: [buildActiveUserRow({ email: 'test@example.com' })],
       })
+
+      const result = await useCase.findActiveByEmail('test@example.com')
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value?.activeUserId).toBe(1n)
+        expect(result.value?.email).toBe('test@example.com')
+      }
+      expect(mockRdbExecutor).toHaveBeenCalled()
+      const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
+      expect(sql).toContain('select')
+      expect(sql).toContain('"email" = ?')
+      expect(params).toContain('test@example.com')
     })
 
-    describe('境界値・特殊値', () => {
-      it('存在しないメールアドレスの場合nullを返す', async () => {
-        // Arrange
-        const email = 'notfound@example.com'
-        prisma.activeUser.findUnique.mockResolvedValue(null)
+    it('存在しないメールアドレスの場合nullを返す', async () => {
+      mockRdbExecutor.mockResolvedValue({ rows: [] })
 
-        // Act
-        const result = await useCase.findActiveByEmail(email)
+      const result = await useCase.findActiveByEmail('notfound@example.com')
 
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toBeNull()
-        }
-      })
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value).toBeNull()
+      }
     })
 
-    describe('例外・制約違反', () => {
-      it('データベースエラー時は適切にエラーを返す', async () => {
-        // Arrange
-        const email = 'test@example.com'
-        const dbError = new Error('Database connection failed')
-        prisma.activeUser.findUnique.mockRejectedValue(dbError)
+    it('データベースエラー時は適切にエラーを返す', async () => {
+      mockRdbExecutor.mockRejectedValue(new Error('Database connection failed'))
 
-        // Act
-        const result = await useCase.findActiveByEmail(email)
+      const result = await useCase.findActiveByEmail('test@example.com')
 
-        // Assert
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error.message).toBe('Database connection failed')
-        }
-      })
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error.message).toBe('Database connection failed')
+      }
     })
   })
 
   describe('findActiveByAuthenticationId', () => {
-    describe('基本動作', () => {
-      it('ActiveUserを認証IDで検索できる', async () => {
-        // Arrange
-        const authenticationId = 'auth-id-123'
-
-        const mockActiveUserData = {
-          activeUserId: 1,
-          userId: 2,
-          email: 'test@example.com',
-          displayName: 'テストユーザー',
-          authenticationId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-
-        prisma.activeUser.findUnique.mockResolvedValue(mockActiveUserData)
-
-        // Act
-        const result = await useCase.findActiveByAuthenticationId(authenticationId)
-
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value?.activeUserId).toBe(1n)
-          expect(result.value?.email).toBe('test@example.com')
-        }
-        expect(prisma.activeUser.findUnique).toHaveBeenCalledWith({
-          where: { authenticationId },
-        })
+    it('ActiveUserを認証IDで検索できる', async () => {
+      mockRdbExecutor.mockResolvedValue({
+        rows: [buildActiveUserRow({ authenticationId: 'auth-id-123' })],
       })
+
+      const result = await useCase.findActiveByAuthenticationId('auth-id-123')
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value?.activeUserId).toBe(1n)
+        expect(result.value?.email).toBe('test@example.com')
+      }
+      expect(mockRdbExecutor).toHaveBeenCalled()
+      const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
+      expect(sql).toContain('select')
+      expect(sql).toContain('"authentication_id" = ?')
+      expect(params).toContain('auth-id-123')
     })
 
-    describe('境界値・特殊値', () => {
-      it('存在しない認証IDの場合nullを返す', async () => {
-        // Arrange
-        const authenticationId = 'nonexistent-auth-id'
-        prisma.activeUser.findUnique.mockResolvedValue(null)
+    it('存在しない認証IDの場合nullを返す', async () => {
+      mockRdbExecutor.mockResolvedValue({ rows: [] })
 
-        // Act
-        const result = await useCase.findActiveByAuthenticationId(authenticationId)
+      const result = await useCase.findActiveByAuthenticationId('nonexistent-auth-id')
 
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toBeNull()
-        }
-      })
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value).toBeNull()
+      }
     })
 
-    describe('例外・制約違反', () => {
-      it('データベースエラー時は適切にエラーを返す', async () => {
-        // Arrange
-        const authenticationId = 'auth-id-123'
-        const dbError = new Error('Database connection failed')
-        prisma.activeUser.findUnique.mockRejectedValue(dbError)
+    it('データベースエラー時は適切にエラーを返す', async () => {
+      mockRdbExecutor.mockRejectedValue(new Error('Database connection failed'))
 
-        // Act
-        const result = await useCase.findActiveByAuthenticationId(authenticationId)
+      const result = await useCase.findActiveByAuthenticationId('auth-id-123')
 
-        // Assert
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error.message).toBe('Database connection failed')
-        }
-      })
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error.message).toBe('Database connection failed')
+      }
     })
   })
 })

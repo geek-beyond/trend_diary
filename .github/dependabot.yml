@@ -8,15 +8,6 @@ updates:
     # CVE等のセキュリティ更新はクールダウン対象外で即時PRが作成される。
     cooldown:
       default-days: 3
-    ignore:
-      # Prisma 7 は workerd(Cloudflare Workers) 上で実行時 WASM コンパイルが
-      # ブロックされクラッシュする未解決の不具合があるため、メジャー更新を抑止する。
-      # 解消されたら本 ignore を外して 7 系へ協調アップグレードする。
-      # 参考: https://github.com/prisma/prisma/issues/28657
-      - dependency-name: "prisma"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@prisma/*"
-        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

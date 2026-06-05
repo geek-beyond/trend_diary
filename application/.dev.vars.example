@@ -1,6 +1,3 @@
-# ローカル/テスト向けフォールバックDB
-# Cloudflare D1 binding(DB)がない環境でのみ参照される
-DATABASE_URL=file:./dev.db
 # wrangler.toml の D1 設定に利用される Database ID (deploy 時に必要)
 D1_DATABASE_ID=
 

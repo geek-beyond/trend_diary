@@ -50,10 +50,6 @@ Cloudflare D1ローカルマイグレーション適用（必要な場合）
 pnpm run d1:apply:local
 ```
 
-### スキーマ変更時の手順（Drizzle ORM）
-
-手順は [docs/how_to_guides/database_migration_guide.md](docs/how_to_guides/database_migration_guide.md) を参照する。
-
 サーバの起動（Hono上でAPIとRemixが起動する）
 
 ```sh

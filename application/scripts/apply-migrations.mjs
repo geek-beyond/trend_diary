@@ -115,7 +115,6 @@ async function main() {
   const client = createClient({ url })
 
   try {
-    // 適用済み管理テーブルを用意する。
     await client.execute(CREATE_MIGRATIONS_TABLE)
 
     const appliedResult = await client.execute(`SELECT name FROM ${MIGRATIONS_TABLE};`)
@@ -137,7 +136,6 @@ async function main() {
     for (const name of unapplied) {
       const sql = readFileSync(join(MIGRATIONS_DIR, name), 'utf8')
       try {
-        // トリガーや複数ステートメントを確実に実行する（PRAGMA 非依存ならトランザクションで包む）。
         await applyMigrationFile(client, sql)
         // 適用済みとして記録する（wrangler 互換で name に拡張子込みファイル名を保存）。
         await client.execute({

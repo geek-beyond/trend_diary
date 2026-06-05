@@ -6,7 +6,6 @@ import { disconnectTestRdb } from '@/test/helper/rdb'
 // server テストが参照する DATABASE_URL のデフォルト（config.ts の dbUrl と一致させる）。
 const DEFAULT_DATABASE_URL = 'file:./test.db'
 
-// scripts/apply-migrations.mjs の絶対パス（このファイルからの相対で解決する）。
 const APPLY_MIGRATIONS_SCRIPT = fileURLToPath(
   new URL('../../../../scripts/apply-migrations.mjs', import.meta.url),
 )

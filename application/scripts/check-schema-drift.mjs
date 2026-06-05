@@ -40,7 +40,6 @@ const SCHEMA_PATH = './src/infrastructure/drizzle-orm/schema.ts'
 // cmd-shim は NODE_PATH を設定して依存解決を行うため、そのまま実行ファイルとして起動する。
 const DRIZZLE_KIT_BIN = join(APP_DIR, 'node_modules', '.bin', 'drizzle-kit')
 
-// 比較対象外のテーブル名。
 const EXCLUDED_TABLES = new Set([
   'd1_migrations', // wrangler 互換の適用管理テーブル
   'sqlite_sequence', // AUTOINCREMENT 用の内部テーブル
@@ -123,7 +122,6 @@ async function dumpTable(client, tableName) {
   const foreignKeysResult = await client.execute(`PRAGMA foreign_key_list("${tableName}");`)
   const foreignKeys = foreignKeysResult.rows
     .map((row) => ({
-      // FK 参照先テーブル名の `_new` サフィックスを正規化する。
       table: normalizeTableName(String(row.table)),
       from: String(row.from),
       to: String(row.to),
@@ -213,17 +211,14 @@ async function main() {
   let drizzleClient
 
   try {
-    // 1. 一時 DB(A) に migrations/*.sql を適用する。
     logInfo('migrations/*.sql を一時DBに適用中...')
     applyMigrations(migrationsDbPath)
 
-    // 2. drizzle-kit export の DDL を一時 DB(B) に適用する。
     logInfo('drizzle-kit export の DDL を一時DBに適用中...')
     const drizzleDdl = exportDrizzleDdl()
     drizzleClient = createClient({ url: `file:${drizzleDbPath}` })
     await drizzleClient.executeMultiple(drizzleDdl)
 
-    // 3. 両 DB の物理スキーマをダンプして比較する。
     logInfo('両DBの物理スキーマを比較中...')
     migrationsClient = createClient({ url: `file:${migrationsDbPath}` })
     const migrationsSchema = await dumpSchema(migrationsClient)
@@ -250,7 +245,6 @@ async function main() {
   } finally {
     migrationsClient?.close()
     drizzleClient?.close()
-    // 一時ファイルを必ず削除する。
     rmSync(tmpRoot, { recursive: true, force: true })
   }
 }

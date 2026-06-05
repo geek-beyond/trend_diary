@@ -105,7 +105,6 @@ export const closeRdbClient = vi.fn((_db: RdbClient): void => {
   // no-op: モックでは接続クローズは何もしない
 })
 
-// INFO: テストごとにモック状態をリセットする(既存 __mocks__/prisma.ts の mockReset 方式を踏襲)
 beforeEach(() => {
   mockRdbExecutor.mockReset()
   getRdbClient.mockClear()

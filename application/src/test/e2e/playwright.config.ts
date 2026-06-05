@@ -9,7 +9,7 @@ process.env.DATABASE_URL ??= TEST_DATABASE_URL
 export default defineConfig({
   // webServer と並行して migrations を test.db へ適用する。webServer の readiness(HTTP)は
   // DB 非依存のため、テスト開始前に適用が完了していればよい。
-  globalSetup: './globalSetup.ts',
+  globalSetup: '../setup/apply-migrations.ts',
   testDir: '.',
   forbidOnly: true,
   retries: 2,

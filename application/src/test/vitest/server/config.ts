@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globals: true,
-    globalSetup: ['src/test/vitest/server/globalSetup.ts'],
+    globalSetup: ['src/test/setup/apply-migrations.ts'],
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
     },

@@ -92,6 +92,13 @@ export async function applyMigrations(databaseUrl: string | undefined): Promise<
 }
 
 // import 時に自動実行しないよう、CLI 直接実行のときだけ DATABASE_URL env を解決して適用する。
+// vitest / playwright の globalSetup として直接指定するエントリ。
+// env.ts は @/ エイリアスを含み CLI(strip-types)では解決できないため遅延 import する。
+export default async function globalSetup(): Promise<void> {
+  const { TEST_DATABASE_URL } = await import('../env')
+  await applyMigrations(process.env.DATABASE_URL ?? TEST_DATABASE_URL)
+}
+
 const isCliEntry = process.argv[1] === fileURLToPath(import.meta.url)
 if (isCliEntry) {
   await applyMigrations(process.env.DATABASE_URL?.trim())

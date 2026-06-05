@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globals: true,
-    globalSetup: ['src/test/vitest/cron/globalSetup.ts'],
+    globalSetup: ['src/test/setup/apply-migrations.ts'],
     env: {
       NODE_ENV: 'test',
       DATABASE_URL: TEST_DATABASE_URL,

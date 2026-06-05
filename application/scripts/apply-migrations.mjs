@@ -1,14 +1,6 @@
-// migrations/*.sql を file: SQLite DB に順次適用するスクリプト。
-//
-// 使い方:
-//   DATABASE_URL=file:/abs/path/to/test.db node scripts/apply-migrations.mjs
-//
-// - 各ファイルはトランザクションで包むが、PRAGMA を含むファイル（0002 の foreign_keys=OFF/ON）は
-//   トランザクション内で PRAGMA が効かない（SQLite はトランザクション中の PRAGMA foreign_keys を無視する）ため、
-//   ファイル内容に PRAGMA を含む場合はトランザクションで包まない。
-//
-// NOTE: ログ出力には process.stdout/stderr.write を使用する。
-//   biome の check:fix（--unsafe）が console.* を削除してしまうため。
+// migrations/*.sql を file: SQLite DB に順次適用する（DATABASE_URL=file:... 必須）。
+// PRAGMA を含むファイルはトランザクション内で PRAGMA が効かないため tx 外で適用する。
+// ログは process.stdout/stderr.write を使用（biome の --unsafe fix が console.* を消すため）。
 
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -35,10 +27,7 @@ function logError(message) {
   process.stderr.write(`${message}\n`)
 }
 
-/**
- * DATABASE_URL を検証して @libsql/client 用の url を返す。
- * file: 形式のみ許可する。
- */
+/** DATABASE_URL を検証して url を返す（file: 形式のみ許可）。 */
 function resolveDatabaseUrl() {
   const databaseUrl = process.env.DATABASE_URL
   if (!databaseUrl) {
@@ -52,31 +41,21 @@ function resolveDatabaseUrl() {
   return databaseUrl
 }
 
-/**
- * migrations ディレクトリ内の *.sql ファイル名を辞書順で返す。
- */
+/** migrations ディレクトリ内の *.sql ファイル名を辞書順で返す。 */
 function listMigrationFiles() {
   return readdirSync(MIGRATIONS_DIR)
     .filter((name) => name.endsWith('.sql'))
     .sort((a, b) => a.localeCompare(b))
 }
 
-/**
- * SQL 内容に PRAGMA 文が含まれるかを判定する。
- * PRAGMA を含むファイルはトランザクション内で PRAGMA が効かないため、
- * トランザクションで包まずに適用する。
- */
+/** SQL に PRAGMA 文が含まれるかを判定する（含む場合は tx 外で適用する）。 */
 function containsPragma(sql) {
   return /^\s*PRAGMA\b/im.test(sql)
 }
 
-/**
- * 1つのマイグレーションファイルを適用する。
- * PRAGMA を含まないファイルはトランザクションで包み、途中失敗時に半適用が残らないようにする。
- */
+/** 1ファイルを適用する。PRAGMA 非含有なら tx で包み、途中失敗時の半適用を防ぐ。 */
 async function applyMigrationFile(client, sql) {
   if (containsPragma(sql)) {
-    // PRAGMA はトランザクション内で無効化されるため、そのまま適用する。
     await client.executeMultiple(sql)
     return
   }

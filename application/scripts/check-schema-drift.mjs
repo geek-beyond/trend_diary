@@ -1,10 +1,5 @@
-// Drizzle スキーマと D1 マイグレーション SQL の DDL 等価性を検証するスクリプト。
-//
-// 使い方:
-//   node scripts/check-schema-drift.mjs
-//
-// NOTE: ログ出力には process.stdout/stderr.write を使用する。
-//   biome の check:fix（--unsafe）が console.* を削除してしまうため。
+// Drizzle スキーマと D1 マイグレーション SQL の DDL 等価性を検証する。
+// ログは process.stdout/stderr.write を使用（biome の --unsafe fix が console.* を消すため）。
 
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -17,8 +12,7 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
 const APP_DIR = resolve(SCRIPT_DIR, '..')
 const APPLY_MIGRATIONS_SCRIPT = join(SCRIPT_DIR, 'apply-migrations.mjs')
 const SCHEMA_PATH = './src/infrastructure/drizzle-orm/schema.ts'
-// `corepack pnpm exec` 経由だと corepack 前提が無い環境（CI のスタンドアロン pnpm 等）で壊れうるため、
-// node_modules/.bin の drizzle-kit を直接起動する。
+// drizzle-kit は bin 直叩き（corepack 前提が無い環境でも動くようにするため）。
 const DRIZZLE_KIT_BIN = join(APP_DIR, 'node_modules', '.bin', 'drizzle-kit')
 
 const EXCLUDED_TABLES = new Set(['d1_migrations', 'sqlite_sequence'])
@@ -33,17 +27,12 @@ function logError(message) {
   process.stderr.write(`${message}\n`)
 }
 
-/**
- * 参照先テーブル名の `_new` サフィックスを正規化する。
- * migration 0002 のテーブル再作成由来で FK 参照先名に `_new` が残るため。
- */
+/** FK 参照先テーブル名の `_new` サフィックスを除去する（0002 のテーブル再作成由来）。 */
 function normalizeTableName(name) {
   return name.endsWith('_new') ? name.slice(0, -'_new'.length) : name
 }
 
-/**
- * migrations/*.sql を一時 DB(A) に適用する。apply-migrations.mjs を子プロセスで実行。
- */
+/** migrations/*.sql を一時 DB に適用する（apply-migrations.mjs を子プロセス実行）。 */
 function applyMigrations(dbPath) {
   execFileSync('node', [APPLY_MIGRATIONS_SCRIPT], {
     cwd: APP_DIR,
@@ -52,9 +41,7 @@ function applyMigrations(dbPath) {
   })
 }
 
-/**
- * drizzle-kit export で schema.ts から DDL を取得する。
- */
+/** drizzle-kit export で schema.ts から DDL を取得する。 */
 function exportDrizzleDdl() {
   const output = execFileSync(
     DRIZZLE_KIT_BIN,
@@ -68,9 +55,7 @@ function exportDrizzleDdl() {
   return output
 }
 
-/**
- * 比較対象とすべきユーザーテーブル名の一覧を取得する。
- */
+/** 比較対象のユーザーテーブル名の一覧を取得する。 */
 async function listTables(client) {
   const result = await client.execute(
     "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name;",
@@ -80,9 +65,7 @@ async function listTables(client) {
     .filter((name) => !EXCLUDED_TABLES.has(name) && !name.startsWith('sqlite_'))
 }
 
-/**
- * 1テーブル分の物理スキーマを PRAGMA で取得し、正規化したオブジェクトを返す。
- */
+/** 1テーブル分の物理スキーマを PRAGMA で取得し、正規化して返す。 */
 async function dumpTable(client, tableName) {
   const columnsResult = await client.execute(`PRAGMA table_info("${tableName}");`)
   // cid は宣言順に依存し本質的でないため除外する。
@@ -129,9 +112,7 @@ async function dumpTable(client, tableName) {
   return { columns, foreignKeys, indexes }
 }
 
-/**
- * DB 全体（全テーブル）の正規化スキーマを取得する。
- */
+/** DB 全体の正規化スキーマを取得する。 */
 async function dumpSchema(client) {
   const tables = await listTables(client)
   const schema = {}
@@ -141,9 +122,7 @@ async function dumpSchema(client) {
   return schema
 }
 
-/**
- * 2つのスキーマダンプの差分を行配列で返す（空なら一致）。
- */
+/** 2つのスキーマダンプの差分を行配列で返す（空なら一致）。 */
 function diffSchemas(migrationsSchema, drizzleSchema) {
   const diffs = []
   const migrationTables = Object.keys(migrationsSchema).sort()

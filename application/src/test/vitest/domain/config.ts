@@ -1,12 +1,14 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
-import tsconfigPaths from 'vite-tsconfig-paths'
 import { coverageReporter, generateIncludes } from '../generate'
 
 const { testInclude, coverageInclude } = generateIncludes('src/domain')
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  // Vite 8 ネイティブの tsconfig paths 解決（vite-tsconfig-paths プラグインの代替）
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     globals: true,
     include: testInclude,

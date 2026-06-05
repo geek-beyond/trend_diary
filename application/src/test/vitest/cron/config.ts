@@ -1,10 +1,12 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
-import tsconfigPaths from 'vite-tsconfig-paths'
 import { TEST_DATABASE_URL } from '../../env'
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  // Vite 8 ネイティブの tsconfig paths 解決（vite-tsconfig-paths プラグインの代替）
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     globals: true,
     globalSetup: ['src/test/setup/apply-migrations.ts'],

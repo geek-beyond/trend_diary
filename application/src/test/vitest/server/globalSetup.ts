@@ -1,4 +1,3 @@
-import { disconnectTestRdb } from '@/test/helper/rdb'
 // @ts-expect-error: .mjs テスト基盤モジュール（型定義は持たない）を直接 import する
 import { applyMigrations } from '@/test/setup/apply-migrations.mjs'
 
@@ -10,9 +9,5 @@ export default async function globalSetup() {
 
   if (databaseUrl.startsWith('file:')) {
     await applyMigrations(databaseUrl)
-  }
-
-  return async () => {
-    disconnectTestRdb()
   }
 }

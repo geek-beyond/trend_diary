@@ -84,7 +84,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'pnpm exec react-router dev',
+    command: 'pnpm start',
     // INFO: command は application ルート基準で実行する（config の cwd 既定は config ファイルの場所）。
     cwd: '../../..',
     url: 'http://localhost:5173',

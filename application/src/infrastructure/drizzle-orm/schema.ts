@@ -1,10 +1,10 @@
 import { relations, sql } from 'drizzle-orm'
 import { customType, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-// 既存D1本番データには Prisma の ISO-8601 文字列、CURRENT_TIMESTAMP 由来の
+// 既存D1本番データには（Prisma時代に書き込まれた）ISO-8601 文字列、CURRENT_TIMESTAMP 由来の
 // "YYYY-MM-DD HH:MM:SS"(UTC・TZなし)、過去の epochミリ秒(integer) が混在しうる。
 // TZなし形式は末尾Zを補ってUTC解釈しないと、非UTC環境で Date がずれる。
-export function normalizePrismaDateTime(value: string | number | bigint): Date {
+export function normalizeDateTime(value: string | number | bigint): Date {
   if (typeof value === 'number' || typeof value === 'bigint') {
     return new Date(Number(value))
   }
@@ -15,9 +15,9 @@ export function normalizePrismaDateTime(value: string | number | bigint): Date {
   return new Date(value)
 }
 
-const prismaDateTime = customType<{
+const dateTime = customType<{
   data: Date
-  driverData: string | number
+  driverData: string | number | bigint
 }>({
   dataType() {
     return 'DATETIME'
@@ -25,14 +25,14 @@ const prismaDateTime = customType<{
   toDriver(value: Date): string {
     return value.toISOString()
   },
-  fromDriver(value: string | number): Date {
-    return normalizePrismaDateTime(value)
+  fromDriver(value: string | number | bigint): Date {
+    return normalizeDateTime(value)
   },
 })
 
 export const users = sqliteTable('users', {
   userId: integer('user_id').primaryKey({ autoIncrement: true }),
-  createdAt: prismaDateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 })
 
 export const activeUsers = sqliteTable(
@@ -42,8 +42,8 @@ export const activeUsers = sqliteTable(
     email: text('email').notNull(),
     displayName: text('display_name'),
     authenticationId: text('authentication_id'),
-    createdAt: prismaDateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: prismaDateTime('updated_at').notNull(),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: dateTime('updated_at').notNull(),
     userId: integer('user_id')
       .notNull()
       .references(() => users.userId, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -64,7 +64,7 @@ export const articles = sqliteTable(
     author: text('author').notNull(),
     description: text('description').notNull(),
     url: text('url').notNull(),
-    createdAt: prismaDateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [uniqueIndex('articles_url_key').on(table.url)],
 )
@@ -75,9 +75,9 @@ export const bannedUsers = sqliteTable(
     userId: integer('user_id')
       .notNull()
       .references(() => users.userId, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    bannedAt: prismaDateTime('banned_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    bannedAt: dateTime('banned_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     reason: text('reason'),
-    createdAt: prismaDateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [uniqueIndex('banned_users_user_id_key').on(table.userId)],
 )
@@ -89,7 +89,7 @@ export const leavedUsers = sqliteTable(
       .notNull()
       .references(() => users.userId, { onDelete: 'cascade', onUpdate: 'cascade' }),
     reason: text('reason'),
-    createdAt: prismaDateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [uniqueIndex('leaved_users_user_id_key').on(table.userId)],
 )
@@ -98,8 +98,8 @@ export const readHistories = sqliteTable(
   'read_histories',
   {
     readHistoryId: integer('read_history_id').primaryKey({ autoIncrement: true }),
-    readAt: prismaDateTime('read_at').notNull(),
-    createdAt: prismaDateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    readAt: dateTime('read_at').notNull(),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     // INFO: 記事IDは外部制約なし（記事削除後も履歴を保持するための意図的設計）
     articleId: integer('article_id').notNull(),
     activeUserId: integer('active_user_id')
@@ -113,7 +113,7 @@ export const skippedArticles = sqliteTable(
   'skipped_articles',
   {
     skippedArticleId: integer('skipped_article_id').primaryKey({ autoIncrement: true }),
-    createdAt: prismaDateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     // INFO: 記事IDは外部制約なし（記事削除後もskip履歴を保持するための意図的設計）
     articleId: integer('article_id').notNull(),
     activeUserId: integer('active_user_id')

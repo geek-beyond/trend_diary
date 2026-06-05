@@ -28,13 +28,8 @@ const getRdbClient = vi.fn(
 
 export default getRdbClient
 
-export const closeRdbClient = vi.fn((_db: RdbClient): void => {
-  // no-op: モックでは接続クローズは何もしない
-})
-
 beforeEach(() => {
   mockRdbExecutor.mockReset()
   getRdbClient.mockClear()
-  closeRdbClient.mockClear()
   mockRdbExecutor.mockResolvedValue({ rows: [] })
 })

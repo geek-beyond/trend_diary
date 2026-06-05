@@ -64,9 +64,9 @@ describe('CommandImpl', () => {
 
   describe('createSkippedArticle', () => {
     it('DBにはnumberで渡し、戻り値はbigintに変換する', async () => {
-      // INFO: insert ... on conflict do nothing returning のカラム順:
+      // INFO: insert ... on conflict do update returning のカラム順:
       // skipped_article_id, created_at, article_id, active_user_id
-      mockRdbExecutor.mockResolvedValue({
+      mockRdbExecutor.mockResolvedValueOnce({
         rows: [[10, '2024-01-15T09:30:00.000Z', 100, 1]],
       })
 
@@ -76,9 +76,10 @@ describe('CommandImpl', () => {
       const [sql, params, method] = mockRdbExecutor.mock.calls[0]
       expect(sql).toContain('insert into "skipped_articles"')
       expect(sql).toContain('on conflict')
-      expect(sql).toContain('do nothing')
+      expect(sql).toContain('do update')
       expect(sql).toContain('returning')
-      expect(params).toEqual([100, 1])
+      // INFO: values(article_id, active_user_id) + do update set active_user_id の3引数
+      expect(params).toEqual([100, 1, 1])
       expect(method).toBe('all')
 
       expect(result.isOk()).toBe(true)
@@ -89,16 +90,16 @@ describe('CommandImpl', () => {
       }
     })
 
-    it('既にスキップ済み(競合)で挿入行が返らない場合は既存行を取得して返す', async () => {
-      mockRdbExecutor
-        // insert ... on conflict do nothing returning → 競合のため空
-        .mockResolvedValueOnce({ rows: [] })
-        // SELECT 既存行: skipped_article_id, created_at, article_id, active_user_id
-        .mockResolvedValueOnce({ rows: [[10, '2024-01-15T09:30:00.000Z', 100, 1]] })
+    it('既にスキップ済み(競合)でも単一insertのreturningで既存行を返す', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({
+        rows: [[10, '2024-01-15T09:30:00.000Z', 100, 1]],
+      })
 
       const result = await commandImpl.createSkippedArticle(1n, 100n)
 
-      expect(mockRdbExecutor).toHaveBeenCalledTimes(2)
+      expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
+      const [sql] = mockRdbExecutor.mock.calls[0]
+      expect(sql).toContain('on conflict')
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
         expect(result.value.skippedArticleId).toBe(10n)
@@ -107,16 +108,11 @@ describe('CommandImpl', () => {
       }
     })
 
-    it('競合後の既存行SELECTも空の場合はServerErrorを返す', async () => {
-      mockRdbExecutor
-        // insert ... on conflict do nothing returning → 競合のため空
-        .mockResolvedValueOnce({ rows: [] })
-        // SELECT 既存行も空(行が消えた)
-        .mockResolvedValueOnce({ rows: [] })
+    it('insert...returningが空行の場合はServerErrorを返す', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
 
       const result = await commandImpl.createSkippedArticle(1n, 100n)
 
-      expect(mockRdbExecutor).toHaveBeenCalledTimes(2)
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
         expect(result.error).toBeInstanceOf(ServerError)

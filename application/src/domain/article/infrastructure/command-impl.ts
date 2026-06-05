@@ -1,12 +1,12 @@
 import { and, eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { ServerError, unwrapDbError } from '@/common/errors'
+import { ServerError } from '@/common/errors'
 import { wrapAsyncCall } from '@/common/result'
 import { Command } from '@/domain/article/repository'
 import type { ReadHistory } from '@/domain/article/schema/read-history-schema'
 import type { SkippedArticle } from '@/domain/article/schema/skipped-article-schema'
 import { readHistories, skippedArticles } from '@/infrastructure/drizzle-orm/schema'
-import { RdbClient } from '@/infrastructure/rdb'
+import { RdbClient, unwrapDbError } from '@/infrastructure/rdb'
 import { fromDbId, toDbId } from '@/infrastructure/rdb-id'
 
 export default class CommandImpl implements Command {
@@ -77,41 +77,27 @@ export default class CommandImpl implements Command {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
-    const result = await wrapAsyncCall(async () => {
-      const inserted = await this.db
+    const result = await wrapAsyncCall(() =>
+      this.db
         .insert(skippedArticles)
         .values({
           activeUserId: dbActiveUserId,
           articleId: dbArticleId,
         })
-        .onConflictDoNothing({
+        // INFO: 競合時も returning が行を返すよう、既存行に対しダミー更新(値不変)を行う
+        .onConflictDoUpdate({
           target: [skippedArticles.articleId, skippedArticles.activeUserId],
+          set: { activeUserId: dbActiveUserId },
         })
-        .returning()
-
-      // INFO: 競合時は returning が空になるため、既存仕様(既存行を返す)に合わせて既存行を取得する
-      if (inserted.length > 0) {
-        return inserted[0]
-      }
-
-      const existing = await this.db
-        .select()
-        .from(skippedArticles)
-        .where(
-          and(
-            eq(skippedArticles.articleId, dbArticleId),
-            eq(skippedArticles.activeUserId, dbActiveUserId),
-          ),
-        )
-      return existing[0]
-    })
+        .returning(),
+    )
     if (result.isErr()) {
       return err(new ServerError(unwrapDbError(result.error)))
     }
 
-    const skippedArticle = result.value
+    const skippedArticle = result.value[0]
     if (!skippedArticle) {
-      return err(new ServerError(new Error('skipped_articles row not found after conflict')))
+      return err(new ServerError(new Error('insert skipped_articles returned no row')))
     }
     return ok({
       skippedArticleId: fromDbId(skippedArticle.skippedArticleId),

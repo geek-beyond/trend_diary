@@ -1,7 +1,7 @@
 import type { Client as LibSQLClient, Config as LibSQLConfig } from '@libsql/client'
 import type { Logger as DrizzleLogger } from 'drizzle-orm'
 import { drizzle as drizzleD1 } from 'drizzle-orm/d1'
-import { drizzle as drizzleLibsql, type LibSQLDatabase } from 'drizzle-orm/libsql'
+import { drizzle as drizzleLibsql } from 'drizzle-orm/libsql'
 import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core'
 import AppLogger, { type LogLevel } from '@/common/logger'
 import * as schema from '@/infrastructure/drizzle-orm/schema'
@@ -30,6 +30,12 @@ const createLibSQLNodeClient: ((config: LibSQLConfig) => LibSQLClient) | null = 
   ? null
   : (await import('@libsql/client/node')).createClient
 
+// Drizzle はドライバ例外を DrizzleQueryError でラップし元例外を cause に格納する。
+// ラッパのメッセージは `Failed query: ...` で元のDBエラー文言が失われるため、cause を取り出す。
+export function unwrapDbError(error: Error): Error {
+  return error.cause instanceof Error ? error.cause : error
+}
+
 type RdbConfig = {
   db?: D1Database
   databaseUrl?: string
@@ -40,11 +46,6 @@ type RdbInput = string | RdbConfig
 // libsql / D1 / sqlite-proxy(テスト) は結果セット型のみ異なるため、結果セット型を
 // unknown にした共通基底型を RdbClient として扱う。
 export type RdbClient = BaseSQLiteDatabase<'async', unknown, typeof schema>
-
-type RdbLibSQLClient = LibSQLDatabase<typeof schema> & {
-  // biome-ignore lint/style/useNamingConvention: drizzleが公開する `$client` プロパティ名に合わせる
-  $client: { close: () => void }
-}
 
 const VALID_LOG_LEVELS: ReadonlyArray<LogLevel> = [
   'trace',
@@ -92,37 +93,27 @@ function resolveLogger(isTest: boolean): DrizzleLogger | false {
 
 export default function getRdbClient(input: RdbInput): RdbClient {
   const isTest = process.env.NODE_ENV === 'test'
-  const isStringInput = typeof input === 'string'
-  const config: RdbConfig = isStringInput ? { databaseUrl: input } : input
-  const processDatabaseUrl = process.env.DATABASE_URL?.trim()
-  const configDatabaseUrl = config.databaseUrl?.trim()
-  // INFO: 文字列入力(明示指定)は最優先、オブジェクト入力ではprocess.envを優先してE2E時の不一致を防ぐ
-  const resolvedDatabaseUrl = isStringInput
-    ? configDatabaseUrl || processDatabaseUrl || config.databaseUrl || process.env.DATABASE_URL
-    : processDatabaseUrl || configDatabaseUrl || process.env.DATABASE_URL || config.databaseUrl
+  // INFO: 文字列入力は databaseUrl の省略形として扱う
+  const config: RdbConfig = typeof input === 'string' ? { databaseUrl: input } : input
+  const databaseUrl = config.databaseUrl?.trim() || process.env.DATABASE_URL?.trim()
 
   const logger = resolveLogger(isTest)
 
-  // INFO: E2E/ローカルSQLiteではDATABASE_URL(file:)を優先し、D1バインディングとの分離を防ぐ
-  if (resolvedDatabaseUrl?.startsWith('file:')) {
+  // INFO: file:(libsql)はD1より優先する。E2EではviteアダプタがD1バインディングも供給するため、
+  //       優先しないと test.db への分離が壊れる
+  if (databaseUrl?.startsWith('file:')) {
     // INFO: `file:`はNodeビルド(`@libsql/client/node`)でのみ対応。workerd(本番)では実行されない経路
     if (!createLibSQLNodeClient) {
       throw new Error('file: database URL is not supported on the Workers runtime')
     }
-    return drizzleLibsql(createLibSQLNodeClient({ url: resolvedDatabaseUrl }), {
-      schema,
-      logger,
-    })
+    return drizzleLibsql(createLibSQLNodeClient({ url: databaseUrl }), { schema, logger })
   }
 
   if (config.db) {
-    return drizzleD1(config.db, {
-      schema,
-      logger,
-    })
+    return drizzleD1(config.db, { schema, logger })
   }
 
-  if (!resolvedDatabaseUrl) {
+  if (!databaseUrl) {
     throw new Error('Either D1 binding (db) or databaseUrl must be provided')
   }
 
@@ -131,29 +122,5 @@ export default function getRdbClient(input: RdbInput): RdbClient {
   if (!createLibSQLNodeClient) {
     throw new Error('Remote libsql database URL is not supported on the Workers runtime')
   }
-  return drizzleLibsql(createLibSQLNodeClient({ url: resolvedDatabaseUrl }), {
-    schema,
-    logger,
-  })
-}
-
-// wrapAsyncCall の cleanup(finally)として呼ばれる(cron storeArticles)。ここで例外を送出すると
-// 業務処理の結果を上書きして漏れるため、クローズ失敗は捕捉して warn ログに留める。
-export function closeRdbClient(db: RdbClient): void {
-  if (!hasClosableClient(db)) return
-
-  try {
-    db.$client.close()
-  } catch (error) {
-    getDrizzleLogger().warn({ msg: 'failed to close rdb client', err: error })
-  }
-}
-
-function hasClosableClient(db: RdbClient): db is RdbClient & RdbLibSQLClient {
-  const candidate = db as Partial<RdbLibSQLClient>
-  return (
-    typeof candidate.$client === 'object' &&
-    candidate.$client !== null &&
-    typeof candidate.$client.close === 'function'
-  )
+  return drizzleLibsql(createLibSQLNodeClient({ url: databaseUrl }), { schema, logger })
 }

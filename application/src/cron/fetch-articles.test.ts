@@ -16,7 +16,6 @@ vi.mock('rss-parser', () => ({
 vi.mock('@/infrastructure/rdb', () => import('@/test/__mocks__/rdb'))
 
 import { fetchHatenaArticles } from '@/cron/fetch-articles'
-import { closeRdbClient } from '@/infrastructure/rdb'
 import { mockRdbExecutor } from '@/test/__mocks__/rdb'
 
 // storeArticles の呼び出し順: 1)既存URL select 2)記事ごとのinsert（returningなし）。
@@ -199,14 +198,6 @@ describe('fetchHatenaArticles', () => {
     expect(insertCalls[0][1] as unknown[]).toContain('encoded本文')
     expect(insertCalls[1][1] as unknown[]).toContain('snippet本文')
     expect(insertCalls[2][1] as unknown[]).toContain('')
-  })
-
-  it('保存完了後に接続をクローズする', async () => {
-    parseStringMock.mockResolvedValue({ items: [] })
-
-    await fetchHatenaArticles(env)
-
-    expect(closeRdbClient).toHaveBeenCalled()
   })
 })
 

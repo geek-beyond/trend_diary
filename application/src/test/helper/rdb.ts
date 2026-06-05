@@ -1,4 +1,4 @@
-import getRdbClient, { closeRdbClient, type RdbClient } from '@/infrastructure/rdb'
+import getRdbClient, { type RdbClient } from '@/infrastructure/rdb'
 import TEST_ENV from '@/test/env'
 
 // テスト環境であることを明示
@@ -11,11 +11,4 @@ export function getTestRdb(): RdbClient {
     rdb = getRdbClient(TEST_ENV.DATABASE_URL)
   }
   return rdb
-}
-
-export function disconnectTestRdb(): void {
-  if (rdb) {
-    closeRdbClient(rdb)
-    rdb = null
-  }
 }

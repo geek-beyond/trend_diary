@@ -25,7 +25,7 @@
    含まれていないかを確認）。D1 は `migrations/` を辞書順に追記適用するため、既存ファイルの編集・
    リネームは禁止（本番適用済み）。生成された SQL・`meta/` 配下の差分をまとめてコミットする。
 4. `pnpm run db:check`（`drizzle-kit check`）で `migrations/meta/_journal.json` とスナップショットの整合を検証する。
-   - スキーマと migrations の乖離は「`db:generate` で差分（新規SQL）が出ない」ことで検証する（CI=`drizzle.yaml` が PR 時に generate→`git diff` で実行）。
+   - スキーマと migrations の乖離は「`db:generate` で差分（新規SQL）が出ない」ことで検証する（CI=`db-schema.yaml` が PR 時に generate→`git diff` で実行）。
    - 制約: 手編集した SQL と `schema.ts` の乖離は検出対象外（生成フロー＋レビューで担保する）。
 
 ## ローカル/テストDBへの適用
@@ -66,7 +66,7 @@
 
 ## スキーマドリフトの検証
 
-drizzle-kit 標準機構で検証する。CI（`drizzle.yaml`）が PR 時に以下を実行する。
+drizzle-kit 標準機構で検証する。CI（`db-schema.yaml`）が PR 時に以下を実行する。
 
 1. `pnpm run db:generate` を実行し、`git diff --exit-code -- migrations` で
    新規 SQL・`meta/` 差分が出ない（＝ドリフトなし）ことを確認する。

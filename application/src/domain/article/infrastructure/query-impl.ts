@@ -1,6 +1,6 @@
 import { eq, type SQL, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { ServerError, unwrapDbError } from '@/common/errors'
+import { ServerError } from '@/common/errors'
 import { addJstDays, toJstDate } from '@/common/locale/date'
 import { DEFAULT_LIMIT, DEFAULT_PAGE, OffsetPaginationResult } from '@/common/pagination'
 import { wrapAsyncCall } from '@/common/result'
@@ -15,8 +15,8 @@ import type {
   DiaryReadItem,
 } from '@/domain/article/schema/diary-schema'
 import { QueryParams } from '@/domain/article/schema/query-schema'
-import { articles, normalizePrismaDateTime } from '@/infrastructure/drizzle-orm/schema'
-import { RdbClient } from '@/infrastructure/rdb'
+import { articles, normalizeDateTime } from '@/infrastructure/drizzle-orm/schema'
+import { RdbClient, unwrapDbError } from '@/infrastructure/rdb'
 import { fromDbId, toDbId } from '@/infrastructure/rdb-id'
 
 type RawArticleRow = {
@@ -561,7 +561,7 @@ export default class QueryImpl implements Query {
       author: row.author,
       description: row.description,
       url: row.url,
-      createdAt: normalizePrismaDateTime(row.createdAt),
+      createdAt: normalizeDateTime(row.createdAt),
     }
   }
 
@@ -572,7 +572,7 @@ export default class QueryImpl implements Query {
       media: row.media as ArticleMedia,
       title: row.title,
       url: row.url,
-      readAt: normalizePrismaDateTime(row.readAt),
+      readAt: normalizeDateTime(row.readAt),
     }
   }
 

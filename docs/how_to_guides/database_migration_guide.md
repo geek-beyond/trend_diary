@@ -34,8 +34,9 @@
 `migrations/*.sql` の適用は以下の起動・テスト実行時に**自動**で行われるため、
 通常は手動で `db:migrate` を意識する必要はない。
 
-- `pnpm run start:e2e`: 起動前に `test.db` へ自動適用してから dev サーバーを起動する
-  （E2E は Playwright の `webServer` がこのコマンドを起動するため、E2E でも自動適用される）
+- `pnpm run e2e`: Playwright の `globalSetup`（`src/test/e2e/globalSetup.ts`）が `test.db` へ
+  自動適用する。`webServer`（`react-router dev`）は readiness が DB 非依存のため、
+  globalSetup 完了後にテストの最初のクエリが実行される
 - `pnpm run test:server`: vitest の `globalSetup` が `file:` の `DATABASE_URL`
   （既定 `test.db`）へ自動適用してからテストを実行する
 

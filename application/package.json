@@ -7,7 +7,6 @@
   },
   "scripts": {
     "start": "react-router dev",
-    "start:e2e": "sh -c 'export DATABASE_URL=file:./test.db && node src/test/setup/apply-migrations.mjs && react-router dev'",
     "build": "react-router build",
     "test:client": "vitest run -c src/test/vitest/client/config.ts",
     "test:domain": "vitest run -c src/test/vitest/domain/config.ts",

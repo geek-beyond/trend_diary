@@ -1,8 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'file:./test.db'
-}
+// E2E 用の file: SQLite DB。globalSetup の migrations 適用先と webServer の参照先を一致させる。
+const DATABASE_URL = 'file:./test.db'
 
 /**
  * Read environment variables from file.
@@ -16,6 +15,9 @@ if (!process.env.DATABASE_URL) {
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
+  // webServer 起動と並行して migrations を test.db へ適用する。
+  // webServer の readiness（HTTP）は DB 非依存のため、テストの最初のクエリ前に適用が完了すればよい。
+  globalSetup: './globalSetup.ts',
   testDir: '.',
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   // INFO: CIに合わせる
@@ -82,9 +84,15 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'CHOKIDAR_USEPOLLING=1 pnpm run start:e2e',
+    command: 'pnpm exec react-router dev',
+    // INFO: command は application ルート基準で実行する（config の cwd 既定は config ファイルの場所）。
     cwd: '../../..',
     url: 'http://localhost:5173',
+    // INFO: 既存の process.env に上書きマージされる。CHOKIDAR_USEPOLLING は dev サーバーのファイル監視用。
+    env: {
+      DATABASE_URL,
+      CHOKIDAR_USEPOLLING: '1',
+    },
     // INFO: CIに合わせる
     reuseExistingServer: false,
   },

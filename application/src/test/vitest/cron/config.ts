@@ -1,9 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
-
-// server テストの test.db と衝突しないよう cron 専用ファイルを使う。
-const dbUrl = 'file:./test-cron.db'
+import { TEST_DATABASE_URL } from '../../env'
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
@@ -12,7 +10,7 @@ export default defineConfig({
     globalSetup: ['src/test/vitest/cron/globalSetup.ts'],
     env: {
       NODE_ENV: 'test',
-      DATABASE_URL: dbUrl,
+      DATABASE_URL: TEST_DATABASE_URL,
     },
     include: ['src/cron/**/*.test.ts'],
     pool: 'threads',

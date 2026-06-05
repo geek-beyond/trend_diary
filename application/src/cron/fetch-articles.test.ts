@@ -17,10 +17,11 @@ vi.mock('rss-parser', () => ({
 import { fetchHatenaArticles } from '@/cron/fetch-articles'
 import { articles } from '@/infrastructure/drizzle-orm/schema'
 import getRdbClient from '@/infrastructure/rdb'
+import { TEST_DATABASE_URL } from '@/test/env'
 
 const env = {
   DB: {} as D1Database,
-  DATABASE_URL: 'file:./test-cron.db',
+  DATABASE_URL: TEST_DATABASE_URL,
 }
 
 const db = getRdbClient(env.DATABASE_URL)

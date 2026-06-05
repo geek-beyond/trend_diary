@@ -1,12 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
-
-// E2E 用の file: SQLite DB。globalSetup の migrations 適用先と webServer の参照先を一致させる。
-const DATABASE_URL = 'file:./test.db'
+import { TEST_DATABASE_URL } from '../env'
 
 // テストランナープロセス（test/helper 経由で file: DB に直接アクセスする側）にも供給する。
 // rdb.ts は process.env.DATABASE_URL の有無で libsql Node クライアントの import を判定するため、
 // テストファイル import より先に評価される config モジュールで設定しておく必要がある。
-process.env.DATABASE_URL ??= DATABASE_URL
+process.env.DATABASE_URL ??= TEST_DATABASE_URL
 
 /**
  * Read environment variables from file.
@@ -95,7 +93,7 @@ export default defineConfig({
     url: 'http://localhost:5173',
     // INFO: 既存の process.env に上書きマージされる。CHOKIDAR_USEPOLLING は dev サーバーのファイル監視用。
     env: {
-      DATABASE_URL,
+      DATABASE_URL: TEST_DATABASE_URL,
       CHOKIDAR_USEPOLLING: '1',
     },
     // INFO: CIに合わせる

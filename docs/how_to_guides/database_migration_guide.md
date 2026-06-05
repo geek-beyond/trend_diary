@@ -24,8 +24,9 @@
 3. 生成された `migrations/000N_*.sql` の内容を**必ずレビュー**する（意図しない `DROP`/再作成等が
    含まれていないかを確認）。D1 は `migrations/` を辞書順に追記適用するため、既存ファイルの編集・
    リネームは禁止（本番適用済み）。生成された SQL・`meta/` 配下の差分をまとめてコミットする。
-4. `pnpm run db:check` で `schema.ts` と `migrations/*.sql` のDDL等価性（整合）を検証する。
-   - CI（`drizzle.yaml`）が PR 時に同チェックを実行し、`schema.ts` と `migrations/` の整合を担保する。
+4. `pnpm run db:check`（`drizzle-kit check`）で `migrations/meta/_journal.json` とスナップショットの整合を検証する。
+   - スキーマと migrations の乖離は「`db:generate` で差分（新規SQL）が出ない」ことで検証する（CI=`drizzle.yaml` が PR 時に generate→`git diff` で実行）。
+   - 制約: 手編集した SQL と `schema.ts` の乖離は検出対象外（生成フロー＋レビューで担保する）。
 
 ## ローカル/テストDBへの適用
 
@@ -65,7 +66,13 @@
 
 ## スキーマドリフトの検証
 
-`pnpm run db:check`（`scripts/check-schema-drift.mjs`）は、`schema.ts` から
-`drizzle-kit export` で生成したDDLと、`migrations/*.sql` を適用した物理スキーマを
-PRAGMA で比較し、両者の差分（ドリフト）を検出する。CIでは `drizzle.yaml` が
-PR時に同チェックを実行する。
+drizzle-kit 標準機構で検証する。CI（`drizzle.yaml`）が PR 時に以下を実行する。
+
+1. `pnpm run db:generate` を実行し、`git diff --exit-code -- migrations` で
+   新規 SQL・`meta/` 差分が出ない（＝ドリフトなし）ことを確認する。
+2. `pnpm run db:check`（`drizzle-kit check`）で `meta/_journal.json` とスナップショットの整合を検証する。
+
+ローカルでも上記をそのまま実行して同じ検証ができる（`db:check` 単体は journal 整合のみ）。
+
+> 制約: 手編集した `migrations/*.sql` と `schema.ts` の乖離は検出対象外。
+> 生成フロー（`db:generate`）＋ SQL レビューで担保する。

@@ -1,5 +1,5 @@
 name: Check Schema Drift
-description: 'DrizzleスキーマとD1マイグレーションSQLのDDL等価性を検証します'
+description: 'Drizzleスキーマとマイグレーションの整合を標準ツールで検証します'
 
 on:
   pull_request:
@@ -9,7 +9,6 @@ on:
       - 'application/src/infrastructure/drizzle-orm/schema.ts'
       - 'application/migrations/**'
       - 'application/drizzle.config.ts'
-      - 'application/scripts/*.mjs'
       - '.github/workflows/drizzle.yaml'
 
 permissions:
@@ -33,5 +32,13 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
-      - name: スキーマドリフトの検証
+      - name: マイグレーション生成（未生成の差分があれば検出）
+        run: pnpm run db:generate
+
+      - name: 生成差分の検出（差分があればドリフト）
+        run: |
+          git add -N migrations
+          git diff --exit-code -- migrations
+
+      - name: journal整合の検証
         run: pnpm run db:check

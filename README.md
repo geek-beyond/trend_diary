@@ -57,7 +57,7 @@ pnpm run d1:apply:local
 1. `src/infrastructure/drizzle-orm/schema.ts` を編集する
 2. `pnpm run db:generate` でマイグレーションSQLの草案を生成する
 3. 生成された差分を `migrations/000N_*.sql` として配置する（D1 は `migrations/` を順次適用する）
-4. `pnpm run db:check` で `schema.ts` と `migrations/*.sql` のDDL等価性を検証する
+4. `pnpm run db:generate` で差分（新規SQL）が出ないこと＋ `pnpm run db:check`（`drizzle-kit check`）で整合を検証する（手編集SQLと`schema.ts`の乖離は検出対象外、生成フロー＋レビューで担保）
 5. 本番反映は `pnpm run d1:apply:remote`（CDの `wrangler d1 migrations apply`）で行う
 
 サーバの起動（Hono上でAPIとRemixが起動する）

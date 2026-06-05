@@ -24,7 +24,7 @@
     "d1:apply:local": "wrangler d1 migrations apply trend-diary-db --local",
     "d1:apply:remote": "wrangler d1 migrations apply trend-diary-db --remote",
     "db:generate": "drizzle-kit generate",
-    "db:check": "node scripts/check-schema-drift.mjs",
+    "db:check": "drizzle-kit check",
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
     "supabase:status": "supabase status",
     "supabase:stop": "supabase stop",

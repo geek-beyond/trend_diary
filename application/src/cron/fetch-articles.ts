@@ -112,43 +112,24 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
 }
 
 /**
- * 一意制約(UNIQUE / PRIMARY KEY)違反エラーかどうかを判定する。
+ * 一意制約違反エラーかどうかを、D1/SQLite共通のメッセージ 'UNIQUE constraint failed' で判定する。
  *
- * Drizzle移行に伴いドライバ別のエラー形式に対応する:
- * - libsql(`LibsqlError`): `code` が 'SQLITE_CONSTRAINT_UNIQUE' /
- *   'SQLITE_CONSTRAINT_PRIMARYKEY' のいずれか。
- * - D1: `code` を持たず、メッセージに 'UNIQUE constraint failed' を含む `Error`。
- *
- * NOT NULL / FOREIGN KEY / CHECK など他の制約違反は重複ではないため、
- * これらは判定対象に含めず呼び出し側で送出させる(握りつぶさない)。
- *
- * さらにDrizzleはクエリ実行時の例外を `DrizzleQueryError` でラップし、
- * 元のドライバエラーを `cause` に格納する。そのため `cause` チェーンを辿って
- * いずれかの階層が一意制約違反であれば true を返す。
+ * DrizzleはドライバエラーをDrizzleQueryErrorでラップし元エラーを`cause`に格納するため、
+ * `cause`チェーンを辿りいずれかの階層が一意制約違反であればtrueを返す。
+ * NOT NULL等の他の制約違反は重複ではないため判定対象外（呼び出し側で送出させる）。
  */
-const UNIQUE_CONSTRAINT_CODES = new Set([
-  'SQLITE_CONSTRAINT_UNIQUE',
-  'SQLITE_CONSTRAINT_PRIMARYKEY',
-])
-
 function isUniqueConstraintError(error: unknown): boolean {
   let current: unknown = error
   for (let depth = 0; depth < 5 && current != null; depth += 1) {
-    if (typeof current === 'object') {
-      const candidate = current as { code?: unknown; message?: unknown; cause?: unknown }
-      if (typeof candidate.code === 'string' && UNIQUE_CONSTRAINT_CODES.has(candidate.code)) {
-        return true
-      }
-      if (
-        typeof candidate.message === 'string' &&
-        candidate.message.includes('UNIQUE constraint failed')
-      ) {
-        return true
-      }
-      current = candidate.cause
-    } else {
-      break
+    if (typeof current !== 'object') break
+    const candidate = current as { message?: unknown; cause?: unknown }
+    if (
+      typeof candidate.message === 'string' &&
+      candidate.message.includes('UNIQUE constraint failed')
+    ) {
+      return true
     }
+    current = candidate.cause
   }
   return false
 }

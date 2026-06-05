@@ -1,4 +1,3 @@
-import { LibsqlError } from '@libsql/client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchMock = vi.hoisted(() => vi.fn())
@@ -130,7 +129,7 @@ describe('fetchHatenaArticles', () => {
     expect(getInsertCalls()).toHaveLength(1)
   })
 
-  it('保存時にlibsqlの一意制約違反が発生した記事はスキップして継続する', async () => {
+  it('保存時に一意制約違反が発生した記事はスキップして継続する', async () => {
     parseStringMock.mockResolvedValue({
       items: [
         {
@@ -152,7 +151,7 @@ describe('fetchHatenaArticles', () => {
       if (/^\s*select/i.test(sql)) return { rows: [] }
       insertCount += 1
       if (insertCount === 1) {
-        throw new LibsqlError('UNIQUE constraint failed: articles.url', 'SQLITE_CONSTRAINT_UNIQUE')
+        throw new Error('UNIQUE constraint failed: articles.url')
       }
       return { rows: [] }
     })
@@ -163,41 +162,18 @@ describe('fetchHatenaArticles', () => {
     expect(getInsertCalls()).toHaveLength(2)
   })
 
-  it('保存時にD1の一意制約違反が発生した記事はスキップして継続する', async () => {
-    parseStringMock.mockResolvedValue({
-      items: [
-        {
-          title: '記事A',
-          creator: '投稿者A',
-          content: '本文A',
-          link: 'https://example.com/a',
-        },
-        {
-          title: '記事B',
-          creator: '投稿者B',
-          content: '本文B',
-          link: 'https://example.com/b',
-        },
-      ],
-    })
-    let insertCount = 0
-    mockRdbExecutor.mockImplementation(async (sql: string) => {
-      if (/^\s*select/i.test(sql)) return { rows: [] }
-      insertCount += 1
-      if (insertCount === 1) {
-        // INFO: D1 は code を持たずメッセージに 'UNIQUE constraint failed' を含む Error を投げる
-        throw new Error('D1_ERROR: UNIQUE constraint failed: articles.url: SQLITE_CONSTRAINT')
-      }
-      return { rows: [] }
-    })
-
-    const count = await fetchHatenaArticles(env)
-
-    expect(count).toBe(1)
-    expect(getInsertCalls()).toHaveLength(2)
-  })
-
-  it('libsqlのNOT NULL制約違反は握りつぶさずに送出する', async () => {
+  it.each([
+    {
+      name: 'NOT NULL制約違反',
+      makeError: () => new Error('NOT NULL constraint failed: articles.title'),
+      expectedCause: 'NOT NULL constraint failed',
+    },
+    {
+      name: '一意制約違反以外のエラー',
+      makeError: () => new Error('disk I/O error'),
+      expectedCause: 'disk I/O error',
+    },
+  ])('$nameは握りつぶさずに送出する', async ({ makeError, expectedCause }) => {
     parseStringMock.mockResolvedValue({
       items: [
         {
@@ -210,61 +186,7 @@ describe('fetchHatenaArticles', () => {
     })
     mockRdbExecutor.mockImplementation(async (sql: string) => {
       if (/^\s*select/i.test(sql)) return { rows: [] }
-      throw new LibsqlError(
-        'NOT NULL constraint failed: articles.title',
-        'SQLITE_CONSTRAINT_NOTNULL',
-      )
-    })
-
-    const error = await fetchHatenaArticles(env).then(
-      () => null,
-      (caught: unknown) => caught,
-    )
-    expect(error).toBeInstanceOf(Error)
-    const causeMessage = (error as { cause?: { message?: string } }).cause?.message
-    expect(causeMessage).toContain('NOT NULL constraint failed')
-  })
-
-  it('D1のNOT NULL制約違反は握りつぶさずに送出する', async () => {
-    parseStringMock.mockResolvedValue({
-      items: [
-        {
-          title: '記事A',
-          creator: '投稿者A',
-          content: '本文A',
-          link: 'https://example.com/a',
-        },
-      ],
-    })
-    mockRdbExecutor.mockImplementation(async (sql: string) => {
-      if (/^\s*select/i.test(sql)) return { rows: [] }
-      // INFO: D1 は code を持たずメッセージに 'NOT NULL constraint failed' を含む Error を投げる
-      throw new Error('D1_ERROR: NOT NULL constraint failed: articles.title: SQLITE_CONSTRAINT')
-    })
-
-    const error = await fetchHatenaArticles(env).then(
-      () => null,
-      (caught: unknown) => caught,
-    )
-    expect(error).toBeInstanceOf(Error)
-    const causeMessage = (error as { cause?: { message?: string } }).cause?.message
-    expect(causeMessage).toContain('NOT NULL constraint failed')
-  })
-
-  it('一意制約違反以外のエラーは握りつぶさずに送出する', async () => {
-    parseStringMock.mockResolvedValue({
-      items: [
-        {
-          title: '記事A',
-          creator: '投稿者A',
-          content: '本文A',
-          link: 'https://example.com/a',
-        },
-      ],
-    })
-    mockRdbExecutor.mockImplementation(async (sql: string) => {
-      if (/^\s*select/i.test(sql)) return { rows: [] }
-      throw new Error('disk I/O error')
+      throw makeError()
     })
 
     // INFO: DrizzleがDrizzleQueryErrorでラップするため、元のエラーは cause に格納される
@@ -274,7 +196,7 @@ describe('fetchHatenaArticles', () => {
     )
     expect(error).toBeInstanceOf(Error)
     const causeMessage = (error as { cause?: { message?: string } }).cause?.message
-    expect(causeMessage).toContain('disk I/O error')
+    expect(causeMessage).toContain(expectedCause)
   })
 
   it('contentが欠損した記事は優先順位でdescriptionを補完する', async () => {

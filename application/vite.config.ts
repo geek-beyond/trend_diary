@@ -8,22 +8,24 @@ import tailwindcss from '@tailwindcss/vite'
 import serverAdapter from 'hono-react-router-adapter/vite'
 import { defineConfig } from 'vite'
 import babel from 'vite-plugin-babel'
-import tsconfigPaths from 'vite-tsconfig-paths'
 
 const ReactCompilerConfig = {}
 
 export default defineConfig({
+  resolve: {
+    tsconfigPaths: true,
+  },
   ssr: {
     resolve: {
       externalConditions: ['workerd', 'worker'],
     },
   },
   plugins: [
-    tsconfigPaths(),
     tailwindcss(),
     reactRouter(),
     babel({
-      filter: /\.[jt]sx?$/,
+      include: [/\.[jt]sx?$/],
+      exclude: [/node_modules/],
       babelConfig: {
         presets: ['@babel/preset-typescript'],
         plugins: [['babel-plugin-react-compiler', ReactCompilerConfig]],

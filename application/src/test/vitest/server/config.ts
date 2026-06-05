@@ -1,13 +1,14 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
-import tsconfigPaths from 'vite-tsconfig-paths'
 import { TEST_DATABASE_URL } from '../../env'
 import { coverageReporter, generateIncludes } from '../generate'
 
 const { testInclude, coverageInclude } = generateIncludes('src/web/server')
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     globals: true,
     globalSetup: ['src/test/setup/apply-migrations.ts'],

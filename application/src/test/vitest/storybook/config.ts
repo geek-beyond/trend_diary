@@ -2,13 +2,15 @@ import storybookTest from '@storybook/addon-vitest/vitest-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import { playwright } from '@vitest/browser-playwright'
 import { defineConfig, loadEnv } from 'vite'
-import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   process.env = { ...process.env, ...env }
   return {
-    plugins: [tailwindcss(), tsconfigPaths(), storybookTest()],
+    resolve: {
+      tsconfigPaths: true,
+    },
+    plugins: [tailwindcss(), storybookTest()],
     optimizeDeps: {
       noDiscovery: true,
       include: [

@@ -5,7 +5,6 @@ import { coverageReporter, generateIncludes } from '../generate'
 const { testInclude, coverageInclude } = generateIncludes('src/common')
 
 export default defineConfig({
-  // Vite 8 ネイティブの tsconfig paths 解決（vite-tsconfig-paths プラグインの代替）
   resolve: {
     tsconfigPaths: true,
   },

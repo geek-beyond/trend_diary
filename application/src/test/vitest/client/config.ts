@@ -13,7 +13,6 @@ const exclude = [
 ]
 
 export default defineConfig({
-  // Vite 8 ネイティブの tsconfig paths 解決（vite-tsconfig-paths プラグインの代替）
   resolve: {
     tsconfigPaths: true,
   },

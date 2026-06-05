@@ -3,7 +3,6 @@ import { defineConfig } from 'vite'
 import { TEST_DATABASE_URL } from '../../env'
 
 export default defineConfig({
-  // Vite 8 ネイティブの tsconfig paths 解決（vite-tsconfig-paths プラグインの代替）
   resolve: {
     tsconfigPaths: true,
   },

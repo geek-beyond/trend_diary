@@ -13,9 +13,6 @@ export default defineConfig(async ({ command }) => {
     tailwindcss(),
     reactRouter(),
     babel({
-      // filter は include と AND 結合される非推奨オプションのため、
-      // include/exclude へ移行する。node_modules を除外することで
-      // react-dom などの大きなファイルを babel 変換対象から外す。
       include: [/\.[jt]sx?$/],
       exclude: [/node_modules/],
       babelConfig: {
@@ -44,7 +41,6 @@ export default defineConfig(async ({ command }) => {
 
   return {
     resolve: {
-      // Vite 8 ネイティブの tsconfig paths 解決（vite-tsconfig-paths の代替）
       tsconfigPaths: true,
     },
     ssr: {

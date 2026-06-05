@@ -7,7 +7,6 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   process.env = { ...process.env, ...env }
   return {
-    // Vite 8 ネイティブの tsconfig paths 解決（vite-tsconfig-paths プラグインの代替）
     resolve: {
       tsconfigPaths: true,
     },

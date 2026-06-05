@@ -157,14 +157,13 @@ describe('fetchHatenaArticles', () => {
       .mockResolvedValueOnce({ rows: [] })
       .mockRejectedValueOnce(new Error(errorMessage))
 
-    // INFO: DrizzleがDrizzleQueryErrorでラップするため、元のエラーは cause に格納される
+    // INFO: wrapDbCall が Drizzle ラッパの cause を1段剥がすため、元エラーが直接送出される
     const error = await fetchHatenaArticles(env).then(
       () => null,
       (caught: unknown) => caught,
     )
     expect(error).toBeInstanceOf(Error)
-    const causeMessage = (error as { cause?: { message?: string } }).cause?.message
-    expect(causeMessage).toContain(errorMessage)
+    expect((error as Error).message).toContain(errorMessage)
   })
 
   it('contentが欠損した記事は優先順位でdescriptionを補完する', async () => {

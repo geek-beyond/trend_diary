@@ -1,12 +1,11 @@
 import { and, eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import { ServerError } from '@/common/errors'
-import { wrapAsyncCall } from '@/common/result'
 import { Command } from '@/domain/article/repository'
 import type { ReadHistory } from '@/domain/article/schema/read-history-schema'
 import type { SkippedArticle } from '@/domain/article/schema/skipped-article-schema'
 import { readHistories, skippedArticles } from '@/infrastructure/drizzle-orm/schema'
-import { RdbClient, unwrapDbError } from '@/infrastructure/rdb'
+import { RdbClient, wrapDbCall } from '@/infrastructure/rdb'
 import { fromDbId, toDbId } from '@/infrastructure/rdb-id'
 
 export default class CommandImpl implements Command {
@@ -19,7 +18,7 @@ export default class CommandImpl implements Command {
   ): Promise<Result<ReadHistory, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
-    const result = await wrapAsyncCall(() =>
+    const result = await wrapDbCall(() =>
       this.db
         .insert(readHistories)
         .values({
@@ -30,7 +29,7 @@ export default class CommandImpl implements Command {
         .returning(),
     )
     if (result.isErr()) {
-      return err(new ServerError(unwrapDbError(result.error)))
+      return err(new ServerError(result.error))
     }
 
     const createdReadHistory = result.value[0]
@@ -53,7 +52,7 @@ export default class CommandImpl implements Command {
   ): Promise<Result<void, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
-    const result = await wrapAsyncCall(() =>
+    const result = await wrapDbCall(() =>
       this.db
         .delete(readHistories)
         .where(
@@ -64,7 +63,7 @@ export default class CommandImpl implements Command {
         ),
     )
     if (result.isErr()) {
-      return err(new ServerError(unwrapDbError(result.error)))
+      return err(new ServerError(result.error))
     }
 
     return ok(undefined)
@@ -77,7 +76,7 @@ export default class CommandImpl implements Command {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
-    const result = await wrapAsyncCall(() =>
+    const result = await wrapDbCall(() =>
       this.db
         .insert(skippedArticles)
         .values({
@@ -92,7 +91,7 @@ export default class CommandImpl implements Command {
         .returning(),
     )
     if (result.isErr()) {
-      return err(new ServerError(unwrapDbError(result.error)))
+      return err(new ServerError(result.error))
     }
 
     const skippedArticle = result.value[0]

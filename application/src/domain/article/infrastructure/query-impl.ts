@@ -3,7 +3,6 @@ import { err, ok, type Result } from 'neverthrow'
 import { ServerError } from '@/common/errors'
 import { addJstDays, toJstDate } from '@/common/locale/date'
 import { DEFAULT_LIMIT, DEFAULT_PAGE, OffsetPaginationResult } from '@/common/pagination'
-import { wrapAsyncCall } from '@/common/result'
 import { Nullable } from '@/common/types/utility'
 import fromRdbToArticle from '@/domain/article/infrastructure/mapper'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@/domain/article/media'
@@ -16,7 +15,7 @@ import type {
 } from '@/domain/article/schema/diary-schema'
 import { QueryParams } from '@/domain/article/schema/query-schema'
 import { articles, normalizeDateTime } from '@/infrastructure/drizzle-orm/schema'
-import { RdbClient, unwrapDbError } from '@/infrastructure/rdb'
+import { RdbClient, wrapDbCall } from '@/infrastructure/rdb'
 import { fromDbId, toDbId } from '@/infrastructure/rdb-id'
 
 type RawArticleRow = {
@@ -98,14 +97,14 @@ export default class QueryImpl implements Query {
     const readStatusSql = QueryImpl.buildIsReadSelectSql(dbActiveUserId)
 
     const queryResultTuple = await Promise.all([
-      wrapAsyncCall(() =>
+      wrapDbCall(() =>
         this.db.all<RawCountRow>(sql`
           SELECT COUNT(*) as total
           FROM articles
           ${whereSql}
         `),
       ),
-      wrapAsyncCall(() =>
+      wrapDbCall(() =>
         this.db.all<RawArticleRow>(sql`
           SELECT
             article_id as articleId,
@@ -147,11 +146,11 @@ export default class QueryImpl implements Query {
 
   async findArticleById(articleId: bigint): Promise<Result<Nullable<Article>, ServerError>> {
     const dbArticleId = toDbId(articleId)
-    const result = await wrapAsyncCall(() =>
+    const result = await wrapDbCall(() =>
       this.db.select().from(articles).where(eq(articles.articleId, dbArticleId)),
     )
     if (result.isErr()) {
-      return err(new ServerError(unwrapDbError(result.error)))
+      return err(new ServerError(result.error))
     }
 
     const article = result.value[0]
@@ -174,7 +173,7 @@ export default class QueryImpl implements Query {
 
     const mediaCondition = media ? sql`AND articles.media = ${media}` : sql.empty()
 
-    const result = await wrapAsyncCall(() =>
+    const result = await wrapDbCall(() =>
       this.db.all<RawArticleRow>(sql`
         SELECT
           article_id as articleId,
@@ -199,7 +198,7 @@ export default class QueryImpl implements Query {
       `),
     )
     if (result.isErr()) {
-      return err(new ServerError(unwrapDbError(result.error)))
+      return err(new ServerError(result.error))
     }
 
     return ok(result.value.map(QueryImpl.mapRawArticle))
@@ -225,7 +224,7 @@ export default class QueryImpl implements Query {
     )
 
     const queryResultTuple = await Promise.all([
-      wrapAsyncCall(() =>
+      wrapDbCall(() =>
         this.db.all<RawDiaryTypedSourceRow>(sql`
             SELECT
               source_type as sourceType,
@@ -259,7 +258,7 @@ export default class QueryImpl implements Query {
             ORDER BY count DESC, media ASC
           `),
       ),
-      wrapAsyncCall(() =>
+      wrapDbCall(() =>
         this.db.all<RawDiaryReadRow>(sql`
             SELECT
               rh.read_history_id as readHistoryId,
@@ -331,7 +330,7 @@ export default class QueryImpl implements Query {
     const readAtJstDateSql = QueryImpl.getJstDateSql('rh.read_at')
     const skipAtJstDateSql = QueryImpl.getJstDateSql('sa.created_at')
 
-    const sourceResult = await wrapAsyncCall(() =>
+    const sourceResult = await wrapDbCall(() =>
       this.db.all<RawDiaryDateTypedSourceRow>(sql`
         SELECT
           source_type as sourceType,
@@ -368,7 +367,7 @@ export default class QueryImpl implements Query {
       `),
     )
     if (sourceResult.isErr()) {
-      return err(new ServerError(unwrapDbError(sourceResult.error)))
+      return err(new ServerError(sourceResult.error))
     }
     const { readRows: readSourceRows, skipRows: skipSourceRows } =
       QueryImpl.splitDiaryDateSourceRows(sourceResult.value)
@@ -472,7 +471,7 @@ export default class QueryImpl implements Query {
 
     for (const result of results) {
       if (result.isErr()) {
-        return err(new ServerError(unwrapDbError(result.error)))
+        return err(new ServerError(result.error))
       }
       unwrapped.push(result.value)
     }

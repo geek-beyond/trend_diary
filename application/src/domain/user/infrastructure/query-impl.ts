@@ -1,10 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import { ServerError } from '@/common/errors'
-import { wrapAsyncCall } from '@/common/result'
 import { Nullable } from '@/common/types/utility'
 import { activeUsers } from '@/infrastructure/drizzle-orm/schema'
-import { RdbClient, unwrapDbError } from '@/infrastructure/rdb'
+import { RdbClient, wrapDbCall } from '@/infrastructure/rdb'
 import { toDbId } from '@/infrastructure/rdb-id'
 import { Query } from '../repository'
 import type { CurrentUser } from '../schema/active-user-schema'
@@ -15,11 +14,11 @@ export default class QueryImpl implements Query {
 
   async findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, Error>> {
     const dbId = toDbId(id)
-    const activeUserResult = await wrapAsyncCall(() =>
+    const activeUserResult = await wrapDbCall(() =>
       this.db.select().from(activeUsers).where(eq(activeUsers.activeUserId, dbId)).limit(1),
     )
     if (activeUserResult.isErr()) {
-      return err(new ServerError(unwrapDbError(activeUserResult.error)))
+      return err(new ServerError(activeUserResult.error))
     }
 
     const activeUser = activeUserResult.value[0]
@@ -31,11 +30,11 @@ export default class QueryImpl implements Query {
   }
 
   async findActiveByEmail(email: string): Promise<Result<Nullable<CurrentUser>, Error>> {
-    const activeUserResult = await wrapAsyncCall(() =>
+    const activeUserResult = await wrapDbCall(() =>
       this.db.select().from(activeUsers).where(eq(activeUsers.email, email)).limit(1),
     )
     if (activeUserResult.isErr()) {
-      return err(new ServerError(unwrapDbError(activeUserResult.error)))
+      return err(new ServerError(activeUserResult.error))
     }
 
     const activeUser = activeUserResult.value[0]
@@ -49,7 +48,7 @@ export default class QueryImpl implements Query {
   async findActiveByAuthenticationId(
     authenticationId: string,
   ): Promise<Result<Nullable<CurrentUser>, Error>> {
-    const activeUserResult = await wrapAsyncCall(() =>
+    const activeUserResult = await wrapDbCall(() =>
       this.db
         .select()
         .from(activeUsers)
@@ -57,7 +56,7 @@ export default class QueryImpl implements Query {
         .limit(1),
     )
     if (activeUserResult.isErr()) {
-      return err(new ServerError(unwrapDbError(activeUserResult.error)))
+      return err(new ServerError(activeUserResult.error))
     }
 
     const activeUser = activeUserResult.value[0]

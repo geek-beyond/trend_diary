@@ -1,5 +1,7 @@
 import { drizzle as drizzleProxy } from 'drizzle-orm/sqlite-proxy'
+import type { Result } from 'neverthrow'
 import { beforeEach, vi } from 'vitest'
+import { wrapAsyncCall } from '@/common/result'
 import * as schema from '@/infrastructure/drizzle-orm/schema'
 import type { RdbClient } from '@/infrastructure/rdb'
 
@@ -27,6 +29,13 @@ const getRdbClient = vi.fn(
 )
 
 export default getRdbClient
+
+// 実装(@/infrastructure/rdb)と同じく、失敗時は Drizzle ラッパの cause を1段取り出して返す
+export function wrapDbCall<T>(fn: () => Promise<T>): Promise<Result<T, Error>> {
+  return wrapAsyncCall(fn).then((result) =>
+    result.mapErr((error) => (error.cause instanceof Error ? error.cause : error)),
+  )
+}
 
 beforeEach(() => {
   mockRdbExecutor.mockReset()

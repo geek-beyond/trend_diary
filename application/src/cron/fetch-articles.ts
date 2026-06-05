@@ -1,9 +1,8 @@
 import { inArray } from 'drizzle-orm'
 import Parser from 'rss-parser'
-import { wrapAsyncCall } from '@/common/result'
 import type { ArticleMedia } from '@/domain/article/media'
 import { articles } from '@/infrastructure/drizzle-orm/schema'
-import getRdbClient from '@/infrastructure/rdb'
+import getRdbClient, { wrapDbCall } from '@/infrastructure/rdb'
 
 type CronEnv = {
   DB: D1Database
@@ -55,18 +54,18 @@ async function fetchRssFeed<T>(url: string) {
 
 async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEnv) {
   const db = getRdbClient({ db: env.DB, databaseUrl: env.DATABASE_URL })
-  const result = await wrapAsyncCall(async () => {
-    if (items.length === 0) return 0
+  if (items.length === 0) return 0
 
-    const normalized = items.map((item) => ({
-      media: truncateByCodePoint(media, MAX_LENGTH.media),
-      title: truncateByCodePoint(item.title, MAX_LENGTH.title),
-      author: truncateByCodePoint(item.author, MAX_LENGTH.author),
-      description: truncateByCodePoint(item.description, MAX_LENGTH.description),
-      url: item.url,
-    }))
+  const normalized = items.map((item) => ({
+    media: truncateByCodePoint(media, MAX_LENGTH.media),
+    title: truncateByCodePoint(item.title, MAX_LENGTH.title),
+    author: truncateByCodePoint(item.author, MAX_LENGTH.author),
+    description: truncateByCodePoint(item.description, MAX_LENGTH.description),
+    url: item.url,
+  }))
 
-    const existing = await db
+  const existingResult = await wrapDbCall(() =>
+    db
       .select({ url: articles.url })
       .from(articles)
       .where(
@@ -74,38 +73,36 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
           articles.url,
           normalized.map((item) => item.url),
         ),
-      )
-
-    const existingUrlSet = new Set(existing.map((item) => item.url))
-    const feedUrlSet = new Set<string>()
-    const uniqueNormalized: typeof normalized = []
-    for (const article of normalized) {
-      if (feedUrlSet.has(article.url)) continue
-      feedUrlSet.add(article.url)
-      uniqueNormalized.push(article)
-    }
-    const toInsert = uniqueNormalized.filter((item) => !existingUrlSet.has(item.url))
-
-    if (toInsert.length === 0) return 0
-
-    let insertedCount = 0
-    for (const article of toInsert) {
-      try {
-        // INFO: D1互換のため記事は1件ずつ保存する
-        await db.insert(articles).values(article)
-        insertedCount += 1
-      } catch (error) {
-        if (isUniqueConstraintError(error)) continue
-        throw error
-      }
-    }
-
-    return insertedCount
-  })
-  if (result.isErr()) {
-    throw result.error
+      ),
+  )
+  if (existingResult.isErr()) {
+    throw existingResult.error
   }
-  return result.value
+
+  const existingUrlSet = new Set(existingResult.value.map((item) => item.url))
+  const feedUrlSet = new Set<string>()
+  const uniqueNormalized: typeof normalized = []
+  for (const article of normalized) {
+    if (feedUrlSet.has(article.url)) continue
+    feedUrlSet.add(article.url)
+    uniqueNormalized.push(article)
+  }
+  const toInsert = uniqueNormalized.filter((item) => !existingUrlSet.has(item.url))
+
+  if (toInsert.length === 0) return 0
+
+  let insertedCount = 0
+  for (const article of toInsert) {
+    // INFO: D1互換のため記事は1件ずつ保存する
+    const insertResult = await wrapDbCall(() => db.insert(articles).values(article))
+    if (insertResult.isErr()) {
+      if (isUniqueConstraintError(insertResult.error)) continue
+      throw insertResult.error
+    }
+    insertedCount += 1
+  }
+
+  return insertedCount
 }
 
 // Drizzle はドライバエラーを DrizzleQueryError でラップし元エラーを cause に格納するため、

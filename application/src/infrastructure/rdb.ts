@@ -3,7 +3,9 @@ import type { Logger as DrizzleLogger } from 'drizzle-orm'
 import { drizzle as drizzleD1 } from 'drizzle-orm/d1'
 import { drizzle as drizzleLibsql } from 'drizzle-orm/libsql'
 import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core'
+import type { Result } from 'neverthrow'
 import AppLogger, { type LogLevel } from '@/common/logger'
+import { wrapAsyncCall } from '@/common/result'
 import * as schema from '@/infrastructure/drizzle-orm/schema'
 
 type D1Database = import('@cloudflare/workers-types').D1Database
@@ -32,8 +34,13 @@ const createLibSQLNodeClient: ((config: LibSQLConfig) => LibSQLClient) | null = 
 
 // Drizzle はドライバ例外を DrizzleQueryError でラップし元例外を cause に格納する。
 // ラッパのメッセージは `Failed query: ...` で元のDBエラー文言が失われるため、cause を取り出す。
-export function unwrapDbError(error: Error): Error {
+function unwrapDbError(error: Error): Error {
   return error.cause instanceof Error ? error.cause : error
+}
+
+// DB呼び出しを Result でラップし、失敗時は Drizzle ラッパから元の例外を取り出して返す。
+export function wrapDbCall<T>(fn: () => Promise<T>): Promise<Result<T, Error>> {
+  return wrapAsyncCall(fn).then((result) => result.mapErr(unwrapDbError))
 }
 
 type RdbConfig = {

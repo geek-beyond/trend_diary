@@ -1,6 +1,3 @@
-# ローカル dev（pnpm start）は vite cloudflare adapter の miniflare D1（binding: DB）を使うため
-# DATABASE_URL は設定しない。dev DB へのマイグレーション適用は `pnpm run d1:apply:local` を使う。
-# DATABASE_URL(file:) は E2E（start:e2e で test.db を明示）やテストでのみ利用するフォールバック。
 # wrangler.toml の D1 設定に利用される Database ID (deploy 時に必要)
 D1_DATABASE_ID=
 

@@ -28,9 +28,12 @@ type D1Database = import('@cloudflare/workers-types').D1Database
  * @see https://github.com/libsql/libsql-client-ts#supported-urls
  */
 const isWorkerd = typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers'
-const createLibSQLNodeClient: ((config: LibSQLConfig) => LibSQLClient) | null = isWorkerd
-  ? null
-  : (await import('@libsql/client/node')).createClient
+// file:(libsql)を使うのはテスト系のみで、それらは常に DATABASE_URL を供給する。dev/本番(D1)は
+// DATABASE_URL 未設定のため、未設定時は import せずネイティブモジュール(libsql)のロードを避ける。
+const createLibSQLNodeClient: ((config: LibSQLConfig) => LibSQLClient) | null =
+  isWorkerd || !process.env.DATABASE_URL?.trim()
+    ? null
+    : (await import('@libsql/client/node')).createClient
 
 // Drizzle はドライバ例外を DrizzleQueryError でラップし元例外を cause に格納する。
 // ラッパのメッセージは `Failed query: ...` で元のDBエラー文言が失われるため、cause を取り出す。
@@ -109,9 +112,12 @@ export default function getRdbClient(input: RdbInput): RdbClient {
   // INFO: file:(libsql)はD1より優先する。E2EではviteアダプタがD1バインディングも供給するため、
   //       優先しないと test.db への分離が壊れる
   if (databaseUrl?.startsWith('file:')) {
-    // INFO: `file:`はNodeビルド(`@libsql/client/node`)でのみ対応。workerd(本番)では実行されない経路
+    // INFO: `file:`はNodeビルド(`@libsql/client/node`)でのみ対応。workerd(本番)では実行されない経路。
+    //       Node実行でも DATABASE_URL 未設定だとクライアント未ロードのため、その旨も案内する
     if (!createLibSQLNodeClient) {
-      throw new Error('file: database URL is not supported on the Workers runtime')
+      throw new Error(
+        'file: database URL requires the Node libsql client, which is only loaded when DATABASE_URL is set (not available on the Workers runtime)',
+      )
     }
     return drizzleLibsql(createLibSQLNodeClient({ url: databaseUrl }), { schema, logger })
   }

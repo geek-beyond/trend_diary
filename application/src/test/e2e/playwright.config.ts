@@ -3,6 +3,11 @@ import { defineConfig, devices } from '@playwright/test'
 // E2E 用の file: SQLite DB。globalSetup の migrations 適用先と webServer の参照先を一致させる。
 const DATABASE_URL = 'file:./test.db'
 
+// テストランナープロセス（test/helper 経由で file: DB に直接アクセスする側）にも供給する。
+// rdb.ts は process.env.DATABASE_URL の有無で libsql Node クライアントの import を判定するため、
+// テストファイル import より先に評価される config モジュールで設定しておく必要がある。
+process.env.DATABASE_URL ??= DATABASE_URL
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv

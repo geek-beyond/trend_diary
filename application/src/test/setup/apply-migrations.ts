@@ -1,7 +1,4 @@
-// DATABASE_URL は file: 形式が必須（libsql Node クライアントでのみ動作する）。
-// PRAGMA を含むファイルはトランザクション内で PRAGMA が効かないため tx 外で適用する。
-// ログは process.stdout/stderr.write を使用（biome の --unsafe fix が console.* を消すため）。
-
+// PRAGMA を含むファイルはトランザクション内で PRAGMA が効かないため tx 外で適用する
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -42,8 +39,7 @@ function containsPragma(sql: string): boolean {
   return /^\s*PRAGMA\b/im.test(sql)
 }
 
-// PRAGMA は tx 内で効かないため tx 外で適用する。それ以外は tx で包み半適用を防ぐ。
-// 失敗時は接続クローズ時に未コミット tx が自動ロールバックされる。
+// PRAGMA は tx 内で効かないため tx 外で適用する。それ以外は tx で包み半適用を防ぐ
 async function applyMigrationFile(client: Client, sql: string): Promise<void> {
   if (containsPragma(sql)) {
     await client.executeMultiple(sql)
@@ -92,7 +88,6 @@ export async function applyMigrations(databaseUrl: string | undefined): Promise<
 }
 
 // import 時に自動実行しないよう、CLI 直接実行のときだけ DATABASE_URL env を解決して適用する。
-// vitest / playwright の globalSetup として直接指定するエントリ。
 // env.ts は @/ エイリアスを含み CLI(strip-types)では解決できないため遅延 import する。
 export default async function globalSetup(): Promise<void> {
   const { TEST_DATABASE_URL } = await import('../env')

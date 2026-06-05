@@ -1,9 +1,11 @@
 import { drizzle as drizzleProxy } from 'drizzle-orm/sqlite-proxy'
-import type { Result } from 'neverthrow'
 import { beforeEach, vi } from 'vitest'
-import { wrapAsyncCall } from '@/common/result'
 import * as schema from '@/infrastructure/drizzle-orm/schema'
 import type { RdbClient } from '@/infrastructure/rdb'
+
+// wrapDbCall はリポジトリ実装・cron が使う本番ロジックのため、複製せず実モジュールを再export する。
+// DATABASE_URL 未設定時は実 rdb.ts の TLA が libsql をロードしないため副作用なし。
+export { wrapDbCall } from '@/infrastructure/rdb'
 
 // 注入する `rows` の形は実行経路で異なる（重要なgotcha）:
 // - クエリビルダ（select / insert returning）: Drizzle が「カラム順の配列」として
@@ -29,12 +31,6 @@ const getRdbClient = vi.fn(
 )
 
 export default getRdbClient
-
-export function wrapDbCall<T>(fn: () => Promise<T>): Promise<Result<T, Error>> {
-  return wrapAsyncCall(fn).then((result) =>
-    result.mapErr((error) => (error.cause instanceof Error ? error.cause : error)),
-  )
-}
 
 beforeEach(() => {
   mockRdbExecutor.mockReset()

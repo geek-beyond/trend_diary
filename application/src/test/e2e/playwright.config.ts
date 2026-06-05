@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 import { TEST_DATABASE_URL } from '../env'
 
-// rdb.ts は process.env.DATABASE_URL の有無で libsql クライアントの import を判定するため、
+// rdb.ts は process.env.DATABASE_URL の有無で libsql クライアントの import を判定するため
 process.env.DATABASE_URL ??= TEST_DATABASE_URL
 
 export default defineConfig({

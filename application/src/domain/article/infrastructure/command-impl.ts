@@ -34,7 +34,6 @@ export default class CommandImpl implements Command {
     }
 
     const createdReadHistory = result.value[0]
-    // INFO: returningは挿入成功時に必ず1行返る想定だが、念のため空ガードしResult契約を守る
     if (!createdReadHistory) {
       return err(new ServerError(new Error('insert read_histories returned no row')))
     }
@@ -85,7 +84,6 @@ export default class CommandImpl implements Command {
           activeUserId: dbActiveUserId,
           articleId: dbArticleId,
         })
-        // INFO: 複合ユニーク(article_id, active_user_id)競合時は何もしない（既存仕様 upsert: update {} 相当）
         .onConflictDoNothing({
           target: [skippedArticles.articleId, skippedArticles.activeUserId],
         })
@@ -112,8 +110,6 @@ export default class CommandImpl implements Command {
     }
 
     const skippedArticle = result.value
-    // INFO: insertとSELECTの間に既存行が消える窓では既存行取得が空になりうる。
-    // その場合もTypeErrorを投げずResult契約を守りServerErrorを返す
     if (!skippedArticle) {
       return err(new ServerError(new Error('skipped_articles row not found after conflict')))
     }

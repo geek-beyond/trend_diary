@@ -20,10 +20,8 @@ import { customType, index, integer, sqliteTable, text, uniqueIndex } from 'driz
  */
 export function normalizePrismaDateTime(value: string | number | bigint): Date {
   if (typeof value === 'number' || typeof value === 'bigint') {
-    // INFO: 過去データのepochミリ秒(integer)に対応
     return new Date(Number(value))
   }
-  // INFO: "YYYY-MM-DD HH:MM:SS"(CURRENT_TIMESTAMP由来のUTC)はTを補い末尾Zを付けてUTCとして解釈
   const hasTimezone = /[Zz]|[+-]\d{2}:?\d{2}$/.test(value)
   if (!hasTimezone && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/.test(value)) {
     return new Date(`${value.replace(' ', 'T')}Z`)
@@ -45,7 +43,6 @@ const prismaDateTime = customType<{
     return 'DATETIME'
   },
   toDriver(value: Date): string {
-    // INFO: PrismaのDateTime書き込みと同じISO-8601形式で保存する
     return value.toISOString()
   },
   fromDriver(value: string | number): Date {
@@ -201,7 +198,6 @@ export const skippedArticlesRelations = relations(skippedArticles, ({ one }) => 
   }),
 }))
 
-// INFO: Prismaモデル型の代替。後続のmapper等で利用する
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type ActiveUser = typeof activeUsers.$inferSelect

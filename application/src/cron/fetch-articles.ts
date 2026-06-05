@@ -133,7 +133,6 @@ const UNIQUE_CONSTRAINT_CODES = new Set([
 
 function isUniqueConstraintError(error: unknown): boolean {
   let current: unknown = error
-  // INFO: DrizzleのDrizzleQueryErrorラップに備えて cause チェーンを辿る
   for (let depth = 0; depth < 5 && current != null; depth += 1) {
     if (typeof current === 'object') {
       const candidate = current as { code?: unknown; message?: unknown; cause?: unknown }

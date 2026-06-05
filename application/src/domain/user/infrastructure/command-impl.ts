@@ -54,7 +54,6 @@ export default class CommandImpl implements Command {
       return compensateAndFail()
     }
 
-    // INFO: returningが空になるケースは到達しない想定だが、念のため補償して失敗させる
     const activeUser = activeUserResult.value[0]
     if (!activeUser) {
       return compensateAndFail()

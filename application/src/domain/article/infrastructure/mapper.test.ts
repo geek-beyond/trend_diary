@@ -187,7 +187,6 @@ describe('fromRdbToArticle', () => {
           expect(result.description).toBe(description)
           expect(result.url).toBe(url)
 
-          // 文字列長制約の確認（スキーマに基づく）
           expect(result.media.length).toBeLessThanOrEqual(10)
           expect(result.title.length).toBeLessThanOrEqual(100)
           expect(result.author.length).toBeLessThanOrEqual(30)

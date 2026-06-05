@@ -102,9 +102,7 @@ describe('QueryImpl', () => {
         // Assert
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          // INFO: DBエラー時はServerErrorとして返却される
           expect(result.error).toBeInstanceOf(ServerError)
-          // INFO: DrizzleQueryErrorのcauseから元ドライバメッセージが伝播すること
           expect(result.error.message).toBe('Database connection failed')
         }
       })
@@ -165,9 +163,7 @@ describe('QueryImpl', () => {
         // Assert
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          // INFO: DBエラー時はServerErrorとして返却される
           expect(result.error).toBeInstanceOf(ServerError)
-          // INFO: DrizzleQueryErrorのcauseから元ドライバメッセージが伝播すること
           expect(result.error.message).toBe('Database connection failed')
         }
       })
@@ -230,9 +226,7 @@ describe('QueryImpl', () => {
         // Assert
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          // INFO: DBエラー時はServerErrorとして返却される
           expect(result.error).toBeInstanceOf(ServerError)
-          // INFO: DrizzleQueryErrorのcauseから元ドライバメッセージが伝播すること
           expect(result.error.message).toBe('Database connection failed')
         }
       })

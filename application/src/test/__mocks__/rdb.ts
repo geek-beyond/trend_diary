@@ -109,6 +109,5 @@ beforeEach(() => {
   mockRdbExecutor.mockReset()
   getRdbClient.mockClear()
   closeRdbClient.mockClear()
-  // 既定では空行を返し、未設定時にエラーで落ちないようにする
   mockRdbExecutor.mockResolvedValue({ rows: [] })
 })

@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '@/test/__mocks__/rdb'
 import QueryImpl from './query-impl'
 
-// INFO: private static の SQL ビルダを呼び出して生成SQLの同一性を担保するためのアクセサ
 type DateRangeSqlBuilders = {
   buildClosedOpenDateRangeSql(columnName: string, fromDate: Date, toDateExclusive: Date): SQL
   buildDateRangeConditions(
@@ -211,9 +210,6 @@ describe('QueryImpl', () => {
         media: undefined,
       },
       {
-        // INFO: CURRENT_TIMESTAMP由来の"YYYY-MM-DD HH:MM:SS"はTZを持たないが、
-        // クエリビルダ経路(customType.fromDriver)と同様にUTCとして解釈し、
-        // 実行環境のTZ(JST等)に依存せず同一のDateを返すこと
         name: 'createdAtがCURRENT_TIMESTAMP形式(スペース区切りUTC)はTZ非依存でUTC解釈される',
         createdAt: '2025-01-01 00:00:00',
         expectedIso: '2025-01-01T00:00:00.000Z',

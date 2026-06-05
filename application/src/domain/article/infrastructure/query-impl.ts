@@ -97,7 +97,6 @@ export default class QueryImpl implements Query {
 
     const readStatusSql = QueryImpl.buildIsReadSelectSql(dbActiveUserId)
 
-    // INFO: COUNTとデータ取得は互いに独立なため並列実行する(getDailyDiaryと同じスタイル)
     const queryResultTuple = await Promise.all([
       wrapAsyncCall(() =>
         this.db.all<RawCountRow>(sql`
@@ -402,7 +401,6 @@ export default class QueryImpl implements Query {
 
   private static getNormalizedDateTimeSqlForSqlite(columnName: NormalizedDateTimeColumn) {
     const column = sql.raw(columnName)
-    // INFO: typeof()はSQLite固有関数。方言差分はこのメソッドに閉じ込める
     return sql`
       CASE
         WHEN typeof(${column}) = 'integer' THEN datetime(${column} / 1000, 'unixepoch')
@@ -420,7 +418,6 @@ export default class QueryImpl implements Query {
     fromDate: Date,
     toDateExclusive: Date,
   ) {
-    // INFO: 両端必須の半開区間。境界比較SQLは buildDateRangeConditions に一元化し AND で結合する
     const conditions = QueryImpl.buildDateRangeConditions(columnName, { fromDate, toDateExclusive })
     return sql.join(conditions, sql.raw(' AND '))
   }
@@ -543,7 +540,6 @@ export default class QueryImpl implements Query {
   }
   private static buildDateRange(from?: string, to?: string): DateRange
   private static buildDateRange(from?: string, to?: string): DateRange {
-    // INFO: APIの指定日はJST日付として扱う
     const fromDate = from ? toJstDate(from) : undefined
     const toDateExclusive = to ? toJstDate(to) : undefined
     if (toDateExclusive) {

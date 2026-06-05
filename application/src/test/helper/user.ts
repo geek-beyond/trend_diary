@@ -64,7 +64,6 @@ async function createActiveUser(email: string, authenticationId: string): Promis
       email,
       displayName: null,
       authenticationId,
-      // INFO: updated_atはNOT NULL（DB側のトリガー未発火タイミングのため明示的に設定）
       updatedAt: new Date(),
     })
     .returning()

@@ -82,7 +82,6 @@ function resolveLogLevel(): LogLevel {
   return VALID_LOG_LEVELS.includes(candidate as LogLevel) ? (candidate as LogLevel) : 'info'
 }
 
-// INFO: getRdbClient/closeRdbClient毎の生成を避けるため、drizzle用ロガーはモジュールレベルの遅延シングルトンで保持する
 let drizzleLogger: AppLogger | undefined
 
 /**
@@ -116,7 +115,6 @@ class DrizzleQueryLogger implements DrizzleLogger {
   }
 }
 
-// INFO: getRdbClient毎の生成を避けるため、Drizzleロガーもモジュールレベルの遅延シングルトンで保持する
 let queryLogger: DrizzleLogger | undefined
 
 /**

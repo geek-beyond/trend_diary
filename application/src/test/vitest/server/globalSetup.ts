@@ -12,14 +12,11 @@ const APPLY_MIGRATIONS_SCRIPT = fileURLToPath(
 
 /**
  * file: 形式の DATABASE_URL に対して migrations を自動適用する。
- * scripts/apply-migrations.mjs を子プロセスで実行して冪等に適用する
- * （適用済みはスキップされるため毎回実行しても安全・高速）。
- * 適用に失敗した場合は例外を投げてテスト全体を止める。
+ * scripts/apply-migrations.mjs を子プロセスで実行して冪等に適用する。
  */
 function applyMigrations(): void {
   const databaseUrl = process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL
 
-  // file: 以外（本番 D1 等）はこのスクリプトの対象外なので何もしない。
   if (!databaseUrl.startsWith('file:')) {
     return
   }
@@ -42,10 +39,8 @@ function applyMigrations(): void {
 }
 
 export default async function globalSetup() {
-  // file: の DATABASE_URL に migrations を自動適用する（pnpm run test:server を単体で完結させる）。
   applyMigrations()
 
-  // teardown処理を返す
   return async () => {
     disconnectTestRdb()
   }

@@ -78,7 +78,6 @@ describe('fetchHatenaArticles', () => {
     const insertCalls = getInsertCalls()
     expect(insertCalls).toHaveLength(1)
     const params = insertCalls[0][1] as unknown[]
-    // INFO: insert の params は (media, title, author, description, url) の順で渡る
     expect(params).toContain('はてなブックマーク')
     expect(params).toContain('本文')
   })
@@ -211,7 +210,6 @@ describe('fetchHatenaArticles', () => {
     })
     mockRdbExecutor.mockImplementation(async (sql: string) => {
       if (/^\s*select/i.test(sql)) return { rows: [] }
-      // INFO: NOT NULL 制約違反は UNIQUE 制約違反ではないため握りつぶしてはいけない
       throw new LibsqlError(
         'NOT NULL constraint failed: articles.title',
         'SQLITE_CONSTRAINT_NOTNULL',
@@ -307,7 +305,6 @@ describe('fetchHatenaArticles', () => {
     expect(count).toBe(3)
     const insertCalls = getInsertCalls()
     expect(insertCalls).toHaveLength(3)
-    // INFO: insert の params に description が含まれることを順番に検証する
     expect(insertCalls[0][1] as unknown[]).toContain('encoded本文')
     expect(insertCalls[1][1] as unknown[]).toContain('snippet本文')
     expect(insertCalls[2][1] as unknown[]).toContain('')

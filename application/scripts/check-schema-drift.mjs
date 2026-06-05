@@ -1,24 +1,7 @@
 // Drizzle スキーマと D1 マイグレーション SQL の DDL 等価性を検証するスクリプト。
 //
-// 旧 `prisma format --check` CI の代替（より強い整合性チェック）。
-// schema.ts（Drizzle の正本）と migrations/*.sql（D1 が実適用する SQL）が
-// 同一の物理スキーマを生成することを保証し、片方だけ更新する事故を防ぐ。
-//
-// 検証手順:
-//   1. 一時 DB(A) に migrations/*.sql を順次適用（apply-migrations.mjs を子プロセスで実行）。
-//   2. `drizzle-kit export` で schema.ts から DDL を生成し、一時 DB(B) に executeMultiple で適用。
-//   3. 両 DB の PRAGMA(table_info / index_list / index_info / foreign_key_list) を
-//      全テーブルでダンプし、正規化して比較する。
-//   4. 一致なら exit 0、ドリフト検出時は差分を出力して exit 1。
-//
 // 使い方:
 //   node scripts/check-schema-drift.mjs
-//
-// 除外/正規化ルール:
-//   - d1_migrations テーブル（wrangler 互換の適用管理テーブル）は比較対象外。
-//   - トリガー（0003 の updated_at トリガー）は Drizzle で表現不能のため対象外。
-//   - migration 0002 のテーブル再作成由来で FK 参照先名が users_new / active_users_new と
-//     残るケースがあるため、参照先テーブル名の `_new` サフィックスを正規化して比較する。
 //
 // NOTE: ログ出力には process.stdout/stderr.write を使用する。
 //   biome の check:fix（--unsafe）が console.* を削除してしまうため。
@@ -34,16 +17,11 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
 const APP_DIR = resolve(SCRIPT_DIR, '..')
 const APPLY_MIGRATIONS_SCRIPT = join(SCRIPT_DIR, 'apply-migrations.mjs')
 const SCHEMA_PATH = './src/infrastructure/drizzle-orm/schema.ts'
-// drizzle-kit は node_modules/.bin の実行ファイル（pnpm の cmd-shim）を直接起動する。
-// `corepack pnpm exec` 経由だと CI（pnpm/action-setup のスタンドアロン pnpm）など
-// corepack 前提が無い環境で壊れうるため、bin を直接叩いてローカル/CI 双方で動かす。
-// cmd-shim は NODE_PATH を設定して依存解決を行うため、そのまま実行ファイルとして起動する。
+// `corepack pnpm exec` 経由だと corepack 前提が無い環境（CI のスタンドアロン pnpm 等）で壊れうるため、
+// node_modules/.bin の drizzle-kit を直接起動する。
 const DRIZZLE_KIT_BIN = join(APP_DIR, 'node_modules', '.bin', 'drizzle-kit')
 
-const EXCLUDED_TABLES = new Set([
-  'd1_migrations', // wrangler 互換の適用管理テーブル
-  'sqlite_sequence', // AUTOINCREMENT 用の内部テーブル
-])
+const EXCLUDED_TABLES = new Set(['d1_migrations', 'sqlite_sequence'])
 
 /** 標準出力に1行書き出す。 */
 function logInfo(message) {
@@ -76,7 +54,6 @@ function applyMigrations(dbPath) {
 
 /**
  * drizzle-kit export で schema.ts から DDL を取得する。
- * node_modules/.bin/drizzle-kit（cmd-shim）を直接起動し corepack 依存を避ける。
  */
 function exportDrizzleDdl() {
   const output = execFileSync(
@@ -142,7 +119,7 @@ async function dumpTable(client, tableName) {
     indexes.push({
       name: indexName,
       unique: Number(indexRow.unique),
-      origin: String(indexRow.origin), // 'c'(CREATE INDEX) / 'u'(UNIQUE) / 'pk'
+      origin: String(indexRow.origin),
       partial: Number(indexRow.partial),
       columns: indexColumns,
     })

@@ -23,7 +23,6 @@ describe('CommandImpl', () => {
 
       const result = await commandImpl.createReadHistory(activeUserId, articleId, readAt)
 
-      // INFO: DBへはnumberで渡る（パラメータは read_at, article_id, active_user_id の順）
       expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
       const [sql, params, method] = mockRdbExecutor.mock.calls[0]
       expect(sql).toContain('insert into "read_histories"')
@@ -40,8 +39,6 @@ describe('CommandImpl', () => {
     })
 
     it('insert...returningが空行の場合はServerErrorを返す', async () => {
-      // INFO: returningが空(到達しない想定だが念のため)でも、result.value[0]参照で
-      // TypeErrorを投げずにResult契約を守りServerErrorを返すこと
       mockRdbExecutor.mockResolvedValue({ rows: [] })
 
       const result = await commandImpl.createReadHistory(1n, 100n, new Date('2024-01-15T09:30:00Z'))
@@ -81,7 +78,6 @@ describe('CommandImpl', () => {
 
       const result = await commandImpl.createSkippedArticle(1n, 100n)
 
-      // INFO: DBへはnumberで渡る（パラメータは article_id, active_user_id の順）
       expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
       const [sql, params, method] = mockRdbExecutor.mock.calls[0]
       expect(sql).toContain('insert into "skipped_articles"')
@@ -100,8 +96,6 @@ describe('CommandImpl', () => {
     })
 
     it('既にスキップ済み(競合)で挿入行が返らない場合は既存行を取得して返す', async () => {
-      // INFO: onConflictDoNothing は競合時に行を返さない。
-      // 既存仕様(upsert: update {})は既存行を返すため、競合時は既存行をSELECTして返す。
       mockRdbExecutor
         // insert ... on conflict do nothing returning → 競合のため空
         .mockResolvedValueOnce({ rows: [] })
@@ -120,8 +114,6 @@ describe('CommandImpl', () => {
     })
 
     it('競合後の既存行SELECTも空の場合はServerErrorを返す', async () => {
-      // INFO: insertとSELECTの間に行が消える窓(competing delete等)でもTypeErrorを投げず
-      // Result契約を守りServerErrorを返すこと
       mockRdbExecutor
         // insert ... on conflict do nothing returning → 競合のため空
         .mockResolvedValueOnce({ rows: [] })
@@ -158,7 +150,6 @@ describe('CommandImpl', () => {
 
       const result = await commandImpl.deleteAllReadHistory(2n, 200n)
 
-      // INFO: DBへはnumberで渡る（パラメータは active_user_id, article_id の順）
       expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
       const [sql, params, method] = mockRdbExecutor.mock.calls[0]
       expect(sql).toContain('delete from "read_histories"')

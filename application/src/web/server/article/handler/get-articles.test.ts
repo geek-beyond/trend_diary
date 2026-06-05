@@ -208,11 +208,9 @@ describe('GET /api/articles', () => {
       },
     ]
 
-    testCases.forEach((testCase) => {
-      it(testCase.name, async () => {
-        const res = await requestGetArticles(testCase.query)
-        expect(res.status).toBe(testCase.status)
-      })
+    it.each(testCases)('$name', async ({ query, status }) => {
+      const res = await requestGetArticles(query)
+      expect(res.status).toBe(status)
     })
   })
 })

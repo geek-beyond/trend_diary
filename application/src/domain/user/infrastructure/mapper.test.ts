@@ -107,24 +107,22 @@ describe('mapToActiveUser', () => {
         },
       ]
 
-      bigintTestCases.forEach(({ name, activeUserId, userId }) => {
-        it(`${name}`, () => {
-          const rdbActiveUser = createMockRdbActiveUser({
-            activeUserId,
-            userId,
-          })
-
-          const result = mapToActiveUser(rdbActiveUser)
-
-          expect(result.activeUserId).toBe(activeUserId)
-          expect(result.userId).toBe(userId)
-          expect(typeof result.activeUserId).toBe('bigint')
-          expect(typeof result.userId).toBe('bigint')
-
-          // 数値の正確性確認（文字列変換で比較）
-          expect(result.activeUserId.toString()).toBe(activeUserId.toString())
-          expect(result.userId.toString()).toBe(userId.toString())
+      it.each(bigintTestCases)('$name', ({ activeUserId, userId }) => {
+        const rdbActiveUser = createMockRdbActiveUser({
+          activeUserId,
+          userId,
         })
+
+        const result = mapToActiveUser(rdbActiveUser)
+
+        expect(result.activeUserId).toBe(activeUserId)
+        expect(result.userId).toBe(userId)
+        expect(typeof result.activeUserId).toBe('bigint')
+        expect(typeof result.userId).toBe('bigint')
+
+        // 数値の正確性確認（文字列変換で比較）
+        expect(result.activeUserId.toString()).toBe(activeUserId.toString())
+        expect(result.userId.toString()).toBe(userId.toString())
       })
     })
 
@@ -157,24 +155,22 @@ describe('mapToActiveUser', () => {
         },
       ]
 
-      stringConstraintTestCases.forEach(({ name, email, displayName }) => {
-        it(`${name}`, () => {
-          const rdbActiveUser = createMockRdbActiveUser({
-            email,
-            displayName,
-          })
-
-          const result = mapToActiveUser(rdbActiveUser)
-
-          expect(result.email).toBe(email)
-          expect(result.displayName).toBe(displayName)
-
-          // 文字列長制約の確認（1024文字以内）
-          expect(result.email.length).toBeLessThanOrEqual(1024)
-          if (result.displayName) {
-            expect(result.displayName.length).toBeLessThanOrEqual(1024)
-          }
+      it.each(stringConstraintTestCases)('$name', ({ email, displayName }) => {
+        const rdbActiveUser = createMockRdbActiveUser({
+          email,
+          displayName,
         })
+
+        const result = mapToActiveUser(rdbActiveUser)
+
+        expect(result.email).toBe(email)
+        expect(result.displayName).toBe(displayName)
+
+        // 文字列長制約の確認（1024文字以内）
+        expect(result.email.length).toBeLessThanOrEqual(1024)
+        if (result.displayName) {
+          expect(result.displayName.length).toBeLessThanOrEqual(1024)
+        }
       })
     })
 
@@ -212,28 +208,26 @@ describe('mapToActiveUser', () => {
         },
       ]
 
-      dateTestCases.forEach(({ name, createdAt, updatedAt }) => {
-        it(`${name}`, () => {
-          const rdbActiveUser = createMockRdbActiveUser({
-            createdAt,
-            updatedAt,
-          })
-
-          const result = mapToActiveUser(rdbActiveUser)
-
-          expect(result.createdAt).toEqual(createdAt)
-          expect(result.updatedAt).toEqual(updatedAt)
-          expect(result.createdAt).toBeInstanceOf(Date)
-          expect(result.updatedAt).toBeInstanceOf(Date)
-
-          // Dateオブジェクトの参照共有（mapperの実装仕様）
-          expect(result.createdAt).toBe(createdAt)
-          expect(result.updatedAt).toBe(updatedAt)
-
-          // タイムスタンプ値の正確性確認
-          expect(result.createdAt.getTime()).toBe(createdAt.getTime())
-          expect(result.updatedAt.getTime()).toBe(updatedAt.getTime())
+      it.each(dateTestCases)('$name', ({ createdAt, updatedAt }) => {
+        const rdbActiveUser = createMockRdbActiveUser({
+          createdAt,
+          updatedAt,
         })
+
+        const result = mapToActiveUser(rdbActiveUser)
+
+        expect(result.createdAt).toEqual(createdAt)
+        expect(result.updatedAt).toEqual(updatedAt)
+        expect(result.createdAt).toBeInstanceOf(Date)
+        expect(result.updatedAt).toBeInstanceOf(Date)
+
+        // Dateオブジェクトの参照共有（mapperの実装仕様）
+        expect(result.createdAt).toBe(createdAt)
+        expect(result.updatedAt).toBe(updatedAt)
+
+        // タイムスタンプ値の正確性確認
+        expect(result.createdAt.getTime()).toBe(createdAt.getTime())
+        expect(result.updatedAt.getTime()).toBe(updatedAt.getTime())
       })
     })
 

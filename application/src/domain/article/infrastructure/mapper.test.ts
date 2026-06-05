@@ -87,21 +87,19 @@ describe('fromRdbToArticle', () => {
         },
       ]
 
-      bigintTestCases.forEach(({ name, articleId }) => {
-        it(`${name}`, () => {
-          // Arrange
-          const rdbArticle = createMockRdbArticle({ articleId })
+      it.each(bigintTestCases)('$name', ({ articleId }) => {
+        // Arrange
+        const rdbArticle = createMockRdbArticle({ articleId })
 
-          // Act
-          const result = fromRdbToArticle(rdbArticle)
+        // Act
+        const result = fromRdbToArticle(rdbArticle)
 
-          // Assert
-          expect(result.articleId).toBe(articleId)
-          expect(typeof result.articleId).toBe('bigint')
+        // Assert
+        expect(result.articleId).toBe(articleId)
+        expect(typeof result.articleId).toBe('bigint')
 
-          // 数値の正確性確認（文字列変換で比較）
-          expect(result.articleId.toString()).toBe(articleId.toString())
-        })
+        // 数値の正確性確認（文字列変換で比較）
+        expect(result.articleId.toString()).toBe(articleId.toString())
       })
     })
 
@@ -166,33 +164,31 @@ describe('fromRdbToArticle', () => {
         },
       ]
 
-      stringConstraintTestCases.forEach(({ name, media, title, author, description, url }) => {
-        it(`${name}`, () => {
-          // Arrange
-          const rdbArticle = createMockRdbArticle({
-            media,
-            title,
-            author,
-            description,
-            url,
-          })
-
-          // Act
-          const result = fromRdbToArticle(rdbArticle)
-
-          // Assert
-          expect(result.media).toBe(media)
-          expect(result.title).toBe(title)
-          expect(result.author).toBe(author)
-          expect(result.description).toBe(description)
-          expect(result.url).toBe(url)
-
-          expect(result.media.length).toBeLessThanOrEqual(10)
-          expect(result.title.length).toBeLessThanOrEqual(100)
-          expect(result.author.length).toBeLessThanOrEqual(30)
-          expect(result.description.length).toBeLessThanOrEqual(1024)
-          // urlはText型のため制限なし
+      it.each(stringConstraintTestCases)('$name', ({ media, title, author, description, url }) => {
+        // Arrange
+        const rdbArticle = createMockRdbArticle({
+          media,
+          title,
+          author,
+          description,
+          url,
         })
+
+        // Act
+        const result = fromRdbToArticle(rdbArticle)
+
+        // Assert
+        expect(result.media).toBe(media)
+        expect(result.title).toBe(title)
+        expect(result.author).toBe(author)
+        expect(result.description).toBe(description)
+        expect(result.url).toBe(url)
+
+        expect(result.media.length).toBeLessThanOrEqual(10)
+        expect(result.title.length).toBeLessThanOrEqual(100)
+        expect(result.author.length).toBeLessThanOrEqual(30)
+        expect(result.description.length).toBeLessThanOrEqual(1024)
+        // urlはText型のため制限なし
       })
     })
 
@@ -220,24 +216,22 @@ describe('fromRdbToArticle', () => {
         },
       ]
 
-      dateTestCases.forEach(({ name, createdAt }) => {
-        it(`${name}`, () => {
-          // Arrange
-          const rdbArticle = createMockRdbArticle({ createdAt })
+      it.each(dateTestCases)('$name', ({ createdAt }) => {
+        // Arrange
+        const rdbArticle = createMockRdbArticle({ createdAt })
 
-          // Act
-          const result = fromRdbToArticle(rdbArticle)
+        // Act
+        const result = fromRdbToArticle(rdbArticle)
 
-          // Assert
-          expect(result.createdAt).toEqual(createdAt)
-          expect(result.createdAt).toBeInstanceOf(Date)
+        // Assert
+        expect(result.createdAt).toEqual(createdAt)
+        expect(result.createdAt).toBeInstanceOf(Date)
 
-          // Dateオブジェクトの参照共有（mapperの実装仕様）
-          expect(result.createdAt).toBe(createdAt)
+        // Dateオブジェクトの参照共有（mapperの実装仕様）
+        expect(result.createdAt).toBe(createdAt)
 
-          // タイムスタンプ値の正確性確認
-          expect(result.createdAt.getTime()).toBe(createdAt.getTime())
-        })
+        // タイムスタンプ値の正確性確認
+        expect(result.createdAt.getTime()).toBe(createdAt.getTime())
       })
     })
   })

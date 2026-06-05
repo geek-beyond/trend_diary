@@ -47,189 +47,97 @@ describe('QueryImpl', () => {
     useCase = new QueryImpl(getRdbClient('file::memory:'))
   })
 
-  describe('findActiveById', () => {
-    describe('基本動作', () => {
-      it('ActiveUserをIDで検索できる', async () => {
-        // Arrange
-        const activeUserId = 1n
-        mockRdbExecutor.mockResolvedValue({ rows: [buildActiveUserRow()] })
+  const finderCases = [
+    {
+      describeName: 'findActiveById',
+      label: 'ID',
+      sqlColumn: '"active_user_id" = ?',
+      expectedParam: 1 as string | number,
+      rowOverrides: (): Parameters<typeof buildActiveUserRow>[0] => ({}),
+      invoke: (target: QueryImpl, found: boolean) => target.findActiveById(found ? 1n : 999n),
+    },
+    {
+      describeName: 'findActiveByEmail',
+      label: 'メールアドレス',
+      sqlColumn: '"email" = ?',
+      expectedParam: 'test@example.com' as string | number,
+      rowOverrides: (): Parameters<typeof buildActiveUserRow>[0] => ({ email: 'test@example.com' }),
+      invoke: (target: QueryImpl, found: boolean) =>
+        target.findActiveByEmail(found ? 'test@example.com' : 'notfound@example.com'),
+    },
+    {
+      describeName: 'findActiveByAuthenticationId',
+      label: '認証ID',
+      sqlColumn: '"authentication_id" = ?',
+      expectedParam: 'auth-id-123' as string | number,
+      rowOverrides: (): Parameters<typeof buildActiveUserRow>[0] => ({
+        authenticationId: 'auth-id-123',
+      }),
+      invoke: (target: QueryImpl, found: boolean) =>
+        target.findActiveByAuthenticationId(found ? 'auth-id-123' : 'nonexistent-auth-id'),
+    },
+  ]
 
-        // Act
-        const result = await useCase.findActiveById(activeUserId)
+  describe.each(finderCases)(
+    '$describeName',
+    ({ label, sqlColumn, expectedParam, rowOverrides, invoke }) => {
+      describe('基本動作', () => {
+        it(`ActiveUserを${label}で検索できる`, async () => {
+          // Arrange
+          mockRdbExecutor.mockResolvedValue({
+            rows: [buildActiveUserRow(rowOverrides())],
+          })
 
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value?.activeUserId).toBe(1n)
-          expect(result.value?.email).toBe('test@example.com')
-        }
-        expect(mockRdbExecutor).toHaveBeenCalled()
-        const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
-        expect(sql).toContain('select')
-        expect(sql).toContain('"active_users"')
-        expect(sql).toContain('"active_user_id" = ?')
-        expect(params).toContain(1)
-      })
-    })
+          // Act
+          const result = await invoke(useCase, true)
 
-    describe('境界値・特殊値', () => {
-      it('存在しないActiveUserの場合nullを返す', async () => {
-        // Arrange
-        const activeUserId = 999n
-        mockRdbExecutor.mockResolvedValue({ rows: [] })
-
-        // Act
-        const result = await useCase.findActiveById(activeUserId)
-
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toBeNull()
-        }
-      })
-    })
-
-    describe('例外・制約違反', () => {
-      it('データベースエラー時は適切にエラーを返す', async () => {
-        // Arrange
-        const activeUserId = 1n
-        const dbError = new Error('Database connection failed')
-        mockRdbExecutor.mockRejectedValue(dbError)
-
-        // Act
-        const result = await useCase.findActiveById(activeUserId)
-
-        // Assert
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-          expect(result.error.message).toBe('Database connection failed')
-        }
-      })
-    })
-  })
-
-  describe('findActiveByEmail', () => {
-    describe('基本動作', () => {
-      it('ActiveUserをメールアドレスで検索できる', async () => {
-        // Arrange
-        const email = 'test@example.com'
-        mockRdbExecutor.mockResolvedValue({ rows: [buildActiveUserRow({ email })] })
-
-        // Act
-        const result = await useCase.findActiveByEmail(email)
-
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value?.email).toBe(email)
-          expect(result.value?.activeUserId).toBe(1n)
-        }
-        expect(mockRdbExecutor).toHaveBeenCalled()
-        const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
-        expect(sql).toContain('select')
-        expect(sql).toContain('"email" = ?')
-        expect(params).toContain(email)
-      })
-    })
-
-    describe('境界値・特殊値', () => {
-      it('存在しないメールアドレスの場合nullを返す', async () => {
-        // Arrange
-        const email = 'notfound@example.com'
-        mockRdbExecutor.mockResolvedValue({ rows: [] })
-
-        // Act
-        const result = await useCase.findActiveByEmail(email)
-
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toBeNull()
-        }
-      })
-    })
-
-    describe('例外・制約違反', () => {
-      it('データベースエラー時は適切にエラーを返す', async () => {
-        // Arrange
-        const email = 'test@example.com'
-        const dbError = new Error('Database connection failed')
-        mockRdbExecutor.mockRejectedValue(dbError)
-
-        // Act
-        const result = await useCase.findActiveByEmail(email)
-
-        // Assert
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-          expect(result.error.message).toBe('Database connection failed')
-        }
-      })
-    })
-  })
-
-  describe('findActiveByAuthenticationId', () => {
-    describe('基本動作', () => {
-      it('ActiveUserを認証IDで検索できる', async () => {
-        // Arrange
-        const authenticationId = 'auth-id-123'
-        mockRdbExecutor.mockResolvedValue({
-          rows: [buildActiveUserRow({ authenticationId })],
+          // Assert
+          expect(result.isOk()).toBe(true)
+          if (result.isOk()) {
+            expect(result.value?.activeUserId).toBe(1n)
+            expect(result.value?.email).toBe('test@example.com')
+          }
+          expect(mockRdbExecutor).toHaveBeenCalled()
+          const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
+          expect(sql).toContain('select')
+          expect(sql).toContain(sqlColumn)
+          expect(params).toContain(expectedParam)
         })
-
-        // Act
-        const result = await useCase.findActiveByAuthenticationId(authenticationId)
-
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value?.activeUserId).toBe(1n)
-          expect(result.value?.email).toBe('test@example.com')
-        }
-        expect(mockRdbExecutor).toHaveBeenCalled()
-        const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
-        expect(sql).toContain('select')
-        expect(sql).toContain('"authentication_id" = ?')
-        expect(params).toContain(authenticationId)
       })
-    })
 
-    describe('境界値・特殊値', () => {
-      it('存在しない認証IDの場合nullを返す', async () => {
-        // Arrange
-        const authenticationId = 'nonexistent-auth-id'
-        mockRdbExecutor.mockResolvedValue({ rows: [] })
+      describe('境界値・特殊値', () => {
+        it(`存在しない${label}の場合nullを返す`, async () => {
+          // Arrange
+          mockRdbExecutor.mockResolvedValue({ rows: [] })
 
-        // Act
-        const result = await useCase.findActiveByAuthenticationId(authenticationId)
+          // Act
+          const result = await invoke(useCase, false)
 
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toBeNull()
-        }
+          // Assert
+          expect(result.isOk()).toBe(true)
+          if (result.isOk()) {
+            expect(result.value).toBeNull()
+          }
+        })
       })
-    })
 
-    describe('例外・制約違反', () => {
-      it('データベースエラー時は適切にエラーを返す', async () => {
-        // Arrange
-        const authenticationId = 'auth-id-123'
-        const dbError = new Error('Database connection failed')
-        mockRdbExecutor.mockRejectedValue(dbError)
+      describe('例外・制約違反', () => {
+        it('データベースエラー時は適切にエラーを返す', async () => {
+          // Arrange
+          const dbError = new Error('Database connection failed')
+          mockRdbExecutor.mockRejectedValue(dbError)
 
-        // Act
-        const result = await useCase.findActiveByAuthenticationId(authenticationId)
+          // Act
+          const result = await invoke(useCase, true)
 
-        // Assert
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-          expect(result.error.message).toBe('Database connection failed')
-        }
+          // Assert
+          expect(result.isErr()).toBe(true)
+          if (result.isErr()) {
+            expect(result.error).toBeInstanceOf(ServerError)
+            expect(result.error.message).toBe('Database connection failed')
+          }
+        })
       })
-    })
-  })
+    },
+  )
 })

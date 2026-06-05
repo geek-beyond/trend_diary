@@ -2,13 +2,9 @@ import { defineConfig, devices } from '@playwright/test'
 import { TEST_DATABASE_URL } from '../env'
 
 // rdb.ts は process.env.DATABASE_URL の有無で libsql クライアントの import を判定するため、
-// テストランナープロセス（helper が file: DB に直接アクセスする側）にはテストファイルの
-// import より先に評価される config モジュールで供給する必要がある。
 process.env.DATABASE_URL ??= TEST_DATABASE_URL
 
 export default defineConfig({
-  // webServer と並行して migrations を test.db へ適用する。webServer の readiness(HTTP)は
-  // DB 非依存のため、テスト開始前に適用が完了していればよい。
   globalSetup: '../setup/apply-migrations.ts',
   testDir: '.',
   forbidOnly: true,

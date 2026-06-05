@@ -41,7 +41,6 @@ function unwrapDbError(error: Error): Error {
   return error.cause instanceof Error ? error.cause : error
 }
 
-// DB呼び出しを Result でラップし、失敗時は Drizzle ラッパから元の例外を取り出して返す。
 export function wrapDbCall<T>(fn: () => Promise<T>): Promise<Result<T, Error>> {
   return wrapAsyncCall(fn).then((result) => result.mapErr(unwrapDbError))
 }
@@ -103,7 +102,6 @@ function resolveLogger(isTest: boolean): DrizzleLogger | false {
 
 export default function getRdbClient(input: RdbInput): RdbClient {
   const isTest = process.env.NODE_ENV === 'test'
-  // INFO: 文字列入力は databaseUrl の省略形として扱う
   const config: RdbConfig = typeof input === 'string' ? { databaseUrl: input } : input
   const databaseUrl = config.databaseUrl?.trim() || process.env.DATABASE_URL?.trim()
 

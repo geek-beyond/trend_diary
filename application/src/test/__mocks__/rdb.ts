@@ -30,7 +30,6 @@ const getRdbClient = vi.fn(
 
 export default getRdbClient
 
-// 実装(@/infrastructure/rdb)と同じく、失敗時は Drizzle ラッパの cause を1段取り出して返す
 export function wrapDbCall<T>(fn: () => Promise<T>): Promise<Result<T, Error>> {
   return wrapAsyncCall(fn).then((result) =>
     result.mapErr((error) => (error.cause instanceof Error ? error.cause : error)),

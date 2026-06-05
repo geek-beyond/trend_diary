@@ -1,6 +1,4 @@
-// migrations/*.sql を file: SQLite DB に順次適用するテスト基盤モジュール（DATABASE_URL=file:... 必須）。
-// applyMigrations 関数を export し、vitest の globalSetup から直接 import して実行する。
-// CLI（node src/test/setup/apply-migrations.mjs）でも実行でき、その場合は DATABASE_URL env を参照する。
+// DATABASE_URL は file: 形式が必須（libsql Node クライアントでのみ動作する）。
 // PRAGMA を含むファイルはトランザクション内で PRAGMA が効かないため tx 外で適用する。
 // ログは process.stdout/stderr.write を使用（biome の --unsafe fix が console.* を消すため）。
 
@@ -54,7 +52,6 @@ async function applyMigrationFile(client, sql) {
   await client.executeMultiple(`BEGIN TRANSACTION;\n${sql}\nCOMMIT;`)
 }
 
-// migrations/*.sql を file: SQLite DB（databaseUrl）へ冪等に適用する。適用済みはスキップする。
 export async function applyMigrations(databaseUrl) {
   const url = assertFileDatabaseUrl(databaseUrl)
   const client = createClient({ url })
@@ -94,8 +91,7 @@ export async function applyMigrations(databaseUrl) {
   }
 }
 
-// CLI として直接実行された場合のみ DATABASE_URL env を解決して適用する。
-// import 経由（globalSetup 等）では実行せず、applyMigrations を呼ばせる。
+// import 時に自動実行しないよう、CLI 直接実行のときだけ DATABASE_URL env を解決して適用する。
 const isCliEntry = process.argv[1] === fileURLToPath(import.meta.url)
 if (isCliEntry) {
   await applyMigrations(process.env.DATABASE_URL?.trim())

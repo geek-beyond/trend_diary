@@ -5,7 +5,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createClient } from '@libsql/client'
+import { type Client, createClient, type Value } from '@libsql/client'
 
 const MIGRATIONS_DIR = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'migrations')
 const MIGRATIONS_TABLE = 'd1_migrations'
@@ -16,11 +16,11 @@ const CREATE_MIGRATIONS_TABLE = `CREATE TABLE IF NOT EXISTS ${MIGRATIONS_TABLE}(
   applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );`
 
-function logInfo(message) {
+function logInfo(message: string): void {
   process.stdout.write(`${message}\n`)
 }
 
-function assertFileDatabaseUrl(databaseUrl) {
+function assertFileDatabaseUrl(databaseUrl: string | undefined): string {
   if (!databaseUrl) {
     throw new Error('DATABASE_URL 環境変数が設定されていません（file: 形式が必要です）')
   }
@@ -32,19 +32,19 @@ function assertFileDatabaseUrl(databaseUrl) {
   return databaseUrl
 }
 
-function listMigrationFiles() {
+function listMigrationFiles(): string[] {
   return readdirSync(MIGRATIONS_DIR)
     .filter((name) => name.endsWith('.sql'))
     .sort((a, b) => a.localeCompare(b))
 }
 
-function containsPragma(sql) {
+function containsPragma(sql: string): boolean {
   return /^\s*PRAGMA\b/im.test(sql)
 }
 
 // PRAGMA は tx 内で効かないため tx 外で適用する。それ以外は tx で包み半適用を防ぐ。
 // 失敗時は接続クローズ時に未コミット tx が自動ロールバックされる。
-async function applyMigrationFile(client, sql) {
+async function applyMigrationFile(client: Client, sql: string): Promise<void> {
   if (containsPragma(sql)) {
     await client.executeMultiple(sql)
     return
@@ -52,7 +52,7 @@ async function applyMigrationFile(client, sql) {
   await client.executeMultiple(`BEGIN TRANSACTION;\n${sql}\nCOMMIT;`)
 }
 
-export async function applyMigrations(databaseUrl) {
+export async function applyMigrations(databaseUrl: string | undefined): Promise<void> {
   const url = assertFileDatabaseUrl(databaseUrl)
   const client = createClient({ url })
 
@@ -60,7 +60,7 @@ export async function applyMigrations(databaseUrl) {
     await client.execute(CREATE_MIGRATIONS_TABLE)
 
     const appliedResult = await client.execute(`SELECT name FROM ${MIGRATIONS_TABLE};`)
-    const appliedNames = new Set(appliedResult.rows.map((row) => row.name))
+    const appliedNames = new Set<Value>(appliedResult.rows.map((row) => row.name))
 
     const allMigrations = listMigrationFiles()
     const unapplied = allMigrations.filter((name) => !appliedNames.has(name))

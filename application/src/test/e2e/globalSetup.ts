@@ -1,6 +1,5 @@
 import { TEST_DATABASE_URL } from '@/test/env'
-// @ts-expect-error: .mjs テスト基盤モジュール（型定義は持たない）を直接 import する
-import { applyMigrations } from '@/test/setup/apply-migrations.mjs'
+import { applyMigrations } from '@/test/setup/apply-migrations'
 
 // webServer の readiness（HTTP）は DB に依存しないため、テストの最初のクエリ前に
 // globalSetup で migrations 適用を完了させればよい。

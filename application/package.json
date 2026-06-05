@@ -20,7 +20,7 @@
     "lint": "biome ci . && pnpm run typecheck",
     "check": "biome check .",
     "check:fix": "biome check --write . --unsafe",
-    "db:migrate:test": "node src/test/setup/apply-migrations.mjs",
+    "db:migrate:test": "node --experimental-strip-types src/test/setup/apply-migrations.ts",
     "d1:apply:local": "wrangler d1 migrations apply trend-diary-db --local",
     "d1:apply:remote": "wrangler d1 migrations apply trend-diary-db --remote",
     "db:generate": "drizzle-kit generate",

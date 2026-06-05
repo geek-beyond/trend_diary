@@ -41,8 +41,8 @@
 - `pnpm run test:server`: vitest の `globalSetup` が `file:` の `DATABASE_URL`
   （既定 `test.db`）へ自動適用してからテストを実行する
 
-いずれも内部で `src/test/setup/apply-migrations.mjs` を呼び出しており、冪等（適用済みはスキップ）
-なので毎回実行しても安全・高速。なお `apply-migrations.mjs` は `file:` の SQLite（test.db）専用の
+いずれも内部で `src/test/setup/apply-migrations.ts` を呼び出しており、冪等（適用済みはスキップ）
+なので毎回実行しても安全・高速。なお `apply-migrations.ts` は `file:` の SQLite（test.db）専用の
 テスト基盤であり、E2E/テスト経路でのみ使う。
 
 > ローカル dev（`pnpm run start`）は vite cloudflare adapter の miniflare D1（binding: `DB`）を
@@ -55,7 +55,7 @@
 
 1. `pnpm run db:migrate:test`（`DATABASE_URL` env で接続先を指定）
 
-> `db:migrate:test` は `src/test/setup/apply-migrations.mjs` が `migrations/*.sql` を
+> `db:migrate:test` は `src/test/setup/apply-migrations.ts` が `migrations/*.sql` を
 > wrangler 互換の `d1_migrations` テーブルで冪等に適用する（適用済みはスキップ）。
 
 ## D1（Cloudflare）への適用

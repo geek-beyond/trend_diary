@@ -42,7 +42,7 @@ cp .dev.vars.example .dev.vars
 pnpm run d1:apply:local
 ```
 
-テスト用DB（`test.db`）はテスト実行時に自動適用される。手動で適用する場合は`DATABASE_URL`を指定して`pnpm run test:db:migrate`を使う
+テスト用DB（`test.db`）はテスト実行時に自動適用される。手動で適用する場合は`DATABASE_URL`を指定して`pnpm run db:migrate:test`を使う
 
 Cloudflare D1ローカルマイグレーション適用（必要な場合）
 

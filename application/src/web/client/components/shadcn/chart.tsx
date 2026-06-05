@@ -1,5 +1,6 @@
 import * as React from 'react'
 import * as RechartsPrimitive from 'recharts'
+import type { LegendPayload, TooltipPayloadEntry } from 'recharts'
 
 import { cn } from '@/web/client/components/shadcn/lib/utils'
 
@@ -115,17 +116,33 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<'div'> & {
-      hideLabel?: boolean
-      hideIndicator?: boolean
-      indicator?: 'line' | 'dot' | 'dashed'
-      nameKey?: string
-      labelKey?: string
-    }
->(
+// recharts v3では active/payload/label はTooltipのpublic型に含まれず描画時に注入されるため、
+// 注入されるpropsを明示的に型定義する
+type ChartTooltipContentProps = React.ComponentProps<'div'> & {
+  active?: boolean
+  payload?: ReadonlyArray<TooltipPayloadEntry>
+  label?: React.ReactNode
+  labelFormatter?: (
+    label: React.ReactNode,
+    payload: ReadonlyArray<TooltipPayloadEntry>,
+  ) => React.ReactNode
+  formatter?: (
+    value: TooltipPayloadEntry['value'],
+    name: TooltipPayloadEntry['name'],
+    item: TooltipPayloadEntry,
+    index: number,
+    payload: TooltipPayloadEntry['payload'],
+  ) => React.ReactNode
+  color?: string
+  labelClassName?: string
+  hideLabel?: boolean
+  hideIndicator?: boolean
+  indicator?: 'line' | 'dot' | 'dashed'
+  nameKey?: string
+  labelKey?: string
+}
+
+const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContentProps>(
   (
     {
       active,
@@ -197,7 +214,7 @@ const ChartTooltipContent = React.forwardRef<
 
               return (
                 <div
-                  key={item.dataKey}
+                  key={key}
                   className={cn(
                     'flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground',
                     indicator === 'dot' && 'items-center',
@@ -263,14 +280,17 @@ ChartTooltipContent.displayName = 'ChartTooltip'
 
 const ChartLegend = RechartsPrimitive.Legend
 
-const ChartLegendContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<'div'> &
-    Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
-      hideIcon?: boolean
-      nameKey?: string
-    }
->(({ className, hideIcon = false, payload, verticalAlign = 'bottom', nameKey }, ref) => {
+// recharts v3では LegendProps から payload/verticalAlign をPickできないため、
+// Legendの content に注入されるpropsを明示的に型定義する
+type ChartLegendContentProps = React.ComponentProps<'div'> & {
+  payload?: ReadonlyArray<LegendPayload>
+  verticalAlign?: 'top' | 'bottom' | 'middle'
+  hideIcon?: boolean
+  nameKey?: string
+}
+
+const ChartLegendContent = React.forwardRef<HTMLDivElement, ChartLegendContentProps>(
+  ({ className, hideIcon = false, payload, verticalAlign = 'bottom', nameKey }, ref) => {
   const { config } = useChart()
 
   if (!payload?.length) {

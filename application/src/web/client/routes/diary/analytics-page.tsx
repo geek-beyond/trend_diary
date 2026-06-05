@@ -26,8 +26,9 @@ type SummaryRangePoint = {
   skip: number
 }
 
+// recharts v3の onClick(state) では activeLabel が string | number になりうる
 type ChartClickState = {
-  activeLabel?: string
+  activeLabel?: string | number
 } | null
 
 type Props = {

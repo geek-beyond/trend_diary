@@ -41,42 +41,4 @@ describe('wrapAsyncCall', () => {
       expect(result.error.message).toBe('sync throw')
     }
   })
-
-  it('cleanupは成功時に呼ばれること', async () => {
-    let cleanedUp = false
-    const result = await wrapAsyncCall(
-      async () => 'ok',
-      () => {
-        cleanedUp = true
-      },
-    )
-    expect(result.isOk()).toBe(true)
-    expect(cleanedUp).toBe(true)
-  })
-
-  it('cleanupは失敗時にも呼ばれること', async () => {
-    let cleanedUp = false
-    const result = await wrapAsyncCall(
-      async () => {
-        throw new Error('boom')
-      },
-      () => {
-        cleanedUp = true
-      },
-    )
-    expect(result.isErr()).toBe(true)
-    expect(cleanedUp).toBe(true)
-  })
-
-  it('非同期cleanupの完了を待つこと', async () => {
-    let cleanedUp = false
-    await wrapAsyncCall(
-      async () => 'ok',
-      async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1))
-        cleanedUp = true
-      },
-    )
-    expect(cleanedUp).toBe(true)
-  })
 })

@@ -178,17 +178,5 @@ export const skippedArticlesRelations = relations(skippedArticles, ({ one }) => 
   }),
 }))
 
-export type User = typeof users.$inferSelect
-export type NewUser = typeof users.$inferInsert
 export type ActiveUser = typeof activeUsers.$inferSelect
-export type NewActiveUser = typeof activeUsers.$inferInsert
 export type Article = typeof articles.$inferSelect
-export type NewArticle = typeof articles.$inferInsert
-export type BannedUser = typeof bannedUsers.$inferSelect
-export type NewBannedUser = typeof bannedUsers.$inferInsert
-export type LeavedUser = typeof leavedUsers.$inferSelect
-export type NewLeavedUser = typeof leavedUsers.$inferInsert
-export type ReadHistory = typeof readHistories.$inferSelect
-export type NewReadHistory = typeof readHistories.$inferInsert
-export type SkippedArticle = typeof skippedArticles.$inferSelect
-export type NewSkippedArticle = typeof skippedArticles.$inferInsert

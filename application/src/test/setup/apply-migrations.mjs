@@ -1,14 +1,15 @@
-// migrations/*.sql を file: SQLite DB に順次適用する（DATABASE_URL=file:... 必須）。
+// migrations/*.sql を file: SQLite DB に順次適用するテスト基盤モジュール（DATABASE_URL=file:... 必須）。
+// applyMigrations 関数を export し、vitest の globalSetup から直接 import して実行する。
+// CLI（node src/test/setup/apply-migrations.mjs）でも実行でき、その場合は DATABASE_URL env を参照する。
 // PRAGMA を含むファイルはトランザクション内で PRAGMA が効かないため tx 外で適用する。
 // ログは process.stdout/stderr.write を使用（biome の --unsafe fix が console.* を消すため）。
 
 import { readdirSync, readFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createClient } from '@libsql/client'
 
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
-const MIGRATIONS_DIR = resolve(SCRIPT_DIR, '..', 'migrations')
+const MIGRATIONS_DIR = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'migrations')
 const MIGRATIONS_TABLE = 'd1_migrations'
 
 const CREATE_MIGRATIONS_TABLE = `CREATE TABLE IF NOT EXISTS ${MIGRATIONS_TABLE}(
@@ -21,8 +22,7 @@ function logInfo(message) {
   process.stdout.write(`${message}\n`)
 }
 
-function resolveDatabaseUrl() {
-  const databaseUrl = process.env.DATABASE_URL
+function assertFileDatabaseUrl(databaseUrl) {
   if (!databaseUrl) {
     throw new Error('DATABASE_URL 環境変数が設定されていません（file: 形式が必要です）')
   }
@@ -54,8 +54,9 @@ async function applyMigrationFile(client, sql) {
   await client.executeMultiple(`BEGIN TRANSACTION;\n${sql}\nCOMMIT;`)
 }
 
-async function main() {
-  const url = resolveDatabaseUrl()
+// migrations/*.sql を file: SQLite DB（databaseUrl）へ冪等に適用する。適用済みはスキップする。
+export async function applyMigrations(databaseUrl) {
+  const url = assertFileDatabaseUrl(databaseUrl)
   const client = createClient({ url })
 
   try {
@@ -93,4 +94,9 @@ async function main() {
   }
 }
 
-await main()
+// CLI として直接実行された場合のみ DATABASE_URL env を解決して適用する。
+// import 経由（globalSetup 等）では実行せず、applyMigrations を呼ばせる。
+const isCliEntry = process.argv[1] === fileURLToPath(import.meta.url)
+if (isCliEntry) {
+  await applyMigrations(process.env.DATABASE_URL?.trim())
+}

@@ -10,7 +10,7 @@ import { createClient } from '@libsql/client'
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
 const APP_DIR = resolve(SCRIPT_DIR, '..')
-const APPLY_MIGRATIONS_SCRIPT = join(SCRIPT_DIR, 'apply-migrations.mjs')
+const APPLY_MIGRATIONS_SCRIPT = join(APP_DIR, 'src', 'test', 'setup', 'apply-migrations.mjs')
 const SCHEMA_PATH = './src/infrastructure/drizzle-orm/schema.ts'
 // drizzle-kit は bin 直叩き（corepack 前提が無い環境でも動くようにするため）。
 const DRIZZLE_KIT_BIN = join(APP_DIR, 'node_modules', '.bin', 'drizzle-kit')

@@ -34,31 +34,32 @@
 `migrations/*.sql` の適用は以下の起動・テスト実行時に**自動**で行われるため、
 通常は手動で `db:migrate` を意識する必要はない。
 
-- `pnpm run start`: 起動前に `dev.db` へ自動適用してから dev サーバーを起動する
 - `pnpm run start:e2e`: 起動前に `test.db` へ自動適用してから dev サーバーを起動する
   （E2E は Playwright の `webServer` がこのコマンドを起動するため、E2E でも自動適用される）
 - `pnpm run test:server`: vitest の `globalSetup` が `file:` の `DATABASE_URL`
   （既定 `test.db`）へ自動適用してからテストを実行する
 
-いずれも内部で `scripts/apply-migrations.mjs` を呼び出しており、冪等（適用済みはスキップ）
-なので毎回実行しても安全・高速。
+いずれも内部で `src/test/setup/apply-migrations.mjs` を呼び出しており、冪等（適用済みはスキップ）
+なので毎回実行しても安全・高速。なお `apply-migrations.mjs` は `file:` の SQLite（test.db）専用の
+テスト基盤であり、E2E/テスト経路でのみ使う。
+
+> ローカル dev（`pnpm run start`）は vite cloudflare adapter の miniflare D1（binding: `DB`）を
+> 直接使うため、`file:` の自動適用は行わない。dev DB へのマイグレーション適用は下記の
+> `pnpm run d1:apply:local` を使う（wrangler と adapter は同じ `.wrangler/state/v3` を共有する）。
 
 ### 手動適用（明示的に適用したい場合）
 
-ローカル開発DB(SQLite: `dev.db`)に反映する場合:
+`DATABASE_URL`（`file:`）で接続先を指定した環境（例: CIの`test.db`）に反映する場合:
 
-1. `pnpm run db:migrate:dev`
+1. `pnpm run db:migrate`（`DATABASE_URL` env で接続先を指定）
 
-`DATABASE_URL`で接続先を指定した環境（例: CIの`test.db`）に反映する場合:
-
-1. `pnpm run db:migrate`
-
-> `db:migrate` 系は `scripts/apply-migrations.mjs` が `migrations/*.sql` を
+> `db:migrate` は `src/test/setup/apply-migrations.mjs` が `migrations/*.sql` を
 > wrangler 互換の `d1_migrations` テーブルで冪等に適用する（適用済みはスキップ）。
 
 ## D1（Cloudflare）への適用
 
-1. ローカル: `pnpm run d1:apply:local`（`wrangler d1 migrations apply trend-diary-db --local`）
+1. ローカル dev: `pnpm run d1:apply:local`（`wrangler d1 migrations apply trend-diary-db --local`）。
+   `pnpm run start` の miniflare D1 と同じ `.wrangler/state/v3` に適用されるため、dev サーバーから参照できる。
 2. 本番: `pnpm run d1:apply:remote`（`wrangler d1 migrations apply trend-diary-db --remote`、CDで自動実行）
 
 ## スキーマドリフトの検証

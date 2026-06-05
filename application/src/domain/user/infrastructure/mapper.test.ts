@@ -103,7 +103,7 @@ describe('mapToActiveUser', () => {
           name: '非常に大きなbigint値での処理',
           activeUserId: 123456789012345678901234567890n,
           userId: 987654321098765432109876543210n,
-          description: 'PostgreSQL bigintの上限に近い非常に大きな値での正確なマッピング',
+          description: '非常に大きなbigint値での正確なマッピング',
         },
       ]
 
@@ -138,14 +138,13 @@ describe('mapToActiveUser', () => {
           name: 'email最大長(1024文字)での境界値処理',
           email: `${'a'.repeat(1011)}@example.com`,
           displayName: '正常な表示名',
-          description: 'emailがPrismaスキーマの最大長制限での正確なマッピング',
+          description: 'email最大長(1024文字)での正確なマッピング',
         },
         {
           name: 'displayName最大長(1024文字)での境界値処理',
           email: 'test@example.com',
           displayName: 'あ'.repeat(1024),
-          description:
-            'displayNameがPrismaスキーマの最大長制限（マルチバイト文字）での正確なマッピング',
+          description: 'displayName最大長(1024文字・マルチバイト文字)での正確なマッピング',
         },
         {
           name: '現実的な日本語メールアドレスでの処理',
@@ -338,7 +337,7 @@ describe('mapToActiveUser', () => {
     })
 
     describe('極限値でのマッピング安定性テスト', () => {
-      it('PostgreSQL bigint上限に近い値でのマッピング精度テスト', () => {
+      it('64bit整数上限に近い値でのマッピング精度テスト', () => {
         const nearMaxBigInt = 9223372036854775806n
         const rdbActiveUser = createMockRdbActiveUser({
           activeUserId: nearMaxBigInt,

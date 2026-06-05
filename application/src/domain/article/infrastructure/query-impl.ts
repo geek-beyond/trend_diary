@@ -396,10 +396,6 @@ export default class QueryImpl implements Query {
   }
 
   private static getNormalizedDateTimeSql(columnName: NormalizedDateTimeColumn) {
-    return QueryImpl.getNormalizedDateTimeSqlForSqlite(columnName)
-  }
-
-  private static getNormalizedDateTimeSqlForSqlite(columnName: NormalizedDateTimeColumn) {
     const column = sql.raw(columnName)
     return sql`
       CASE

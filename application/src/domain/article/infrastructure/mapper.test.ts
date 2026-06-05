@@ -288,9 +288,9 @@ describe('fromRdbToArticle', () => {
     })
 
     describe('極限値でのマッピング安定性テスト', () => {
-      it('PostgreSQL bigint上限に近い値でのマッピング精度テスト', () => {
+      it('64bit整数上限に近い値でのマッピング精度テスト', () => {
         // Arrange
-        // PostgreSQL bigintの最大値は 9223372036854775807
+        // SQLite integerの最大値は 9223372036854775807
         const nearMaxBigInt = 9223372036854775806n
         const rdbArticle = createMockRdbArticle({
           articleId: nearMaxBigInt,

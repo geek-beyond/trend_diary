@@ -49,23 +49,17 @@ describe('CommandImpl', () => {
       }
     })
 
-    it.each([{ errorMessage: 'Database connection failed' }])(
-      'DBエラー時は失敗を返す',
-      async ({ errorMessage }) => {
-        mockRdbExecutor.mockRejectedValue(new Error(errorMessage))
+    it('DBエラー時は失敗を返す', async () => {
+      const errorMessage = 'Database connection failed'
+      mockRdbExecutor.mockRejectedValue(new Error(errorMessage))
 
-        const result = await commandImpl.createReadHistory(
-          1n,
-          100n,
-          new Date('2024-01-15T09:30:00Z'),
-        )
+      const result = await commandImpl.createReadHistory(1n, 100n, new Date('2024-01-15T09:30:00Z'))
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error.message).toBe(errorMessage)
-        }
-      },
-    )
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error.message).toBe(errorMessage)
+      }
+    })
   })
 
   describe('createSkippedArticle', () => {
@@ -129,19 +123,17 @@ describe('CommandImpl', () => {
       }
     })
 
-    it.each([{ errorMessage: 'Database connection failed' }])(
-      'DBエラー時は失敗を返す',
-      async ({ errorMessage }) => {
-        mockRdbExecutor.mockRejectedValue(new Error(errorMessage))
+    it('DBエラー時は失敗を返す', async () => {
+      const errorMessage = 'Database connection failed'
+      mockRdbExecutor.mockRejectedValue(new Error(errorMessage))
 
-        const result = await commandImpl.createSkippedArticle(1n, 100n)
+      const result = await commandImpl.createSkippedArticle(1n, 100n)
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error.message).toBe(errorMessage)
-        }
-      },
-    )
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error.message).toBe(errorMessage)
+      }
+    })
   })
 
   describe('deleteAllReadHistory', () => {
@@ -159,18 +151,16 @@ describe('CommandImpl', () => {
       expect(result.isOk()).toBe(true)
     })
 
-    it.each([{ errorMessage: 'Database connection failed' }])(
-      'DBエラー時は失敗を返す',
-      async ({ errorMessage }) => {
-        mockRdbExecutor.mockRejectedValue(new Error(errorMessage))
+    it('DBエラー時は失敗を返す', async () => {
+      const errorMessage = 'Database connection failed'
+      mockRdbExecutor.mockRejectedValue(new Error(errorMessage))
 
-        const result = await commandImpl.deleteAllReadHistory(1n, 100n)
+      const result = await commandImpl.deleteAllReadHistory(1n, 100n)
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error.message).toBe(errorMessage)
-        }
-      },
-    )
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error.message).toBe(errorMessage)
+      }
+    })
   })
 })

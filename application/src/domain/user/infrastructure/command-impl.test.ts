@@ -1,9 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { ServerError } from '@/common/errors'
 import getRdbClient, { mockRdbExecutor } from '@/test/__mocks__/rdb'
 import CommandImpl from './command-impl'
-
-vi.mock('@/infrastructure/rdb')
 
 describe('CommandImpl', () => {
   let useCase: CommandImpl
@@ -29,7 +27,6 @@ describe('CommandImpl', () => {
   ]
 
   beforeEach(() => {
-    vi.clearAllMocks()
     useCase = new CommandImpl(getRdbClient('file::memory:'))
   })
 

@@ -153,9 +153,6 @@ jobs:
           version: v0.1.1
           addr: 127.0.0.1:54321
 
-      - name: DB Migration
-        run: pnpm run db:migrate
-
       - name: サーバーのテスト
         uses: ./.github/actions/test_cov
         with:

@@ -10,17 +10,40 @@
 ## スキーマ変更とマイグレーションファイルの生成
 
 スキーマは `schema.ts` を正本とし、D1 への適用は `migrations/*.sql` で行う。
+`drizzle-kit` の出力先 `out` は `migrations/` を指している（`drizzle.config.ts`）。
+`migrations/meta/`（`_journal.json` と最新スナップショット）をコミットしているため、
+`db:generate` は前回スナップショットとの**差分のみ**を `migrations/000N_*.sql` に直接生成する。
 
 1. `src/infrastructure/drizzle-orm/schema.ts` を編集
-2. `pnpm run db:generate`（`drizzle-kit generate`）でマイグレーションSQLの草案を生成
-   - 出力先 `out: './drizzle'` は `.gitignore` 対象（コミットしない）。新規チェックアウトでは
-     基準スナップショットが存在しないため、生成物は**差分ではなく全スキーマのDDL草案**になる。
-3. 生成物は全スキーマDDLの草案として扱い、`migrations/000N_*.sql` へ配置する際は
-   **既存の適用済みマイグレーションとの差分を手動で抽出**して、新しい変更分のみを記載する
-   （D1 は `migrations/` を辞書順に追記適用するため、既存ファイルは編集せず新規番号で追加する）。
+2. `pnpm run db:generate`（`drizzle-kit generate`）を実行
+   - `migrations/meta/` の基準スナップショットと現在の `schema.ts` を比較し、
+     差分の `ALTER TABLE ...` 等だけを含む新しい `migrations/000N_*.sql` を**自動採番**で生成する。
+   - 同時に `migrations/meta/_journal.json` と `migrations/meta/000N_snapshot.json` が更新される。
+   - 既存の本番適用済み `0001`〜`0004` と連番が続くため、次に生成されるファイルは `0005_*.sql` となる。
+   - スキーマに差分が無い場合は `No schema changes, nothing to migrate` と表示され何も生成されない。
+3. 生成された `migrations/000N_*.sql` の内容を**必ずレビュー**する（意図しない `DROP`/再作成等が
+   含まれていないかを確認）。D1 は `migrations/` を辞書順に追記適用するため、既存ファイルの編集・
+   リネームは禁止（本番適用済み）。生成された SQL・`meta/` 配下の差分をまとめてコミットする。
 4. `pnpm run db:check` で `schema.ts` と `migrations/*.sql` のDDL等価性（整合）を検証する。
+   - CI（`drizzle.yaml`）が PR 時に同チェックを実行し、`schema.ts` と `migrations/` の整合を担保する。
 
 ## ローカル/テストDBへの適用
+
+### 自動適用（通常はこちらで完結する）
+
+`migrations/*.sql` の適用は以下の起動・テスト実行時に**自動**で行われるため、
+通常は手動で `db:migrate` を意識する必要はない。
+
+- `pnpm run start`: 起動前に `dev.db` へ自動適用してから dev サーバーを起動する
+- `pnpm run start:e2e`: 起動前に `test.db` へ自動適用してから dev サーバーを起動する
+  （E2E は Playwright の `webServer` がこのコマンドを起動するため、E2E でも自動適用される）
+- `pnpm run test:server`: vitest の `globalSetup` が `file:` の `DATABASE_URL`
+  （既定 `test.db`）へ自動適用してからテストを実行する
+
+いずれも内部で `scripts/apply-migrations.mjs` を呼び出しており、冪等（適用済みはスキップ）
+なので毎回実行しても安全・高速。
+
+### 手動適用（明示的に適用したい場合）
 
 ローカル開発DB(SQLite: `dev.db`)に反映する場合:
 

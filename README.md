@@ -36,13 +36,13 @@ supabase start
 cp .dev.vars.example .dev.vars
 ```
 
-ローカル開発用DB(SQLite: `dev.db`)にマイグレーションを適用
+ローカル開発用DB（miniflare D1）にマイグレーションを適用
 
 ```sh
-pnpm run db:migrate:dev
+pnpm run d1:apply:local
 ```
 
-`DATABASE_URL`を指定した環境（例: CIの`test.db`）に適用する場合は`pnpm run db:migrate`を使う
+テスト用DB（`test.db`）はテスト実行時に自動適用される。手動で適用する場合は`DATABASE_URL`を指定して`pnpm run test:db:migrate`を使う
 
 Cloudflare D1ローカルマイグレーション適用（必要な場合）
 

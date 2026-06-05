@@ -32,7 +32,7 @@
 ### 自動適用（通常はこちらで完結する）
 
 `migrations/*.sql` の適用は以下の起動・テスト実行時に**自動**で行われるため、
-通常は手動で `db:migrate` を意識する必要はない。
+通常は手動で `test:db:migrate` を意識する必要はない。
 
 - `pnpm run e2e`: Playwright の `globalSetup`（`src/test/e2e/globalSetup.ts`）が `test.db` へ
   自動適用する。`webServer`（`react-router dev`）は readiness が DB 非依存のため、
@@ -52,9 +52,9 @@
 
 `DATABASE_URL`（`file:`）で接続先を指定した環境（例: CIの`test.db`）に反映する場合:
 
-1. `pnpm run db:migrate`（`DATABASE_URL` env で接続先を指定）
+1. `pnpm run test:db:migrate`（`DATABASE_URL` env で接続先を指定）
 
-> `db:migrate` は `src/test/setup/apply-migrations.mjs` が `migrations/*.sql` を
+> `test:db:migrate` は `src/test/setup/apply-migrations.mjs` が `migrations/*.sql` を
 > wrangler 互換の `d1_migrations` テーブルで冪等に適用する（適用済みはスキップ）。
 
 ## D1（Cloudflare）への適用

@@ -19,25 +19,8 @@ import { fetchHatenaArticles } from '@/cron/fetch-articles'
 import { closeRdbClient } from '@/infrastructure/rdb'
 import { mockRdbExecutor } from '@/test/__mocks__/rdb'
 
-// INFO: sqlite-proxy のモックは「カラム順の配列」で行を返す。
-// storeArticles は select({ url: articles.url }) と insert(articles).values(...) を実行するため、
-// SQLが select か insert かでモックの戻り行とinsert呼び出し回数を制御する。
-type ProxyMethod = 'run' | 'all' | 'values' | 'get'
-
-function setupExecutor(options: { existingUrls?: string[] } = {}) {
-  const existingUrls = options.existingUrls ?? []
-  mockRdbExecutor.mockImplementation(
-    async (sql: string, _params: unknown[], _method: ProxyMethod) => {
-      if (/^\s*select/i.test(sql)) {
-        // INFO: select({ url: articles.url }) はカラム順の配列（url のみ）で返す
-        return { rows: existingUrls.map((url) => [url]) }
-      }
-      // INFO: insert(articles).values(...) は returning なしのため行は不要
-      return { rows: [] }
-    },
-  )
-}
-
+// storeArticles の呼び出し順: 1)既存URL select 2)記事ごとのinsert（returningなし）。
+// rdbモックの既定は { rows: [] } のため、selectは既存URLなし・insertは行不要で成立する。
 function getInsertCalls() {
   return mockRdbExecutor.mock.calls.filter(([sql]) => /^\s*insert/i.test(sql as string))
 }
@@ -56,7 +39,6 @@ describe('fetchHatenaArticles', () => {
       ok: true,
       text: vi.fn().mockResolvedValue('<rss />'),
     })
-    setupExecutor()
   })
 
   it('creatorが欠損した記事はauthorをフォールバック値で補完する', async () => {
@@ -146,15 +128,10 @@ describe('fetchHatenaArticles', () => {
         },
       ],
     })
-    let insertCount = 0
-    mockRdbExecutor.mockImplementation(async (sql: string) => {
-      if (/^\s*select/i.test(sql)) return { rows: [] }
-      insertCount += 1
-      if (insertCount === 1) {
-        throw new Error('UNIQUE constraint failed: articles.url')
-      }
-      return { rows: [] }
-    })
+    // 呼び出し順: 1)既存URL select 2)1件目insert(UNIQUE違反) 3)2件目insert成功
+    mockRdbExecutor
+      .mockResolvedValueOnce({ rows: [] })
+      .mockRejectedValueOnce(new Error('UNIQUE constraint failed: articles.url'))
 
     const count = await fetchHatenaArticles(env)
 
@@ -163,17 +140,9 @@ describe('fetchHatenaArticles', () => {
   })
 
   it.each([
-    {
-      name: 'NOT NULL制約違反',
-      makeError: () => new Error('NOT NULL constraint failed: articles.title'),
-      expectedCause: 'NOT NULL constraint failed',
-    },
-    {
-      name: '一意制約違反以外のエラー',
-      makeError: () => new Error('disk I/O error'),
-      expectedCause: 'disk I/O error',
-    },
-  ])('$nameは握りつぶさずに送出する', async ({ makeError, expectedCause }) => {
+    { name: 'NOT NULL制約違反', errorMessage: 'NOT NULL constraint failed: articles.title' },
+    { name: '一意制約違反以外のエラー', errorMessage: 'disk I/O error' },
+  ])('$nameは握りつぶさずに送出する', async ({ errorMessage }) => {
     parseStringMock.mockResolvedValue({
       items: [
         {
@@ -184,10 +153,10 @@ describe('fetchHatenaArticles', () => {
         },
       ],
     })
-    mockRdbExecutor.mockImplementation(async (sql: string) => {
-      if (/^\s*select/i.test(sql)) return { rows: [] }
-      throw makeError()
-    })
+    // 呼び出し順: 1)既存URL select 2)insertで対象エラー送出
+    mockRdbExecutor
+      .mockResolvedValueOnce({ rows: [] })
+      .mockRejectedValueOnce(new Error(errorMessage))
 
     // INFO: DrizzleがDrizzleQueryErrorでラップするため、元のエラーは cause に格納される
     const error = await fetchHatenaArticles(env).then(
@@ -196,7 +165,7 @@ describe('fetchHatenaArticles', () => {
     )
     expect(error).toBeInstanceOf(Error)
     const causeMessage = (error as { cause?: { message?: string } }).cause?.message
-    expect(causeMessage).toContain(expectedCause)
+    expect(causeMessage).toContain(errorMessage)
   })
 
   it('contentが欠損した記事は優先順位でdescriptionを補完する', async () => {

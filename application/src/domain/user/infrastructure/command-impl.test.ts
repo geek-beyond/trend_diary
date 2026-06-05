@@ -35,25 +35,17 @@ describe('CommandImpl', () => {
 
   describe('createActiveWithAuthenticationId', () => {
     it('displayName付きでActiveUserを作成できる', async () => {
-      // Arrange: 1回目=usersへのinsert returning, 2回目=active_usersへのinsert returning
-      mockRdbExecutor.mockImplementation(async (sql: string) => {
-        if (sql.includes('insert into "users"')) {
-          return { rows: [buildUserRow(2)] }
-        }
-        if (sql.includes('insert into "active_users"')) {
-          return {
-            rows: [
-              buildActiveUserRow({
-                activeUserId: 1,
-                email: 'test@example.com',
-                displayName: '表示名',
-                authenticationId: 'auth-id-123',
-                userId: 2,
-              }),
-            ],
-          }
-        }
-        return { rows: [] }
+      // Arrange: 呼び出し順 1)users insert returning 2)active_users insert returning
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [buildUserRow(2)] }).mockResolvedValueOnce({
+        rows: [
+          buildActiveUserRow({
+            activeUserId: 1,
+            email: 'test@example.com',
+            displayName: '表示名',
+            authenticationId: 'auth-id-123',
+            userId: 2,
+          }),
+        ],
       })
 
       // Act
@@ -97,25 +89,17 @@ describe('CommandImpl', () => {
     })
 
     it('displayNameなし(null)でもActiveUserを作成できる', async () => {
-      // Arrange
-      mockRdbExecutor.mockImplementation(async (sql: string) => {
-        if (sql.includes('insert into "users"')) {
-          return { rows: [buildUserRow(2)] }
-        }
-        if (sql.includes('insert into "active_users"')) {
-          return {
-            rows: [
-              buildActiveUserRow({
-                activeUserId: 1,
-                email: 'test@example.com',
-                displayName: null,
-                authenticationId: 'auth-id-123',
-                userId: 2,
-              }),
-            ],
-          }
-        }
-        return { rows: [] }
+      // Arrange: 呼び出し順 1)users insert 2)active_users insert
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [buildUserRow(2)] }).mockResolvedValueOnce({
+        rows: [
+          buildActiveUserRow({
+            activeUserId: 1,
+            email: 'test@example.com',
+            displayName: null,
+            authenticationId: 'auth-id-123',
+            userId: 2,
+          }),
+        ],
       })
 
       // Act
@@ -135,12 +119,7 @@ describe('CommandImpl', () => {
 
     it('users作成失敗時にエラーを返す', async () => {
       // Arrange: 1回目のusers insertで失敗
-      mockRdbExecutor.mockImplementation(async (sql: string) => {
-        if (sql.includes('insert into "users"')) {
-          throw new Error('create user failed')
-        }
-        return { rows: [] }
-      })
+      mockRdbExecutor.mockRejectedValueOnce(new Error('create user failed'))
 
       // Act
       const result = await useCase.createActiveWithAuthenticationId(
@@ -167,16 +146,11 @@ describe('CommandImpl', () => {
     })
 
     it('activeUser作成失敗時にエラーを返し、補償としてusersを削除する', async () => {
-      // Arrange: users insertは成功するが active_users insertで失敗する
-      mockRdbExecutor.mockImplementation(async (sql: string) => {
-        if (sql.includes('insert into "users"')) {
-          return { rows: [buildUserRow(2)] }
-        }
-        if (sql.includes('insert into "active_users"')) {
-          throw new Error('create active failed')
-        }
-        return { rows: [] }
-      })
+      // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete成功
+      mockRdbExecutor
+        .mockResolvedValueOnce({ rows: [buildUserRow(2)] })
+        .mockRejectedValueOnce(new Error('create active failed'))
+        .mockResolvedValueOnce({ rows: [] })
 
       // Act
       const result = await useCase.createActiveWithAuthenticationId(
@@ -201,19 +175,11 @@ describe('CommandImpl', () => {
     })
 
     it('activeUser作成失敗かつ補償delete失敗時もServerErrorを返す', async () => {
-      // Arrange: active_users insert失敗 → 補償のusers deleteも失敗する
-      mockRdbExecutor.mockImplementation(async (sql: string) => {
-        if (sql.includes('insert into "users"')) {
-          return { rows: [buildUserRow(2)] }
-        }
-        if (sql.includes('insert into "active_users"')) {
-          throw new Error('create active failed')
-        }
-        if (sql.includes('delete from "users"')) {
-          throw new Error('compensation delete failed')
-        }
-        return { rows: [] }
-      })
+      // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete失敗
+      mockRdbExecutor
+        .mockResolvedValueOnce({ rows: [buildUserRow(2)] })
+        .mockRejectedValueOnce(new Error('create active failed'))
+        .mockRejectedValueOnce(new Error('compensation delete failed'))
 
       // Act
       const result = await useCase.createActiveWithAuthenticationId(

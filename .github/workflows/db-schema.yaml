@@ -9,7 +9,7 @@ on:
       - 'application/src/infrastructure/drizzle-orm/schema.ts'
       - 'application/migrations/**'
       - 'application/drizzle.config.ts'
-      - '.github/workflows/drizzle.yaml'
+      - '.github/workflows/db-schema.yaml'
 
 permissions:
   contents: read

@@ -1,23 +1,9 @@
 import { relations, sql } from 'drizzle-orm'
 import { customType, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-/**
- * ドライバが返す日時値を `Date` へ正規化する。
- *
- * 既存D1本番データには、Prismaが書き込んだISO-8601文字列
- * ("2025-01-01T00:00:00.000Z") と、DEFAULT CURRENT_TIMESTAMP由来の
- * "YYYY-MM-DD HH:MM:SS"（UTC）形式が混在しうる。さらに過去のデータでは
- * epochミリ秒(integer)が格納されている可能性もある（生SQL経路では bigint で返りうる）。
- *
- * - number / bigint: epochミリ秒として解釈する。
- * - タイムゾーン付き文字列(ISO-8601): そのまま `Date` で解釈する。
- * - "YYYY-MM-DD HH:MM:SS"(CURRENT_TIMESTAMP由来のUTC): Tを補い末尾Zを付けてUTCとして解釈する。
- *
- * クエリビルダ経路(customType.fromDriver)と生SQL経路(db.all)の両方で
- * 同一の正規化を共有し、ローカル/devなど非UTC環境でも返る `Date` がずれないようにする。
- *
- * @see src/domain/article/infrastructure/query-impl.ts の getNormalizedDateTimeSql()
- */
+// 既存D1本番データには Prisma の ISO-8601 文字列、CURRENT_TIMESTAMP 由来の
+// "YYYY-MM-DD HH:MM:SS"(UTC・TZなし)、過去の epochミリ秒(integer) が混在しうる。
+// TZなし形式は末尾Zを補ってUTC解釈しないと、非UTC環境で Date がずれる。
 export function normalizePrismaDateTime(value: string | number | bigint): Date {
   if (typeof value === 'number' || typeof value === 'bigint') {
     return new Date(Number(value))
@@ -29,12 +15,6 @@ export function normalizePrismaDateTime(value: string | number | bigint): Date {
   return new Date(value)
 }
 
-/**
- * Prisma互換のDateTimeカラム型。
- *
- * - 読み込み: `normalizePrismaDateTime` でいずれの形式の値も `Date` に正規化する。
- * - 書き込み: Prismaと同じISO-8601形式の文字列で書き込む。
- */
 const prismaDateTime = customType<{
   data: Date
   driverData: string | number

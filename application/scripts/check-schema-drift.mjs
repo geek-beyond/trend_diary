@@ -17,22 +17,19 @@ const DRIZZLE_KIT_BIN = join(APP_DIR, 'node_modules', '.bin', 'drizzle-kit')
 
 const EXCLUDED_TABLES = new Set(['d1_migrations', 'sqlite_sequence'])
 
-/** 標準出力に1行書き出す。 */
 function logInfo(message) {
   process.stdout.write(`${message}\n`)
 }
 
-/** 標準エラー出力に1行書き出す。 */
 function logError(message) {
   process.stderr.write(`${message}\n`)
 }
 
-/** FK 参照先テーブル名の `_new` サフィックスを除去する（0002 のテーブル再作成由来）。 */
+// FK 参照先テーブル名の `_new` サフィックスを除去する（0002 のテーブル再作成由来）。
 function normalizeTableName(name) {
   return name.endsWith('_new') ? name.slice(0, -'_new'.length) : name
 }
 
-/** migrations/*.sql を一時 DB に適用する（apply-migrations.mjs を子プロセス実行）。 */
 function applyMigrations(dbPath) {
   execFileSync('node', [APPLY_MIGRATIONS_SCRIPT], {
     cwd: APP_DIR,
@@ -41,7 +38,6 @@ function applyMigrations(dbPath) {
   })
 }
 
-/** drizzle-kit export で schema.ts から DDL を取得する。 */
 function exportDrizzleDdl() {
   const output = execFileSync(
     DRIZZLE_KIT_BIN,
@@ -55,7 +51,6 @@ function exportDrizzleDdl() {
   return output
 }
 
-/** 比較対象のユーザーテーブル名の一覧を取得する。 */
 async function listTables(client) {
   const result = await client.execute(
     "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name;",
@@ -65,7 +60,6 @@ async function listTables(client) {
     .filter((name) => !EXCLUDED_TABLES.has(name) && !name.startsWith('sqlite_'))
 }
 
-/** 1テーブル分の物理スキーマを PRAGMA で取得し、正規化して返す。 */
 async function dumpTable(client, tableName) {
   const columnsResult = await client.execute(`PRAGMA table_info("${tableName}");`)
   // cid は宣言順に依存し本質的でないため除外する。
@@ -112,7 +106,6 @@ async function dumpTable(client, tableName) {
   return { columns, foreignKeys, indexes }
 }
 
-/** DB 全体の正規化スキーマを取得する。 */
 async function dumpSchema(client) {
   const tables = await listTables(client)
   const schema = {}
@@ -122,7 +115,6 @@ async function dumpSchema(client) {
   return schema
 }
 
-/** 2つのスキーマダンプの差分を行配列で返す（空なら一致）。 */
 function diffSchemas(migrationsSchema, drizzleSchema) {
   const diffs = []
   const migrationTables = Object.keys(migrationsSchema).sort()
@@ -150,7 +142,6 @@ function diffSchemas(migrationsSchema, drizzleSchema) {
   return diffs
 }
 
-/** 各行に指定スペースのインデントを付ける。 */
 function indent(text, spaces) {
   const pad = ' '.repeat(spaces)
   return text

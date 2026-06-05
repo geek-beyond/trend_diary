@@ -17,17 +17,14 @@ const CREATE_MIGRATIONS_TABLE = `CREATE TABLE IF NOT EXISTS ${MIGRATIONS_TABLE}(
   applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );`
 
-/** 標準出力に1行書き出す。 */
 function logInfo(message) {
   process.stdout.write(`${message}\n`)
 }
 
-/** 標準エラー出力に1行書き出す。 */
 function logError(message) {
   process.stderr.write(`${message}\n`)
 }
 
-/** DATABASE_URL を検証して url を返す（file: 形式のみ許可）。 */
 function resolveDatabaseUrl() {
   const databaseUrl = process.env.DATABASE_URL
   if (!databaseUrl) {
@@ -41,19 +38,17 @@ function resolveDatabaseUrl() {
   return databaseUrl
 }
 
-/** migrations ディレクトリ内の *.sql ファイル名を辞書順で返す。 */
 function listMigrationFiles() {
   return readdirSync(MIGRATIONS_DIR)
     .filter((name) => name.endsWith('.sql'))
     .sort((a, b) => a.localeCompare(b))
 }
 
-/** SQL に PRAGMA 文が含まれるかを判定する（含む場合は tx 外で適用する）。 */
 function containsPragma(sql) {
   return /^\s*PRAGMA\b/im.test(sql)
 }
 
-/** 1ファイルを適用する。PRAGMA 非含有なら tx で包み、途中失敗時の半適用を防ぐ。 */
+// PRAGMA は tx 内で効かないため tx 外で適用する。それ以外は tx で包み半適用を防ぐ。
 async function applyMigrationFile(client, sql) {
   if (containsPragma(sql)) {
     await client.executeMultiple(sql)

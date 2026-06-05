@@ -50,11 +50,9 @@ async function deleteAuthUsersByEmailPattern(emailPattern: string): Promise<void
   }
 }
 
-// ActiveUser生成関数（実DBに作成）
 async function createActiveUser(email: string, authenticationId: string): Promise<ActiveUser> {
   const db = getTestRdb()
 
-  // 実際のDBにユーザーを作成
   const [user] = await db.insert(users).values({}).returning()
 
   const [activeUser] = await db
@@ -95,9 +93,6 @@ export type CleanUpIds = {
   authIds: string[]
 }
 
-/**
- * テスト用ユーザーを作成する（Supabase Auth + DB）
- */
 export async function create(email: string, password: string): Promise<CreateResult> {
   const client = getSupabase()
   const db = getTestRdb()
@@ -144,10 +139,7 @@ export async function create(email: string, password: string): Promise<CreateRes
   }
 }
 
-/**
- * Hono経由でログインしてセッション情報を取得する
- * Set-Cookieヘッダーも返すので、後続のリクエストに使用できる
- */
+// Set-Cookie ヘッダーも返すので後続リクエストに使用できる。
 export async function login(email: string, password: string): Promise<LoginResult> {
   const db = getTestRdb()
 
@@ -189,17 +181,11 @@ export async function login(email: string, password: string): Promise<LoginResul
   }
 }
 
-/**
- * ログアウトする
- */
 export async function logout(): Promise<void> {
   const client = getSupabase()
   await client.auth.signOut()
 }
 
-/**
- * テストデータをクリーンアップする（指定したIDのみ削除）
- */
 export async function cleanUp(ids: CleanUpIds): Promise<void> {
   const db = getTestRdb()
 
@@ -223,10 +209,7 @@ export async function cleanUp(ids: CleanUpIds): Promise<void> {
   }
 }
 
-/**
- * テスト用メールパターンのユーザーを全て削除する（APIテスト用）
- * signup API などで直接作成されたユーザーもクリーンアップ可能
- */
+// signup API などで直接作成されたユーザー(ActiveUser なし)もクリーンアップする。
 export async function cleanUpByEmailPattern(emailPattern: string): Promise<void> {
   const db = getTestRdb()
 

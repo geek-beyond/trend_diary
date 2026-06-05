@@ -111,13 +111,8 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
   return result.value
 }
 
-/**
- * 一意制約違反エラーかどうかを、D1/SQLite共通のメッセージ 'UNIQUE constraint failed' で判定する。
- *
- * DrizzleはドライバエラーをDrizzleQueryErrorでラップし元エラーを`cause`に格納するため、
- * `cause`チェーンを辿りいずれかの階層が一意制約違反であればtrueを返す。
- * NOT NULL等の他の制約違反は重複ではないため判定対象外（呼び出し側で送出させる）。
- */
+// Drizzle はドライバエラーを DrizzleQueryError でラップし元エラーを cause に格納するため、
+// cause チェーンを辿って 'UNIQUE constraint failed'(D1/SQLite共通)を探す。
 function isUniqueConstraintError(error: unknown): boolean {
   let current: unknown = error
   for (let depth = 0; depth < 5 && current != null; depth += 1) {

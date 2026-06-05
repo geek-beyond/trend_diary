@@ -37,24 +37,10 @@ type RdbConfig = {
 
 type RdbInput = string | RdbConfig
 
-/**
- * libsql / D1 双方のDrizzleインスタンスを共通に扱う型。
- *
- * `drizzle-orm/libsql` の `LibSQLDatabase`、`drizzle-orm/d1` の `DrizzleD1Database`、
- * さらにテスト用の `drizzle-orm/sqlite-proxy`（`SqliteRemoteDatabase`）は
- * いずれも `BaseSQLiteDatabase<'async', ...>` を継承する。結果セット型のみが
- * ドライバごとに異なるため、結果セット型を `unknown` にした共通基底型を
- * `RdbClient` として公開する。
- *
- * この型でクエリビルダ（select/insert/update/delete）、`db.all(sql\`...\`)`、
- * リレーショナルクエリ（`db.query.activeUsers.findFirst(...)`）を型安全に呼び出せる。
- */
+// libsql / D1 / sqlite-proxy(テスト) は結果セット型のみ異なるため、結果セット型を
+// unknown にした共通基底型を RdbClient として扱う。
 export type RdbClient = BaseSQLiteDatabase<'async', unknown, typeof schema>
 
-/**
- * libsql ドライバのDrizzleインスタンス（`$client` で生のlibsqlクライアントにアクセス可能）。
- * `closeRdbClient` での接続クローズ判定に使用する。
- */
 type RdbLibSQLClient = LibSQLDatabase<typeof schema> & {
   // biome-ignore lint/style/useNamingConvention: drizzleが公開する `$client` プロパティ名に合わせる
   $client: { close: () => void }
@@ -70,13 +56,8 @@ const VALID_LOG_LEVELS: ReadonlyArray<LogLevel> = [
   'silent',
 ]
 
-/**
- * `LOG_LEVEL` 環境変数を解決する。未設定/不正値の場合は本番想定の `info` を既定とする。
- *
- * `info` 既定により、クエリログ（debug）は `LOG_LEVEL=debug`（または `trace`）が
- * 明示的に指定されたときだけ出力される。これによりPII（email等）を含むSQL paramsが
- * 本番で常時ログ出力される事故を防ぐ。
- */
+// 既定を info にすることで、PII(email等)を含むクエリログ(debug)は LOG_LEVEL=debug/trace
+// を明示したときだけ出力され、本番で常時ログ出力される事故を防ぐ。
 function resolveLogLevel(): LogLevel {
   const candidate = process.env.LOG_LEVEL?.trim()
   return VALID_LOG_LEVELS.includes(candidate as LogLevel) ? (candidate as LogLevel) : 'info'
@@ -84,13 +65,6 @@ function resolveLogLevel(): LogLevel {
 
 let drizzleLogger: AppLogger | undefined
 
-/**
- * drizzle コンポーネント用の `AppLogger` を遅延生成して返すシングルトン。
- *
- * レベルは `resolveLogLevel()`（既定 `info`）で決定し、`AppLogger`（pino）の
- * レベルフィルタに出力可否を委譲する。`debug` ログはレベルが `debug`/`trace` の
- * ときだけ実出力される。
- */
 function getDrizzleLogger(): AppLogger {
   if (!drizzleLogger) {
     drizzleLogger = new AppLogger(resolveLogLevel(), { component: 'drizzle' })
@@ -98,17 +72,8 @@ function getDrizzleLogger(): AppLogger {
   return drizzleLogger
 }
 
-/**
- * Drizzle の `logger` オプションに渡す構造化ロガー。
- *
- * Drizzle の logger はSQLクエリログのみを扱う。クエリの `params` には email 等の
- * PII が含まれ得るため、本番（`LOG_LEVEL` 未設定 = `info`）では出力させない。
- *
- * 出力ゲートは `AppLogger`（pino）のレベルフィルタに委譲する。`AppLogger` は
- * コンストラクタで受け取ったレベルを pino の `level` に設定し、それ未満のログを
- * pino 自身がドロップする。そのため、解決した `LOG_LEVEL` を AppLogger に渡せば、
- * `LOG_LEVEL` が `debug`/`trace` のときだけ `logQuery` の debug ログが実出力される。
- */
+// クエリの params には email 等の PII が含まれ得るため、出力ゲートを AppLogger(pino) の
+// レベルフィルタに委譲し、debug ログは LOG_LEVEL=debug/trace のときだけ実出力させる。
 class DrizzleQueryLogger implements DrizzleLogger {
   logQuery(query: string, params: unknown[]): void {
     getDrizzleLogger().debug({ msg: 'drizzle query', query, params })
@@ -117,14 +82,6 @@ class DrizzleQueryLogger implements DrizzleLogger {
 
 let queryLogger: DrizzleLogger | undefined
 
-/**
- * Drizzle に渡すロガーを解決する。
- *
- * - テスト環境（`NODE_ENV === 'test'`）: クエリログを完全に無効化（`false`）する。
- * - それ以外: 遅延生成したシングルトンの `DrizzleQueryLogger` を返す。実際に
- *   クエリログが出力されるかは `LOG_LEVEL`（既定 `info`）に依存し、`debug`/`trace`
- *   のときのみ出力される。
- */
 function resolveLogger(isTest: boolean): DrizzleLogger | false {
   if (isTest) return false
   if (!queryLogger) {
@@ -133,17 +90,6 @@ function resolveLogger(isTest: boolean): DrizzleLogger | false {
   return queryLogger
 }
 
-/**
- * RDBクライアント（Drizzle）を生成する。
- *
- * 接続先の解決優先順位は移行前（Prisma実装）と完全に同一:
- * - 文字列入力（明示指定）は最優先で、その値を `databaseUrl` として扱う。
- * - オブジェクト入力では `process.env.DATABASE_URL` を優先し、E2E時の不一致を防ぐ。
- * - `file:` で始まるURLは D1 バインディングより優先する（ローカル/テスト用SQLite）。
- *
- * - `file:` URL  → `drizzle-orm/libsql`（`@libsql/client`）
- * - D1 バインディング → `drizzle-orm/d1`
- */
 export default function getRdbClient(input: RdbInput): RdbClient {
   const isTest = process.env.NODE_ENV === 'test'
   const isStringInput = typeof input === 'string'
@@ -191,20 +137,8 @@ export default function getRdbClient(input: RdbInput): RdbClient {
   })
 }
 
-/**
- * libsql クライアントの接続を閉じる。
- *
- * - libsql: `$client.close()` を呼び出して接続を解放する。
- * - D1 / その他($clientを持たないインスタンス): 明示的なクローズは不要のため no-op。
- *
- * `RdbClient` は共通基底型のため `$client` を直接持たない。実体が libsql の場合のみ
- * `$client.close` が存在するので、型ガードで安全に分岐する。
- *
- * クローズ失敗は握りつぶす（warnログのみ）。本関数は `wrapAsyncCall` の cleanup として
- * `finally` 経由で呼ばれる（cron `storeArticles`）ため、ここで例外を送出すると業務処理の
- * 結果（成功/本来のエラー）を上書きして外へ漏れてしまう。接続クローズの失敗で業務処理を
- * 失敗させないため、例外は捕捉してログに留める。
- */
+// wrapAsyncCall の cleanup(finally)として呼ばれる(cron storeArticles)。ここで例外を送出すると
+// 業務処理の結果を上書きして漏れるため、クローズ失敗は捕捉して warn ログに留める。
 export function closeRdbClient(db: RdbClient): void {
   if (!hasClosableClient(db)) return
 
@@ -215,9 +149,6 @@ export function closeRdbClient(db: RdbClient): void {
   }
 }
 
-/**
- * 実体が libsql ドライバのインスタンス（`$client.close` を持つ）かを判定する型ガード。
- */
 function hasClosableClient(db: RdbClient): db is RdbClient & RdbLibSQLClient {
   const candidate = db as Partial<RdbLibSQLClient>
   return (

@@ -10,10 +10,6 @@ const APPLY_MIGRATIONS_SCRIPT = fileURLToPath(
   new URL('../../../../scripts/apply-migrations.mjs', import.meta.url),
 )
 
-/**
- * file: 形式の DATABASE_URL に対して migrations を自動適用する。
- * scripts/apply-migrations.mjs を子プロセスで実行して冪等に適用する。
- */
 function applyMigrations(): void {
   const databaseUrl = process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL
 

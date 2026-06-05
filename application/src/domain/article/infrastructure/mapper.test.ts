@@ -1,12 +1,12 @@
-import { Article as PrismaArticle } from '@prisma/client'
 import { describe, expect, it } from 'vitest'
-import fromPrismaToArticle from './mapper'
+import type { Article as RdbArticle } from '@/infrastructure/drizzle-orm/schema'
+import fromRdbToArticle from './mapper'
 
-describe('fromPrismaToArticle', () => {
+describe('fromRdbToArticle', () => {
   // テストデータ作成ヘルパー
-  const createMockPrismaArticle = (
-    overrides: Partial<Record<keyof PrismaArticle, unknown>> = {},
-  ): PrismaArticle => {
+  const createMockRdbArticle = (
+    overrides: Partial<Record<keyof RdbArticle, unknown>> = {},
+  ): RdbArticle => {
     return {
       articleId: 1n,
       media: 'Qiita',
@@ -16,49 +16,49 @@ describe('fromPrismaToArticle', () => {
       url: 'https://example.com/article/1',
       createdAt: new Date('2024-01-15T09:30:00Z'),
       ...overrides,
-    } as unknown as PrismaArticle
+    } as unknown as RdbArticle
   }
 
   describe('基本動作', () => {
     it('標準的なArticleデータで全フィールドが正確にマッピングされること', () => {
       // Arrange
-      const prismaArticle = createMockPrismaArticle()
+      const rdbArticle = createMockRdbArticle()
 
       // Act
-      const result = fromPrismaToArticle(prismaArticle)
+      const result = fromRdbToArticle(rdbArticle)
 
       // Assert
       expect(result).toBeDefined()
-      expect(result.articleId).toBe(prismaArticle.articleId)
-      expect(result.media).toBe(prismaArticle.media)
-      expect(result.title).toBe(prismaArticle.title)
-      expect(result.author).toBe(prismaArticle.author)
-      expect(result.description).toBe(prismaArticle.description)
-      expect(result.url).toBe(prismaArticle.url)
-      expect(result.createdAt).toEqual(prismaArticle.createdAt)
+      expect(result.articleId).toBe(rdbArticle.articleId)
+      expect(result.media).toBe(rdbArticle.media)
+      expect(result.title).toBe(rdbArticle.title)
+      expect(result.author).toBe(rdbArticle.author)
+      expect(result.description).toBe(rdbArticle.description)
+      expect(result.url).toBe(rdbArticle.url)
+      expect(result.createdAt).toEqual(rdbArticle.createdAt)
     })
 
-    it('結果オブジェクトがPrismaオブジェクトとは独立したArticleインスタンスであること', () => {
+    it('結果オブジェクトがRdbオブジェクトとは独立したArticleインスタンスであること', () => {
       // Arrange
-      const prismaArticle = createMockPrismaArticle()
+      const rdbArticle = createMockRdbArticle()
 
       // Act
-      const result = fromPrismaToArticle(prismaArticle)
+      const result = fromRdbToArticle(rdbArticle)
 
       // Assert - インスタンス独立性の確認
-      expect(result).not.toBe(prismaArticle)
+      expect(result).not.toBe(rdbArticle)
       expect(result).toBeDefined()
 
       // Dateオブジェクトは同じ参照を持つ（mapperの実装仕様）
-      expect(result.createdAt).toBe(prismaArticle.createdAt)
+      expect(result.createdAt).toBe(rdbArticle.createdAt)
 
       // プリミティブ値は値で比較される
-      expect(result.articleId).toBe(prismaArticle.articleId)
-      expect(result.media).toBe(prismaArticle.media)
-      expect(result.title).toBe(prismaArticle.title)
-      expect(result.author).toBe(prismaArticle.author)
-      expect(result.description).toBe(prismaArticle.description)
-      expect(result.url).toBe(prismaArticle.url)
+      expect(result.articleId).toBe(rdbArticle.articleId)
+      expect(result.media).toBe(rdbArticle.media)
+      expect(result.title).toBe(rdbArticle.title)
+      expect(result.author).toBe(rdbArticle.author)
+      expect(result.description).toBe(rdbArticle.description)
+      expect(result.url).toBe(rdbArticle.url)
     })
   })
 
@@ -90,10 +90,10 @@ describe('fromPrismaToArticle', () => {
       bigintTestCases.forEach(({ name, articleId }) => {
         it(`${name}`, () => {
           // Arrange
-          const prismaArticle = createMockPrismaArticle({ articleId })
+          const rdbArticle = createMockRdbArticle({ articleId })
 
           // Act
-          const result = fromPrismaToArticle(prismaArticle)
+          const result = fromRdbToArticle(rdbArticle)
 
           // Assert
           expect(result.articleId).toBe(articleId)
@@ -169,7 +169,7 @@ describe('fromPrismaToArticle', () => {
       stringConstraintTestCases.forEach(({ name, media, title, author, description, url }) => {
         it(`${name}`, () => {
           // Arrange
-          const prismaArticle = createMockPrismaArticle({
+          const rdbArticle = createMockRdbArticle({
             media,
             title,
             author,
@@ -178,7 +178,7 @@ describe('fromPrismaToArticle', () => {
           })
 
           // Act
-          const result = fromPrismaToArticle(prismaArticle)
+          const result = fromRdbToArticle(rdbArticle)
 
           // Assert
           expect(result.media).toBe(media)
@@ -187,7 +187,7 @@ describe('fromPrismaToArticle', () => {
           expect(result.description).toBe(description)
           expect(result.url).toBe(url)
 
-          // 文字列長制約の確認（Prismaスキーマに基づく）
+          // 文字列長制約の確認（スキーマに基づく）
           expect(result.media.length).toBeLessThanOrEqual(10)
           expect(result.title.length).toBeLessThanOrEqual(100)
           expect(result.author.length).toBeLessThanOrEqual(30)
@@ -224,10 +224,10 @@ describe('fromPrismaToArticle', () => {
       dateTestCases.forEach(({ name, createdAt }) => {
         it(`${name}`, () => {
           // Arrange
-          const prismaArticle = createMockPrismaArticle({ createdAt })
+          const rdbArticle = createMockRdbArticle({ createdAt })
 
           // Act
-          const result = fromPrismaToArticle(prismaArticle)
+          const result = fromRdbToArticle(rdbArticle)
 
           // Assert
           expect(result.createdAt).toEqual(createdAt)
@@ -250,13 +250,13 @@ describe('fromPrismaToArticle', () => {
         const specialMedia = 'Qiita-Tech.io'
         const specialUrl =
           'https://qiita.com/users/test+tag/items/article-title_123?page=1&sort=popular#section-1'
-        const prismaArticle = createMockPrismaArticle({
+        const rdbArticle = createMockRdbArticle({
           media: specialMedia,
           url: specialUrl,
         })
 
         // Act
-        const result = fromPrismaToArticle(prismaArticle)
+        const result = fromRdbToArticle(rdbArticle)
 
         // Assert
         expect(result.media).toBe(specialMedia)
@@ -275,13 +275,13 @@ describe('fromPrismaToArticle', () => {
         // Arrange
         const unicodeTitle = 'TypeScript🚀の型安全性について'
         const unicodeDescription = 'この記事では📝TypeScriptの型安全性について解説します'
-        const prismaArticle = createMockPrismaArticle({
+        const rdbArticle = createMockRdbArticle({
           title: unicodeTitle,
           description: unicodeDescription,
         })
 
         // Act
-        const result = fromPrismaToArticle(prismaArticle)
+        const result = fromRdbToArticle(rdbArticle)
 
         // Assert
         expect(result.title).toBe(unicodeTitle)
@@ -299,12 +299,12 @@ describe('fromPrismaToArticle', () => {
         // Arrange
         // PostgreSQL bigintの最大値は 9223372036854775807
         const nearMaxBigInt = 9223372036854775806n
-        const prismaArticle = createMockPrismaArticle({
+        const rdbArticle = createMockRdbArticle({
           articleId: nearMaxBigInt,
         })
 
         // Act
-        const result = fromPrismaToArticle(prismaArticle)
+        const result = fromRdbToArticle(rdbArticle)
 
         // Assert
         expect(result.articleId).toBe(nearMaxBigInt)
@@ -316,12 +316,12 @@ describe('fromPrismaToArticle', () => {
       it('ミリ秒境界でのDate型マッピング精度テスト', () => {
         // Arrange
         const preciseDate = new Date('2024-01-15T09:30:15.999Z')
-        const prismaArticle = createMockPrismaArticle({
+        const rdbArticle = createMockRdbArticle({
           createdAt: preciseDate,
         })
 
         // Act
-        const result = fromPrismaToArticle(prismaArticle)
+        const result = fromRdbToArticle(rdbArticle)
 
         // Assert
         expect(result.createdAt.getTime()).toBe(preciseDate.getTime())

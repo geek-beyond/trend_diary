@@ -1,4 +1,4 @@
-import getRdbClient, { RdbClient } from '@/infrastructure/rdb'
+import getRdbClient, { closeRdbClient, type RdbClient } from '@/infrastructure/rdb'
 import TEST_ENV from '@/test/env'
 
 // テスト環境であることを明示
@@ -13,9 +13,9 @@ export function getTestRdb(): RdbClient {
   return rdb
 }
 
-export async function disconnectTestRdb(): Promise<void> {
+export function disconnectTestRdb(): void {
   if (rdb) {
-    await rdb.$disconnect()
+    closeRdbClient(rdb)
     rdb = null
   }
 }

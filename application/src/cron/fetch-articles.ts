@@ -1,7 +1,9 @@
+import { inArray } from 'drizzle-orm'
 import Parser from 'rss-parser'
 import { wrapAsyncCall } from '@/common/result'
 import type { ArticleMedia } from '@/domain/article/media'
-import getRdbClient from '@/infrastructure/rdb'
+import { articles } from '@/infrastructure/drizzle-orm/schema'
+import getRdbClient, { closeRdbClient } from '@/infrastructure/rdb'
 
 type CronEnv = {
   DB: D1Database
@@ -65,16 +67,15 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
         url: item.url,
       }))
 
-      const existing = await db.article.findMany({
-        where: {
-          url: {
-            in: normalized.map((item) => item.url),
-          },
-        },
-        select: {
-          url: true,
-        },
-      })
+      const existing = await db
+        .select({ url: articles.url })
+        .from(articles)
+        .where(
+          inArray(
+            articles.url,
+            normalized.map((item) => item.url),
+          ),
+        )
 
       const existingUrlSet = new Set(existing.map((item) => item.url))
       const feedUrlSet = new Set<string>()
@@ -91,9 +92,8 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
       let insertedCount = 0
       for (const article of toInsert) {
         try {
-          await db.article.create({
-            data: article,
-          })
+          // INFO: D1互換のため記事は1件ずつ保存する
+          await db.insert(articles).values(article)
           insertedCount += 1
         } catch (error) {
           if (isUniqueConstraintError(error)) continue
@@ -103,7 +103,7 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
 
       return insertedCount
     },
-    () => db.$disconnect(),
+    () => closeRdbClient(db),
   )
   if (result.isErr()) {
     throw result.error
@@ -111,10 +111,47 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
   return result.value
 }
 
+/**
+ * 一意制約(UNIQUE / PRIMARY KEY)違反エラーかどうかを判定する。
+ *
+ * Drizzle移行に伴いドライバ別のエラー形式に対応する:
+ * - libsql(`LibsqlError`): `code` が 'SQLITE_CONSTRAINT_UNIQUE' /
+ *   'SQLITE_CONSTRAINT_PRIMARYKEY' のいずれか。
+ * - D1: `code` を持たず、メッセージに 'UNIQUE constraint failed' を含む `Error`。
+ *
+ * NOT NULL / FOREIGN KEY / CHECK など他の制約違反は重複ではないため、
+ * これらは判定対象に含めず呼び出し側で送出させる(握りつぶさない)。
+ *
+ * さらにDrizzleはクエリ実行時の例外を `DrizzleQueryError` でラップし、
+ * 元のドライバエラーを `cause` に格納する。そのため `cause` チェーンを辿って
+ * いずれかの階層が一意制約違反であれば true を返す。
+ */
+const UNIQUE_CONSTRAINT_CODES = new Set([
+  'SQLITE_CONSTRAINT_UNIQUE',
+  'SQLITE_CONSTRAINT_PRIMARYKEY',
+])
+
 function isUniqueConstraintError(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null) return false
-  const errorWithCode = error as { code?: unknown }
-  return errorWithCode.code === 'P2002'
+  let current: unknown = error
+  // INFO: DrizzleのDrizzleQueryErrorラップに備えて cause チェーンを辿る
+  for (let depth = 0; depth < 5 && current != null; depth += 1) {
+    if (typeof current === 'object') {
+      const candidate = current as { code?: unknown; message?: unknown; cause?: unknown }
+      if (typeof candidate.code === 'string' && UNIQUE_CONSTRAINT_CODES.has(candidate.code)) {
+        return true
+      }
+      if (
+        typeof candidate.message === 'string' &&
+        candidate.message.includes('UNIQUE constraint failed')
+      ) {
+        return true
+      }
+      current = candidate.cause
+    } else {
+      break
+    }
+  }
+  return false
 }
 
 export async function fetchQiitaArticles(env: CronEnv): Promise<number> {

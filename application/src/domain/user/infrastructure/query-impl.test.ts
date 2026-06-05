@@ -1,13 +1,50 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import prisma from '@/test/__mocks__/prisma'
+import { ServerError } from '@/common/errors'
+import getRdbClient, { mockRdbExecutor } from '@/test/__mocks__/rdb'
 import QueryImpl from './query-impl'
+
+vi.mock('@/infrastructure/rdb')
 
 describe('QueryImpl', () => {
   let useCase: QueryImpl
 
+  // INFO: Drizzleのselectは「カラム順の配列」で行を返す
+  // 並び順: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
+  const buildActiveUserRow = (
+    overrides: Partial<{
+      activeUserId: number
+      email: string
+      displayName: string | null
+      authenticationId: string | null
+      createdAt: string
+      updatedAt: string
+      userId: number
+    }> = {},
+  ): unknown[] => {
+    const data = {
+      activeUserId: 1,
+      email: 'test@example.com',
+      displayName: 'テストユーザー',
+      authenticationId: null,
+      createdAt: '2024-01-15T09:30:00.000Z',
+      updatedAt: '2024-01-15T09:30:00.000Z',
+      userId: 2,
+      ...overrides,
+    }
+    return [
+      data.activeUserId,
+      data.email,
+      data.displayName,
+      data.authenticationId,
+      data.createdAt,
+      data.updatedAt,
+      data.userId,
+    ]
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
-    useCase = new QueryImpl(prisma)
+    useCase = new QueryImpl(getRdbClient('file::memory:'))
   })
 
   describe('findActiveById', () => {
@@ -15,18 +52,7 @@ describe('QueryImpl', () => {
       it('ActiveUserをIDで検索できる', async () => {
         // Arrange
         const activeUserId = 1n
-
-        const mockActiveUserData = {
-          activeUserId: 1,
-          userId: 2,
-          email: 'test@example.com',
-          displayName: 'テストユーザー',
-          authenticationId: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-
-        prisma.activeUser.findUnique.mockResolvedValue(mockActiveUserData)
+        mockRdbExecutor.mockResolvedValue({ rows: [buildActiveUserRow()] })
 
         // Act
         const result = await useCase.findActiveById(activeUserId)
@@ -37,7 +63,12 @@ describe('QueryImpl', () => {
           expect(result.value?.activeUserId).toBe(1n)
           expect(result.value?.email).toBe('test@example.com')
         }
-        expect(prisma.activeUser.findUnique).toHaveBeenCalled()
+        expect(mockRdbExecutor).toHaveBeenCalled()
+        const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
+        expect(sql).toContain('select')
+        expect(sql).toContain('"active_users"')
+        expect(sql).toContain('"active_user_id" = ?')
+        expect(params).toContain(1)
       })
     })
 
@@ -45,7 +76,7 @@ describe('QueryImpl', () => {
       it('存在しないActiveUserの場合nullを返す', async () => {
         // Arrange
         const activeUserId = 999n
-        prisma.activeUser.findUnique.mockResolvedValue(null)
+        mockRdbExecutor.mockResolvedValue({ rows: [] })
 
         // Act
         const result = await useCase.findActiveById(activeUserId)
@@ -63,7 +94,7 @@ describe('QueryImpl', () => {
         // Arrange
         const activeUserId = 1n
         const dbError = new Error('Database connection failed')
-        prisma.activeUser.findUnique.mockRejectedValue(dbError)
+        mockRdbExecutor.mockRejectedValue(dbError)
 
         // Act
         const result = await useCase.findActiveById(activeUserId)
@@ -71,6 +102,9 @@ describe('QueryImpl', () => {
         // Assert
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
+          // INFO: DBエラー時はServerErrorとして返却される
+          expect(result.error).toBeInstanceOf(ServerError)
+          // INFO: DrizzleQueryErrorのcauseから元ドライバメッセージが伝播すること
           expect(result.error.message).toBe('Database connection failed')
         }
       })
@@ -82,18 +116,7 @@ describe('QueryImpl', () => {
       it('ActiveUserをメールアドレスで検索できる', async () => {
         // Arrange
         const email = 'test@example.com'
-
-        const mockActiveUserData = {
-          activeUserId: 1,
-          userId: 2,
-          email,
-          displayName: 'テストユーザー',
-          authenticationId: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-
-        prisma.activeUser.findUnique.mockResolvedValue(mockActiveUserData)
+        mockRdbExecutor.mockResolvedValue({ rows: [buildActiveUserRow({ email })] })
 
         // Act
         const result = await useCase.findActiveByEmail(email)
@@ -104,7 +127,11 @@ describe('QueryImpl', () => {
           expect(result.value?.email).toBe(email)
           expect(result.value?.activeUserId).toBe(1n)
         }
-        expect(prisma.activeUser.findUnique).toHaveBeenCalled()
+        expect(mockRdbExecutor).toHaveBeenCalled()
+        const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
+        expect(sql).toContain('select')
+        expect(sql).toContain('"email" = ?')
+        expect(params).toContain(email)
       })
     })
 
@@ -112,7 +139,7 @@ describe('QueryImpl', () => {
       it('存在しないメールアドレスの場合nullを返す', async () => {
         // Arrange
         const email = 'notfound@example.com'
-        prisma.activeUser.findUnique.mockResolvedValue(null)
+        mockRdbExecutor.mockResolvedValue({ rows: [] })
 
         // Act
         const result = await useCase.findActiveByEmail(email)
@@ -130,7 +157,7 @@ describe('QueryImpl', () => {
         // Arrange
         const email = 'test@example.com'
         const dbError = new Error('Database connection failed')
-        prisma.activeUser.findUnique.mockRejectedValue(dbError)
+        mockRdbExecutor.mockRejectedValue(dbError)
 
         // Act
         const result = await useCase.findActiveByEmail(email)
@@ -138,6 +165,9 @@ describe('QueryImpl', () => {
         // Assert
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
+          // INFO: DBエラー時はServerErrorとして返却される
+          expect(result.error).toBeInstanceOf(ServerError)
+          // INFO: DrizzleQueryErrorのcauseから元ドライバメッセージが伝播すること
           expect(result.error.message).toBe('Database connection failed')
         }
       })
@@ -149,18 +179,9 @@ describe('QueryImpl', () => {
       it('ActiveUserを認証IDで検索できる', async () => {
         // Arrange
         const authenticationId = 'auth-id-123'
-
-        const mockActiveUserData = {
-          activeUserId: 1,
-          userId: 2,
-          email: 'test@example.com',
-          displayName: 'テストユーザー',
-          authenticationId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-
-        prisma.activeUser.findUnique.mockResolvedValue(mockActiveUserData)
+        mockRdbExecutor.mockResolvedValue({
+          rows: [buildActiveUserRow({ authenticationId })],
+        })
 
         // Act
         const result = await useCase.findActiveByAuthenticationId(authenticationId)
@@ -171,9 +192,11 @@ describe('QueryImpl', () => {
           expect(result.value?.activeUserId).toBe(1n)
           expect(result.value?.email).toBe('test@example.com')
         }
-        expect(prisma.activeUser.findUnique).toHaveBeenCalledWith({
-          where: { authenticationId },
-        })
+        expect(mockRdbExecutor).toHaveBeenCalled()
+        const [sql, params] = mockRdbExecutor.mock.calls[0] ?? []
+        expect(sql).toContain('select')
+        expect(sql).toContain('"authentication_id" = ?')
+        expect(params).toContain(authenticationId)
       })
     })
 
@@ -181,7 +204,7 @@ describe('QueryImpl', () => {
       it('存在しない認証IDの場合nullを返す', async () => {
         // Arrange
         const authenticationId = 'nonexistent-auth-id'
-        prisma.activeUser.findUnique.mockResolvedValue(null)
+        mockRdbExecutor.mockResolvedValue({ rows: [] })
 
         // Act
         const result = await useCase.findActiveByAuthenticationId(authenticationId)
@@ -199,7 +222,7 @@ describe('QueryImpl', () => {
         // Arrange
         const authenticationId = 'auth-id-123'
         const dbError = new Error('Database connection failed')
-        prisma.activeUser.findUnique.mockRejectedValue(dbError)
+        mockRdbExecutor.mockRejectedValue(dbError)
 
         // Act
         const result = await useCase.findActiveByAuthenticationId(authenticationId)
@@ -207,6 +230,9 @@ describe('QueryImpl', () => {
         // Assert
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
+          // INFO: DBエラー時はServerErrorとして返却される
+          expect(result.error).toBeInstanceOf(ServerError)
+          // INFO: DrizzleQueryErrorのcauseから元ドライバメッセージが伝播すること
           expect(result.error.message).toBe('Database connection failed')
         }
       })

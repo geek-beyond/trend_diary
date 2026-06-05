@@ -1,6 +1,8 @@
+import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import { ServerError } from '@/common/errors'
 import { wrapAsyncCall } from '@/common/result'
+import { activeUsers, users } from '@/infrastructure/drizzle-orm/schema'
 import { RdbClient } from '@/infrastructure/rdb'
 import { Command } from '../repository'
 import type { CurrentUser } from '../schema/active-user-schema'
@@ -14,23 +16,50 @@ export default class CommandImpl implements Command {
     authenticationId: string,
     displayName?: string | null,
   ): Promise<Result<CurrentUser, ServerError>> {
-    const activeUserResult = await wrapAsyncCall(() =>
-      this.db.activeUser.create({
-        data: {
-          email,
-          authenticationId,
-          displayName,
-          user: {
-            create: {},
-          },
-        },
-      }),
-    )
-
-    if (activeUserResult.isErr()) {
+    // INFO: D1はインタラクティブトランザクション非対応のため、users→active_usersを逐次insertし、
+    //       2文目失敗時はusersをdeleteする補償方式で整合性を担保する
+    const userResult = await wrapAsyncCall(() => this.db.insert(users).values({}).returning())
+    if (userResult.isErr()) {
       return err(new ServerError('Failed to create active user'))
     }
 
-    return ok(mapToActiveUser(activeUserResult.value))
+    const createdUser = userResult.value[0]
+    if (!createdUser) {
+      return err(new ServerError('Failed to create active user'))
+    }
+    const { userId } = createdUser
+
+    // INFO: active_users insert失敗時の補償。作成済みusersを削除しエラーを返す。
+    //       補償自体の失敗は握りつぶし、元のエラーを優先して返す
+    const compensateAndFail = async (): Promise<Result<CurrentUser, ServerError>> => {
+      await wrapAsyncCall(() => this.db.delete(users).where(eq(users.userId, userId)))
+      return err(new ServerError('Failed to create active user'))
+    }
+
+    // INFO: PrismaのupdatedAt(@updatedAt)はDrizzleでは自動付与されないため明示的に現在時刻を設定する
+    const now = new Date()
+    const activeUserResult = await wrapAsyncCall(() =>
+      this.db
+        .insert(activeUsers)
+        .values({
+          email,
+          authenticationId,
+          displayName,
+          updatedAt: now,
+          userId,
+        })
+        .returning(),
+    )
+    if (activeUserResult.isErr()) {
+      return compensateAndFail()
+    }
+
+    // INFO: returningが空になるケースは到達しない想定だが、念のため補償して失敗させる
+    const activeUser = activeUserResult.value[0]
+    if (!activeUser) {
+      return compensateAndFail()
+    }
+
+    return ok(mapToActiveUser(activeUser))
   }
 }

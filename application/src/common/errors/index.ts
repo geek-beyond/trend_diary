@@ -4,6 +4,7 @@ import NotFoundError from './client-error/not-found-error'
 import ExternalServiceError from './external-service-error'
 import handleError from './handle'
 import ServerError from './server-error'
+import unwrapDbError from './unwrap-db-error'
 
 export {
   ClientError,
@@ -12,4 +13,5 @@ export {
   NotFoundError,
   ServerError,
   handleError,
+  unwrapDbError,
 }

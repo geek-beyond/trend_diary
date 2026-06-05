@@ -1,34 +1,69 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import prisma from '@/test/__mocks__/prisma'
+import { ServerError } from '@/common/errors'
+import getRdbClient, { mockRdbExecutor } from '@/test/__mocks__/rdb'
 import CommandImpl from './command-impl'
+
+vi.mock('@/infrastructure/rdb')
 
 describe('CommandImpl', () => {
   let useCase: CommandImpl
 
+  // INFO: Drizzleのinsert returningは「カラム順の配列」で行を返す
+  // users:        user_id, created_at
+  // active_users: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
+  const buildUserRow = (userId: number): unknown[] => [userId, '2024-01-15T09:30:00.000Z']
+  const buildActiveUserRow = (data: {
+    activeUserId: number
+    email: string
+    displayName: string | null
+    authenticationId: string | null
+    userId: number
+  }): unknown[] => [
+    data.activeUserId,
+    data.email,
+    data.displayName,
+    data.authenticationId,
+    '2024-01-15T09:30:00.000Z',
+    '2024-01-15T09:30:00.000Z',
+    data.userId,
+  ]
+
   beforeEach(() => {
     vi.clearAllMocks()
-    useCase = new CommandImpl(prisma)
+    useCase = new CommandImpl(getRdbClient('file::memory:'))
   })
 
   describe('createActiveWithAuthenticationId', () => {
     it('displayName付きでActiveUserを作成できる', async () => {
-      const createdActiveUser = {
-        activeUserId: 1,
-        userId: 2,
-        email: 'test@example.com',
-        displayName: '表示名',
-        authenticationId: 'auth-id-123',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-      prisma.activeUser.create.mockResolvedValue(createdActiveUser)
+      // Arrange: 1回目=usersへのinsert returning, 2回目=active_usersへのinsert returning
+      mockRdbExecutor.mockImplementation(async (sql: string) => {
+        if (sql.includes('insert into "users"')) {
+          return { rows: [buildUserRow(2)] }
+        }
+        if (sql.includes('insert into "active_users"')) {
+          return {
+            rows: [
+              buildActiveUserRow({
+                activeUserId: 1,
+                email: 'test@example.com',
+                displayName: '表示名',
+                authenticationId: 'auth-id-123',
+                userId: 2,
+              }),
+            ],
+          }
+        }
+        return { rows: [] }
+      })
 
+      // Act
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
         '表示名',
       )
 
+      // Assert: 成功時はCurrentUserを返す
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
         expect(result.value.email).toBe('test@example.com')
@@ -36,29 +71,168 @@ describe('CommandImpl', () => {
         expect(result.value.activeUserId).toBe(1n)
         expect(result.value.userId).toBe(2n)
       }
-      const activeUserCreateArgs = prisma.activeUser.create.mock.calls[0]?.[0]
-      expect(activeUserCreateArgs?.data).toMatchObject({
-        email: 'test@example.com',
-        authenticationId: 'auth-id-123',
-        displayName: '表示名',
-      })
-      expect(activeUserCreateArgs?.data?.user).toEqual({ create: {} })
-      expect(activeUserCreateArgs?.data?.activeUserId).toBeUndefined()
+
+      // usersへのinsert後にactive_usersへinsertする逐次実行であること
+      const usersInsertCall = mockRdbExecutor.mock.calls.find(([sql]) =>
+        sql.includes('insert into "users"'),
+      )
+      const activeUsersInsertCall = mockRdbExecutor.mock.calls.find(([sql]) =>
+        sql.includes('insert into "active_users"'),
+      )
+      expect(usersInsertCall).toBeDefined()
+      expect(activeUsersInsertCall).toBeDefined()
+
+      // active_users insertには取得したuserId(=2)とemail/authenticationId/displayNameが渡されること
+      const [, activeUsersParams] = activeUsersInsertCall ?? []
+      expect(activeUsersParams).toContain('test@example.com')
+      expect(activeUsersParams).toContain('auth-id-123')
+      expect(activeUsersParams).toContain('表示名')
+      expect(activeUsersParams).toContain(2)
+
+      // 補償のdeleteは呼ばれないこと
+      const deleteCall = mockRdbExecutor.mock.calls.find(([sql]) =>
+        sql.includes('delete from "users"'),
+      )
+      expect(deleteCall).toBeUndefined()
     })
 
-    it('activeUser作成失敗時にエラーを返す', async () => {
-      prisma.activeUser.create.mockRejectedValue(new Error('create active failed'))
+    it('displayNameなし(null)でもActiveUserを作成できる', async () => {
+      // Arrange
+      mockRdbExecutor.mockImplementation(async (sql: string) => {
+        if (sql.includes('insert into "users"')) {
+          return { rows: [buildUserRow(2)] }
+        }
+        if (sql.includes('insert into "active_users"')) {
+          return {
+            rows: [
+              buildActiveUserRow({
+                activeUserId: 1,
+                email: 'test@example.com',
+                displayName: null,
+                authenticationId: 'auth-id-123',
+                userId: 2,
+              }),
+            ],
+          }
+        }
+        return { rows: [] }
+      })
 
+      // Act
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
       )
 
+      // Assert
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value.displayName).toBeNull()
+        expect(result.value.activeUserId).toBe(1n)
+        expect(result.value.userId).toBe(2n)
+      }
+    })
+
+    it('users作成失敗時にエラーを返す', async () => {
+      // Arrange: 1回目のusers insertで失敗
+      mockRdbExecutor.mockImplementation(async (sql: string) => {
+        if (sql.includes('insert into "users"')) {
+          throw new Error('create user failed')
+        }
+        return { rows: [] }
+      })
+
+      // Act
+      const result = await useCase.createActiveWithAuthenticationId(
+        'test@example.com',
+        'auth-id-123',
+      )
+
+      // Assert: ServerErrorを返す
       expect(result.isErr()).toBe(true)
-      expect(prisma.user.delete).not.toHaveBeenCalled()
       if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(ServerError)
         expect(result.error.message).toBe('Failed to create active user')
       }
+
+      // users作成自体が失敗しているので、active_users insertも補償deleteも行われないこと
+      const activeUsersInsertCall = mockRdbExecutor.mock.calls.find(([sql]) =>
+        sql.includes('insert into "active_users"'),
+      )
+      const deleteCall = mockRdbExecutor.mock.calls.find(([sql]) =>
+        sql.includes('delete from "users"'),
+      )
+      expect(activeUsersInsertCall).toBeUndefined()
+      expect(deleteCall).toBeUndefined()
+    })
+
+    it('activeUser作成失敗時にエラーを返し、補償としてusersを削除する', async () => {
+      // Arrange: users insertは成功するが active_users insertで失敗する
+      mockRdbExecutor.mockImplementation(async (sql: string) => {
+        if (sql.includes('insert into "users"')) {
+          return { rows: [buildUserRow(2)] }
+        }
+        if (sql.includes('insert into "active_users"')) {
+          throw new Error('create active failed')
+        }
+        return { rows: [] }
+      })
+
+      // Act
+      const result = await useCase.createActiveWithAuthenticationId(
+        'test@example.com',
+        'auth-id-123',
+      )
+
+      // Assert: ServerErrorを返す
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error.message).toBe('Failed to create active user')
+      }
+
+      // 補償として作成済みのusers(user_id=2)をdeleteすること
+      const deleteCall = mockRdbExecutor.mock.calls.find(([sql]) =>
+        sql.includes('delete from "users"'),
+      )
+      expect(deleteCall).toBeDefined()
+      const [, deleteParams] = deleteCall ?? []
+      expect(deleteParams).toContain(2)
+    })
+
+    it('activeUser作成失敗かつ補償delete失敗時もServerErrorを返す', async () => {
+      // Arrange: active_users insert失敗 → 補償のusers deleteも失敗する
+      mockRdbExecutor.mockImplementation(async (sql: string) => {
+        if (sql.includes('insert into "users"')) {
+          return { rows: [buildUserRow(2)] }
+        }
+        if (sql.includes('insert into "active_users"')) {
+          throw new Error('create active failed')
+        }
+        if (sql.includes('delete from "users"')) {
+          throw new Error('compensation delete failed')
+        }
+        return { rows: [] }
+      })
+
+      // Act
+      const result = await useCase.createActiveWithAuthenticationId(
+        'test@example.com',
+        'auth-id-123',
+      )
+
+      // Assert: 補償が失敗しても元のServerErrorを返す
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error.message).toBe('Failed to create active user')
+      }
+
+      // 補償deleteの試行自体は行われていること
+      const deleteCall = mockRdbExecutor.mock.calls.find(([sql]) =>
+        sql.includes('delete from "users"'),
+      )
+      expect(deleteCall).toBeDefined()
     })
   })
 })

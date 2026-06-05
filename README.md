@@ -24,12 +24,6 @@ Nodeモジュールのインストール
 pnpm install --frozen-lockfile
 ```
 
-Prismaクライアントの生成
-
-```sh
-pnpm run setup
-```
-
 Supabaseを起動（Auth用途）
 
 ```sh
@@ -55,6 +49,16 @@ Cloudflare D1ローカルマイグレーション適用（必要な場合）
 ```sh
 pnpm run d1:apply:local
 ```
+
+### スキーマ変更時の手順（Drizzle ORM）
+
+スキーマは `src/infrastructure/drizzle-orm/schema.ts` を正本とし、D1 への適用は `migrations/*.sql` で行う。
+
+1. `src/infrastructure/drizzle-orm/schema.ts` を編集する
+2. `pnpm run db:generate` でマイグレーションSQLの草案を生成する
+3. 生成された差分を `migrations/000N_*.sql` として配置する（D1 は `migrations/` を順次適用する）
+4. `pnpm run db:check` で `schema.ts` と `migrations/*.sql` のDDL等価性を検証する
+5. 本番反映は `pnpm run d1:apply:remote`（CDの `wrangler d1 migrations apply`）で行う
 
 サーバの起動（Hono上でAPIとRemixが起動する）
 

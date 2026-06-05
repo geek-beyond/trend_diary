@@ -5,6 +5,6 @@ export default async function globalSetup() {
 
   // teardown処理を返す
   return async () => {
-    await disconnectTestRdb()
+    disconnectTestRdb()
   }
 }

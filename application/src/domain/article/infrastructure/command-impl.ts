@@ -1,9 +1,11 @@
+import { and, eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { ServerError } from '@/common/errors'
+import { ServerError, unwrapDbError } from '@/common/errors'
 import { wrapAsyncCall } from '@/common/result'
 import { Command } from '@/domain/article/repository'
 import type { ReadHistory } from '@/domain/article/schema/read-history-schema'
 import type { SkippedArticle } from '@/domain/article/schema/skipped-article-schema'
+import { readHistories, skippedArticles } from '@/infrastructure/drizzle-orm/schema'
 import { RdbClient } from '@/infrastructure/rdb'
 import { fromDbId, toDbId } from '@/infrastructure/rdb-id'
 
@@ -18,19 +20,24 @@ export default class CommandImpl implements Command {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
     const result = await wrapAsyncCall(() =>
-      this.db.readHistory.create({
-        data: {
+      this.db
+        .insert(readHistories)
+        .values({
           activeUserId: dbActiveUserId,
           articleId: dbArticleId,
           readAt,
-        },
-      }),
+        })
+        .returning(),
     )
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(new ServerError(unwrapDbError(result.error)))
     }
 
-    const createdReadHistory = result.value
+    const createdReadHistory = result.value[0]
+    // INFO: returningは挿入成功時に必ず1行返る想定だが、念のため空ガードしResult契約を守る
+    if (!createdReadHistory) {
+      return err(new ServerError(new Error('insert read_histories returned no row')))
+    }
     const readHistory: ReadHistory = {
       readHistoryId: fromDbId(createdReadHistory.readHistoryId),
       activeUserId: fromDbId(createdReadHistory.activeUserId),
@@ -48,15 +55,17 @@ export default class CommandImpl implements Command {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
     const result = await wrapAsyncCall(() =>
-      this.db.readHistory.deleteMany({
-        where: {
-          activeUserId: dbActiveUserId,
-          articleId: dbArticleId,
-        },
-      }),
+      this.db
+        .delete(readHistories)
+        .where(
+          and(
+            eq(readHistories.activeUserId, dbActiveUserId),
+            eq(readHistories.articleId, dbArticleId),
+          ),
+        ),
     )
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(new ServerError(unwrapDbError(result.error)))
     }
 
     return ok(undefined)
@@ -69,26 +78,45 @@ export default class CommandImpl implements Command {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
-    const result = await wrapAsyncCall(() =>
-      this.db.skippedArticle.upsert({
-        where: {
-          articleIdActiveUserId: {
-            articleId: dbArticleId,
-            activeUserId: dbActiveUserId,
-          },
-        },
-        update: {},
-        create: {
+    const result = await wrapAsyncCall(async () => {
+      const inserted = await this.db
+        .insert(skippedArticles)
+        .values({
           activeUserId: dbActiveUserId,
           articleId: dbArticleId,
-        },
-      }),
-    )
+        })
+        // INFO: 複合ユニーク(article_id, active_user_id)競合時は何もしない（既存仕様 upsert: update {} 相当）
+        .onConflictDoNothing({
+          target: [skippedArticles.articleId, skippedArticles.activeUserId],
+        })
+        .returning()
+
+      // INFO: 競合時は returning が空になるため、既存仕様(既存行を返す)に合わせて既存行を取得する
+      if (inserted.length > 0) {
+        return inserted[0]
+      }
+
+      const existing = await this.db
+        .select()
+        .from(skippedArticles)
+        .where(
+          and(
+            eq(skippedArticles.articleId, dbArticleId),
+            eq(skippedArticles.activeUserId, dbActiveUserId),
+          ),
+        )
+      return existing[0]
+    })
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(new ServerError(unwrapDbError(result.error)))
     }
 
     const skippedArticle = result.value
+    // INFO: insertとSELECTの間に既存行が消える窓では既存行取得が空になりうる。
+    // その場合もTypeErrorを投げずResult契約を守りServerErrorを返す
+    if (!skippedArticle) {
+      return err(new ServerError(new Error('skipped_articles row not found after conflict')))
+    }
     return ok({
       skippedArticleId: fromDbId(skippedArticle.skippedArticleId),
       activeUserId: fromDbId(skippedArticle.activeUserId),

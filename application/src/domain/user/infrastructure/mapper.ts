@@ -1,4 +1,4 @@
-import { ActiveUser as RdbActiveUser } from '@prisma/client'
+import type { ActiveUser as RdbActiveUser } from '@/infrastructure/drizzle-orm/schema'
 import { fromDbId } from '@/infrastructure/rdb-id'
 import type { CurrentUser } from '../schema/active-user-schema'
 

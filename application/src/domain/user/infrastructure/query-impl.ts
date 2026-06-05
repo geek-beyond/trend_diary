@@ -1,7 +1,9 @@
+import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { ServerError } from '@/common/errors'
+import { ServerError, unwrapDbError } from '@/common/errors'
 import { wrapAsyncCall } from '@/common/result'
 import { Nullable } from '@/common/types/utility'
+import { activeUsers } from '@/infrastructure/drizzle-orm/schema'
 import { RdbClient } from '@/infrastructure/rdb'
 import { toDbId } from '@/infrastructure/rdb-id'
 import { Query } from '../repository'
@@ -14,15 +16,13 @@ export default class QueryImpl implements Query {
   async findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, Error>> {
     const dbId = toDbId(id)
     const activeUserResult = await wrapAsyncCall(() =>
-      this.db.activeUser.findUnique({
-        where: { activeUserId: dbId },
-      }),
+      this.db.select().from(activeUsers).where(eq(activeUsers.activeUserId, dbId)).limit(1),
     )
     if (activeUserResult.isErr()) {
-      return err(new ServerError(activeUserResult.error))
+      return err(new ServerError(unwrapDbError(activeUserResult.error)))
     }
 
-    const activeUser = activeUserResult.value
+    const activeUser = activeUserResult.value[0]
     if (!activeUser) {
       return ok(null)
     }
@@ -32,15 +32,13 @@ export default class QueryImpl implements Query {
 
   async findActiveByEmail(email: string): Promise<Result<Nullable<CurrentUser>, Error>> {
     const activeUserResult = await wrapAsyncCall(() =>
-      this.db.activeUser.findUnique({
-        where: { email },
-      }),
+      this.db.select().from(activeUsers).where(eq(activeUsers.email, email)).limit(1),
     )
     if (activeUserResult.isErr()) {
-      return err(new ServerError(activeUserResult.error))
+      return err(new ServerError(unwrapDbError(activeUserResult.error)))
     }
 
-    const activeUser = activeUserResult.value
+    const activeUser = activeUserResult.value[0]
     if (!activeUser) {
       return ok(null)
     }
@@ -52,15 +50,17 @@ export default class QueryImpl implements Query {
     authenticationId: string,
   ): Promise<Result<Nullable<CurrentUser>, Error>> {
     const activeUserResult = await wrapAsyncCall(() =>
-      this.db.activeUser.findUnique({
-        where: { authenticationId },
-      }),
+      this.db
+        .select()
+        .from(activeUsers)
+        .where(eq(activeUsers.authenticationId, authenticationId))
+        .limit(1),
     )
     if (activeUserResult.isErr()) {
-      return err(new ServerError(activeUserResult.error))
+      return err(new ServerError(unwrapDbError(activeUserResult.error)))
     }
 
-    const activeUser = activeUserResult.value
+    const activeUser = activeUserResult.value[0]
     if (!activeUser) {
       return ok(null)
     }

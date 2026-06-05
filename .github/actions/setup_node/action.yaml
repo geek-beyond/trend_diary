@@ -26,8 +26,3 @@ runs:
       shell: bash
       working-directory: ${{ github.workspace }}/application
       run: pnpm install --frozen-lockfile
-
-    - name: Prismaクライアントの生成
-      shell: bash
-      working-directory: ${{ github.workspace }}/application
-      run: pnpm run setup

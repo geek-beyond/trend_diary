@@ -1,5 +1,5 @@
-import { ActiveUser as RdbActiveUser } from '@prisma/client'
 import { describe, expect, it } from 'vitest'
+import type { ActiveUser as RdbActiveUser } from '@/infrastructure/drizzle-orm/schema'
 import { mapToActiveUser } from './mapper'
 
 describe('mapToActiveUser', () => {

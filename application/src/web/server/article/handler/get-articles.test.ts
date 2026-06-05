@@ -1,4 +1,6 @@
 import { faker } from '@faker-js/faker'
+import { inArray } from 'drizzle-orm'
+import { articles, readHistories } from '@/infrastructure/drizzle-orm/schema'
 import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
 import { getTestRdb } from '@/test/helper/rdb'
@@ -63,13 +65,13 @@ describe('GET /api/articles', () => {
 
   beforeAll(async () => {
     const db = getTestRdb()
-    await db.readHistory.deleteMany()
-    await db.article.deleteMany()
+    await db.delete(readHistories)
+    await db.delete(articles)
 
-    const articles = await Promise.all(
+    const createdArticles = await Promise.all(
       testArticlesData.map((article) => articleHelper.createArticle(article)),
     )
-    createdArticleIds.push(...articles.map((a) => a.articleId))
+    createdArticleIds.push(...createdArticles.map((a) => a.articleId))
   })
 
   afterAll(async () => {
@@ -222,25 +224,16 @@ describe('GET /api/articles 既読情報', () => {
 
   beforeEach(async () => {
     const db = getTestRdb()
-    const staleArticles = await db.article.findMany({
-      where: {
-        title: { in: ['既読記事', '未読記事', 'スキップ記事'] },
-      },
-      select: { articleId: true },
-    })
+    const staleTitles = ['既読記事', '未読記事', 'スキップ記事']
+    const staleArticles = await db
+      .select({ articleId: articles.articleId })
+      .from(articles)
+      .where(inArray(articles.title, staleTitles))
     const staleArticleIds = staleArticles.map((article) => article.articleId)
     if (staleArticleIds.length > 0) {
-      await db.readHistory.deleteMany({
-        where: {
-          articleId: { in: staleArticleIds },
-        },
-      })
+      await db.delete(readHistories).where(inArray(readHistories.articleId, staleArticleIds))
     }
-    await db.article.deleteMany({
-      where: {
-        title: { in: ['既読記事', '未読記事', 'スキップ記事'] },
-      },
-    })
+    await db.delete(articles).where(inArray(articles.title, staleTitles))
 
     // アカウント作成・ログイン
     const { userId, authenticationId } = await userHelper.create(

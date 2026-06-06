@@ -5,8 +5,8 @@ import type { Plugin } from 'vite'
 
 const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 
-// server/cron 共通の pool-workers 設定。各テスト(workerd内)の D1 へ migrations を適用するため、
-// readD1Migrations の結果を TEST_MIGRATIONS バインディングとして渡す（workers-d1.ts が適用）。
+// 各テスト(workerd内)の D1 へ migrations を適用するため、readD1Migrations の結果を
+// TEST_MIGRATIONS バインディングとして渡す（workers-d1.ts が適用）。
 export async function createWorkersPool(): Promise<{
   plugins: Plugin[]
   pool: ReturnType<typeof cloudflarePool>

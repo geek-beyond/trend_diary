@@ -17,10 +17,11 @@ export const mockRdbExecutor =
     ) => Promise<{ rows: unknown[] }>
   >()
 
-const mockDb: RdbClient = drizzleProxy(
-  (sql, params, method) => mockRdbExecutor(sql, params, method),
-  { schema },
-)
+// 本番型(DrizzleD1Database)とドライバが異なるため、テスト側でキャストして吸収する
+// （クエリビルダ API は共通のため実行時は問題なく動作する）。
+const mockDb = drizzleProxy((sql, params, method) => mockRdbExecutor(sql, params, method), {
+  schema,
+}) as unknown as RdbClient
 
 type D1Database = import('@cloudflare/workers-types').D1Database
 

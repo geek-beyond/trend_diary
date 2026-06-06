@@ -35,11 +35,4 @@ class DrizzleQueryLogger implements DrizzleLogger {
   }
 }
 
-let queryLogger: DrizzleLogger | undefined
-
-export function resolveLogger(): DrizzleLogger {
-  if (!queryLogger) {
-    queryLogger = new DrizzleQueryLogger()
-  }
-  return queryLogger
-}
+export const queryLogger: DrizzleLogger = new DrizzleQueryLogger()

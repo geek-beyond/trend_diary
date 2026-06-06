@@ -74,12 +74,8 @@ export function createAuthActionUseCase(request: Request, context: AuthActionCon
     },
   })
 
-  // フレームワークの context.cloudflare.env は型上 undefined を取り得る。本番では DB が
-  // 必ずバインドされるため、欠落は設定ミスとして即時に失敗させる。
-  if (!env?.DB) {
-    throw new Error('D1 binding (db) is required')
-  }
-  const rdb = getRdbClient(env.DB)
+  // route コンテキストでは DB が必ずバインドされる
+  const rdb = getRdbClient(env?.DB as D1Database)
   const useCase = createAuthUseCase(client, rdb)
 
   return {

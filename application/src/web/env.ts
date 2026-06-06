@@ -28,6 +28,6 @@ export type Env = {
 
 declare module 'react-router' {
   interface AppLoadContext {
-    whatever: string
+    cloudflare: { env: Env['Bindings'] }
   }
 }

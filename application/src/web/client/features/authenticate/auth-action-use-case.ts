@@ -1,19 +1,12 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
+import type { AppLoadContext } from 'react-router'
 import { isDevelopmentNodeEnv } from '@/common/env'
 import { createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 
-type D1Database = import('@cloudflare/workers-types').D1Database
-
-type AuthActionBindings = {
-  DB?: D1Database
-  SUPABASE_URL?: string
-  SUPABASE_ANON_KEY?: string
-}
-
-type AuthActionContext = {
+type SupabaseAuthContext = {
   cloudflare?: {
-    env?: AuthActionBindings
+    env?: { SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string }
   }
 }
 
@@ -36,7 +29,7 @@ export function shouldUseSecureCookie() {
   return !isDevelopmentNodeEnv()
 }
 
-export function resolveSupabaseAuthConfig(context: AuthActionContext) {
+export function resolveSupabaseAuthConfig(context: SupabaseAuthContext) {
   const env = context.cloudflare?.env
   const supabaseUrl = readEnv(env?.SUPABASE_URL) ?? readNodeEnv('SUPABASE_URL')
   const supabaseAnonKey = readEnv(env?.SUPABASE_ANON_KEY) ?? readNodeEnv('SUPABASE_ANON_KEY')
@@ -45,12 +38,12 @@ export function resolveSupabaseAuthConfig(context: AuthActionContext) {
     throw new Error(AUTH_CONFIG_ERROR_MESSAGE)
   }
 
-  return { env, supabaseUrl, supabaseAnonKey }
+  return { supabaseUrl, supabaseAnonKey }
 }
 
-export function createAuthActionUseCase(request: Request, context: AuthActionContext) {
+export function createAuthActionUseCase(request: Request, context: AppLoadContext) {
   const headers = new Headers()
-  const { env, supabaseUrl, supabaseAnonKey } = resolveSupabaseAuthConfig(context)
+  const { supabaseUrl, supabaseAnonKey } = resolveSupabaseAuthConfig(context)
 
   const client = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -74,7 +67,7 @@ export function createAuthActionUseCase(request: Request, context: AuthActionCon
     },
   })
 
-  const rdb = getRdbClient(env?.DB as D1Database)
+  const rdb = getRdbClient(context.cloudflare.env.DB)
   const useCase = createAuthUseCase(client, rdb)
 
   return {

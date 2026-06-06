@@ -17,9 +17,8 @@ vi.mock('rss-parser', () => ({
 import { env } from 'cloudflare:test'
 import { fetchHatenaArticles } from '@/cron/fetch-articles'
 import { articles } from '@/infrastructure/drizzle-orm/schema'
-import { testRdb } from '@/test/helper/rdb'
+import { testRdb as db } from '@/test/helper/rdb'
 
-const db = testRdb
 const cronEnv = { DB: env.DB }
 
 async function countArticles(): Promise<number> {

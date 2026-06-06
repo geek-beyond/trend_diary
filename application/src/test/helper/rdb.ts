@@ -1,21 +1,36 @@
-import { createClient } from '@libsql/client'
-import { drizzle as drizzleLibsql } from 'drizzle-orm/libsql'
-import * as schema from '@/infrastructure/drizzle-orm/schema'
 import type { RdbClient } from '@/infrastructure/rdb'
-import { resolveMiniflareD1Url } from '@/test/setup/miniflare-d1'
 
+type D1Database = import('@cloudflare/workers-types').D1Database
+
+// テスト用の D1 バインディングと RdbClient は、実行コンテキスト毎の setup で注入する。
+// - vitest(server/cron): pool-workers の setup(workers-d1.ts)が cloudflare:test の env.DB を注入
+// - E2E(Playwright): e2e-rdb.ts が getPlatformProxy().env.DB を注入
+// 本モジュールは libsql/node:fs を一切 import しないため、workerd バンドルでも安全に読み込める。
 let rdb: RdbClient | null = null
+let d1: D1Database | null = null
 
-// vitest は setupFiles(test-rdb.ts) でテストファイル毎の in-memory SQLite を注入する。
+export function setTestD1(db: D1Database): void {
+  d1 = db
+}
+
+export function getTestD1(): D1Database {
+  if (!d1) {
+    throw new Error(
+      'テスト用 D1 バインディングが未初期化です（setup で setTestD1 を呼び出してください）',
+    )
+  }
+  return d1
+}
+
 export function setTestRdb(client: RdbClient): void {
   rdb = client
 }
 
 export function getTestRdb(): RdbClient {
   if (!rdb) {
-    // setupFiles を通らない E2E(Playwright)経路。dev サーバと共有する miniflare local D1
-    // (sqlite)へ libsql で直接接続し、本番ハンドラが読む DB と同じ実体にシードする。
-    rdb = drizzleLibsql(createClient({ url: resolveMiniflareD1Url() }), { schema })
+    throw new Error(
+      'テスト用 RdbClient が未初期化です（vitest は setupFiles=workers-d1.ts、E2E は beforeAll で initE2ETestRdb を呼び出してください）',
+    )
   }
   return rdb
 }

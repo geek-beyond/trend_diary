@@ -1,12 +1,11 @@
 import { Env } from '@/web/env'
-import { getTestRdb } from './helper/rdb'
-
-export const TEST_DATABASE_URL = 'file:./test.db'
+import { getTestD1 } from './helper/rdb'
 
 const TEST_ENV = {
-  // setupFiles で注入済みの RdbClient を本番ハンドラへ渡す（resolveRdbClient が優先利用する）。
-  get rdbClient() {
-    return getTestRdb()
+  // setup で注入された D1 バインディングを本番ハンドラへ渡す（resolveRdbClient が利用する）。
+  // biome-ignore lint/style/useNamingConvention: env バインディング名(DB)に合わせる
+  get DB() {
+    return getTestD1()
   },
   DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL ?? '',
   // ローカルSupabase環境変数

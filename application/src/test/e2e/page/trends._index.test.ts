@@ -5,6 +5,11 @@ import { DesktopMediaFilter } from '@/test/e2e/pom/components/desktop-media-filt
 import { SUPPORTED_ARTICLE_URL_PATTERN } from '@/test/e2e/pom/constants'
 import { TrendsPage } from '@/test/e2e/pom/trends-page'
 import * as articleHelper from '@/test/helper/article'
+import { disposeE2ETestRdb, initE2ETestRdb } from '@/test/setup/e2e-rdb'
+
+// dev サーバと同じ miniflare local D1 へ接続し、本番ハンドラが読む DB へシードする
+test.beforeAll(initE2ETestRdb)
+test.afterAll(disposeE2ETestRdb)
 
 const ARTICLE_COUNT = 10
 

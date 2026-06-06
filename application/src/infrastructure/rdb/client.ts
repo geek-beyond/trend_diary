@@ -16,17 +16,13 @@ export default function getRdbClient(db: D1Database): RdbClient {
 }
 
 type RdbSource = {
-  rdbClient?: RdbClient
   DB?: D1Database
 }
 
-// 注入された rdbClient(テスト)を優先し、無ければ env.DB(D1)から構築する。
-// 各ハンドラに `??` を散らすと未到達分岐が増え server カバレッジ(branch 80%)を割るため、
-// 解決処理をこの一箇所へ集約する。
+// env.DB(D1)から RdbClient を構築する。テストでも miniflare の D1 バインディングを
+// 注入するため、本番・テストともこの単一経路を通る。undefined チェックをここへ集約し、
+// 各ハンドラ側の分岐(未到達ブランチ)を増やさない。
 export function resolveRdbClient(source: RdbSource): RdbClient {
-  if (source.rdbClient) {
-    return source.rdbClient
-  }
   if (!source.DB) {
     throw new Error('D1 binding (db) is required')
   }

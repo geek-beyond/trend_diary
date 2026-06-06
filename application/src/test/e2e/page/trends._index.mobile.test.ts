@@ -4,6 +4,11 @@ import { MobileFilterPanel } from '@/test/e2e/pom/components/mobile-filter-panel
 import { SUPPORTED_ARTICLE_URL_PATTERN, TIMEOUT } from '@/test/e2e/pom/constants'
 import { TrendsPage } from '@/test/e2e/pom/trends-page'
 import * as articleHelper from '@/test/helper/article'
+import { disposeE2ETestRdb, initE2ETestRdb } from '@/test/setup/e2e-rdb'
+
+// dev サーバと同じ miniflare local D1 へ接続し、本番ハンドラが読む DB へシードする
+test.beforeAll(initE2ETestRdb)
+test.afterAll(disposeE2ETestRdb)
 
 const ARTICLE_COUNT = 10
 const MOBILE_VIEWPORT = { width: 375, height: 667 }

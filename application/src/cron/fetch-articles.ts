@@ -2,11 +2,10 @@ import { inArray } from 'drizzle-orm'
 import Parser from 'rss-parser'
 import type { ArticleMedia } from '@/domain/article/media'
 import { articles } from '@/infrastructure/drizzle-orm/schema'
-import { type RdbClient, resolveRdbClient, wrapDbCall } from '@/infrastructure/rdb'
+import { resolveRdbClient, wrapDbCall } from '@/infrastructure/rdb'
 
 type CronEnv = {
   DB?: D1Database
-  rdbClient?: RdbClient
   LOG_LEVEL?: import('@/common/logger').LogLevel
 }
 

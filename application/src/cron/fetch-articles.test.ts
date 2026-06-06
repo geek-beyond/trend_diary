@@ -16,10 +16,10 @@ vi.mock('rss-parser', () => ({
 
 import { fetchHatenaArticles } from '@/cron/fetch-articles'
 import { articles } from '@/infrastructure/drizzle-orm/schema'
-import { getTestRdb } from '@/test/helper/rdb'
+import { getTestD1, getTestRdb } from '@/test/helper/rdb'
 
 const db = getTestRdb()
-const env = { rdbClient: db }
+const env = { DB: getTestD1() }
 
 async function countArticles(): Promise<number> {
   const rows = await db.select({ url: articles.url }).from(articles)

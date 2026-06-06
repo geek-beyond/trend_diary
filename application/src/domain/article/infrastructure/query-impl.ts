@@ -16,7 +16,7 @@ import type {
 import { QueryParams } from '@/domain/article/schema/query-schema'
 import { articles, normalizeDateTime } from '@/infrastructure/drizzle-orm/schema'
 import { RdbClient, wrapDbCall } from '@/infrastructure/rdb'
-import { fromDbId, toDbId } from '@/infrastructure/rdb-id'
+import { fromDbId, toDbId } from '@/infrastructure/rdb/id'
 
 type RawArticleRow = {
   articleId: number | bigint

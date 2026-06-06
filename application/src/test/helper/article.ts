@@ -3,7 +3,7 @@ import { and, count, eq, inArray } from 'drizzle-orm'
 import { toJstDateString } from '@/common/locale/date'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@/domain/article/media'
 import { articles, readHistories, skippedArticles } from '@/infrastructure/drizzle-orm/schema'
-import { fromDbId, toDbId, toDbIds } from '@/infrastructure/rdb-id'
+import { fromDbId, toDbId, toDbIds } from '@/infrastructure/rdb/id'
 import { getTestRdb } from './rdb'
 
 function getTodayJstNoon(): Date {

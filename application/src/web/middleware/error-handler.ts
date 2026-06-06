@@ -1,7 +1,7 @@
+import { DiscordNotifier } from '@trend-diary/notification'
 import { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { LoggerType } from '@/common/logger'
-import { DiscordNotifier } from '@/infrastructure/notification'
 import { Env } from '../env'
 import CONTEXT_KEY from './context'
 

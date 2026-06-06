@@ -13,6 +13,7 @@
     "test:server": "vitest run -c src/test/vitest/server/config.ts",
     "test:common": "vitest run -c src/test/vitest/common/config.ts",
     "test:cron": "vitest run -c src/test/vitest/cron/config.ts",
+    "test:notification": "pnpm --filter @trend-diary/notification test",
     "e2e": "playwright test --config=src/test/e2e/playwright.config.ts",
     "e2e:report": "playwright show-report src/test/e2e/playwright-report",
     "e2e:gen": "playwright codegen --config=src/test/e2e/playwright.config.ts",
@@ -32,6 +33,7 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.6",
+    "@trend-diary/notification": "workspace:*",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

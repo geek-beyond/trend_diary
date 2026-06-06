@@ -1,9 +1,90 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { DiscordNotifier } from './discord'
+import { DiscordNotifier, DiscordWebhookClient } from './discord'
 
 // fetchをモック
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
+
+describe('DiscordWebhookClient', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  describe('send', () => {
+    it('Webhook URLが設定されていない場合は何もしない', async () => {
+      const client = new DiscordWebhookClient('')
+
+      await client.send({ content: 'test' })
+
+      expect(mockFetch).not.toHaveBeenCalled()
+    })
+
+    it('Webhook URLが未指定（undefined）の場合は何もしない', async () => {
+      const client = new DiscordWebhookClient()
+
+      await client.send({ content: 'test' })
+
+      expect(mockFetch).not.toHaveBeenCalled()
+    })
+
+    it('指定したペイロードをDiscord Webhookに送信する', async () => {
+      const webhookUrl = 'https://discord.com/api/webhooks/test'
+      const client = new DiscordWebhookClient(webhookUrl)
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
+
+      const payload = {
+        content: null,
+        embeds: [
+          {
+            title: 'title',
+            color: 1,
+            fields: [{ name: 'n', value: 'v', inline: false }],
+            timestamp: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      }
+      await client.send(payload)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        webhookUrl,
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(body).toEqual(payload)
+    })
+
+    it('送信が失敗してもエラーを投げない', async () => {
+      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test')
+      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+
+      await expect(client.send({ content: 'test' })).resolves.not.toThrow()
+    })
+  })
+
+  describe('sendMessage', () => {
+    it('content形式の単純メッセージを送信する', async () => {
+      const webhookUrl = 'https://discord.com/api/webhooks/test'
+      const client = new DiscordWebhookClient(webhookUrl)
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
+
+      await client.sendMessage('hello')
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(body).toEqual({ content: 'hello' })
+    })
+
+    it('Webhook URLが設定されていない場合は何もしない', async () => {
+      const client = new DiscordWebhookClient('')
+
+      await client.sendMessage('hello')
+
+      expect(mockFetch).not.toHaveBeenCalled()
+    })
+  })
+})
 
 describe('DiscordNotifier', () => {
   beforeEach(() => {

@@ -3,7 +3,7 @@ import { inArray } from 'drizzle-orm'
 import { articles, readHistories } from '@/infrastructure/drizzle-orm/schema'
 import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
-import { getTestRdb } from '@/test/helper/rdb'
+import { testRdb } from '@/test/helper/rdb'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import app from '../../../server'
@@ -64,7 +64,7 @@ describe('GET /api/articles', () => {
   const createdArticleIds: bigint[] = []
 
   beforeAll(async () => {
-    const db = getTestRdb()
+    const db = testRdb
     await db.delete(readHistories)
     await db.delete(articles)
 
@@ -221,7 +221,7 @@ describe('GET /api/articles 既読情報', () => {
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
 
   beforeEach(async () => {
-    const db = getTestRdb()
+    const db = testRdb
     const staleTitles = ['既読記事', '未読記事', 'スキップ記事']
     const staleArticles = await db
       .select({ articleId: articles.articleId })

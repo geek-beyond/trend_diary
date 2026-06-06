@@ -1,14 +1,9 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@/test/e2e/fixtures'
+import * as articleHelper from '@/test/e2e/helper/article'
 import { ArticleDrawer } from '@/test/e2e/pom/components/article-drawer'
 import { MobileFilterPanel } from '@/test/e2e/pom/components/mobile-filter-panel'
 import { SUPPORTED_ARTICLE_URL_PATTERN, TIMEOUT } from '@/test/e2e/pom/constants'
 import { TrendsPage } from '@/test/e2e/pom/trends-page'
-import * as articleHelper from '@/test/helper/article'
-import { disposeE2ETestRdb, initE2ETestRdb } from '@/test/setup/e2e-rdb'
-
-// dev サーバと同じ miniflare local D1 へ接続し、本番ハンドラが読む DB へシードする
-test.beforeAll(initE2ETestRdb)
-test.afterAll(disposeE2ETestRdb)
 
 const ARTICLE_COUNT = 10
 const MOBILE_VIEWPORT = { width: 375, height: 667 }
@@ -69,17 +64,17 @@ test.describe('記事一覧ページ(モバイル)', () => {
   test.describe('記事がある場合', () => {
     const createdArticleIds: bigint[] = []
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({ rdb }) => {
       // 記事を作成
       const articles = await Promise.all(
-        Array.from({ length: ARTICLE_COUNT }, () => articleHelper.createArticle()),
+        Array.from({ length: ARTICLE_COUNT }, () => articleHelper.createArticle(rdb)),
       )
       createdArticleIds.push(...articles.map((a) => a.articleId))
     })
 
-    test.afterAll(async () => {
+    test.afterAll(async ({ rdb }) => {
       // テスト後に記事をクリーンアップ
-      await articleHelper.cleanUp(createdArticleIds)
+      await articleHelper.cleanUp(rdb, createdArticleIds)
     })
 
     test.beforeEach(async ({ page }) => {
@@ -136,16 +131,16 @@ test.describe('記事一覧ページ(モバイル)', () => {
   test.describe('記事詳細の概要表示(モバイル)', () => {
     const createdArticleIds: bigint[] = []
 
-    test.beforeAll(async () => {
-      const article = await articleHelper.createArticle({
+    test.beforeAll(async ({ rdb }) => {
+      const article = await articleHelper.createArticle(rdb, {
         title: LONG_ARTICLE_TITLE,
         description: LONG_ARTICLE_DESCRIPTION,
       })
       createdArticleIds.push(article.articleId)
     })
 
-    test.afterAll(async () => {
-      await articleHelper.cleanUp(createdArticleIds)
+    test.afterAll(async ({ rdb }) => {
+      await articleHelper.cleanUp(rdb, createdArticleIds)
     })
 
     test.beforeEach(async ({ page }) => {
@@ -174,22 +169,26 @@ test.describe('記事一覧ページ(モバイル)', () => {
     const ZENN_COUNT = 3
     const createdArticleIds: bigint[] = []
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({ rdb }) => {
       // Qiita記事を作成
       const qiitaArticles = await Promise.all(
-        Array.from({ length: QIITA_COUNT }, () => articleHelper.createArticle({ media: 'qiita' })),
+        Array.from({ length: QIITA_COUNT }, () =>
+          articleHelper.createArticle(rdb, { media: 'qiita' }),
+        ),
       )
       createdArticleIds.push(...qiitaArticles.map((a) => a.articleId))
 
       // Zenn記事を作成
       const zennArticles = await Promise.all(
-        Array.from({ length: ZENN_COUNT }, () => articleHelper.createArticle({ media: 'zenn' })),
+        Array.from({ length: ZENN_COUNT }, () =>
+          articleHelper.createArticle(rdb, { media: 'zenn' }),
+        ),
       )
       createdArticleIds.push(...zennArticles.map((a) => a.articleId))
     })
 
-    test.afterAll(async () => {
-      await articleHelper.cleanUp(createdArticleIds)
+    test.afterAll(async ({ rdb }) => {
+      await articleHelper.cleanUp(rdb, createdArticleIds)
     })
 
     test.beforeEach(async ({ page }) => {

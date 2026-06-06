@@ -1,12 +1,8 @@
+import { env } from 'cloudflare:test'
 import { Env } from '@/web/env'
-import { getTestD1 } from './helper/rdb'
 
 const TEST_ENV = {
-  // E2E(node)とも共有するため cloudflare:test は import せず、getTestD1 経由で遅延取得する
-  // biome-ignore lint/style/useNamingConvention: env バインディング名(DB)に合わせる
-  get DB() {
-    return getTestD1()
-  },
+  DB: env.DB,
   DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL ?? '',
   // ローカルSupabase環境変数
   SUPABASE_URL: 'http://127.0.0.1:54321',

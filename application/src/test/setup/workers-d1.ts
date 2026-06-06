@@ -1,9 +1,5 @@
 import { applyD1Migrations, env } from 'cloudflare:test'
-import { setTestD1 } from '@/test/helper/rdb'
 
-// pool-workers の setupFiles。テストファイル毎の(workerd内)D1 にマイグレーションを適用し、
-// 本番と同じ drizzle-orm/d1 経路の RdbClient を注入する。isolatedStorage により
+// テストファイル毎の(workerd内)D1 に migrations を適用する。isolatedStorage により
 // テスト間のストレージは分離される。
 await applyD1Migrations(env.DB, env.TEST_MIGRATIONS)
-
-setTestD1(env.DB)

@@ -1,16 +1,11 @@
 import { faker } from '@faker-js/faker'
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@/test/e2e/fixtures'
+import * as articleHelper from '@/test/e2e/helper/article'
+import * as userHelper from '@/test/e2e/helper/user'
 import { AuthPage } from '@/test/e2e/pom/auth-page'
 import { ArticleDrawer } from '@/test/e2e/pom/components/article-drawer'
 import { AUTH_FLOW_TIMEOUT } from '@/test/e2e/pom/constants'
 import { TrendsPage } from '@/test/e2e/pom/trends-page'
-import * as articleHelper from '@/test/helper/article'
-import * as userHelper from '@/test/helper/user'
-import { disposeE2ETestRdb, initE2ETestRdb } from '@/test/setup/e2e-rdb'
-
-// dev サーバと同じ miniflare local D1 へ接続し、本番ハンドラが読む DB へシードする
-test.beforeAll(initE2ETestRdb)
-test.afterAll(disposeE2ETestRdb)
 
 const AUTH_SCENARIO_TIMEOUT = AUTH_FLOW_TIMEOUT * 3
 
@@ -27,20 +22,20 @@ test.describe('新規登録・ログイン後の記事詳細閲覧シナリオ',
 
   let createdArticleId: bigint | null = null
 
-  test.beforeAll(async () => {
-    const article = await articleHelper.createArticle({
+  test.beforeAll(async ({ rdb }) => {
+    const article = await articleHelper.createArticle(rdb, {
       title: articleTitle,
       media: 'zenn',
     })
     createdArticleId = article.articleId
   })
 
-  test.afterAll(async () => {
+  test.afterAll(async ({ rdb }) => {
     if (createdArticleId) {
-      await articleHelper.cleanUp([createdArticleId])
+      await articleHelper.cleanUp(rdb, [createdArticleId])
     }
 
-    await userHelper.cleanUpByEmailPattern(email)
+    await userHelper.cleanUpByEmailPattern(rdb, email)
   })
 
   test('ログイン後にトレンド記事の詳細を開ける', async ({ page }) => {

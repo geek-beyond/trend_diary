@@ -34,13 +34,17 @@ test.describe('記事一覧ページ(モバイル)', () => {
     })
 
     test('ハンバーガーメニューを開いてメニュー項目が表示されること', async ({ page }) => {
-      // ハンバーガーメニューを開く
       const menuButton = page.getByRole('button', { name: 'メニューを開く' })
-      await menuButton.click()
-
-      // Sheetが開くのを待機
       const sheet = page.getByRole('dialog', { name: 'メニュー' })
-      await expect(sheet).toBeVisible({ timeout: TIMEOUT })
+
+      // INFO: ハイドレーション完了前のクリックはハンドラ未アタッチで失われるため、
+      // Sheetが開くまでクリックを再試行する
+      await expect(async () => {
+        if (!(await sheet.isVisible())) {
+          await menuButton.click()
+        }
+        await expect(sheet).toBeVisible({ timeout: 2_000 })
+      }).toPass({ timeout: TIMEOUT })
 
       // Applicationラベルが表示されていること
       await expect(sheet.getByText('Application')).toBeVisible()

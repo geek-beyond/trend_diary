@@ -43,7 +43,7 @@ test.describe('記事一覧ページ(モバイル)', () => {
         if (!(await sheet.isVisible())) {
           await menuButton.click()
         }
-        await expect(sheet).toBeVisible({ timeout: 2_000 })
+        await expect(sheet).toBeVisible({ timeout: 1_000 })
       }).toPass({ timeout: TIMEOUT })
 
       // Applicationラベルが表示されていること

@@ -10,7 +10,7 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
   const valid = c.req.valid('json')
 
   const client = createSupabaseAuthClient(c)
-  const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
+  const rdb = c.env.rdbClient ?? getRdbClient(c.env.DB)
   const useCase = createAuthUseCase(client, rdb)
 
   const result = await useCase.login(valid.email, valid.password)

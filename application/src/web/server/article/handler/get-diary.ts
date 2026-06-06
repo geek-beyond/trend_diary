@@ -81,7 +81,7 @@ export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) 
 
   validateDiaryDateRange(fromDate, toDate, todayJst)
 
-  const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
+  const rdb = c.env.rdbClient ?? getRdbClient(c.env.DB)
   const useCase = createArticleUseCase(rdb)
 
   if (query.page !== undefined) {

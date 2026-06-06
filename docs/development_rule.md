@@ -7,6 +7,11 @@
 - 必ず日本語を使用する
 - `.claude/skills`にCommit、TDDの設定を入れている。必要に応じて参照すること
 
+### GitHub操作
+
+- GitHub MCP（`mcp__github__*`）の使用を**禁止**する
+- PR・Issue・レビュー・CIなど全てのGitHub操作は`gh` CLIで行うこと
+
 ### レビュー時のprefix
 
 レビューコメントには以下のprefixをつける:

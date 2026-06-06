@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
+import { TEST_DATABASE_URL } from '../../env'
 
 export default defineConfig({
   resolve: {
@@ -7,9 +8,10 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    setupFiles: ['src/test/setup/test-rdb.ts'],
+    globalSetup: ['src/test/setup/apply-migrations.ts'],
     env: {
       NODE_ENV: 'test',
+      DATABASE_URL: TEST_DATABASE_URL,
     },
     include: ['src/cron/**/*.test.ts'],
     pool: 'threads',

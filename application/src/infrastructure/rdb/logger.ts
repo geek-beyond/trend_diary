@@ -37,7 +37,8 @@ class DrizzleQueryLogger implements DrizzleLogger {
 
 let queryLogger: DrizzleLogger | undefined
 
-export function resolveLogger(): DrizzleLogger {
+export function resolveLogger(isTest: boolean): DrizzleLogger | false {
+  if (isTest) return false
   if (!queryLogger) {
     queryLogger = new DrizzleQueryLogger()
   }

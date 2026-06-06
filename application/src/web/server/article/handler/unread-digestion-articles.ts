@@ -30,7 +30,7 @@ export default async function unreadDigestionArticles(
   const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!
   const query = c.req.valid('query')
 
-  const rdb = c.env.rdbClient ?? getRdbClient(c.env.DB)
+  const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
   const useCase = createArticleUseCase(rdb)
   const result = await useCase.getUnreadDigestionArticles(sessionUser.activeUserId, query.media)
   if (result.isErr()) {

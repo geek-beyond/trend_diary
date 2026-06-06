@@ -39,7 +39,7 @@ export async function validateSession(
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   try {
     const supabaseClient = createSupabaseAuthClient(c)
-    const rdb = c.env.rdbClient ?? getRdbClient(c.env.DB)
+    const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
     const useCase = createAuthUseCase(supabaseClient, rdb)
 
     const result = await useCase.getCurrentActiveUser()

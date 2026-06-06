@@ -65,7 +65,7 @@ export default async function getArticles(c: ZodValidatedQueryContext<ApiQueryPa
   const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)
   const activeUserId = sessionUser?.activeUserId
 
-  const rdb = c.env.rdbClient ?? getRdbClient(c.env.DB)
+  const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
   const useCase = createArticleUseCase(rdb)
 
   const result = await useCase.searchArticles(

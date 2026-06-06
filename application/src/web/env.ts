@@ -1,6 +1,5 @@
 import { LoggerType, LogLevel } from '@/common/logger'
 import { Nullable } from '@/common/types/utility'
-import type { RdbClient } from '@/infrastructure/rdb'
 import CONTEXT_KEY from './middleware/context'
 
 type D1Database = import('@cloudflare/workers-types').D1Database
@@ -14,7 +13,6 @@ export type SessionUser = {
 export type Env = {
   Bindings: {
     DB?: D1Database
-    rdbClient?: RdbClient
     DATABASE_URL?: string
     DISCORD_WEBHOOK_URL: string
     SUPABASE_URL: string

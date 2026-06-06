@@ -1,16 +1,14 @@
-import type { RdbClient } from '@/infrastructure/rdb'
+import getRdbClient, { type RdbClient } from '@/infrastructure/rdb'
+import TEST_ENV from '@/test/env'
+
+// テスト環境であることを明示
+process.env.NODE_ENV = 'test'
 
 let rdb: RdbClient | null = null
 
-export function setTestRdb(client: RdbClient): void {
-  rdb = client
-}
-
 export function getTestRdb(): RdbClient {
   if (!rdb) {
-    throw new Error(
-      'テスト用 RdbClient が未初期化です。vitest config の setupFiles に src/test/setup/test-rdb.ts を設定してください',
-    )
+    rdb = getRdbClient(TEST_ENV.DATABASE_URL)
   }
   return rdb
 }

@@ -1,7 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
+import { TEST_DATABASE_URL } from '../env'
+
+// rdb.ts は process.env.DATABASE_URL の有無で libsql クライアントの import を判定するため
+process.env.DATABASE_URL ??= TEST_DATABASE_URL
 
 export default defineConfig({
-  globalSetup: './global-setup.ts',
+  globalSetup: '../setup/apply-migrations.ts',
   testDir: '.',
   forbidOnly: true,
   retries: 2,
@@ -27,6 +31,7 @@ export default defineConfig({
     cwd: '../../..',
     url: 'http://localhost:5173',
     env: {
+      DATABASE_URL: TEST_DATABASE_URL,
       // dev サーバーのファイル監視用
       CHOKIDAR_USEPOLLING: '1',
     },

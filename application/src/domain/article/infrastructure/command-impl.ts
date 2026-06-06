@@ -6,7 +6,7 @@ import type { ReadHistory } from '@/domain/article/schema/read-history-schema'
 import type { SkippedArticle } from '@/domain/article/schema/skipped-article-schema'
 import { readHistories, skippedArticles } from '@/infrastructure/drizzle-orm/schema'
 import { RdbClient, wrapDbCall } from '@/infrastructure/rdb'
-import { fromDbId, toDbId } from '@/infrastructure/rdb-id'
+import { fromDbId, toDbId } from '@/infrastructure/rdb/id'
 
 export default class CommandImpl implements Command {
   constructor(private readonly db: RdbClient) {}

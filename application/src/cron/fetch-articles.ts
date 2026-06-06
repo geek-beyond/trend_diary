@@ -2,10 +2,10 @@ import { inArray } from 'drizzle-orm'
 import Parser from 'rss-parser'
 import type { ArticleMedia } from '@/domain/article/media'
 import { articles } from '@/infrastructure/drizzle-orm/schema'
-import { resolveRdbClient, wrapDbCall } from '@/infrastructure/rdb'
+import getRdbClient, { wrapDbCall } from '@/infrastructure/rdb'
 
 type CronEnv = {
-  DB?: D1Database
+  DB: D1Database
   LOG_LEVEL?: import('@/common/logger').LogLevel
 }
 
@@ -52,7 +52,7 @@ async function fetchRssFeed<T>(url: string) {
 }
 
 async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEnv) {
-  const db = resolveRdbClient(env)
+  const db = getRdbClient(env.DB)
   if (items.length === 0) return 0
 
   const normalized = items.map((item) => ({

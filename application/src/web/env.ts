@@ -12,7 +12,7 @@ export type SessionUser = {
 
 export type Env = {
   Bindings: {
-    DB?: D1Database
+    DB: D1Database
     DISCORD_WEBHOOK_URL: string
     SUPABASE_URL: string
     SUPABASE_ANON_KEY: string

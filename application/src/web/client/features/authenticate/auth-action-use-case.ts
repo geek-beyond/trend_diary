@@ -1,7 +1,7 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 import { isDevelopmentNodeEnv } from '@/common/env'
 import { createAuthUseCase } from '@/domain/user'
-import { resolveRdbClient } from '@/infrastructure/rdb'
+import getRdbClient from '@/infrastructure/rdb'
 
 type D1Database = import('@cloudflare/workers-types').D1Database
 
@@ -74,7 +74,12 @@ export function createAuthActionUseCase(request: Request, context: AuthActionCon
     },
   })
 
-  const rdb = resolveRdbClient(env ?? {})
+  // フレームワークの context.cloudflare.env は型上 undefined を取り得る。本番では DB が
+  // 必ずバインドされるため、欠落は設定ミスとして即時に失敗させる。
+  if (!env?.DB) {
+    throw new Error('D1 binding (db) is required')
+  }
+  const rdb = getRdbClient(env.DB)
   const useCase = createAuthUseCase(client, rdb)
 
   return {

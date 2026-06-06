@@ -5,7 +5,7 @@ import { createArticleUseCase, QueryParams } from '@/domain/article'
 import { ARTICLE_MEDIA } from '@/domain/article/media'
 import type { ArticleWithOptionalReadStatus } from '@/domain/article/schema/article-schema'
 import { ArticleOutput } from '@/domain/article/schema/article-schema'
-import { resolveRdbClient } from '@/infrastructure/rdb'
+import getRdbClient from '@/infrastructure/rdb'
 import CONTEXT_KEY from '@/web/middleware/context'
 import { ZodValidatedQueryContext } from '@/web/middleware/zod-validator'
 
@@ -65,7 +65,7 @@ export default async function getArticles(c: ZodValidatedQueryContext<ApiQueryPa
   const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)
   const activeUserId = sessionUser?.activeUserId
 
-  const rdb = resolveRdbClient(c.env)
+  const rdb = getRdbClient(c.env.DB)
   const useCase = createArticleUseCase(rdb)
 
   const result = await useCase.searchArticles(

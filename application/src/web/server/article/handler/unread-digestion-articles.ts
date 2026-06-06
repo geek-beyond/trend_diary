@@ -3,7 +3,7 @@ import { handleError } from '@/common/errors'
 import { createArticleUseCase } from '@/domain/article'
 import { ARTICLE_MEDIA } from '@/domain/article/media'
 import type { ArticleOutput } from '@/domain/article/schema/article-schema'
-import { resolveRdbClient } from '@/infrastructure/rdb'
+import getRdbClient from '@/infrastructure/rdb'
 import CONTEXT_KEY from '@/web/middleware/context'
 import type { ZodValidatedQueryContext } from '@/web/middleware/zod-validator'
 
@@ -30,7 +30,7 @@ export default async function unreadDigestionArticles(
   const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!
   const query = c.req.valid('query')
 
-  const rdb = resolveRdbClient(c.env)
+  const rdb = getRdbClient(c.env.DB)
   const useCase = createArticleUseCase(rdb)
   const result = await useCase.getUnreadDigestionArticles(sessionUser.activeUserId, query.media)
   if (result.isErr()) {

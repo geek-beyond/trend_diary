@@ -1,16 +1,15 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readD1Migrations } from '@cloudflare/vitest-pool-workers'
-import { createTestMiniflare } from './d1'
+import { openTestD1 } from './d1'
 
 const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 
 export default async function globalSetup(): Promise<void> {
   const migrations = await readD1Migrations(resolve(APP_ROOT, 'migrations'))
-  const mf = createTestMiniflare()
+  const { db, dispose } = await openTestD1()
 
   try {
-    const db = await mf.getD1Database('DB')
     await db.exec(
       'CREATE TABLE IF NOT EXISTS d1_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)',
     )
@@ -25,6 +24,6 @@ export default async function globalSetup(): Promise<void> {
       await db.prepare('INSERT INTO d1_migrations (name) VALUES (?)').bind(migration.name).run()
     }
   } finally {
-    await mf.dispose()
+    await dispose()
   }
 }

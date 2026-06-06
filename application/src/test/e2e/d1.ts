@@ -1,16 +1,13 @@
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { Miniflare } from 'miniflare'
+import { getPlatformProxy } from 'wrangler'
 
-const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
+type D1Database = import('@cloudflare/workers-types').D1Database
 
-const D1_DATABASE_ID = '15dfd380-5a78-4237-8e59-49640c2e954f'
+type TestD1 = {
+  db: D1Database
+  dispose: () => Promise<void>
+}
 
-export function createTestMiniflare(): Miniflare {
-  return new Miniflare({
-    modules: true,
-    script: 'export default {};',
-    d1Databases: { DB: D1_DATABASE_ID },
-    defaultPersistRoot: resolve(APP_ROOT, '.wrangler/state/v3'),
-  })
+export async function openTestD1(): Promise<TestD1> {
+  const proxy = await getPlatformProxy<{ DB: D1Database }>()
+  return { db: proxy.env.DB, dispose: () => proxy.dispose() }
 }

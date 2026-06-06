@@ -92,7 +92,6 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "drizzle-kit": "0.31.10",
     "jsdom": "^26.1.0",
-    "miniflare": "^4.20260601.0",
     "playwright": "^1.60.0",
     "storybook": "^10.4.1",
     "tailwindcss": "^4.3.0",

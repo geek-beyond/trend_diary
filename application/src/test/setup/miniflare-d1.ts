@@ -21,11 +21,17 @@ export function resolveMiniflareD1Url(): string {
     sqliteFiles = readdirSync(D1_STATE_DIR).filter((name) => D1_SQLITE_PATTERN.test(name))
   } catch {
     throw new Error(
-      `miniflare local D1 が見つかりません（${D1_STATE_DIR}）。先に pnpm run d1:apply:local を実行してください`,
+      `miniflare local D1 のディレクトリが見つかりません（${D1_STATE_DIR}）。先に pnpm run d1:apply:local を実行してください`,
     )
   }
 
-  if (sqliteFiles.length !== 1) {
+  if (sqliteFiles.length === 0) {
+    throw new Error(
+      `miniflare local D1 の sqlite ファイルが見つかりません（${D1_STATE_DIR}）。先に pnpm run d1:apply:local を実行してください`,
+    )
+  }
+
+  if (sqliteFiles.length > 1) {
     throw new Error(
       `miniflare local D1 の sqlite を一意に特定できません（${sqliteFiles.length} 件）。.wrangler/state を初期化してから再実行してください`,
     )

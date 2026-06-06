@@ -11,10 +11,7 @@ export type RdbClient = BaseSQLiteDatabase<'async', unknown, typeof schema>
 
 // 本番は D1 専用。file:/libsql はテストコード(src/test)のみで利用し、本番バンドル(workerd)に
 // libsql を含めない。
-export default function getRdbClient(db: D1Database | undefined): RdbClient {
-  if (!db) {
-    throw new Error('D1 binding (db) is required')
-  }
+export default function getRdbClient(db: D1Database): RdbClient {
   return drizzleD1(db, { schema, logger: resolveLogger() })
 }
 
@@ -27,5 +24,11 @@ type RdbSource = {
 // 各ハンドラに `??` を散らすと未到達分岐が増え server カバレッジ(branch 80%)を割るため、
 // 解決処理をこの一箇所へ集約する。
 export function resolveRdbClient(source: RdbSource): RdbClient {
-  return source.rdbClient ?? getRdbClient(source.DB)
+  if (source.rdbClient) {
+    return source.rdbClient
+  }
+  if (!source.DB) {
+    throw new Error('D1 binding (db) is required')
+  }
+  return getRdbClient(source.DB)
 }

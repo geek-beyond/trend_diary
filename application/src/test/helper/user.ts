@@ -5,7 +5,7 @@ import { activeUsers, users } from '@/infrastructure/drizzle-orm/schema'
 import { fromDbId, toDbIds } from '@/infrastructure/rdb/id'
 import TEST_ENV from '@/test/env'
 import app from '@/web/server'
-import { getTestRdb } from './rdb'
+import { testRdb as db } from './rdb'
 
 // Supabaseクライアント
 let supabase: SupabaseClient | null = null
@@ -51,8 +51,6 @@ async function deleteAuthUsersByEmailPattern(emailPattern: string): Promise<void
 }
 
 async function createActiveUser(email: string, authenticationId: string): Promise<ActiveUser> {
-  const db = getTestRdb()
-
   const [user] = await db.insert(users).values({}).returning()
 
   const [activeUser] = await db
@@ -95,7 +93,6 @@ export type CleanUpIds = {
 
 export async function create(email: string, password: string): Promise<CreateResult> {
   const client = getSupabase()
-  const db = getTestRdb()
 
   const signUpResult = await client.auth.signUp({ email, password })
 
@@ -141,8 +138,6 @@ export async function create(email: string, password: string): Promise<CreateRes
 
 // Set-Cookie ヘッダーも返すので後続リクエストに使用できる。
 export async function login(email: string, password: string): Promise<LoginResult> {
-  const db = getTestRdb()
-
   // Hono経由でログイン
   const res = await app.request(
     '/api/auth/login',
@@ -187,8 +182,6 @@ export async function logout(): Promise<void> {
 }
 
 export async function cleanUp(ids: CleanUpIds): Promise<void> {
-  const db = getTestRdb()
-
   // ログアウト
   const client = getSupabase()
   await client.auth.signOut()
@@ -211,8 +204,6 @@ export async function cleanUp(ids: CleanUpIds): Promise<void> {
 
 // signup API などで直接作成されたユーザー(ActiveUser なし)もクリーンアップする。
 export async function cleanUpByEmailPattern(emailPattern: string): Promise<void> {
-  const db = getTestRdb()
-
   // DBのユーザーを削除
   const activeUserRows = await db
     .select({ userId: activeUsers.userId, authenticationId: activeUsers.authenticationId })

@@ -7,7 +7,7 @@ describe('CommandImpl', () => {
   let commandImpl: CommandImpl
 
   beforeEach(() => {
-    commandImpl = new CommandImpl(getRdbClient('file::memory:'))
+    commandImpl = new CommandImpl(getRdbClient())
   })
 
   describe('createReadHistory', () => {

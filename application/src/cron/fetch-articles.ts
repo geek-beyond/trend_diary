@@ -6,7 +6,6 @@ import getRdbClient, { wrapDbCall } from '@/infrastructure/rdb'
 
 type CronEnv = {
   DB: D1Database
-  DATABASE_URL?: string
   LOG_LEVEL?: import('@/common/logger').LogLevel
 }
 
@@ -53,7 +52,7 @@ async function fetchRssFeed<T>(url: string) {
 }
 
 async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEnv) {
-  const db = getRdbClient({ db: env.DB, databaseUrl: env.DATABASE_URL })
+  const db = getRdbClient(env.DB)
   if (items.length === 0) return 0
 
   const normalized = items.map((item) => ({

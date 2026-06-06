@@ -1,9 +1,8 @@
+import { env } from 'cloudflare:test'
 import { Env } from '@/web/env'
 
-export const TEST_DATABASE_URL = 'file:./test.db'
-
 const TEST_ENV = {
-  DATABASE_URL: TEST_DATABASE_URL,
+  DB: env.DB,
   DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL ?? '',
   // ローカルSupabase環境変数
   SUPABASE_URL: 'http://127.0.0.1:54321',

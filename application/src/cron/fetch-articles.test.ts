@@ -14,17 +14,12 @@ vi.mock('rss-parser', () => ({
   },
 }))
 
+import { env } from 'cloudflare:test'
 import { fetchHatenaArticles } from '@/cron/fetch-articles'
 import { articles } from '@/infrastructure/drizzle-orm/schema'
-import getRdbClient from '@/infrastructure/rdb'
-import { TEST_DATABASE_URL } from '@/test/env'
+import { testRdb as db } from '@/test/helper/rdb'
 
-const env = {
-  DB: {} as D1Database,
-  DATABASE_URL: TEST_DATABASE_URL,
-}
-
-const db = getRdbClient(env.DATABASE_URL)
+const cronEnv = { DB: env.DB }
 
 async function countArticles(): Promise<number> {
   const rows = await db.select({ url: articles.url }).from(articles)
@@ -64,7 +59,7 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(env)
+    const count = await fetchHatenaArticles(cronEnv)
 
     expect(count).toBe(1)
     expect(fetchMock).toHaveBeenCalledWith('https://b.hatena.ne.jp/hotentry/it.rss')
@@ -92,7 +87,7 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(env)
+    const count = await fetchHatenaArticles(cronEnv)
 
     expect(count).toBe(2)
     expect(await countArticles()).toBe(2)
@@ -118,7 +113,7 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(env)
+    const count = await fetchHatenaArticles(cronEnv)
 
     expect(count).toBe(1)
     expect(await countArticles()).toBe(1)
@@ -136,11 +131,11 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const firstCount = await fetchHatenaArticles(env)
+    const firstCount = await fetchHatenaArticles(cronEnv)
     expect(firstCount).toBe(1)
     expect(await countArticles()).toBe(1)
 
-    const secondCount = await fetchHatenaArticles(env)
+    const secondCount = await fetchHatenaArticles(cronEnv)
     expect(secondCount).toBe(0)
     expect(await countArticles()).toBe(1)
   })
@@ -156,7 +151,7 @@ describe('fetchHatenaArticles', () => {
         },
       ],
     })
-    await fetchHatenaArticles(env)
+    await fetchHatenaArticles(cronEnv)
 
     parseStringMock.mockResolvedValueOnce({
       items: [
@@ -175,7 +170,7 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(env)
+    const count = await fetchHatenaArticles(cronEnv)
 
     expect(count).toBe(1)
     expect(await countArticles()).toBe(2)
@@ -205,7 +200,7 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(env)
+    const count = await fetchHatenaArticles(cronEnv)
 
     expect(count).toBe(3)
     expect((await findByUrl('https://example.com/1')).description).toBe('encoded本文')
@@ -213,5 +208,3 @@ describe('fetchHatenaArticles', () => {
     expect((await findByUrl('https://example.com/3')).description).toBe('')
   })
 })
-
-type D1Database = import('@cloudflare/workers-types').D1Database

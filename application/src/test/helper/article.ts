@@ -4,7 +4,7 @@ import { toJstDateString } from '@/common/locale/date'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@/domain/article/media'
 import { articles, readHistories, skippedArticles } from '@/infrastructure/drizzle-orm/schema'
 import { fromDbId, toDbId, toDbIds } from '@/infrastructure/rdb/id'
-import { getTestRdb } from './rdb'
+import { testRdb as rdb } from './rdb'
 
 function getTodayJstNoon(): Date {
   const todayJstResult = toJstDateString(new Date())
@@ -21,7 +21,6 @@ export async function createArticle(options?: {
   url?: string
   createdAt?: Date
 }) {
-  const rdb = getTestRdb()
   const media = options?.media ?? faker.helpers.arrayElement(ARTICLE_MEDIA)
   let generatedUrl: string
   if (media === 'qiita') {
@@ -50,7 +49,6 @@ export async function createArticle(options?: {
 }
 
 export async function deleteArticle(articleId: bigint): Promise<void> {
-  const rdb = getTestRdb()
   const dbArticleId = toDbId(articleId)
   await rdb.delete(readHistories).where(eq(readHistories.articleId, dbArticleId))
   await rdb.delete(skippedArticles).where(eq(skippedArticles.articleId, dbArticleId))
@@ -61,7 +59,6 @@ export async function findReadHistory(
   activeUserId: bigint,
   articleId: bigint,
 ): Promise<{ readHistoryId: bigint; readAt: Date } | null> {
-  const rdb = getTestRdb()
   const [readHistory] = await rdb
     .select({
       readHistoryId: readHistories.readHistoryId,
@@ -83,7 +80,6 @@ export async function findReadHistory(
 }
 
 export async function createReadHistory(activeUserId: bigint, articleId: bigint, readAt?: Date) {
-  const rdb = getTestRdb()
   const [readHistory] = await rdb
     .insert(readHistories)
     .values({
@@ -101,7 +97,6 @@ export async function createReadHistory(activeUserId: bigint, articleId: bigint,
 }
 
 export async function deleteReadHistory(activeUserId: bigint, articleId: bigint): Promise<void> {
-  const rdb = getTestRdb()
   await rdb
     .delete(readHistories)
     .where(
@@ -113,7 +108,6 @@ export async function deleteReadHistory(activeUserId: bigint, articleId: bigint)
 }
 
 export async function createSkippedArticle(activeUserId: bigint, articleId: bigint) {
-  const rdb = getTestRdb()
   const [skippedArticle] = await rdb
     .insert(skippedArticles)
     .values({
@@ -130,7 +124,6 @@ export async function createSkippedArticle(activeUserId: bigint, articleId: bigi
 }
 
 export async function countReadHistories(activeUserId: bigint, articleId: bigint): Promise<number> {
-  const rdb = getTestRdb()
   const [result] = await rdb
     .select({ value: count() })
     .from(readHistories)
@@ -144,7 +137,6 @@ export async function countReadHistories(activeUserId: bigint, articleId: bigint
 }
 
 export async function cleanUp(articleIds: bigint[]): Promise<void> {
-  const rdb = getTestRdb()
   if (articleIds.length > 0) {
     const dbArticleIds = toDbIds(articleIds)
     await rdb.delete(skippedArticles).where(inArray(skippedArticles.articleId, dbArticleIds))

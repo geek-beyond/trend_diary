@@ -1,21 +1,21 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite'
-import { TEST_DATABASE_URL } from '../../env'
+import { defineConfig } from 'vitest/config'
+import { createWorkersPool } from '../workers-pool'
 
-export default defineConfig({
-  resolve: {
-    tsconfigPaths: true,
-  },
-  test: {
-    globals: true,
-    globalSetup: ['src/test/setup/apply-migrations.ts'],
-    env: {
-      NODE_ENV: 'test',
-      DATABASE_URL: TEST_DATABASE_URL,
+export default defineConfig(async () => {
+  const { plugins, pool } = await createWorkersPool()
+
+  return {
+    plugins,
+    resolve: {
+      tsconfigPaths: true,
     },
-    include: ['src/cron/**/*.test.ts'],
-    pool: 'threads',
-    maxWorkers: 1,
-    watch: false,
-  },
+    test: {
+      globals: true,
+      pool,
+      setupFiles: ['src/test/setup/workers-d1.ts'],
+      include: ['src/cron/**/*.test.ts'],
+      watch: false,
+    },
+  }
 })

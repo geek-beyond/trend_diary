@@ -1,14 +1,6 @@
-import getRdbClient, { type RdbClient } from '@/infrastructure/rdb'
-import TEST_ENV from '@/test/env'
+import { env } from 'cloudflare:test'
+import { drizzle } from 'drizzle-orm/d1'
+import * as schema from '@/infrastructure/drizzle-orm/schema'
+import type { RdbClient } from '@/infrastructure/rdb'
 
-// テスト環境であることを明示
-process.env.NODE_ENV = 'test'
-
-let rdb: RdbClient | null = null
-
-export function getTestRdb(): RdbClient {
-  if (!rdb) {
-    rdb = getRdbClient(TEST_ENV.DATABASE_URL)
-  }
-  return rdb
-}
+export const testRdb: RdbClient = drizzle(env.DB, { schema })

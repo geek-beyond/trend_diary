@@ -6,7 +6,6 @@ type D1Database = import('@cloudflare/workers-types').D1Database
 
 type CronWorkerEnv = {
   DB: D1Database
-  DATABASE_URL?: string
   DISCORD_WEBHOOK_URL: string
   LOG_LEVEL?: import('@/common/logger').LogLevel
 }

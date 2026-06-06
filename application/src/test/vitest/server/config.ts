@@ -1,6 +1,5 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
-import { TEST_DATABASE_URL } from '../../env'
 import { coverageReporter, generateIncludes } from '../generate'
 
 const { testInclude, coverageInclude } = generateIncludes('src/web/server')
@@ -11,10 +10,8 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    globalSetup: ['src/test/setup/apply-migrations.ts'],
-    env: {
-      DATABASE_URL: TEST_DATABASE_URL,
-    },
+    // テストファイル毎に独立した in-memory SQLite を生成・注入する（テスト間を完全分離）
+    setupFiles: ['src/test/setup/test-rdb.ts'],
     // テスト間の影響が無いようにする
     // 参考: https://zenn.dev/microcms/articles/c3b9d48b5647b4#%E8%A8%AD%E5%AE%9A%E6%96%B9%E6%B3%95
     pool: 'threads',

@@ -16,15 +16,10 @@ vi.mock('rss-parser', () => ({
 
 import { fetchHatenaArticles } from '@/cron/fetch-articles'
 import { articles } from '@/infrastructure/drizzle-orm/schema'
-import getRdbClient from '@/infrastructure/rdb'
-import { TEST_DATABASE_URL } from '@/test/env'
+import { getTestRdb } from '@/test/helper/rdb'
 
-const env = {
-  DB: {} as D1Database,
-  DATABASE_URL: TEST_DATABASE_URL,
-}
-
-const db = getRdbClient(env.DATABASE_URL)
+const db = getTestRdb()
+const env = { rdbClient: db }
 
 async function countArticles(): Promise<number> {
   const rows = await db.select({ url: articles.url }).from(articles)
@@ -213,5 +208,3 @@ describe('fetchHatenaArticles', () => {
     expect((await findByUrl('https://example.com/3')).description).toBe('')
   })
 })
-
-type D1Database = import('@cloudflare/workers-types').D1Database

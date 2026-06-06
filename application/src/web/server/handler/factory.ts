@@ -60,7 +60,7 @@ import type { ContentfulStatusCode, StatusCode } from 'hono/utils/http-status'
 import { type Result } from 'neverthrow'
 import { handleError } from '@/common/errors'
 import type { LoggerType } from '@/common/logger'
-import getRdbClient, { type RdbClient } from '@/infrastructure/rdb'
+import { type RdbClient, resolveRdbClient } from '@/infrastructure/rdb'
 import type { Env, SessionUser } from '@/web/env'
 import CONTEXT_KEY from '@/web/middleware/context'
 
@@ -234,7 +234,7 @@ export function createSimpleApiHandler<
 >(config: SimpleHandlerConfig<TUseCase, TContext, TOutput, TResponse>) {
   return async (c: Context<Env>): Promise<Response> => {
     const logger = c.get(CONTEXT_KEY.APP_LOG)
-    const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
+    const rdb = resolveRdbClient(c.env)
 
     // バリデーションミドルウェアで検証済みのデータを取得するための型ハック
     const validParam = c.req.valid ? c.req.valid('param' as never) : undefined
@@ -293,7 +293,7 @@ export function createAuthenticatedApiHandler<
 >(config: AuthenticatedHandlerConfig<TUseCase, TContext, TOutput, TResponse>) {
   return async (c: Context<Env>): Promise<Response> => {
     const logger = c.get(CONTEXT_KEY.APP_LOG)
-    const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
+    const rdb = resolveRdbClient(c.env)
 
     // 認証チェック
     const user = c.get(CONTEXT_KEY.SESSION_USER)

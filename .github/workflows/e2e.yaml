@@ -25,7 +25,6 @@ defaults:
 # 共通の設定を定義
 env:
   NODE_VERSION_FILE: .node-version
-  DATABASE_URL: file:./test.db
 
 jobs:
   test:
@@ -52,7 +51,6 @@ jobs:
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
           SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
-          DATABASE_URL=${{ env.DATABASE_URL }}
           EOF
           
       - name: E2Eテストの実行
@@ -107,7 +105,6 @@ jobs:
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
           SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
-          DATABASE_URL=${{ env.DATABASE_URL }}
           EOF
 
       - name: E2Eテストの差分実行

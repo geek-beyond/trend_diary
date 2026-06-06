@@ -3,7 +3,7 @@ import { err, ok, type Result } from 'neverthrow'
 import { ClientError, ServerError } from '@/common/errors'
 import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
 import { createAuthUseCase } from '@/domain/user'
-import getRdbClient from '@/infrastructure/rdb'
+import { resolveRdbClient } from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import type { Env, SessionUser } from '../../env'
 import CONTEXT_KEY from '../context'
@@ -39,7 +39,7 @@ export async function validateSession(
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   try {
     const supabaseClient = createSupabaseAuthClient(c)
-    const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
+    const rdb = resolveRdbClient(c.env)
     const useCase = createAuthUseCase(supabaseClient, rdb)
 
     const result = await useCase.getCurrentActiveUser()

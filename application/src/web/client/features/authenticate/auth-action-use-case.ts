@@ -1,13 +1,13 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 import { isDevelopmentNodeEnv } from '@/common/env'
 import { createAuthUseCase } from '@/domain/user'
-import getRdbClient from '@/infrastructure/rdb'
+import { type RdbClient, resolveRdbClient } from '@/infrastructure/rdb'
 
 type D1Database = import('@cloudflare/workers-types').D1Database
 
 type AuthActionBindings = {
   DB?: D1Database
-  DATABASE_URL?: string
+  rdbClient?: RdbClient
   SUPABASE_URL?: string
   SUPABASE_ANON_KEY?: string
 }
@@ -75,7 +75,7 @@ export function createAuthActionUseCase(request: Request, context: AuthActionCon
     },
   })
 
-  const rdb = getRdbClient({ db: env?.DB, databaseUrl: env?.DATABASE_URL })
+  const rdb = resolveRdbClient(env ?? {})
   const useCase = createAuthUseCase(client, rdb)
 
   return {

@@ -27,7 +27,7 @@ describe('CommandImpl', () => {
   ]
 
   beforeEach(() => {
-    useCase = new CommandImpl(getRdbClient('file::memory:'))
+    useCase = new CommandImpl(getRdbClient())
   })
 
   describe('createActiveWithAuthenticationId', () => {

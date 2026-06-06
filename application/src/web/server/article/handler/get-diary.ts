@@ -6,7 +6,7 @@ import { MAX_PAGE } from '@/common/pagination'
 import { createArticleUseCase } from '@/domain/article'
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@/domain/article/diary'
 import type { DailyDiary, DailyDiaryRangeItem } from '@/domain/article/schema/diary-schema'
-import getRdbClient from '@/infrastructure/rdb'
+import { resolveRdbClient } from '@/infrastructure/rdb'
 import CONTEXT_KEY from '@/web/middleware/context'
 import type { ZodValidatedQueryContext } from '@/web/middleware/zod-validator'
 
@@ -81,7 +81,7 @@ export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) 
 
   validateDiaryDateRange(fromDate, toDate, todayJst)
 
-  const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
+  const rdb = resolveRdbClient(c.env)
   const useCase = createArticleUseCase(rdb)
 
   if (query.page !== undefined) {

@@ -41,7 +41,7 @@ describe('QueryImpl', () => {
   }
 
   beforeEach(() => {
-    useCase = new QueryImpl(getRdbClient('file::memory:'))
+    useCase = new QueryImpl(getRdbClient())
   })
 
   describe('findActiveById', () => {

@@ -48,40 +48,49 @@ async function applyMigrationFile(client: Client, sql: string): Promise<void> {
   await client.executeMultiple(`BEGIN TRANSACTION;\n${sql}\nCOMMIT;`)
 }
 
+// 生成済みクライアントへマイグレーションを適用する。in-memory(vitest) と file:(CLI/E2E) の
+// 双方から再利用するため、クライアント生成・破棄は呼び出し側の責務とする。
+export async function applyMigrationsToClient(
+  client: Client,
+  log?: (message: string) => void,
+): Promise<void> {
+  await client.execute(CREATE_MIGRATIONS_TABLE)
+
+  const appliedResult = await client.execute(`SELECT name FROM ${MIGRATIONS_TABLE};`)
+  const appliedNames = new Set<Value>(appliedResult.rows.map((row) => row.name))
+
+  const allMigrations = listMigrationFiles()
+  const unapplied = allMigrations.filter((name) => !appliedNames.has(name))
+
+  if (unapplied.length === 0) {
+    log?.('適用すべきマイグレーションはありません（全て適用済み）')
+    return
+  }
+
+  log?.(`適用対象のマイグレーション: ${unapplied.length} 件`)
+  for (const name of unapplied) {
+    log?.(`  - ${name}`)
+  }
+
+  for (const name of unapplied) {
+    const sql = readFileSync(join(MIGRATIONS_DIR, name), 'utf8')
+    await applyMigrationFile(client, sql)
+    await client.execute({
+      sql: `INSERT INTO ${MIGRATIONS_TABLE} (name) VALUES (?);`,
+      args: [name],
+    })
+    log?.(`適用しました: ${name}`)
+  }
+
+  log?.(`完了: ${unapplied.length} 件のマイグレーションを適用しました`)
+}
+
 export async function applyMigrations(databaseUrl: string | undefined): Promise<void> {
   const url = assertFileDatabaseUrl(databaseUrl)
   const client = createClient({ url })
 
   try {
-    await client.execute(CREATE_MIGRATIONS_TABLE)
-
-    const appliedResult = await client.execute(`SELECT name FROM ${MIGRATIONS_TABLE};`)
-    const appliedNames = new Set<Value>(appliedResult.rows.map((row) => row.name))
-
-    const allMigrations = listMigrationFiles()
-    const unapplied = allMigrations.filter((name) => !appliedNames.has(name))
-
-    if (unapplied.length === 0) {
-      logInfo('適用すべきマイグレーションはありません（全て適用済み）')
-      return
-    }
-
-    logInfo(`適用対象のマイグレーション: ${unapplied.length} 件`)
-    for (const name of unapplied) {
-      logInfo(`  - ${name}`)
-    }
-
-    for (const name of unapplied) {
-      const sql = readFileSync(join(MIGRATIONS_DIR, name), 'utf8')
-      await applyMigrationFile(client, sql)
-      await client.execute({
-        sql: `INSERT INTO ${MIGRATIONS_TABLE} (name) VALUES (?);`,
-        args: [name],
-      })
-      logInfo(`適用しました: ${name}`)
-    }
-
-    logInfo(`完了: ${unapplied.length} 件のマイグレーションを適用しました`)
+    await applyMigrationsToClient(client, logInfo)
   } finally {
     client.close()
   }

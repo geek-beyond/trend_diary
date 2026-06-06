@@ -22,9 +22,9 @@ const mockDb: RdbClient = drizzleProxy(
   { schema },
 )
 
-const getRdbClient = vi.fn(
-  (_input: string | { db?: unknown; databaseUrl?: string }): RdbClient => mockDb,
-)
+type D1Database = import('@cloudflare/workers-types').D1Database
+
+const getRdbClient = vi.fn((_db?: D1Database): RdbClient => mockDb)
 
 export default getRdbClient
 

@@ -17,7 +17,7 @@ describe('QueryImpl', () => {
   let queryImpl: QueryImpl
 
   beforeEach(() => {
-    queryImpl = new QueryImpl(getRdbClient('file::memory:'))
+    queryImpl = new QueryImpl(getRdbClient())
   })
 
   it.todo('DB方言ごとにcreatedAt/readAtの日時正規化SQLを切り替えられる')

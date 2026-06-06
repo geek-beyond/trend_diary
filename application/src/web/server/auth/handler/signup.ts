@@ -1,6 +1,6 @@
 import { ExternalServiceError, handleError } from '@/common/errors'
 import { type AuthInput, createAuthUseCase } from '@/domain/user'
-import getRdbClient from '@/infrastructure/rdb'
+import { resolveRdbClient } from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/web/middleware/context'
 import { ZodValidatedContext } from '@/web/middleware/zod-validator'
@@ -10,7 +10,7 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
   const valid = c.req.valid('json')
 
   const client = createSupabaseAuthClient(c)
-  const rdb = getRdbClient({ db: c.env.DB, databaseUrl: c.env.DATABASE_URL })
+  const rdb = resolveRdbClient(c.env)
   const useCase = createAuthUseCase(client, rdb)
 
   const result = await useCase.signup(valid.email, valid.password)

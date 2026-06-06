@@ -1,9 +1,13 @@
 import { Env } from '@/web/env'
+import { getTestRdb } from './helper/rdb'
 
 export const TEST_DATABASE_URL = 'file:./test.db'
 
 const TEST_ENV = {
-  DATABASE_URL: TEST_DATABASE_URL,
+  // setupFiles で注入済みの RdbClient を本番ハンドラへ渡す（resolveRdbClient が優先利用する）。
+  get rdbClient() {
+    return getTestRdb()
+  },
   DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL ?? '',
   // ローカルSupabase環境変数
   SUPABASE_URL: 'http://127.0.0.1:54321',

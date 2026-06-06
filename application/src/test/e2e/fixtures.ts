@@ -10,8 +10,6 @@ type WorkerFixtures = {
   rdb: RdbClient
 }
 
-// dev サーバと同じ local D1 を共有する rdb を worker scope で供給する。
-// beforeAll/afterAll でも受け取れるため、シード/クリーンアップから利用する。
 export const test = base.extend<Record<never, never>, WorkerFixtures>({
   rdb: [
     // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture の第1引数（他fixture未使用）

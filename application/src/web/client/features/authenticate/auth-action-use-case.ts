@@ -74,7 +74,6 @@ export function createAuthActionUseCase(request: Request, context: AuthActionCon
     },
   })
 
-  // route コンテキストでは DB が必ずバインドされる
   const rdb = getRdbClient(env?.DB as D1Database)
   const useCase = createAuthUseCase(client, rdb)
 

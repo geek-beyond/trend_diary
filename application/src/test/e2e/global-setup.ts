@@ -5,8 +5,6 @@ import { createTestMiniflare } from './d1'
 
 const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 
-// wrangler CLI を subprocess 起動せず、miniflare で在プロセスに migrations を適用する。
-// 適用済みは wrangler と同じ d1_migrations テーブルで管理し、再実行でも冪等にする。
 export default async function globalSetup(): Promise<void> {
   const migrations = await readD1Migrations(resolve(APP_ROOT, 'migrations'))
   const mf = createTestMiniflare()

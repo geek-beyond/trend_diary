@@ -58,9 +58,6 @@ importers:
       '@biomejs/biome':
         specifier: 2.4.16
         version: 2.4.16
-      '@trend-diary/lint':
-        specifier: workspace:*
-        version: link:packages/lint
       '@typescript/native-preview':
         specifier: ^7.0.0-dev.20251209.1
         version: 7.0.0-dev.20251209.1
@@ -222,8 +219,6 @@ importers:
       playwright:
         specifier: ^1.60.0
         version: 1.60.0
-
-  packages/lint: {}
 
   packages/notification:
     devDependencies:

@@ -13,7 +13,6 @@
     "test:server": "vitest run -c src/test/vitest/server/config.ts",
     "test:common": "vitest run -c src/test/vitest/common/config.ts",
     "test:cron": "vitest run -c src/test/vitest/cron/config.ts",
-    "test:notification": "pnpm --filter @trend-diary/notification test",
     "e2e": "playwright test --config=src/test/e2e/playwright.config.ts",
     "e2e:report": "playwright show-report src/test/e2e/playwright-report",
     "e2e:gen": "playwright codegen --config=src/test/e2e/playwright.config.ts",

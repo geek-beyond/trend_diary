@@ -20,5 +20,10 @@
     "@trend-diary/notification": "workspace:*",
     "drizzle-orm": "catalog:",
     "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -56,6 +56,7 @@
   "devDependencies": {
     "@chromatic-com/storybook": "^5.2.1",
     "@cloudflare/vitest-pool-workers": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
     "@faker-js/faker": "catalog:",
     "@hono/vite-dev-server": "^0.26.0",
     "@playwright/test": "^1.60.0",

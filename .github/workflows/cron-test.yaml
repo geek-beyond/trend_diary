@@ -13,7 +13,7 @@ on:
       - 'application/pnpm-lock.yaml'
       - 'application/src/cron/**'
       - 'application/packages/common/**'
-      - 'application/src/infrastructure/**'
+      - 'application/packages/datastore/**'
       - 'application/packages/notification/**'
   push:
     branches:
@@ -27,7 +27,7 @@ on:
       - 'application/pnpm-lock.yaml'
       - 'application/src/cron/**'
       - 'application/packages/common/**'
-      - 'application/src/infrastructure/**'
+      - 'application/packages/datastore/**'
       - 'application/packages/notification/**'
 
 permissions:

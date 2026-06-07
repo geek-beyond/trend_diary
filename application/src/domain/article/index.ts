@@ -1,4 +1,4 @@
-import { RdbClient } from '@/infrastructure/rdb'
+import { RdbClient } from '@trend-diary/datastore/rdb'
 import CommandImpl from './infrastructure/command-impl'
 import QueryImpl from './infrastructure/query-impl'
 import { UseCase } from './use-case'

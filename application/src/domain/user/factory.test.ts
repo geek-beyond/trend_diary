@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { describe, expect, it } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
-import type { RdbClient } from '@/infrastructure/rdb'
 import { createAuthUseCase } from './factory'
 import { AuthUseCase } from './use-case'
 

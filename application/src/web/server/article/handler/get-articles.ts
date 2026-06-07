@@ -1,11 +1,11 @@
 import { handleError } from '@trend-diary/common/errors'
 import { OffsetPaginationResult, offsetPaginationSchema } from '@trend-diary/common/pagination'
+import getRdbClient from '@trend-diary/datastore/rdb'
 import { z } from 'zod'
 import { createArticleUseCase, QueryParams } from '@/domain/article'
 import { ARTICLE_MEDIA } from '@/domain/article/media'
 import type { ArticleWithOptionalReadStatus } from '@/domain/article/schema/article-schema'
 import { ArticleOutput } from '@/domain/article/schema/article-schema'
-import getRdbClient from '@/infrastructure/rdb'
 import CONTEXT_KEY from '@/web/middleware/context'
 import { ZodValidatedQueryContext } from '@/web/middleware/zod-validator'
 

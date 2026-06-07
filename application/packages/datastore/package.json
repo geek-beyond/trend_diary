@@ -1,0 +1,19 @@
+{
+  "name": "@trend-diary/datastore",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": ["./src/*.ts", "./src/*/index.ts"],
+      "default": "./src/*"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@trend-diary/common": "workspace:*"
+  }
+}

@@ -1,8 +1,8 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 import { isDevelopmentNodeEnv } from '@trend-diary/common/env'
+import getRdbClient from '@trend-diary/datastore/rdb'
 import type { AppLoadContext } from 'react-router'
 import { createAuthUseCase } from '@/domain/user'
-import getRdbClient from '@/infrastructure/rdb'
 
 type SupabaseAuthContext = {
   cloudflare?: {

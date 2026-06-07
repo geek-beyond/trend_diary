@@ -1,7 +1,7 @@
 import { test as base } from '@playwright/test'
+import * as schema from '@trend-diary/datastore/drizzle-orm/schema'
+import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { drizzle } from 'drizzle-orm/d1'
-import * as schema from '@/infrastructure/drizzle-orm/schema'
-import type { RdbClient } from '@/infrastructure/rdb'
 import { openTestD1 } from './d1'
 
 type WorkerFixtures = {

@@ -58,6 +58,9 @@ importers:
       '@trend-diary/common':
         specifier: workspace:*
         version: link:packages/common
+      '@trend-diary/datastore':
+        specifier: workspace:*
+        version: link:packages/datastore
       '@trend-diary/notification':
         specifier: workspace:*
         version: link:packages/notification
@@ -226,6 +229,12 @@ importers:
         version: 4.96.0(@cloudflare/workers-types@4.20260507.1)
 
   packages/common: {}
+
+  packages/datastore:
+    dependencies:
+      '@trend-diary/common':
+        specifier: workspace:*
+        version: link:../common
 
   packages/notification: {}
 

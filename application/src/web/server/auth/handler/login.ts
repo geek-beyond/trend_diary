@@ -1,6 +1,6 @@
 import { handleError } from '@trend-diary/common/errors'
+import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAuthUseCase } from '@/domain/user'
-import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/web/middleware/context'
 import { ZodValidatedContext } from '@/web/middleware/zod-validator'

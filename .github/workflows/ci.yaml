@@ -290,6 +290,6 @@ jobs:
           results="${{ join(needs.*.result, ' ') }}"
           echo "各ジョブの結果: $results"
           if [[ "$results" == *failure* || "$results" == *cancelled* ]]; then
-            echo "::error::失敗またはキャンセルされたジョブがあります"
+            echo "::error::失敗またはタイムアウトしたジョブがあります"
             exit 1
           fi

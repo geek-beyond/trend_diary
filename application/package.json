@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.6",
-    "@trend-diary/biome-plugin": "workspace:*",
+    "@trend-diary/lint": "workspace:*",
     "@chromatic-com/storybook": "^5.2.1",
     "@cloudflare/vitest-pool-workers": "^0.16.12",
     "@cloudflare/workers-types": "^4.20260507.1",

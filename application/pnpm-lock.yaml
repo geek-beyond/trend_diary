@@ -194,9 +194,9 @@ importers:
       '@testing-library/react':
         specifier: ^16.3.2
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@trend-diary/biome-plugin':
+      '@trend-diary/lint':
         specifier: workspace:*
-        version: link:packages/biome-plugin
+        version: link:packages/lint
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1
@@ -252,8 +252,6 @@ importers:
         specifier: ^4.95.0
         version: 4.96.0(@cloudflare/workers-types@4.20260507.1)
 
-  packages/biome-plugin: {}
-
   packages/common:
     dependencies:
       hono:
@@ -301,6 +299,8 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+
+  packages/lint: {}
 
   packages/notification: {}
 

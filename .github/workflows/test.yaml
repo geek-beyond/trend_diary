@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - '.github/workflows/test.yaml'
-      - 'application/.storybook/**'
+      - 'application/packages/web/.storybook/**'
       - 'application/src/**'
       - 'application/packages/**'
       - 'application/migrations/**'
@@ -17,7 +17,7 @@ on:
       - main
     paths:
       - '.github/workflows/test.yaml'
-      - 'application/.storybook/**'
+      - 'application/packages/web/.storybook/**'
       - 'application/src/**'
       - 'application/packages/**'
       - 'application/migrations/**'
@@ -55,32 +55,33 @@ jobs:
         id: check-test-config
         uses: ./.github/actions/diff
         with:
-          subdir: '.github/workflows/test.yaml application/src/test/vitest/'
+          subdir: '.github/workflows/test.yaml application/packages/web/src/test/vitest/'
 
       - name: クライアントの差分チェック
         id: check-client
         uses: ./.github/actions/diff
         with:
-          subdir: 'application/src/web/client'
-          exclude_pattern: 'application/src/web/client/components/shadcn'
+          subdir: 'application/packages/web/src/client'
+          exclude_pattern: 'application/packages/web/src/client/components/shadcn'
 
       - name: サーバーの差分チェック
         id: check-server
         uses: ./.github/actions/diff
         with:
-          subdir: 'application/src/web/server application/migrations'
+          subdir: 'application/packages/web/src/server application/migrations'
 
       - name: パッケージの差分チェック
         id: check-packages
         uses: ./.github/actions/diff
         with:
           subdir: 'application/packages'
+          exclude_pattern: 'application/packages/web'
 
       - name: Storybook設定の差分チェック
         id: check-storybook
         uses: ./.github/actions/diff
         with:
-          subdir: 'application/.storybook'
+          subdir: 'application/packages/web/.storybook'
 
       - name: 差分結果の表示
         run: |

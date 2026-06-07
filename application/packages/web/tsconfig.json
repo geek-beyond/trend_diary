@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": [
+      "@cloudflare/workers-types/2023-07-01",
+      "vite/client",
+      "vitest/globals",
+      "@react-router/node"
+    ],
+    "rootDirs": [".", "./.react-router/types"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [".react-router/types/**/*", "src"],
+  "exclude": ["supabase"]
+}

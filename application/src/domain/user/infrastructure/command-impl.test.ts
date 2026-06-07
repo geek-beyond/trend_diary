@@ -1,5 +1,5 @@
+import { ServerError } from '@trend-diary/common/errors'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ServerError } from '@/common/errors'
 import getRdbClient, { mockRdbExecutor } from '@/test/__mocks__/rdb'
 import CommandImpl from './command-impl'
 

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker'
+import { articles, readHistories } from '@trend-diary/datastore/drizzle-orm/schema'
 import { inArray } from 'drizzle-orm'
-import { articles, readHistories } from '@/infrastructure/drizzle-orm/schema'
 import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
 import { testRdb as db } from '@/test/helper/rdb'

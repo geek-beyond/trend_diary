@@ -1,5 +1,5 @@
+import type { ActiveUser as RdbActiveUser } from '@trend-diary/datastore/drizzle-orm/schema'
 import { describe, expect, it } from 'vitest'
-import type { ActiveUser as RdbActiveUser } from '@/infrastructure/drizzle-orm/schema'
 import { mapToActiveUser } from './mapper'
 
 describe('mapToActiveUser', () => {

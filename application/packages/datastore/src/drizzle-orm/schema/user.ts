@@ -1,7 +1,7 @@
 import { relations, sql } from 'drizzle-orm'
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import { readHistories, skippedArticles } from '@/infrastructure/drizzle-orm/schema/article'
-import { dateTime } from '@/infrastructure/drizzle-orm/schema/datetime'
+import { readHistories, skippedArticles } from './article'
+import { dateTime } from './datetime'
 
 export const users = sqliteTable('users', {
   userId: integer('user_id').primaryKey({ autoIncrement: true }),

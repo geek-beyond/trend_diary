@@ -1,5 +1,5 @@
+import { Nullable } from '@trend-diary/common/types/utility'
 import { useState } from 'react'
-import { Nullable } from '@/common/types/utility'
 import type { Article } from './use-articles'
 
 export default function useArticleDrawer() {

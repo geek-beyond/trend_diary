@@ -1,5 +1,5 @@
+import { toJaTimeString } from '@trend-diary/common/locale/date'
 import type { ReactNode } from 'react'
-import { toJaTimeString } from '@/common/locale/date'
 import { AnchorLink } from '@/web/client/components/ui/link'
 import type { ReadItem } from '@/web/client/features/diary/types'
 import { toSafeExternalPath } from '@/web/client/lib/url'

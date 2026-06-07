@@ -1,4 +1,4 @@
-import { toJaDateString, toJstDate } from '@/common/locale/date'
+import { toJaDateString, toJstDate } from '@trend-diary/common/locale/date'
 import { ARTICLE_MEDIA_LABELS } from '@/domain/article/media'
 import {
   Table,

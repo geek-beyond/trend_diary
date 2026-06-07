@@ -1,7 +1,7 @@
+import * as schema from '@trend-diary/datastore/drizzle-orm/schema'
+import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { drizzle as drizzleProxy } from 'drizzle-orm/sqlite-proxy'
 import { beforeEach, vi } from 'vitest'
-import * as schema from '@/infrastructure/drizzle-orm/schema'
-import type { RdbClient } from '@/infrastructure/rdb'
 
 // 注入する `rows` の形は実行経路で異なる（重要なgotcha）:
 // - クエリビルダ（select / insert returning）: Drizzle が「カラム順の配列」として

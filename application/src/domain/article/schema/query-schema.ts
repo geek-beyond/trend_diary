@@ -1,5 +1,5 @@
+import { offsetPaginationSchema } from '@trend-diary/common/pagination'
 import { z } from 'zod'
-import { offsetPaginationSchema } from '@/common/pagination'
 import { ARTICLE_MEDIA } from '@/domain/article/media'
 
 const mediaEnum = z.enum(ARTICLE_MEDIA)

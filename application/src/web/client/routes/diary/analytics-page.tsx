@@ -1,5 +1,5 @@
+import { formatSummaryDateTick, toJaDateString, toJstDate } from '@trend-diary/common/locale/date'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
-import { formatSummaryDateTick, toJaDateString, toJstDate } from '@/common/locale/date'
 import {
   ChartConfig,
   ChartContainer,

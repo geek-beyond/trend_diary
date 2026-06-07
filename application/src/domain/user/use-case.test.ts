@@ -1,7 +1,7 @@
+import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
-import { ClientError, ServerError } from '@/common/errors'
 import type { AuthRepository, Command, Query } from '@/domain/user/repository'
 import type { CurrentUser } from '@/domain/user/schema/active-user-schema'
 import type { AuthenticationSession, AuthenticationUser } from '@/domain/user/schema/auth-schema'

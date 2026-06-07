@@ -1,5 +1,5 @@
+import { createdAt, updatedAt } from '@trend-diary/common/schemas'
 import { z } from 'zod'
-import { createdAt, updatedAt } from '@/common/schemas'
 
 export const activeUserSchema = z.object({
   activeUserId: z.bigint().positive(),

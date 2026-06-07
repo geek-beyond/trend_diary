@@ -5,10 +5,10 @@ import {
   type SupabaseClient,
   type User,
 } from '@supabase/supabase-js'
+import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/common/errors'
+import UnauthorizedError from '@trend-diary/common/errors/client-error/unauthorized-error'
+import { wrapAsyncCall } from '@trend-diary/common/result'
 import { err, ok, type Result } from 'neverthrow'
-import { AlreadyExistsError, ClientError, ServerError } from '@/common/errors'
-import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
-import { wrapAsyncCall } from '@/common/result'
 import type { AuthLoginResult, AuthRepository, AuthSignupResult } from '../repository'
 import type { AuthenticationUser } from '../schema/auth-schema'
 

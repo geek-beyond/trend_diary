@@ -1,0 +1,20 @@
+{
+  "name": "@trend-diary/datastore",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./rdb": "./src/rdb/index.ts",
+    "./drizzle-orm/schema": "./src/drizzle-orm/schema/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@trend-diary/common": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "neverthrow": "catalog:"
+  }
+}

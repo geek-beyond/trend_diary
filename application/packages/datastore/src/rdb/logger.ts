@@ -1,5 +1,5 @@
+import AppLogger, { type LogLevel } from '@trend-diary/common/logger'
 import type { Logger as DrizzleLogger } from 'drizzle-orm'
-import AppLogger, { type LogLevel } from '@/common/logger'
 
 const VALID_LOG_LEVELS: ReadonlyArray<LogLevel> = [
   'trace',

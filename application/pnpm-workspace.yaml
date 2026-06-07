@@ -1,6 +1,15 @@
 packages:
   - 'packages/*'
 
+# パッケージ間で共有する依存のバージョンを集中管理する。
+# 各パッケージでは "<dep>": "catalog:" と宣言してここのバージョンを参照する。
+catalog:
+  drizzle-orm: 0.45.2
+  hono: ^4.12.23
+  neverthrow: ^8.2.0
+  pino: ^10.3.1
+  zod: ^4.4.3
+
 allowBuilds:
   esbuild: false
   sharp: false

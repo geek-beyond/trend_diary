@@ -1,3 +1,4 @@
+import Logger from '@trend-diary/common/logger'
 import {
   type ActionFunctionArgs,
   type MetaFunction,
@@ -5,7 +6,6 @@ import {
   useActionData,
   useNavigation,
 } from 'react-router'
-import Logger from '@/common/logger'
 import { createAuthActionUseCase } from '@/web/client/features/authenticate/auth-action-use-case'
 import {
   AUTH_ERROR_MESSAGES,

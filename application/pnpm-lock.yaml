@@ -4,6 +4,24 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    drizzle-orm:
+      specifier: 0.45.2
+      version: 0.45.2
+    hono:
+      specifier: ^4.12.23
+      version: 4.12.23
+    neverthrow:
+      specifier: ^8.2.0
+      version: 8.2.0
+    pino:
+      specifier: ^10.3.1
+      version: 10.3.1
+    zod:
+      specifier: ^4.4.3
+      version: 4.4.3
+
 overrides:
   '@hono/node-server': ^1.19.13
   brace-expansion: ^2.0.3
@@ -55,6 +73,12 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.3.0
         version: 4.3.0(vite@8.0.16(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.4))
+      '@trend-diary/common':
+        specifier: workspace:*
+        version: link:packages/common
+      '@trend-diary/datastore':
+        specifier: workspace:*
+        version: link:packages/datastore
       '@trend-diary/notification':
         specifier: workspace:*
         version: link:packages/notification
@@ -221,6 +245,33 @@ importers:
       wrangler:
         specifier: ^4.95.0
         version: 4.96.0(@cloudflare/workers-types@4.20260507.1)
+
+  packages/common:
+    dependencies:
+      hono:
+        specifier: 'catalog:'
+        version: 4.12.23
+      neverthrow:
+        specifier: 'catalog:'
+        version: 8.2.0
+      pino:
+        specifier: 'catalog:'
+        version: 10.3.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+
+  packages/datastore:
+    dependencies:
+      '@trend-diary/common':
+        specifier: workspace:*
+        version: link:../common
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@4.20260507.1)(@libsql/client@0.17.3)
+      neverthrow:
+        specifier: 'catalog:'
+        version: 8.2.0
 
   packages/notification: {}
 

@@ -1,0 +1,25 @@
+{
+  "name": "@trend-diary/common",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./env": "./src/env/index.ts",
+    "./errors": "./src/errors/index.ts",
+    "./locale": "./src/locale/index.ts",
+    "./pagination": "./src/pagination/index.ts",
+    "./result": "./src/result/index.ts",
+    "./sanitization": "./src/sanitization/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "hono": "catalog:",
+    "neverthrow": "catalog:",
+    "pino": "catalog:",
+    "zod": "catalog:"
+  }
+}

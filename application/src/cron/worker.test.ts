@@ -10,7 +10,7 @@ vi.mock('./fetch-articles', () => ({
   runScheduledFetch: runScheduledFetchMock,
 }))
 
-vi.mock('@/common/logger', () => ({
+vi.mock('@trend-diary/common/logger', () => ({
   default: class MockLogger {
     info(message: unknown) {
       loggerInfoMock(message)

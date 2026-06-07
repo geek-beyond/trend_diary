@@ -1,5 +1,5 @@
+import { createdAt } from '@trend-diary/common/schemas'
 import { z } from 'zod'
-import { createdAt } from '@/common/schemas'
 
 export const articleSchema = z.object({
   articleId: z.bigint(),

@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
+import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { inArray, like } from 'drizzle-orm'
-import { activeUsers, users } from '@/infrastructure/drizzle-orm/schema'
-import type { RdbClient } from '@/infrastructure/rdb'
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321'
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY

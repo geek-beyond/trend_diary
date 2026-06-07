@@ -1,12 +1,12 @@
 import type { RenderHookResult } from '@testing-library/react'
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
 import type { ReactNode } from 'react'
 import { createElement } from 'react'
 import { MemoryRouter } from 'react-router'
 import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import type { MockedFunction } from 'vitest'
-import { addJstDays, toJstDateString } from '@/common/locale/date'
 import getApiClientForClient from '@/infrastructure/api'
 import useArticles, { type Article } from './use-articles'
 

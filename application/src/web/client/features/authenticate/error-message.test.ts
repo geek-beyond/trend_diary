@@ -1,4 +1,4 @@
-import { ClientError, ServerError } from '@/common/errors'
+import { ClientError, ServerError } from '@trend-diary/common/errors'
 import {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,

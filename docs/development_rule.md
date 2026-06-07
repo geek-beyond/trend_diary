@@ -9,8 +9,9 @@
 
 ### GitHub操作
 
-- GitHub MCP（`mcp__github__*`）の使用を**禁止**する
-- PR・Issue・レビュー・CIなど全てのGitHub操作は`gh` CLIで行うこと
+- GitHub操作は原則`gh` CLIで行う
+- GitHub MCP（`mcp__github__*`）は原則禁止。ただし**PRの作成・更新のみ**MCP利用可
+- 上記以外（Issue・レビュー・CIなど）は`gh` CLIで行うこと
 
 ### レビュー時のprefix
 

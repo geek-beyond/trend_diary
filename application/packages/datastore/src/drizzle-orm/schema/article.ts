@@ -1,7 +1,7 @@
 import { relations, sql } from 'drizzle-orm'
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import { dateTime } from '@/infrastructure/drizzle-orm/schema/datetime'
-import { activeUsers } from '@/infrastructure/drizzle-orm/schema/user'
+import { dateTime } from './datetime'
+import { activeUsers } from './user'
 
 export const articles = sqliteTable(
   'articles',

@@ -1,5 +1,5 @@
+import { authInputSchema } from '@trend-diary/domain/user'
 import { Hono } from 'hono'
-import { authInputSchema } from '@/domain/user'
 import { Env } from '@/web/env'
 import { authenticator } from '@/web/middleware/authenticator'
 import zodValidator from '@/web/middleware/zod-validator'

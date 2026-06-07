@@ -4,9 +4,9 @@ import { RdbClient, wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { and, eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { Command } from '@/domain/article/repository'
-import type { ReadHistory } from '@/domain/article/schema/read-history-schema'
-import type { SkippedArticle } from '@/domain/article/schema/skipped-article-schema'
+import { Command } from '../repository'
+import type { ReadHistory } from '../schema/read-history-schema'
+import type { SkippedArticle } from '../schema/skipped-article-schema'
 
 export default class CommandImpl implements Command {
   constructor(private readonly db: RdbClient) {}

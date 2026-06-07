@@ -14,6 +14,7 @@ on:
       - 'application/src/cron/**'
       - 'application/packages/common/**'
       - 'application/packages/datastore/**'
+      - 'application/packages/domain/**'
       - 'application/packages/notification/**'
   push:
     branches:
@@ -28,6 +29,7 @@ on:
       - 'application/src/cron/**'
       - 'application/packages/common/**'
       - 'application/packages/datastore/**'
+      - 'application/packages/domain/**'
       - 'application/packages/notification/**'
 
 permissions:

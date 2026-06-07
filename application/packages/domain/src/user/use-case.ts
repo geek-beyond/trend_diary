@@ -1,8 +1,7 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
-import type { Command, Query } from '@/domain/user/repository'
-import type { CurrentUser } from '@/domain/user/schema/active-user-schema'
-import type { AuthRepository } from './repository'
+import type { AuthRepository, Command, Query } from './repository'
+import type { CurrentUser } from './schema/active-user-schema'
 import type { AuthenticationSession } from './schema/auth-schema'
 
 /**

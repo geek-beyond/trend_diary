@@ -79,6 +79,9 @@ importers:
       '@trend-diary/datastore':
         specifier: workspace:*
         version: link:packages/datastore
+      '@trend-diary/domain':
+        specifier: workspace:*
+        version: link:packages/domain
       '@trend-diary/notification':
         specifier: workspace:*
         version: link:packages/notification
@@ -272,6 +275,27 @@ importers:
       neverthrow:
         specifier: 'catalog:'
         version: 8.2.0
+
+  packages/domain:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.76.1
+        version: 2.106.1
+      '@trend-diary/common':
+        specifier: workspace:*
+        version: link:../common
+      '@trend-diary/datastore':
+        specifier: workspace:*
+        version: link:../datastore
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@4.20260507.1)(@libsql/client@0.17.3)
+      neverthrow:
+        specifier: 'catalog:'
+        version: 8.2.0
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
 
   packages/notification: {}
 

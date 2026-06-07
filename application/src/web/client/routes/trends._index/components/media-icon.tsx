@@ -1,4 +1,4 @@
-import type { ArticleMedia } from '@/domain/article/media'
+import type { ArticleMedia } from '@trend-diary/domain/article/media'
 
 export type MediaType = ArticleMedia
 type IconSize = 'sm' | 'md'

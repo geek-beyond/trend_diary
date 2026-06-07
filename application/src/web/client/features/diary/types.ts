@@ -1,4 +1,4 @@
-import type { ArticleMedia } from '@/domain/article/media'
+import type { ArticleMedia } from '@trend-diary/domain/article/media'
 
 export type Source = {
   media: ArticleMedia

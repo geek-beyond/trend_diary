@@ -1,6 +1,6 @@
 import Logger from '@trend-diary/common/logger'
+import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { DiscordWebhookClient } from '@trend-diary/notification'
-import type { ArticleMedia } from '@/domain/article/media'
 import { runScheduledFetch } from './fetch-articles'
 
 type D1Database = import('@cloudflare/workers-types').D1Database

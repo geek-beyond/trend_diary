@@ -1,4 +1,4 @@
-import { createArticleUseCase } from '@/domain/article'
+import { createArticleUseCase } from '@trend-diary/domain/article'
 import {
   type AuthenticatedRequestContext,
   createAuthenticatedApiHandler,

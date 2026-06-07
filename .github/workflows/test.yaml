@@ -45,7 +45,6 @@ jobs:
     outputs:
       test_runner: ubuntu-latest
       run_client_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-client.outputs.diff-count != 0 }}
-      run_domain_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-domain.outputs.diff-count != 0 }}
       run_server_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-server.outputs.diff-count != 0 }}
       run_component_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-client.outputs.diff-count != 0 || steps.check-storybook.outputs.diff-count != 0 }}
       run_package_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-packages.outputs.diff-count != 0 }}
@@ -64,12 +63,6 @@ jobs:
         with:
           subdir: 'application/src/web/client'
           exclude_pattern: 'application/src/web/client/components/shadcn'
-
-      - name: ドメインの差分チェック
-        id: check-domain
-        uses: ./.github/actions/diff
-        with:
-          subdir: 'application/src/domain'
 
       - name: サーバーの差分チェック
         id: check-server
@@ -96,7 +89,6 @@ jobs:
           else
             echo "テスト設定差分: ${{ steps.check-test-config.outputs.diff-count }} ファイル"
             echo "クライアント差分: ${{ steps.check-client.outputs.diff-count }} ファイル"
-            echo "ドメイン差分: ${{ steps.check-domain.outputs.diff-count }} ファイル"
             echo "サーバー差分: ${{ steps.check-server.outputs.diff-count }} ファイル"
             echo "Storybook設定差分: ${{ steps.check-storybook.outputs.diff-count }} ファイル"
             if [[ "${{ steps.check-test-config.outputs.diff-count }}" != "0" ]]; then
@@ -121,22 +113,6 @@ jobs:
         uses: ./.github/actions/test_cov
         with:
           target: client
-
-  domain:
-    needs: setup
-    runs-on: ${{ needs.setup.outputs.test_runner }}
-    if: ${{ needs.setup.outputs.run_domain_test == 'true' }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Node.jsの構築
-        uses: ./.github/actions/setup_node
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
-
-      - name: ドメインのテスト
-        uses: ./.github/actions/test_cov
-        with:
-          target: domain
 
   server:
     needs: setup
@@ -174,6 +150,7 @@ jobs:
         package:
           - common
           - datastore
+          - domain
           - notification
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3

@@ -1,6 +1,6 @@
 import { ServerError } from '@trend-diary/common/errors'
 import { beforeEach, describe, expect, it } from 'vitest'
-import getRdbClient, { mockRdbExecutor } from '@/test/__mocks__/rdb'
+import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import CommandImpl from './command-impl'
 
 describe('CommandImpl', () => {

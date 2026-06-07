@@ -1,7 +1,7 @@
 import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
+import { createAuthUseCase } from '@trend-diary/domain/user'
 import type { Context } from 'hono'
-import { createAuthUseCase } from '@/domain/user'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/web/middleware/context'
 

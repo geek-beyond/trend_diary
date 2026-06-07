@@ -1,5 +1,5 @@
+import { createArticleUseCase } from '@trend-diary/domain/article'
 import { z } from 'zod'
-import { createArticleUseCase } from '@/domain/article'
 import {
   type AuthenticatedRequestContext,
   createAuthenticatedApiHandler,

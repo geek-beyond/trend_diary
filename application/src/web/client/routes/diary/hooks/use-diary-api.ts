@@ -1,4 +1,4 @@
-import type { ArticleMedia } from '@/domain/article/media'
+import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import createSWRFetcher from '@/web/client/features/create-swr-fetcher'
 
 export type DiarySource = {

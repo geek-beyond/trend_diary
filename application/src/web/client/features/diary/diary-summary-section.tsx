@@ -1,5 +1,5 @@
 import { toJaDateString, toJstDate } from '@trend-diary/common/locale/date'
-import { ARTICLE_MEDIA_LABELS } from '@/domain/article/media'
+import { ARTICLE_MEDIA_LABELS } from '@trend-diary/domain/article/media'
 import {
   Table,
   TableBody,

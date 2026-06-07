@@ -20,5 +20,11 @@ export async function openTestD1(): Promise<TestD1> {
     // dev サーバー(pnpm start)が利用する application/.wrangler/state/v3 と同じ DB を参照する
     persist: { path: resolve(APP_ROOT, '.wrangler/state/v3') },
   })
+  if (!proxy.env.DB) {
+    await proxy.dispose()
+    throw new Error(
+      'D1 バインディング "DB" が見つかりません。wrangler.toml の設定を確認してください。',
+    )
+  }
   return { db: proxy.env.DB, dispose: () => proxy.dispose() }
 }

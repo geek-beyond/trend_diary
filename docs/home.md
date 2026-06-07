@@ -73,7 +73,6 @@
 │   └── supabase.ts # Supabase接続
 ├── test # テスト関連
 │   ├── __mocks__ # モック
-│   ├── e2e # E2Eテスト
 │   ├── helper # テストヘルパー
 │   ├── vitest # Vitest設定
 │   │   ├── client # クライアント側テスト設定

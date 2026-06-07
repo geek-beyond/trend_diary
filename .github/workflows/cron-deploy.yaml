@@ -39,8 +39,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./application
-          command: deploy --config packages/cron/wrangler.toml
+          workingDirectory: ./application/packages/cron
+          command: deploy
           secrets: |
             DISCORD_WEBHOOK_URL
         env:

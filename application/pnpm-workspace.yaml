@@ -25,6 +25,7 @@ allowBuilds:
 minimumReleaseAge: 4320
 
 overrides:
+  '@esbuild-kit/core-utils>esbuild': ^0.25.0
   '@hono/node-server': ^1.19.13
   brace-expansion: ^2.0.3
   defu: ^6.1.5

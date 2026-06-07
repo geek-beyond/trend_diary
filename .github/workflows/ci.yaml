@@ -280,7 +280,7 @@ jobs:
         run: rm -f packages/web/.dev.vars
 
   gate:
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     needs: [changes, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e, e2e-diff]
     runs-on: ubuntu-latest
     steps:

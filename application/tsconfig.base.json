@@ -6,6 +6,6 @@
     "strict": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+    "lib": ["ESNext"]
   }
 }

@@ -50,7 +50,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./application
+          workingDirectory: ./application/packages/web
           command: deploy
           # Secretsで保存するものをActionsで管理し、環境変数として渡す
           secrets: |
@@ -83,5 +83,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./application
+          workingDirectory: ./application/packages/web
           command: d1 migrations apply trend-diary-db --remote

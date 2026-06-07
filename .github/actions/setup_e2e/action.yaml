@@ -25,4 +25,4 @@ runs:
       if: steps.playwright-cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: ./application
-      run: pnpm exec playwright install chromium --with-deps
+      run: pnpm --filter @trend-diary/web exec playwright install chromium --with-deps

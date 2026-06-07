@@ -33,13 +33,13 @@ supabase start
 環境変数ファイルをコピー(Cloudflareでは.{env}.vars)
 `supabase start`時に表示される`anon key`を`SUPABASE_ANON_KEY`に設定
 ```sh
-cp .dev.vars.example .dev.vars
+cp packages/web/.dev.vars.example packages/web/.dev.vars
 ```
 
 ローカル開発用DB（miniflare D1）にマイグレーションを適用
 
 ```sh
-pnpm run d1:apply:local
+pnpm --filter @trend-diary/web d1:apply:local
 ```
 
 テスト用DB（`test.db`）はテスト実行時に自動適用される。手動で適用する場合は`DATABASE_URL`を指定して`pnpm run db:migrate:test`を使う
@@ -47,13 +47,13 @@ pnpm run d1:apply:local
 Cloudflare D1ローカルマイグレーション適用（必要な場合）
 
 ```sh
-pnpm run d1:apply:local
+pnpm --filter @trend-diary/web d1:apply:local
 ```
 
 サーバの起動（Hono上でAPIとRemixが起動する）
 
 ```sh
-pnpm start
+pnpm dev
 ```
 
 ## 他ドキュメント

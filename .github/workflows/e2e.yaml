@@ -7,8 +7,9 @@ on:
   pull_request:
     paths:
       - ".github/workflows/e2e.yaml"
-      - "application/src/test/e2e/**"
-      - "application/src/web/client/routes/**"
+      - "application/packages/web/src/test/e2e/**"
+      - "application/packages/web/src/client/routes/**"
+      - "application/packages/web/**"
       - "application/package.json"
       - "application/pnpm-lock.yaml"
 
@@ -46,7 +47,7 @@ jobs:
 
       - name: Create .dev.vars for Actions
         run: |
-          cat > .dev.vars <<'EOF'
+          cat > packages/web/.dev.vars <<'EOF'
           # Dev env for Actions (created from secrets)
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
@@ -54,14 +55,14 @@ jobs:
           EOF
           
       - name: E2Eテストの実行
-        run: pnpm run e2e --fail-on-flaky-tests
+        run: pnpm --filter @trend-diary/web e2e --fail-on-flaky-tests
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-report-main-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/playwright-report/
+          path: application/packages/web/playwright-report/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -70,13 +71,13 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-test-results-main-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/test-results/
+          path: application/packages/web/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
       - name: Cleanup .dev.vars
         if: always()
-        run: rm -f .dev.vars
+        run: rm -f packages/web/.dev.vars
 
   test-diff:
     name: Diff
@@ -100,7 +101,7 @@ jobs:
 
       - name: Create .dev.vars for Actions
         run: |
-          cat > .dev.vars <<'EOF'
+          cat > packages/web/.dev.vars <<'EOF'
           # Dev env for Actions (created from secrets)
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
@@ -108,14 +109,14 @@ jobs:
           EOF
 
       - name: E2Eテストの差分実行
-        run: pnpm run e2e --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
+        run: pnpm --filter @trend-diary/web e2e --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-report-diff-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/playwright-report/
+          path: application/packages/web/playwright-report/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -124,10 +125,10 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-test-results-diff-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/test-results/
+          path: application/packages/web/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
       - name: Cleanup .dev.vars
         if: always()
-        run: rm -f .dev.vars
+        run: rm -f packages/web/.dev.vars

@@ -1,0 +1,113 @@
+import app from '@/server'
+import TEST_ENV from '@/test/env'
+import * as articleHelper from '@/test/helper/article'
+import type { CleanUpIds } from '@/test/helper/user'
+import * as userHelper from '@/test/helper/user'
+
+describe('DELETE /api/articles/:article_id/unread', () => {
+  let testActiveUserId: bigint
+  let testArticleId: bigint
+  let authCookies: string
+  const createdArticleIds: bigint[] = []
+  const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
+
+  async function requestUnreadArticle(articleId: string, cookies: string) {
+    const headers: Record<string, string> = {
+      Cookie: cookies,
+    }
+
+    return app.request(
+      `/api/articles/${articleId}/unread`,
+      {
+        method: 'DELETE',
+        headers,
+      },
+      TEST_ENV,
+    )
+  }
+
+  beforeEach(async () => {
+    // アカウント作成・ログイン
+    const { userId, authenticationId } = await userHelper.create(
+      'test@example.com',
+      'Test@password123',
+    )
+    createdUserIds.userIds.push(userId)
+    createdUserIds.authIds.push(authenticationId)
+
+    const loginData = await userHelper.login('test@example.com', 'Test@password123')
+    testActiveUserId = loginData.activeUserId
+    authCookies = loginData.cookies
+
+    // テスト記事作成
+    const article = await articleHelper.createArticle()
+    testArticleId = article.articleId
+    createdArticleIds.push(article.articleId)
+
+    // 既読履歴を事前に作成（削除テスト用）
+    await articleHelper.createReadHistory(
+      testActiveUserId,
+      testArticleId,
+      new Date('2024-01-01T10:00:00Z'),
+    )
+  })
+
+  afterEach(async () => {
+    await Promise.allSettled([
+      userHelper.cleanUp(createdUserIds),
+      articleHelper.cleanUp(createdArticleIds),
+    ])
+    createdUserIds.userIds.length = 0
+    createdUserIds.authIds.length = 0
+    createdArticleIds.length = 0
+  })
+
+  describe('正常系', () => {
+    it('既読履歴を削除できること', async () => {
+      // 事前に既読履歴があることを確認
+      const beforeCount = await articleHelper.countReadHistories(testActiveUserId, testArticleId)
+      expect(beforeCount).toBe(1)
+
+      const response = await requestUnreadArticle(testArticleId.toString(), authCookies)
+
+      expect(response.status).toBe(200)
+      const json = (await response.json()) as { message: string }
+      expect(json.message).toBe('記事を未読にしました')
+
+      // DBから実際に削除されていることを確認
+      const afterCount = await articleHelper.countReadHistories(testActiveUserId, testArticleId)
+      expect(afterCount).toBe(0)
+    })
+
+    it('既読履歴がなくてもOK', async () => {
+      // 既読履歴を削除
+      await articleHelper.deleteReadHistory(testActiveUserId, testArticleId)
+
+      const response = await requestUnreadArticle(testArticleId.toString(), authCookies)
+
+      expect(response.status).toBe(200)
+      const json = (await response.json()) as { message: string }
+      expect(json.message).toBe('記事を未読にしました')
+
+      // DBから実際に削除されていることを確認
+      const afterCount = await articleHelper.countReadHistories(testActiveUserId, testArticleId)
+      expect(afterCount).toBe(0)
+    })
+  })
+
+  describe('準正常系', () => {
+    it('無効なarticle_idでバリデーションエラーが発生すること', async () => {
+      const response = await requestUnreadArticle('invalid-id', authCookies)
+
+      expect(response.status).toBe(422)
+    })
+
+    it('記事が存在しない場合はエラー', async () => {
+      // 記事を削除
+      await articleHelper.deleteArticle(testArticleId)
+
+      const response = await requestUnreadArticle(testArticleId.toString(), authCookies)
+      expect(response.status).toBe(404)
+    })
+  })
+})

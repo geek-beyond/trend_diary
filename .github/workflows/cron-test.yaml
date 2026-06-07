@@ -8,10 +8,10 @@ on:
       - '.github/workflows/cron-test.yaml'
       - '.github/workflows/cron-deploy.yaml'
       - '.github/actions/setup_node/action.yaml'
-      - 'application/wrangler.cron.toml'
       - 'application/package.json'
       - 'application/pnpm-lock.yaml'
-      - 'application/src/cron/**'
+      - 'application/migrations/**'
+      - 'application/packages/cron/**'
       - 'application/packages/common/**'
       - 'application/packages/datastore/**'
       - 'application/packages/domain/**'
@@ -23,10 +23,10 @@ on:
       - '.github/workflows/cron-test.yaml'
       - '.github/workflows/cron-deploy.yaml'
       - '.github/actions/setup_node/action.yaml'
-      - 'application/wrangler.cron.toml'
       - 'application/package.json'
       - 'application/pnpm-lock.yaml'
-      - 'application/src/cron/**'
+      - 'application/migrations/**'
+      - 'application/packages/cron/**'
       - 'application/packages/common/**'
       - 'application/packages/datastore/**'
       - 'application/packages/domain/**'
@@ -54,5 +54,8 @@ jobs:
         with:
           node-version-file: .node-version
 
+      - name: 型チェック
+        run: pnpm --filter @trend-diary/cron typecheck
+
       - name: Cronテスト
-        run: pnpm run test:cron
+        run: pnpm --filter @trend-diary/cron test

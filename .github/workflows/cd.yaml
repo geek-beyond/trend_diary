@@ -31,7 +31,6 @@ defaults:
     working-directory: ./application
 
 jobs:
-  # CI 成功(main への push)時は変更があったリソースだけ、手動実行時は選択したリソースだけをデプロイ対象にする
   changes:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
@@ -72,7 +71,6 @@ jobs:
 
             if grep -qE "application/packages/web/|$shared" <<<"$files"; then web=true; fi
             if grep -qE "application/packages/cron/|$shared" <<<"$files"; then cron=true; fi
-            # マイグレーションファイルが変わったときだけ D1 に適用する
             if grep -qE 'application/packages/datastore/migrations/' <<<"$files"; then database=true; fi
           fi
 

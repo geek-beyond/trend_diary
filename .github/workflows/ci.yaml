@@ -66,18 +66,24 @@ jobs:
           echo "検知したパッケージ:"
           echo "${NAMES:-(なし)}"
 
+          # 指定パッケージが変更対象に含まれるか判定する(grep の非マッチで set -e に
+          # 引っかからないよう if で包む)。
+          has() { grep -qx "$1" <<<"$NAMES"; }
+
           # node + vitest だけで完結する同質パッケージは matrix にまとめる。
           # 特殊な環境が要るもの(web=supabase/playwright, e2e=playwright)は専用ジョブで扱う。
-          PACKAGES=$(for p in common datastore domain notification cron; do
-            grep -qx "$p" <<<"$NAMES" && echo "$p"
-          done | jq -R . | jq -cs .)
+          items=""
+          for p in common datastore domain notification cron; do
+            if has "$p"; then items="${items}\"${p}\","; fi
+          done
+          PACKAGES="[${items%,}]"
 
           web=false
-          grep -qx web <<<"$NAMES" && web=true
+          if has web; then web=true; fi
 
           # e2e は web をランタイム検証するため、web が変わったら必ず実行する。
           e2e=false
-          { grep -qx e2e <<<"$NAMES" || [[ "$web" == "true" ]]; } && e2e=true
+          if has e2e || [[ "$web" == "true" ]]; then e2e=true; fi
 
           # スキーマドリフト検査は datastore のスキーマ/マイグレーション変更時のみ。
           schema=false

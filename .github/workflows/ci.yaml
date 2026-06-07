@@ -306,6 +306,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: いずれかのジョブが失敗していないか確認
+        working-directory: ${{ github.workspace }}
         run: |
           results="${{ join(needs.*.result, ' ') }}"
           echo "各ジョブの結果: $results"

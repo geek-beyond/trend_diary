@@ -15,5 +15,11 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "hono": "catalog:",
+    "neverthrow": "catalog:",
+    "pino": "catalog:",
+    "zod": "catalog:"
   }
 }

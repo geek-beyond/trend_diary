@@ -13,6 +13,8 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@trend-diary/common": "workspace:*"
+    "@trend-diary/common": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "neverthrow": "catalog:"
   }
 }

@@ -361,5 +361,5 @@
     "enabled": true,
     "actions": { "source": { "organizeImports": "on" } }
   },
-  "plugins": ["./src/plugin/biome/no-use-direct-dom-a-element.grit"]
+  "plugins": ["./packages/biome-plugin/no-use-direct-dom-a-element.grit"]
 }

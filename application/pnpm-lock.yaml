@@ -124,9 +124,6 @@ importers:
       recharts:
         specifier: ^3.8.1
         version: 3.8.1(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react-is@18.3.1)(react@19.2.6)(redux@5.0.1)
-      rss-parser:
-        specifier: ^3.13.0
-        version: 3.13.0
       sonner:
         specifier: ^2.0.3
         version: 2.0.7(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -263,6 +260,27 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+
+  packages/cron:
+    dependencies:
+      '@trend-diary/common':
+        specifier: workspace:*
+        version: link:../common
+      '@trend-diary/datastore':
+        specifier: workspace:*
+        version: link:../datastore
+      '@trend-diary/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@trend-diary/notification':
+        specifier: workspace:*
+        version: link:../notification
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@4.20260507.1)(@libsql/client@0.17.3)
+      rss-parser:
+        specifier: ^3.13.0
+        version: 3.13.0
 
   packages/datastore:
     dependencies:

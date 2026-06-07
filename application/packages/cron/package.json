@@ -1,0 +1,24 @@
+{
+  "name": "@trend-diary/cron",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/worker.ts",
+  "exports": {
+    "./worker": "./src/worker.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@trend-diary/common": "workspace:*",
+    "@trend-diary/datastore": "workspace:*",
+    "@trend-diary/domain": "workspace:*",
+    "@trend-diary/notification": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "rss-parser": "^3.13.0"
+  }
+}

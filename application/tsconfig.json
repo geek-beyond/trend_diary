@@ -1,11 +1,4 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "types": ["@cloudflare/workers-types/2023-07-01", "vitest/globals"],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": ["src"],
-  "exclude": ["supabase"]
+  "include": ["drizzle.config.ts"]
 }

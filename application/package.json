@@ -11,7 +11,6 @@
     "build": "pnpm --filter @trend-diary/web build",
     "test:client": "pnpm --filter @trend-diary/web test:client",
     "test:server": "pnpm --filter @trend-diary/web test:server",
-    "test:cron": "vitest run -c src/test/vitest/cron/config.ts",
     "e2e": "pnpm --filter @trend-diary/web e2e",
     "e2e:report": "pnpm --filter @trend-diary/web e2e:report",
     "e2e:gen": "pnpm --filter @trend-diary/web e2e:gen",
@@ -28,15 +27,6 @@
     "supabase:stop": "supabase stop",
     "storybook": "pnpm --filter @trend-diary/web storybook",
     "test-storybook": "pnpm --filter @trend-diary/web test-storybook"
-  },
-  "dependencies": {
-    "@trend-diary/common": "workspace:*",
-    "@trend-diary/datastore": "workspace:*",
-    "@trend-diary/domain": "workspace:*",
-    "@trend-diary/notification": "workspace:*",
-    "drizzle-orm": "catalog:",
-    "neverthrow": "catalog:",
-    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.6",

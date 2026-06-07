@@ -11,10 +11,6 @@ export interface RequestInfo {
   userAgent: string
 }
 
-export interface ChatNotifier {
-  error(error: Error, requestInfo: RequestInfo): Promise<void>
-}
-
 const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
   const logger = c.get(CONTEXT_KEY.APP_LOG) as LoggerType | undefined
 
@@ -26,7 +22,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
     userAgent: c.req.header('User-Agent') || '',
   }
 
-  const chatNotifier: ChatNotifier = new DiscordNotifier(discordWebhookUrl)
+  const discordNotifier = new DiscordNotifier(discordWebhookUrl)
   if (err instanceof HTTPException) {
     if (err.status >= 500) {
       if (logger && typeof logger.error === 'function') {
@@ -55,7 +51,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
       console.warn('http exception', err)
     }
 
-    if (err.status >= 500) await chatNotifier.error(err, requestInfo)
+    if (err.status >= 500) await discordNotifier.error(err, requestInfo)
 
     return c.json(
       {
@@ -74,7 +70,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
     // biome-ignore lint/suspicious/noConsole: request logger未設定時の最終フォールバック
     console.error('Unhandled error', err)
   }
-  await chatNotifier.error(err, requestInfo)
+  await discordNotifier.error(err, requestInfo)
 
   return c.json('Internal Server Error', { status: 500 })
 }

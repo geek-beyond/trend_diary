@@ -86,7 +86,7 @@
               "onfocus": "Register focus handlers via window.addEventListener('focus', ...) instead of the implicit onfocus global.",
               "pageYOffset": "Use window.scrollY (or window.pageYOffset) explicitly so it is not confused with a local variable.",
               "addEventListener": "Use window.addEventListener explicitly so it is not confused with a local variable.",
-              "defaultstatus": "Avoid the deprecated defaultstatus; use window.defaultstatus explicitly if it is truly required.",
+              "defaultstatus": "Avoid the deprecated lowercase defaultstatus; use the standard window.defaultStatus explicitly if it is truly required.",
               "history": "Use window.history explicitly so it is not confused with a local variable.",
               "frames": "Use window.frames explicitly so it is not confused with a local variable.",
               "screenY": "Use window.screenY explicitly so it is not confused with a local variable.",

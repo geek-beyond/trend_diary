@@ -4,10 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": {
-      "types": ["./src/*.ts", "./src/*/index.ts"],
-      "default": "./src/*"
-    }
+    "./rdb": "./src/rdb/index.ts",
+    "./drizzle-orm/schema": "./src/drizzle-orm/schema/index.ts",
+    "./*": "./src/*.ts"
   },
   "scripts": {
     "test": "vitest run",

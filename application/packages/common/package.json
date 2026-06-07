@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": {
-      "types": ["./src/*.ts", "./src/*/index.ts"],
-      "default": "./src/*"
-    }
+    "./env": "./src/env/index.ts",
+    "./errors": "./src/errors/index.ts",
+    "./locale": "./src/locale/index.ts",
+    "./pagination": "./src/pagination/index.ts",
+    "./result": "./src/result/index.ts",
+    "./sanitization": "./src/sanitization/index.ts",
+    "./*": "./src/*.ts"
   },
   "scripts": {
     "test": "vitest run",

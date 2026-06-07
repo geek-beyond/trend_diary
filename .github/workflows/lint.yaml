@@ -41,9 +41,7 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: TypeScript型チェック
-        run: |
-          pnpm run typecheck
-          pnpm --filter @trend-diary/web typecheck
+        run: pnpm -r typecheck
 
   build:
     runs-on: ubuntu-latest

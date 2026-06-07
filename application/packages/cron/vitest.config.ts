@@ -4,9 +4,13 @@ import { fileURLToPath } from 'node:url'
 import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import { defineConfig } from 'vitest/config'
 
-const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url))
-// migrations はアプリケーションルート配下で集中管理しているため、パッケージから参照する。
-const MIGRATIONS_DIR = resolve(PACKAGE_ROOT, '..', '..', 'migrations')
+// migrations は datastore パッケージで集中管理しているため、パッケージから参照する。
+const MIGRATIONS_DIR = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'datastore',
+  'migrations',
+)
 
 export default defineConfig(async () => {
   const migrations = await readD1Migrations(MIGRATIONS_DIR)

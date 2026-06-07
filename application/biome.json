@@ -9,6 +9,6 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!**/.vscode/", "!**/supabase", "!migrations/meta"]
+    "includes": ["**", "!**/.vscode/", "!**/supabase"]
   }
 }

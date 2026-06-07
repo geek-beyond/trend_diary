@@ -12,8 +12,6 @@
     "lint": "biome ci . && pnpm -r typecheck",
     "check": "biome check .",
     "check:fix": "biome check --write . --unsafe",
-    "db:generate": "drizzle-kit generate",
-    "db:check": "drizzle-kit check",
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
     "supabase:status": "supabase status",
     "supabase:stop": "supabase stop"
@@ -22,7 +20,6 @@
     "@biomejs/biome": "2.4.16",
     "@trend-diary/lint": "workspace:*",
     "@typescript/native-preview": "^7.0.0-dev.20251209.1",
-    "drizzle-kit": "0.31.10",
     "typescript": "^5.9.3"
   }
 }

@@ -4,18 +4,20 @@
 
 - アプリケーション側（バックエンド/API）
   - Drizzle ORM (`drizzle-orm/sqlite-core`) + Cloudflare D1 (SQLite) を使用
-  - スキーマの正本は `src/infrastructure/drizzle-orm/schema.ts`
+  - スキーマの正本は `packages/datastore/src/drizzle-orm/schema/`
   - 型は `typeof table.$inferSelect` / `typeof table.$inferInsert` で取得する
 
 ## スキーマ変更とマイグレーションファイルの生成
 
-スキーマは `schema.ts` を正本とし、D1 への適用は `migrations/*.sql` で行う。
-`drizzle-kit` の出力先 `out` は `migrations/` を指している（`drizzle.config.ts`）。
-`migrations/meta/`（`_journal.json` と最新スナップショット）をコミットしているため、
-`db:generate` は前回スナップショットとの**差分のみ**を `migrations/000N_*.sql` に直接生成する。
+スキーマは `packages/datastore/src/drizzle-orm/schema/` を正本とし、D1 への適用は
+`packages/datastore/migrations/*.sql` で行う。`drizzle-kit` の出力先 `out` は
+`migrations/` を指している（`packages/datastore/drizzle.config.ts`。以降の相対パスは
+`packages/datastore/` 基準）。`migrations/meta/`（`_journal.json` と最新スナップショット）を
+コミットしているため、`db:generate` は前回スナップショットとの**差分のみ**を
+`migrations/000N_*.sql` に直接生成する。
 
-1. `src/infrastructure/drizzle-orm/schema.ts` を編集
-2. `pnpm run db:generate`（`drizzle-kit generate`）を実行
+1. `packages/datastore/src/drizzle-orm/schema/` を編集
+2. `pnpm --filter @trend-diary/datastore db:generate`（`drizzle-kit generate`）を実行
    - `migrations/meta/` の基準スナップショットと現在の `schema.ts` を比較し、
      差分の `ALTER TABLE ...` 等だけを含む新しい `migrations/000N_*.sql` を**自動採番**で生成する。
    - 同時に `migrations/meta/_journal.json` と `migrations/meta/000N_snapshot.json` が更新される。
@@ -24,7 +26,7 @@
 3. 生成された `migrations/000N_*.sql` の内容を**必ずレビュー**する（意図しない `DROP`/再作成等が
    含まれていないかを確認）。D1 は `migrations/` を辞書順に追記適用するため、既存ファイルの編集・
    リネームは禁止（本番適用済み）。生成された SQL・`meta/` 配下の差分をまとめてコミットする。
-4. `pnpm run db:check`（`drizzle-kit check`）で `migrations/meta/_journal.json` とスナップショットの整合を検証する。
+4. `pnpm --filter @trend-diary/datastore db:check`（`drizzle-kit check`）で `migrations/meta/_journal.json` とスナップショットの整合を検証する。
    - スキーマと migrations の乖離は「`db:generate` で差分（新規SQL）が出ない」ことで検証する（CI=`db-schema.yaml` が PR 時に generate→`git diff` で実行）。
    - 制約: 手編集した SQL と `schema.ts` の乖離は検出対象外（生成フロー＋レビューで担保する）。
 
@@ -68,9 +70,10 @@
 
 drizzle-kit 標準機構で検証する。CI（`db-schema.yaml`）が PR 時に以下を実行する。
 
-1. `pnpm run db:generate` を実行し、`git diff --exit-code -- migrations` で
+1. `pnpm --filter @trend-diary/datastore db:generate` を実行し、
+   `git diff --exit-code -- packages/datastore/migrations` で
    新規 SQL・`meta/` 差分が出ない（＝ドリフトなし）ことを確認する。
-2. `pnpm run db:check`（`drizzle-kit check`）で `meta/_journal.json` とスナップショットの整合を検証する。
+2. `pnpm --filter @trend-diary/datastore db:check`（`drizzle-kit check`）で `meta/_journal.json` とスナップショットの整合を検証する。
 
 ローカルでも上記をそのまま実行して同じ検証ができる（`db:check` 単体は journal 整合のみ）。
 

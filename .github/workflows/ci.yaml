@@ -290,8 +290,7 @@ jobs:
         if: always()
         run: rm -f packages/web/.dev.vars
 
-  ci-success:
-    name: CI 完了判定
+  gate:
     if: ${{ always() }}
     needs:
       - changes

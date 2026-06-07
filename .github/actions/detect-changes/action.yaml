@@ -1,0 +1,109 @@
+name: Detect Changes
+description: >-
+  pnpm の依存グラフ(--filter "...[<base>]")で「変更されたパッケージ＋その依存先」を算出し、
+  matrix 用のパッケージ集合(common/datastore/domain/notification/cron のうち該当分)と
+  web / e2e / schema の実行フラグを返す。パスを手で列挙する方式と違い依存関係を自動で辿れる。
+
+inputs:
+  base:
+    description: 比較ベースの ref(PR のベースブランチ名など)。空ならリグレッションとして全件扱い。
+    required: false
+    default: ''
+  node-version-file:
+    description: Node.js のバージョンファイル
+    required: false
+    default: .node-version
+
+outputs:
+  packages:
+    description: matrix 対象パッケージ短縮名の JSON 配列(例 ["common","cron"])。該当なしは []。
+    value: ${{ steps.detect.outputs.packages }}
+  web:
+    description: web(＋依存元)の変更有無
+    value: ${{ steps.detect.outputs.web }}
+  e2e:
+    description: e2e 実行要否(web 変更時も true)
+    value: ${{ steps.detect.outputs.e2e }}
+  schema:
+    description: スキーマドリフト検査の要否
+    value: ${{ steps.detect.outputs.schema }}
+
+runs:
+  using: composite
+  steps:
+    - name: Node.jsの構築
+      uses: ./.github/actions/setup_node
+      with:
+        node-version-file: ${{ inputs.node-version-file }}
+
+    - name: 変更パッケージの検知
+      id: detect
+      shell: bash
+      working-directory: ./application
+      env:
+        BASE: ${{ inputs.base }}
+      run: |
+        set -euo pipefail
+
+        all_pkg_names() {
+          pnpm -r exec pwd 2>/dev/null | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u || true
+        }
+
+        # 依存解決(pnpm-lock)・ワークスペース構成・共通tsconfig・CI定義/共通アクションなど、
+        # 特定パッケージ配下に無く pnpm 差分では拾えない基盤ファイルの変更時は全実行に倒す。
+        run_all=false
+        if [[ -z "$BASE" ]]; then
+          run_all=true
+        else
+          git fetch --no-tags origin "$BASE"
+          if [[ -n "$(git diff --name-only "origin/${BASE}" HEAD -- \
+              package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json \
+              ../.github/workflows/ci.yaml ../.github/actions)" ]]; then
+            run_all=true
+          fi
+        fi
+
+        if [[ "$run_all" == "true" ]]; then
+          names=$(all_pkg_names)
+        else
+          names=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd 2>/dev/null \
+            | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u || true)
+        fi
+
+        echo "変更パッケージ(依存先含む, run_all=${run_all}): ${names:-(なし)}"
+
+        has() { grep -qx "$1" <<<"$names"; }
+
+        # cron は web/e2e のような特殊環境ではなく node+vitest だけで完結するため、
+        # common/datastore/domain/notification と同じ matrix に含める。
+        items=""
+        for p in common datastore domain notification cron; do
+          if has "$p"; then items="${items}\"${p}\","; fi
+        done
+        packages="[${items%,}]"
+
+        web=false
+        if has web; then web=true; fi
+
+        # e2e は web をランタイム検証するため、web が変わったら必ず実行する。
+        e2e=false
+        if has e2e || [[ "$web" == "true" ]]; then e2e=true; fi
+
+        # スキーマドリフト検査は datastore のスキーマ/マイグレーション変更時のみ。
+        schema=false
+        if [[ "$run_all" == "true" ]]; then
+          schema=true
+        elif git diff --name-only "origin/${BASE}" HEAD -- \
+            packages/datastore/src/drizzle-orm/schema \
+            packages/datastore/migrations \
+            packages/datastore/drizzle.config.ts | grep -q .; then
+          schema=true
+        fi
+
+        {
+          echo "packages=$packages"
+          echo "web=$web"
+          echo "e2e=$e2e"
+          echo "schema=$schema"
+        } >> "$GITHUB_OUTPUT"
+        echo "matrix=$packages web=$web e2e=$e2e schema=$schema"

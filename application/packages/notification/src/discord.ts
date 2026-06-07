@@ -18,7 +18,6 @@ export type DiscordWebhookPayload = {
 
 /**
  * Discord Webhook への汎用送信クライアント。
- * web / cron など複数の実行環境から共有する通知基盤。特定のレイヤーには依存しない。
  */
 export class DiscordWebhookClient {
   private readonly webhookUrl: string
@@ -50,21 +49,14 @@ export class DiscordWebhookClient {
   }
 }
 
-/**
- * エラー通知に必要なリクエスト情報。
- * web 側の ChatNotifier ポートと構造的に互換な形を保つ（web には依存しない）。
- */
+/** エラー通知に必要なリクエスト情報。 */
 export type ErrorRequestInfo = {
   url: string
   method: string
   userAgent: string
 }
 
-/**
- * 5xx エラーを Discord の embed 形式で通知する。
- * web の ChatNotifier ポート（error(error, requestInfo)）を構造的型で満たすため、
- * `implements` を書かず web へ依存しない。送信は DiscordWebhookClient へ委譲する。
- */
+/** 5xx エラーを Discord の embed 形式で通知する。 */
 export class DiscordNotifier {
   private readonly client: DiscordWebhookClient
 

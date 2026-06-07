@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   // dev サーバ起動前に miniflare local D1(.wrangler/state)へ migrations を適用する
-  globalSetup: './global-setup.ts',
-  testDir: '.',
+  globalSetup: './src/global-setup.ts',
+  testDir: './src',
   forbidOnly: true,
   retries: 2,
   // CIのスペックの問題で並列実行ができないため、ローカルもCIに合わせてオフにする
@@ -25,7 +25,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm dev',
     // command は web パッケージ(packages/web)ルート基準で実行する（cwd 既定は config ファイルの場所）
-    cwd: '../../..',
+    cwd: '../web',
     url: 'http://localhost:5173',
     env: {
       // dev サーバーのファイル監視用

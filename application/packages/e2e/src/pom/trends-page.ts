@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test'
-import { TIMEOUT } from '@/test/e2e/pom/constants'
+import { TIMEOUT } from './constants'
 
 export class TrendsPage {
   private readonly noArticlesMessage: Locator

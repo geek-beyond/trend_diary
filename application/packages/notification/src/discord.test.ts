@@ -11,16 +11,11 @@ describe('DiscordWebhookClient', () => {
   })
 
   describe('send', () => {
-    it('Webhook URLが設定されていない場合は何もしない', async () => {
-      const client = new DiscordWebhookClient('')
-
-      await client.send({ content: 'test' })
-
-      expect(mockFetch).not.toHaveBeenCalled()
-    })
-
-    it('Webhook URLが未指定（undefined）の場合は何もしない', async () => {
-      const client = new DiscordWebhookClient()
+    it.each([
+      { label: '空文字', url: '' },
+      { label: 'undefined', url: undefined },
+    ])('Webhook URLが$labelの場合は何もしない', async ({ url }) => {
+      const client = new DiscordWebhookClient(url)
 
       await client.send({ content: 'test' })
 
@@ -135,22 +130,29 @@ describe('DiscordNotifier', () => {
       const callArgs = mockFetch.mock.calls[0]
       const body = JSON.parse(callArgs[1].body)
 
-      expect(body.content).toBeNull()
-      expect(body.embeds).toHaveLength(1)
-      expect(body.embeds[0].title).toBe('🚨 5xx Server Error Occurred')
-      expect(body.embeds[0].color).toBe(15158332)
-      expect(body.embeds[0].fields).toHaveLength(3)
-      expect(body.embeds[0].fields[0].name).toBe('Error Message')
-      expect(body.embeds[0].fields[0].value).toBe('```\nInternal Server Error\n```')
-      expect(body.embeds[0].fields[1].name).toBe('Request Info')
-      expect(body.embeds[0].fields[1].value).toBe(
-        '```\nMethod: POST\nURL: /api/test\nUser-Agent: Mozilla/5.0\n```',
-      )
-      expect(body.embeds[0].fields[2].name).toBe('Stack Trace')
-      expect(body.embeds[0].fields[2].value).toBe(
-        '```\nError: Internal Server Error\n    at test.js:1:1\n```',
-      )
-      expect(body.embeds[0].timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
+      expect(body).toEqual({
+        content: null,
+        embeds: [
+          {
+            title: '🚨 5xx Server Error Occurred',
+            color: 15158332,
+            fields: [
+              { name: 'Error Message', value: '```\nInternal Server Error\n```', inline: false },
+              {
+                name: 'Request Info',
+                value: '```\nMethod: POST\nURL: /api/test\nUser-Agent: Mozilla/5.0\n```',
+                inline: false,
+              },
+              {
+                name: 'Stack Trace',
+                value: '```\nError: Internal Server Error\n    at test.js:1:1\n```',
+                inline: false,
+              },
+            ],
+            timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+          },
+        ],
+      })
     })
 
     it('Discord Webhook送信が失敗してもエラーを投げない', async () => {

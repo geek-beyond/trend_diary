@@ -6,11 +6,11 @@ import {
   offsetPaginationMobileSchema,
   offsetPaginationSchema,
 } from '@trend-diary/common/pagination/schema'
+import { isArticleMedia } from '@trend-diary/domain/article/media'
+import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
-import { isArticleMedia } from '@/domain/article/media'
-import type { ArticleOutput } from '@/domain/article/schema/article-schema'
 import { useIsMobile } from '@/web/client/components/shadcn/hooks/use-mobile'
 import createSWRFetcher from '@/web/client/features/create-swr-fetcher'
 import type { MediaType } from '../components/media-filter'

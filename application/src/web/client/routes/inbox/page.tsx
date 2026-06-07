@@ -1,5 +1,5 @@
+import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { CheckCircle2 } from 'lucide-react'
-import { isArticleMedia } from '@/domain/article/media'
 import { Button } from '@/web/client/components/shadcn/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/web/client/components/shadcn/tooltip'
 import MediaFilter, {

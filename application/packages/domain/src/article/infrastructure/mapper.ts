@@ -1,6 +1,6 @@
 import type { Article as RdbArticle } from '@trend-diary/datastore/drizzle-orm/schema'
 import { fromDbId } from '@trend-diary/datastore/rdb/id'
-import type { Article } from '@/domain/article/schema/article-schema'
+import type { Article } from '../schema/article-schema'
 
 export default function fromRdbToArticle(rdbArticle: RdbArticle): Article {
   return {

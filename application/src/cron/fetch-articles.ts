@@ -1,8 +1,8 @@
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
+import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { inArray } from 'drizzle-orm'
 import Parser from 'rss-parser'
-import type { ArticleMedia } from '@/domain/article/media'
 
 type CronEnv = {
   DB: D1Database

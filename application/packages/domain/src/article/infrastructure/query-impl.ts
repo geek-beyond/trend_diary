@@ -7,16 +7,12 @@ import { RdbClient, wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { eq, type SQL, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import fromRdbToArticle from '@/domain/article/infrastructure/mapper'
-import { ARTICLE_MEDIA, type ArticleMedia } from '@/domain/article/media'
-import { Query } from '@/domain/article/repository'
-import type { Article, ArticleWithOptionalReadStatus } from '@/domain/article/schema/article-schema'
-import type {
-  DailyDiary,
-  DailyDiaryRangeItem,
-  DiaryReadItem,
-} from '@/domain/article/schema/diary-schema'
-import { QueryParams } from '@/domain/article/schema/query-schema'
+import { ARTICLE_MEDIA, type ArticleMedia } from '../media'
+import { Query } from '../repository'
+import type { Article, ArticleWithOptionalReadStatus } from '../schema/article-schema'
+import type { DailyDiary, DailyDiaryRangeItem, DiaryReadItem } from '../schema/diary-schema'
+import { QueryParams } from '../schema/query-schema'
+import fromRdbToArticle from './mapper'
 
 type RawArticleRow = {
   articleId: number | bigint

@@ -1,5 +1,5 @@
+import { AuthInput, authInputSchema } from '@trend-diary/domain/user'
 import { z } from 'zod'
-import { AuthInput, authInputSchema } from '@/domain/user'
 import { newValidationError, newValidationSuccess, ValidationResult } from '../validation'
 
 export type AuthenticateErrors = {

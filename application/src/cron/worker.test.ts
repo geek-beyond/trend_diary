@@ -1,5 +1,5 @@
+import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ARTICLE_MEDIA, type ArticleMedia } from '@/domain/article/media'
 import worker from './worker'
 
 const runScheduledFetchMock = vi.hoisted(() => vi.fn())

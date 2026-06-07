@@ -4,13 +4,13 @@ import { DEFAULT_LIMIT, DEFAULT_PAGE, OffsetPaginationResult } from '@trend-diar
 import extractTrimmed from '@trend-diary/common/sanitization'
 import { isNull } from '@trend-diary/common/types/utility'
 import { err, ok, type Result } from 'neverthrow'
-import type { ArticleMedia } from '@/domain/article/media'
-import { Command, Query } from '@/domain/article/repository'
-import type { Article, ArticleWithOptionalReadStatus } from '@/domain/article/schema/article-schema'
-import type { DailyDiary, DailyDiaryRangeItem } from '@/domain/article/schema/diary-schema'
-import { QueryParams } from '@/domain/article/schema/query-schema'
-import type { ReadHistory } from '@/domain/article/schema/read-history-schema'
-import type { SkippedArticle } from '@/domain/article/schema/skipped-article-schema'
+import type { ArticleMedia } from './media'
+import { Command, Query } from './repository'
+import type { Article, ArticleWithOptionalReadStatus } from './schema/article-schema'
+import type { DailyDiary, DailyDiaryRangeItem } from './schema/diary-schema'
+import { QueryParams } from './schema/query-schema'
+import type { ReadHistory } from './schema/read-history-schema'
+import type { SkippedArticle } from './schema/skipped-article-schema'
 
 export class UseCase {
   constructor(

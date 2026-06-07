@@ -1,9 +1,9 @@
 import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
+import { createArticleUseCase } from '@trend-diary/domain/article'
+import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
+import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { z } from 'zod'
-import { createArticleUseCase } from '@/domain/article'
-import { ARTICLE_MEDIA } from '@/domain/article/media'
-import type { ArticleOutput } from '@/domain/article/schema/article-schema'
 import CONTEXT_KEY from '@/web/middleware/context'
 import type { ZodValidatedQueryContext } from '@/web/middleware/zod-validator'
 

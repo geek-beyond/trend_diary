@@ -3,7 +3,7 @@ description: 'テストを実行し、テストカバレッジの可視化まで
 
 inputs:
   target:
-    description: 'テスト対象 (client, server, domain)'
+    description: 'テスト対象 (client, server)'
     required: true
 
 runs:

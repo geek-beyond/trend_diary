@@ -1,4 +1,4 @@
-import { ARTICLE_MEDIA_LABELS, type ArticleMedia } from '@/domain/article/media'
+import { ARTICLE_MEDIA_LABELS, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { Button } from '@/web/client/components/shadcn/button'
 import { cn } from '@/web/client/components/shadcn/lib/utils'
 

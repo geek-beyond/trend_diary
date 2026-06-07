@@ -1,8 +1,8 @@
 import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagination/schema'
+import { DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
+import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
-import { DIARY_READ_LIMIT } from '@/domain/article/diary'
-import { ARTICLE_MEDIA, type ArticleMedia } from '@/domain/article/media'
 import { getTodayJst, sumSourceSummary } from '@/web/client/features/diary/diary-shared'
 import useDiaryApi from './use-diary-api'
 

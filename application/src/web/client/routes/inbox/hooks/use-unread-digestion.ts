@@ -1,7 +1,7 @@
+import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
-import type { ArticleOutput } from '@/domain/article/schema/article-schema'
 import createSWRFetcher from '@/web/client/features/create-swr-fetcher'
 import type { MediaType } from '../../trends._index/components/media-filter'
 import useReadArticle from '../../trends._index/hooks/use-read-article'

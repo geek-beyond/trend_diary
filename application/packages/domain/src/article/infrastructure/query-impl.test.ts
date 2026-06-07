@@ -1,7 +1,7 @@
 import { type SQL, sql } from 'drizzle-orm'
 import { SQLiteSyncDialect } from 'drizzle-orm/sqlite-core'
 import { beforeEach, describe, expect, it } from 'vitest'
-import getRdbClient, { mockRdbExecutor } from '@/test/__mocks__/rdb'
+import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import QueryImpl from './query-impl'
 
 type DateRangeSqlBuilders = {

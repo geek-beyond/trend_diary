@@ -23,9 +23,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm start',
-    // command は application ルート基準で実行する（cwd 既定は config ファイルの場所）
-    cwd: '../..',
+    command: 'pnpm dev',
+    // command は web パッケージ(packages/web)ルート基準で実行する（cwd 既定は config ファイルの場所）
+    cwd: '../web',
     url: 'http://localhost:5173',
     env: {
       // dev サーバーのファイル監視用

@@ -1,0 +1,15 @@
+name = "trend-diary"
+compatibility_date = "2025-04-01"
+compatibility_flags = [ "nodejs_compat" ]
+main = "./src/worker.ts"
+assets = { directory = "./build/client" }
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[[d1_databases]]
+binding = "DB"
+database_name = "trend-diary-db"
+database_id = "15dfd380-5a78-4237-8e59-49640c2e954f"
+migrations_dir = "../../migrations"

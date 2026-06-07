@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url'
 import { readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import { openTestD1 } from './d1'
 
-const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
+// migrations は application ルートで一元管理しているため、パッケージ(packages/web)から相対参照する。
+const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
 
 export default async function globalSetup(): Promise<void> {
   const migrations = await readD1Migrations(resolve(APP_ROOT, 'migrations'))

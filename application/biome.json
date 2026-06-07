@@ -6,8 +6,8 @@
     "includes": [
       "**",
       "!**/.vscode/",
-      "!src/web/client/components/shadcn",
-      "!src/web/client/components/customized",
+      "!packages/web/src/client/components/shadcn",
+      "!packages/web/src/client/components/customized",
       "!**/supabase",
       "!migrations/meta"
     ]

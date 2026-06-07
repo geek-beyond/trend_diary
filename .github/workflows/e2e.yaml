@@ -8,10 +8,11 @@ on:
     paths:
       - ".github/workflows/e2e.yaml"
       - "application/packages/e2e/**"
+      - "application/packages/web/**"
       - "application/packages/common/**"
       - "application/packages/datastore/**"
       - "application/packages/domain/**"
-      - "application/src/web/client/routes/**"
+      - "application/migrations/**"
       - "application/package.json"
       - "application/pnpm-lock.yaml"
 
@@ -41,18 +42,15 @@ jobs:
 
       - name: Supabaseのセットアップ
         uses: ./.github/actions/setup_supabase
-        
+
       - name: E2E環境のセットアップ
         uses: ./.github/actions/setup_e2e
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
-      - name: 型チェック
-        run: pnpm --filter @trend-diary/e2e typecheck
-
       - name: Create .dev.vars for Actions
         run: |
-          cat > .dev.vars <<'EOF'
+          cat > packages/web/.dev.vars <<'EOF'
           # Dev env for Actions (created from secrets)
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
@@ -60,7 +58,7 @@ jobs:
           EOF
 
       - name: E2Eテストの実行
-        run: pnpm --filter @trend-diary/e2e run e2e --fail-on-flaky-tests
+        run: pnpm --filter @trend-diary/e2e test --fail-on-flaky-tests
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -82,7 +80,7 @@ jobs:
 
       - name: Cleanup .dev.vars
         if: always()
-        run: rm -f .dev.vars
+        run: rm -f packages/web/.dev.vars
 
   test-diff:
     name: Diff
@@ -104,12 +102,9 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
-      - name: 型チェック
-        run: pnpm --filter @trend-diary/e2e typecheck
-
       - name: Create .dev.vars for Actions
         run: |
-          cat > .dev.vars <<'EOF'
+          cat > packages/web/.dev.vars <<'EOF'
           # Dev env for Actions (created from secrets)
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
@@ -117,7 +112,7 @@ jobs:
           EOF
 
       - name: E2Eテストの差分実行
-        run: pnpm --filter @trend-diary/e2e run e2e --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
+        run: pnpm --filter @trend-diary/e2e test --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -139,4 +134,4 @@ jobs:
 
       - name: Cleanup .dev.vars
         if: always()
-        run: rm -f .dev.vars
+        run: rm -f packages/web/.dev.vars

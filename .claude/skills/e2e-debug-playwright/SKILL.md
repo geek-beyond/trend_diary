@@ -23,7 +23,7 @@ pnpm run check
 次にCI相当コマンドを実行する:
 
 ```bash
-pnpm --filter @trend-diary/e2e run e2e \
+pnpm --filter @trend-diary/e2e test \
   --reporter=line \
   --only-changed=origin/main \
   --pass-with-no-tests \
@@ -33,7 +33,7 @@ pnpm --filter @trend-diary/e2e run e2e \
 失敗シナリオを絞って連続実行する:
 
 ```bash
-pnpm --filter @trend-diary/e2e run e2e src/scenario/signup-basic.test.ts \
+pnpm --filter @trend-diary/e2e test src/scenario/signup-basic.test.ts \
   --project=chromium \
   --repeat-each=5 \
   --retries=0 \

@@ -50,6 +50,8 @@ jobs:
       run_package_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-packages.outputs.diff-count != 0 }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
 
       - name: テスト設定ファイルの差分チェック
         id: check-test-config
@@ -105,6 +107,8 @@ jobs:
     if: ${{ needs.setup.outputs.run_client_test == 'true' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - name: Node.jsの構築
         uses: ./.github/actions/setup_node
         with:
@@ -121,6 +125,8 @@ jobs:
     if: ${{ needs.setup.outputs.run_server_test == 'true' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - name: Node.jsの構築
         uses: ./.github/actions/setup_node
         with:
@@ -155,6 +161,8 @@ jobs:
           - notification
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - name: Node.jsの構築
         uses: ./.github/actions/setup_node
         with:
@@ -173,6 +181,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
       - name: Node.jsの構築
         uses: ./.github/actions/setup_node
         with:

@@ -289,3 +289,33 @@ jobs:
       - name: Cleanup .dev.vars
         if: always()
         run: rm -f packages/web/.dev.vars
+
+  ci-success:
+    name: CI 完了判定
+    if: ${{ always() }}
+    needs:
+      - changes
+      - biome
+      - unit
+      - web-build
+      - web-client
+      - web-server
+      - web-component
+      - schema
+      - e2e
+      - e2e-diff
+    runs-on: ubuntu-latest
+    steps:
+      - name: いずれかのジョブが失敗していないか確認
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          echo "各ジョブの結果: $results"
+          for r in $results; do
+            case "$r" in
+              success | skipped) ;;
+              *)
+                echo "::error::失敗またはキャンセルされたジョブがあります ($r)"
+                exit 1
+                ;;
+            esac
+          done

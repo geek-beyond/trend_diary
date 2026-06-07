@@ -26,7 +26,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
     userAgent: c.req.header('User-Agent') || '',
   }
 
-  const chatNotifier = new DiscordNotifier(discordWebhookUrl)
+  const chatNotifier: ChatNotifier = new DiscordNotifier(discordWebhookUrl)
   if (err instanceof HTTPException) {
     if (err.status >= 500) {
       if (logger && typeof logger.error === 'function') {

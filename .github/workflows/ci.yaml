@@ -93,7 +93,8 @@ jobs:
       - name: ビルド
         run: pnpm run build
 
-  web-client:
+  client-test:
+    name: web client test
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
@@ -109,7 +110,8 @@ jobs:
         with:
           target: client
 
-  web-server:
+  server-test:
+    name: web server test
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
@@ -131,7 +133,8 @@ jobs:
         with:
           target: server
 
-  web-component:
+  component-test:
+    name: web component test
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
@@ -218,16 +221,9 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-report-main-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/packages/e2e/playwright-report/
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: Playwright成果物を保存
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ always() && !cancelled() }}
-        with:
-          name: playwright-test-results-main-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/packages/e2e/test-results/
+          path: |
+            application/packages/e2e/playwright-report/
+            application/packages/e2e/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -273,16 +269,9 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-report-diff-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/packages/e2e/playwright-report/
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: Playwright成果物を保存
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ always() && !cancelled() }}
-        with:
-          name: playwright-test-results-diff-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/packages/e2e/test-results/
+          path: |
+            application/packages/e2e/playwright-report/
+            application/packages/e2e/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -292,17 +281,7 @@ jobs:
 
   gate:
     if: ${{ always() }}
-    needs:
-      - changes
-      - code-quality
-      - unit-test
-      - web-build
-      - web-client
-      - web-server
-      - web-component
-      - schema
-      - e2e
-      - e2e-diff
+    needs: [changes, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e, e2e-diff]
     runs-on: ubuntu-latest
     steps:
       - name: いずれかのジョブが失敗していないか確認
@@ -310,12 +289,7 @@ jobs:
         run: |
           results="${{ join(needs.*.result, ' ') }}"
           echo "各ジョブの結果: $results"
-          for r in $results; do
-            case "$r" in
-              success | skipped) ;;
-              *)
-                echo "::error::失敗またはキャンセルされたジョブがあります ($r)"
-                exit 1
-                ;;
-            esac
-          done
+          if [[ "$results" == *failure* || "$results" == *cancelled* ]]; then
+            echo "::error::失敗またはキャンセルされたジョブがあります"
+            exit 1
+          fi

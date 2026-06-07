@@ -15,5 +15,9 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsgo --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "vitest": "catalog:"
   }
 }

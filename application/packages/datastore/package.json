@@ -16,5 +16,10 @@
     "@trend-diary/common": "workspace:*",
     "drizzle-orm": "catalog:",
     "neverthrow": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
   }
 }

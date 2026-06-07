@@ -187,11 +187,11 @@ jobs:
 
       - name: Playwrightのセットアップ(キャッシュミス)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: node node_modules/playwright/cli.js install chromium --with-deps
+        run: pnpm --filter @trend-diary/web exec playwright install chromium --with-deps
 
       - name: Playwright依存のセットアップ(キャッシュヒット)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: node node_modules/playwright/cli.js install-deps chromium
+        run: pnpm --filter @trend-diary/web exec playwright install-deps chromium
 
       - name: コンポーネントのテスト
         run: pnpm --filter @trend-diary/web test-storybook --coverage

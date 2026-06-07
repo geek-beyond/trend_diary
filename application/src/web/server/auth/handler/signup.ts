@@ -1,4 +1,4 @@
-import { ExternalServiceError, handleError } from '@/common/errors'
+import { ExternalServiceError, handleError } from '@trend-diary/common/errors'
 import { type AuthInput, createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'

@@ -1,5 +1,5 @@
+import { handleError } from '@trend-diary/common/errors'
 import type { Context } from 'hono'
-import { handleError } from '@/common/errors'
 import { createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'

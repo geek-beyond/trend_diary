@@ -1,6 +1,6 @@
+import { ServerError } from '@trend-diary/common/errors'
 import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { ServerError } from '@/common/errors'
 import { activeUsers, users } from '@/infrastructure/drizzle-orm/schema'
 import { RdbClient, wrapDbCall } from '@/infrastructure/rdb'
 import { Command } from '../repository'

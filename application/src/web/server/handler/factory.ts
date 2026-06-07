@@ -54,12 +54,12 @@
  * - deletePermission.ts（動的パス + $delete）
  */
 
+import { handleError } from '@trend-diary/common/errors'
+import type { LoggerType } from '@trend-diary/common/logger'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { ContentfulStatusCode, StatusCode } from 'hono/utils/http-status'
 import { type Result } from 'neverthrow'
-import { handleError } from '@/common/errors'
-import type { LoggerType } from '@/common/logger'
 import getRdbClient, { type RdbClient } from '@/infrastructure/rdb'
 import type { Env, SessionUser } from '@/web/env'
 import CONTEXT_KEY from '@/web/middleware/context'

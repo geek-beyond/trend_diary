@@ -1,5 +1,5 @@
+import { wrapAsyncCall } from '@trend-diary/common/result'
 import type { Result } from 'neverthrow'
-import { wrapAsyncCall } from '@/common/result'
 
 // Drizzle はドライバ例外を DrizzleQueryError でラップし元例外を cause に格納する。
 // ラッパのメッセージは `Failed query: ...` で元のDBエラー文言が失われるため、cause を取り出す。

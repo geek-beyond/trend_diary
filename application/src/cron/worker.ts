@@ -1,5 +1,5 @@
+import Logger from '@trend-diary/common/logger'
 import { DiscordWebhookClient } from '@trend-diary/notification'
-import Logger from '@/common/logger'
 import type { ArticleMedia } from '@/domain/article/media'
 import { runScheduledFetch } from './fetch-articles'
 
@@ -8,7 +8,7 @@ type D1Database = import('@cloudflare/workers-types').D1Database
 type CronWorkerEnv = {
   DB: D1Database
   DISCORD_WEBHOOK_URL: string
-  LOG_LEVEL?: import('@/common/logger').LogLevel
+  LOG_LEVEL?: import('@trend-diary/common/logger').LogLevel
 }
 
 const MEDIA_LIST: ReadonlyArray<ArticleMedia> = ['qiita', 'zenn', 'hatena']

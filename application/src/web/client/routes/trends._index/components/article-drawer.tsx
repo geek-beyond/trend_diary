@@ -1,7 +1,7 @@
+import { toJaDateString } from '@trend-diary/common/locale'
 import { Calendar, Check, ExternalLink, User, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { toJaDateString } from '@/common/locale'
 import { isArticleMedia } from '@/domain/article/media'
 import {
   Drawer,

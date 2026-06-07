@@ -1,6 +1,6 @@
+import Logger from '@trend-diary/common/logger'
 import { createMiddleware } from 'hono/factory'
 import { v4 as uuidv4 } from 'uuid'
-import Logger from '@/common/logger'
 import { Env } from '../env'
 import CONTEXT_KEY from './context'
 

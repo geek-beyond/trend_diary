@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { StdTestHelper } from '@/test/helper/std'
 import Logger from './logger'
+import { StdTestHelper } from './test-helper/std'
 
 const parseLogObjects = (lines: string[]) =>
   lines

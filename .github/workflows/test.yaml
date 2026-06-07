@@ -47,9 +47,8 @@ jobs:
       run_client_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-client.outputs.diff-count != 0 }}
       run_domain_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-domain.outputs.diff-count != 0 }}
       run_server_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-server.outputs.diff-count != 0 }}
-      run_common_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-common.outputs.diff-count != 0 }}
       run_component_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-client.outputs.diff-count != 0 || steps.check-storybook.outputs.diff-count != 0 }}
-      run_notification_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-notification.outputs.diff-count != 0 }}
+      run_package_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-packages.outputs.diff-count != 0 }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
@@ -78,17 +77,11 @@ jobs:
         with:
           subdir: 'application/src/web/server application/migrations'
 
-      - name: 共通モジュールの差分チェック
-        id: check-common
+      - name: パッケージの差分チェック
+        id: check-packages
         uses: ./.github/actions/diff
         with:
-          subdir: 'application/src/common'
-
-      - name: 通知パッケージの差分チェック
-        id: check-notification
-        uses: ./.github/actions/diff
-        with:
-          subdir: 'application/packages/notification'
+          subdir: 'application/packages'
 
       - name: Storybook設定の差分チェック
         id: check-storybook
@@ -167,22 +160,6 @@ jobs:
         with:
           target: server
 
-  common:
-    needs: setup
-    runs-on: ${{ needs.setup.outputs.test_runner }}
-    if: ${{ needs.setup.outputs.run_common_test == 'true' }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Node.jsの構築
-        uses: ./.github/actions/setup_node
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
-      
-      - name: 共通モジュールのテスト
-        uses: ./.github/actions/test_cov
-        with:
-          target: common
-
   # node + vitest だけで完結する同質パッケージのテストはマトリクスにまとめる。
   # 同質パッケージが増えたら matrix.package に追加する。
   # 特殊な環境が要るもの(server=supabase, cron=miniflare, component=playwright)は専用ジョブのまま。
@@ -190,11 +167,12 @@ jobs:
   package:
     needs: setup
     runs-on: ${{ needs.setup.outputs.test_runner }}
-    if: ${{ needs.setup.outputs.run_notification_test == 'true' }}
+    if: ${{ needs.setup.outputs.run_package_test == 'true' }}
     strategy:
       fail-fast: false
       matrix:
         package:
+          - common
           - notification
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3

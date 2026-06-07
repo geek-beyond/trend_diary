@@ -1,5 +1,5 @@
-import { LoggerType, LogLevel } from '@/common/logger'
-import { Nullable } from '@/common/types/utility'
+import { LoggerType, LogLevel } from '@trend-diary/common/logger'
+import { Nullable } from '@trend-diary/common/types/utility'
 import CONTEXT_KEY from './middleware/context'
 
 type D1Database = import('@cloudflare/workers-types').D1Database

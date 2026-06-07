@@ -1,6 +1,6 @@
+import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-import { wrapAsyncCall } from '@/common/result'
 import getApiClientForClient from '../../../infrastructure/api'
 
 const MarkAsReadErrorMessage = '既読に失敗しました'

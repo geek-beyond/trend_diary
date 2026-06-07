@@ -1,6 +1,6 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
+import { isDevelopmentNodeEnv } from '@trend-diary/common/env'
 import type { AppLoadContext } from 'react-router'
-import { isDevelopmentNodeEnv } from '@/common/env'
 import { createAuthUseCase } from '@/domain/user'
 import getRdbClient from '@/infrastructure/rdb'
 

@@ -1,7 +1,7 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
+import { isDevelopmentNodeEnv } from '@trend-diary/common/env'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { isDevelopmentNodeEnv } from '@/common/env'
 
 export type SupabaseAuthClient = ReturnType<typeof createSupabaseAuthClient>
 

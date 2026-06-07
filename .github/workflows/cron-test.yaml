@@ -12,7 +12,7 @@ on:
       - 'application/package.json'
       - 'application/pnpm-lock.yaml'
       - 'application/src/cron/**'
-      - 'application/src/common/**'
+      - 'application/packages/common/**'
       - 'application/src/infrastructure/**'
       - 'application/packages/notification/**'
   push:
@@ -26,7 +26,7 @@ on:
       - 'application/package.json'
       - 'application/pnpm-lock.yaml'
       - 'application/src/cron/**'
-      - 'application/src/common/**'
+      - 'application/packages/common/**'
       - 'application/src/infrastructure/**'
       - 'application/packages/notification/**'
 

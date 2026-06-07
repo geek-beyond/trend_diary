@@ -5,10 +5,10 @@ import {
   type SupabaseClient,
   type User,
 } from '@supabase/supabase-js'
+import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/common/errors'
+import UnauthorizedError from '@trend-diary/common/errors/client-error/unauthorized-error'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
-import { AlreadyExistsError, ClientError, ServerError } from '@/common/errors'
-import UnauthorizedError from '@/common/errors/client-error/unauthorized-error'
 import { SupabaseAuthRepository } from './supabase-auth-repository'
 
 const buildSupabaseUser = (overrides: Partial<User> = {}): User => ({

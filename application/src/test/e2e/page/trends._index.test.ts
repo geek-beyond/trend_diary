@@ -1,4 +1,4 @@
-import { addJstDays, toJstDateString } from '@/common/locale/date'
+import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
 import { expect, test } from '@/test/e2e/fixtures'
 import * as articleHelper from '@/test/e2e/helper/article'
 import { ArticleDrawer } from '@/test/e2e/pom/components/article-drawer'

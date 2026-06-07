@@ -6,7 +6,7 @@ import getRdbClient, { wrapDbCall } from '@/infrastructure/rdb'
 
 type CronEnv = {
   DB: D1Database
-  LOG_LEVEL?: import('@/common/logger').LogLevel
+  LOG_LEVEL?: import('@trend-diary/common/logger').LogLevel
 }
 
 type D1Database = import('@cloudflare/workers-types').D1Database

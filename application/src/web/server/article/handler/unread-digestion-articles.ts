@@ -1,5 +1,5 @@
+import { handleError } from '@trend-diary/common/errors'
 import { z } from 'zod'
-import { handleError } from '@/common/errors'
 import { createArticleUseCase } from '@/domain/article'
 import { ARTICLE_MEDIA } from '@/domain/article/media'
 import type { ArticleOutput } from '@/domain/article/schema/article-schema'

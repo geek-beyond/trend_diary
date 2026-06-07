@@ -1,9 +1,9 @@
 import { renderHook, waitFor } from '@testing-library/react'
+import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { SWRConfig } from 'swr'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { addJstDays, toJstDateString } from '@/common/locale/date'
 import useAnalytics from './use-analytics'
 import useDiaryApi, { type DiaryRangeItemResponse, type DiaryResponse } from './use-diary-api'
 

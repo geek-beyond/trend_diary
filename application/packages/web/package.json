@@ -6,17 +6,14 @@
   "scripts": {
     "dev": "react-router dev",
     "build": "react-router build",
-    "test": "pnpm run test:client && pnpm run test:server",
     "test:client": "vitest run -c src/test/vitest/client/config.ts",
     "test:server": "vitest run -c src/test/vitest/server/config.ts",
     "test-storybook": "vitest run -c src/test/vitest/storybook/config.ts",
     "e2e": "playwright test --config=src/test/e2e/playwright.config.ts",
     "e2e:report": "playwright show-report src/test/e2e/playwright-report",
     "e2e:gen": "playwright codegen --config=src/test/e2e/playwright.config.ts",
-    "storybook": "storybook dev -p 6006",
     "typecheck": "tsgo --noEmit",
-    "d1:apply:local": "wrangler d1 migrations apply trend-diary-db --local",
-    "d1:apply:remote": "wrangler d1 migrations apply trend-diary-db --remote"
+    "d1:apply:local": "wrangler d1 migrations apply trend-diary-db --local"
   },
   "dependencies": {
     "@trend-diary/common": "workspace:*",

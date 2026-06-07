@@ -6,9 +6,9 @@ on:
     branches:
       - main
     paths:
-      - 'application/src/infrastructure/drizzle-orm/schema.ts'
-      - 'application/migrations/**'
-      - 'application/drizzle.config.ts'
+      - 'application/packages/datastore/src/drizzle-orm/schema/**'
+      - 'application/packages/datastore/migrations/**'
+      - 'application/packages/datastore/drizzle.config.ts'
       - '.github/workflows/db-schema.yaml'
 
 permissions:
@@ -37,8 +37,8 @@ jobs:
 
       - name: 生成差分の検出（差分があればドリフト）
         run: |
-          git add -N migrations
-          git diff --exit-code -- migrations
+          git add -N packages/datastore/migrations
+          git diff --exit-code -- packages/datastore/migrations
 
       - name: journal整合の検証
         run: pnpm run db:check

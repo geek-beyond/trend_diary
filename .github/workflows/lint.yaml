@@ -1,0 +1,56 @@
+name: Lint
+
+on:
+  push:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# 共通の設定を定義
+env:
+  NODE_VERSION_FILE: .node-version
+  BIOME_VERSION: 2.4.16
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./application
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Setup Biome
+        uses: biomejs/setup-biome@4c91541eaada48f67d7dbd7833600ce162b68f51 # v2
+        with:
+          version: ${{ env.BIOME_VERSION }}
+
+      - name: Run Biome CI
+        run: biome ci .
+
+  # 本来であれば、概念的にコンパイルはLint/Formatと同列ではないが、実行時間短縮のために並列実行にしている
+  ts-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: TypeScript型チェック
+        run: pnpm -r typecheck
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: ビルド
+        run: pnpm run build

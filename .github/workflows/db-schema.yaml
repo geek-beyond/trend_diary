@@ -1,0 +1,44 @@
+name: Check Schema Drift
+description: 'Drizzleスキーマとマイグレーションの整合を標準ツールで検証します'
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'application/packages/datastore/src/drizzle-orm/schema/**'
+      - 'application/packages/datastore/migrations/**'
+      - 'application/packages/datastore/drizzle.config.ts'
+      - '.github/workflows/db-schema.yaml'
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION_FILE: .node-version
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./application
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: マイグレーション生成（未生成の差分があれば検出）
+        run: pnpm --filter @trend-diary/datastore db:generate
+
+      - name: 生成差分の検出（差分があればドリフト）
+        run: |
+          git add -N packages/datastore/migrations
+          git diff --exit-code -- packages/datastore/migrations
+
+      - name: journal整合の検証
+        run: pnpm --filter @trend-diary/datastore db:check

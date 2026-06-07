@@ -1,0 +1,37 @@
+# 参考: https://qiita.com/ningenMe/items/e2ed82c9c740ad10d480
+name: diff
+description: git diffを取得し、指定したディレクトリ以下の変更ファイル数をカウントする
+
+inputs:
+  subdir:
+    description: チェックするディレクトリ
+    required: true
+  exclude_pattern:
+    description: 除外するパターン(スペース区切り)
+    required: false
+    default: ''
+outputs:
+  diff-count:
+    value: ${{ steps.diff.outputs.diff-count }}
+    description: 変更ファイル数
+
+runs:
+  using: composite
+  steps:
+    - id: diff
+      env:
+        TARGET_BRANCH: ${{ github.base_ref || 'main' }}
+      run: |
+        git fetch origin ${TARGET_BRANCH}
+
+        EXCLUDE_OPTS=""
+        # 除外パターンをスペースで分割して追加
+        for pattern in ${{ inputs.exclude_pattern }}; do
+          EXCLUDE_OPTS="${EXCLUDE_OPTS} \":(exclude)$pattern\""
+        done
+
+        # 最終的なコマンドを実行
+        GIT_DIFF_CMD="git diff origin/${TARGET_BRANCH} HEAD --name-only -- ${{ inputs.subdir }} ${EXCLUDE_OPTS}"
+        count=$(bash -c "$GIT_DIFF_CMD" | wc -l)
+        echo "diff-count=$count" >> $GITHUB_OUTPUT
+      shell: bash

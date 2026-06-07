@@ -2,7 +2,7 @@ name: Cron Deploy
 
 on:
   workflow_run:
-    workflows: [CI]
+    workflows: [Cron Test]
     types: [completed]
     branches: [main]
 

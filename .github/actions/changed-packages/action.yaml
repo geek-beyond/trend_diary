@@ -1,0 +1,67 @@
+name: Changed Packages
+description: >-
+  pnpm の依存グラフ(--filter "...[<base>]")で「変更されたパッケージ＋その依存先」を
+  算出し、scope で指定した候補のうち該当するものを JSON 配列で返す。
+  パスを手で列挙する方式と違い、依存関係を自動で辿れる。
+
+inputs:
+  scope:
+    description: 対象候補のパッケージ短縮名(スペース区切り)。空なら全ワークスペースパッケージを対象にする。
+    required: false
+    default: ''
+  base:
+    description: 比較ベースの ref(PR のベースブランチ名など)。空ならリグレッションとして全件返す。
+    required: false
+    default: ''
+  node-version-file:
+    description: Node.js のバージョンファイル
+    required: false
+    default: .node-version
+
+outputs:
+  packages:
+    description: 該当パッケージ短縮名の JSON 配列(例 ["common","domain"])。該当なしは []。
+    value: ${{ steps.detect.outputs.packages }}
+
+runs:
+  using: composite
+  steps:
+    - name: Node.jsの構築
+      uses: ./.github/actions/setup_node
+      with:
+        node-version-file: ${{ inputs.node-version-file }}
+
+    - name: 変更パッケージの検知
+      id: detect
+      shell: bash
+      working-directory: ./application
+      env:
+        SCOPE: ${{ inputs.scope }}
+        BASE: ${{ inputs.base }}
+      run: |
+        set -euo pipefail
+
+        if [[ -n "$BASE" ]]; then
+          git fetch --no-tags origin "$BASE"
+          names=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd 2>/dev/null \
+            | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u || true)
+        else
+          # ベース未指定(main への push 等)はリグレッションとして全件
+          names=$(pnpm -r exec pwd 2>/dev/null \
+            | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u || true)
+        fi
+
+        echo "変更パッケージ(依存先含む): ${names:-(なし)}"
+
+        # 候補が無マッチでも set -e に引っかからないよう if で包んで JSON を組み立てる。
+        candidates="$SCOPE"
+        if [[ -z "$candidates" ]]; then candidates="$names"; fi
+
+        items=""
+        for p in $candidates; do
+          if grep -qx "$p" <<<"$names"; then items="${items}\"${p}\","; fi
+        done
+        packages="[${items%,}]"
+
+        echo "packages=$packages" >> "$GITHUB_OUTPUT"
+        echo "出力(scope='${SCOPE:-*}'): $packages"

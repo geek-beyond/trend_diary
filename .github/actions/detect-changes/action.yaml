@@ -1,0 +1,100 @@
+name: Detect Changes
+description: pnpm 依存グラフで変更パッケージ(＋依存先)を算出し、matrix用パッケージ集合と web/e2e/schema フラグを返す
+
+inputs:
+  base:
+    description: 比較ベースの ref。空なら全件扱い。
+    required: false
+    default: ''
+  node-version-file:
+    description: Node.js のバージョンファイル
+    required: false
+    default: .node-version
+
+outputs:
+  packages:
+    description: matrix 対象パッケージ短縮名の JSON 配列
+    value: ${{ steps.detect.outputs.packages }}
+  web:
+    description: web(＋依存元)の変更有無
+    value: ${{ steps.detect.outputs.web }}
+  e2e:
+    description: e2e 実行要否
+    value: ${{ steps.detect.outputs.e2e }}
+  schema:
+    description: スキーマドリフト検査の要否
+    value: ${{ steps.detect.outputs.schema }}
+
+runs:
+  using: composite
+  steps:
+    - name: Node.jsの構築
+      uses: ./.github/actions/setup_node
+      with:
+        node-version-file: ${{ inputs.node-version-file }}
+
+    - name: 変更パッケージの検知
+      id: detect
+      shell: bash
+      working-directory: ./application
+      env:
+        BASE: ${{ inputs.base }}
+      run: |
+        set -euo pipefail
+
+        all_pkg_names() {
+          pnpm -r exec pwd | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u
+        }
+
+        run_all=false
+        if [[ -z "$BASE" ]]; then
+          run_all=true
+        else
+          git fetch --no-tags origin "$BASE"
+          if [[ -n "$(git diff --name-only "origin/${BASE}" HEAD -- \
+              package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json \
+              ../.github/workflows/ci.yaml ../.github/actions)" ]]; then
+            run_all=true
+          fi
+        fi
+
+        if [[ "$run_all" == "true" ]]; then
+          names=$(all_pkg_names)
+        else
+          names=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd \
+            | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u)
+        fi
+
+        echo "変更パッケージ(依存先含む, run_all=${run_all}): ${names:-(なし)}"
+
+        has() { grep -qx "$1" <<<"$names"; }
+
+        items=""
+        for p in common datastore domain notification cron; do
+          if has "$p"; then items="${items}\"${p}\","; fi
+        done
+        packages="[${items%,}]"
+
+        web=false
+        if has web; then web=true; fi
+
+        e2e=false
+        if has e2e || [[ "$web" == "true" ]]; then e2e=true; fi
+
+        schema=false
+        if [[ "$run_all" == "true" ]]; then
+          schema=true
+        elif git diff --name-only "origin/${BASE}" HEAD -- \
+            packages/datastore/src/drizzle-orm/schema \
+            packages/datastore/migrations \
+            packages/datastore/drizzle.config.ts | grep -q .; then
+          schema=true
+        fi
+
+        {
+          echo "packages=$packages"
+          echo "web=$web"
+          echo "e2e=$e2e"
+          echo "schema=$schema"
+        } >> "$GITHUB_OUTPUT"
+        echo "matrix=$packages web=$web e2e=$e2e schema=$schema"

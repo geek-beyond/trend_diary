@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy_type:
-        description: 手動デプロイ対象（変更検知をスキップして強制デプロイ）
+        description: 対象リソース
         required: true
         default: web
         type: choice
@@ -23,8 +23,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
-  # デプロイは途中でキャンセルせず、直列に流す
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 defaults:
   run:
@@ -32,59 +31,63 @@ defaults:
     working-directory: ./application
 
 jobs:
-  # CI 成功(push 由来)時は変更パッケージのみ、手動実行時は選択リソースのみをデプロイ対象とする
+  # CI 成功(main への push)時は変更があったリソースだけ、手動実行時は選択したリソースだけをデプロイ対象にする
   changes:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     outputs:
-      web: ${{ steps.detect.outputs.web || steps.dispatch.outputs.web }}
-      cron: ${{ steps.detect.outputs.cron || steps.dispatch.outputs.cron }}
-      database: ${{ steps.detect.outputs.schema || steps.dispatch.outputs.database }}
+      web: ${{ steps.detect.outputs.web }}
+      cron: ${{ steps.detect.outputs.cron }}
+      database: ${{ steps.detect.outputs.database }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          # CI を通過した commit をデプロイ対象にする（手動実行時はデフォルトブランチ）
+          # CI を通過したコミットをデプロイ対象にする(手動実行時はデフォルトブランチ)
           ref: ${{ github.event.workflow_run.head_sha || github.ref }}
-          # 直前コミットとの差分を取るため履歴を全取得
-          fetch-depth: 0
+          # ひとつ前のコミットとの差分を取るため
+          fetch-depth: 2
           persist-credentials: false
-
-      # 手動実行: 変更検知をスキップし、選択リソースのみ強制デプロイ
-      - id: dispatch
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - id: detect
         env:
+          EVENT: ${{ github.event_name }}
           DEPLOY_TYPE: ${{ github.event.inputs.deploy_type }}
         run: |
           set -euo pipefail
-          web=false; cron=false; database=false
-          case "$DEPLOY_TYPE" in
-            web) web=true ;;
-            cron) cron=true ;;
-            database) database=true ;;
-          esac
+
+          web=false
+          cron=false
+          database=false
+
+          if [[ "$EVENT" == "workflow_dispatch" ]]; then
+            case "$DEPLOY_TYPE" in
+              web) web=true ;;
+              cron) cron=true ;;
+              database) database=true ;;
+            esac
+          else
+            files=$(git diff --name-only HEAD~1 HEAD)
+
+            # web と cron が共通で依存するパッケージとルート設定(変わると両方を再デプロイ)
+            shared='application/packages/(common|datastore|domain|notification)/|application/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|tsconfig(\.base)?\.json)$'
+
+            if grep -qE "application/packages/web/|$shared" <<<"$files"; then web=true; fi
+            if grep -qE "application/packages/cron/|$shared" <<<"$files"; then cron=true; fi
+            # マイグレーションファイルが変わったときだけ D1 に適用する
+            if grep -qE 'application/packages/datastore/migrations/' <<<"$files"; then database=true; fi
+          fi
+
           {
             echo "web=$web"
             echo "cron=$cron"
             echo "database=$database"
           } >> "$GITHUB_OUTPUT"
-          echo "手動デプロイ: web=$web cron=$cron database=$database"
-
-      # push(main) 由来: 直前コミットとの差分から依存グラフを評価して対象を決定
-      - id: detect
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: ./.github/actions/detect-changes
-        with:
-          # head_sha の第一親(=push 前の main 先端)との差分で判定する
-          base: HEAD~1
-          fetch: false
-          node-version-file: .node-version
+          echo "デプロイ対象: web=$web cron=$cron database=$database"
 
   web:
-    needs: [changes, database]
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
     environment: production
-    # database が動く場合はマイグレーション後にデプロイする（skip 時も実行できるよう !cancelled() で判定）
-    if: ${{ !cancelled() && needs.changes.outputs.web == 'true' && needs.database.result != 'failure' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -119,13 +122,13 @@ jobs:
       - name: デプロイの出力を表示
         env:
           CMD_OUTPUT: ${{ steps.deploy.outputs.command-output }}
-        run: echo "$CMD_OUTPUT"
+        run: echo $CMD_OUTPUT
 
   cron:
     needs: changes
+    if: ${{ needs.changes.outputs.cron == 'true' }}
     runs-on: ubuntu-latest
     environment: production
-    if: ${{ needs.changes.outputs.cron == 'true' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -157,9 +160,9 @@ jobs:
 
   database:
     needs: changes
+    if: ${{ needs.changes.outputs.database == 'true' }}
     runs-on: ubuntu-latest
     environment: production
-    if: ${{ needs.changes.outputs.database == 'true' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:

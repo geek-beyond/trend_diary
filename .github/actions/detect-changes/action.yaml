@@ -1,15 +1,11 @@
 name: Detect Changes
-description: pnpm 依存グラフで変更パッケージ(＋依存先)を算出し、matrix用パッケージ集合と web/cron/e2e/schema フラグを返す
+description: pnpm 依存グラフで変更パッケージ(＋依存先)を算出し、matrix用パッケージ集合と web/e2e/schema フラグを返す
 
 inputs:
   base:
     description: 比較ベースの ref。空なら全件扱い。
     required: false
     default: ''
-  fetch:
-    description: base を origin から取得するか。false の場合 base をローカルの committish としてそのまま使用する。
-    required: false
-    default: 'true'
   node-version-file:
     description: Node.js のバージョンファイル
     required: false
@@ -22,9 +18,6 @@ outputs:
   web:
     description: web(＋依存元)の変更有無
     value: ${{ steps.detect.outputs.web }}
-  cron:
-    description: cron(＋依存元)の変更有無
-    value: ${{ steps.detect.outputs.cron }}
   e2e:
     description: e2e 実行要否
     value: ${{ steps.detect.outputs.e2e }}
@@ -46,7 +39,6 @@ runs:
       working-directory: ./application
       env:
         BASE: ${{ inputs.base }}
-        FETCH: ${{ inputs.fetch }}
       run: |
         set -euo pipefail
 
@@ -55,18 +47,11 @@ runs:
         }
 
         run_all=false
-        base_ref=""
         if [[ -z "$BASE" ]]; then
           run_all=true
         else
-          if [[ "$FETCH" == "true" ]]; then
-            git fetch --no-tags origin "$BASE"
-            base_ref="origin/${BASE}"
-          else
-            # base をローカルの committish としてそのまま使用する
-            base_ref="$BASE"
-          fi
-          if [[ -n "$(git diff --name-only "$base_ref" HEAD -- \
+          git fetch --no-tags origin "$BASE"
+          if [[ -n "$(git diff --name-only "origin/${BASE}" HEAD -- \
               package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json \
               ../.github/workflows/ci.yaml ../.github/actions)" ]]; then
             run_all=true
@@ -76,7 +61,7 @@ runs:
         if [[ "$run_all" == "true" ]]; then
           names=$(all_pkg_names)
         else
-          names=$(pnpm --filter "...[${base_ref}]" -r exec pwd \
+          names=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd \
             | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u)
         fi
 
@@ -93,16 +78,13 @@ runs:
         web=false
         if has web; then web=true; fi
 
-        cron=false
-        if has cron; then cron=true; fi
-
         e2e=false
         if has e2e || [[ "$web" == "true" ]]; then e2e=true; fi
 
         schema=false
         if [[ "$run_all" == "true" ]]; then
           schema=true
-        elif git diff --name-only "$base_ref" HEAD -- \
+        elif git diff --name-only "origin/${BASE}" HEAD -- \
             packages/datastore/src/drizzle-orm/schema \
             packages/datastore/migrations \
             packages/datastore/drizzle.config.ts | grep -q .; then
@@ -112,8 +94,7 @@ runs:
         {
           echo "packages=$packages"
           echo "web=$web"
-          echo "cron=$cron"
           echo "e2e=$e2e"
           echo "schema=$schema"
         } >> "$GITHUB_OUTPUT"
-        echo "matrix=$packages web=$web cron=$cron e2e=$e2e schema=$schema"
+        echo "matrix=$packages web=$web e2e=$e2e schema=$schema"

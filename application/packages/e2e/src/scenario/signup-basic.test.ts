@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker'
-import { expect, test } from '@/test/e2e/fixtures'
-import * as articleHelper from '@/test/e2e/helper/article'
-import * as userHelper from '@/test/e2e/helper/user'
-import { AuthPage } from '@/test/e2e/pom/auth-page'
-import { ArticleDrawer } from '@/test/e2e/pom/components/article-drawer'
-import { AUTH_FLOW_TIMEOUT } from '@/test/e2e/pom/constants'
-import { TrendsPage } from '@/test/e2e/pom/trends-page'
+import { expect, test } from '../fixtures'
+import * as articleHelper from '../helper/article'
+import * as userHelper from '../helper/user'
+import { AuthPage } from '../pom/auth-page'
+import { ArticleDrawer } from '../pom/components/article-drawer'
+import { AUTH_FLOW_TIMEOUT } from '../pom/constants'
+import { TrendsPage } from '../pom/trends-page'
 
 const AUTH_SCENARIO_TIMEOUT = AUTH_FLOW_TIMEOUT * 3
 

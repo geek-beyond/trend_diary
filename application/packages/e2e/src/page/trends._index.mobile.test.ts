@@ -1,9 +1,9 @@
-import { expect, test } from '@/test/e2e/fixtures'
-import * as articleHelper from '@/test/e2e/helper/article'
-import { ArticleDrawer } from '@/test/e2e/pom/components/article-drawer'
-import { MobileFilterPanel } from '@/test/e2e/pom/components/mobile-filter-panel'
-import { SUPPORTED_ARTICLE_URL_PATTERN, TIMEOUT } from '@/test/e2e/pom/constants'
-import { TrendsPage } from '@/test/e2e/pom/trends-page'
+import { expect, test } from '../fixtures'
+import * as articleHelper from '../helper/article'
+import { ArticleDrawer } from '../pom/components/article-drawer'
+import { MobileFilterPanel } from '../pom/components/mobile-filter-panel'
+import { SUPPORTED_ARTICLE_URL_PATTERN, TIMEOUT } from '../pom/constants'
+import { TrendsPage } from '../pom/trends-page'
 
 const ARTICLE_COUNT = 10
 const MOBILE_VIEWPORT = { width: 375, height: 667 }

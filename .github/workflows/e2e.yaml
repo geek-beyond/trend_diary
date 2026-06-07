@@ -7,9 +7,12 @@ on:
   pull_request:
     paths:
       - ".github/workflows/e2e.yaml"
-      - "application/packages/web/src/test/e2e/**"
-      - "application/packages/web/src/client/routes/**"
+      - "application/packages/e2e/**"
       - "application/packages/web/**"
+      - "application/packages/common/**"
+      - "application/packages/datastore/**"
+      - "application/packages/domain/**"
+      - "application/migrations/**"
       - "application/package.json"
       - "application/pnpm-lock.yaml"
 
@@ -39,7 +42,7 @@ jobs:
 
       - name: Supabaseのセットアップ
         uses: ./.github/actions/setup_supabase
-        
+
       - name: E2E環境のセットアップ
         uses: ./.github/actions/setup_e2e
         with:
@@ -53,16 +56,16 @@ jobs:
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
           SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
           EOF
-          
+
       - name: E2Eテストの実行
-        run: pnpm --filter @trend-diary/web e2e --fail-on-flaky-tests
+        run: pnpm --filter @trend-diary/e2e test --fail-on-flaky-tests
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-report-main-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/packages/web/playwright-report/
+          path: application/packages/e2e/playwright-report/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -71,7 +74,7 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-test-results-main-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/packages/web/test-results/
+          path: application/packages/e2e/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -109,14 +112,14 @@ jobs:
           EOF
 
       - name: E2Eテストの差分実行
-        run: pnpm --filter @trend-diary/web e2e --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
+        run: pnpm --filter @trend-diary/e2e test --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-report-diff-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/packages/web/playwright-report/
+          path: application/packages/e2e/playwright-report/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -125,7 +128,7 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-test-results-diff-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/packages/web/test-results/
+          path: application/packages/e2e/test-results/
           if-no-files-found: ignore
           retention-days: 30
 

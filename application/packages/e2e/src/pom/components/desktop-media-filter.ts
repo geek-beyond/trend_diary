@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
-import { TIMEOUT } from '@/test/e2e/pom/constants'
+import { TIMEOUT } from '../constants'
 
 type MediaOption = 'all' | ArticleMedia
 

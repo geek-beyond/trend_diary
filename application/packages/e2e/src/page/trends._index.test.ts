@@ -1,10 +1,10 @@
 import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
-import { expect, test } from '@/test/e2e/fixtures'
-import * as articleHelper from '@/test/e2e/helper/article'
-import { ArticleDrawer } from '@/test/e2e/pom/components/article-drawer'
-import { DesktopMediaFilter } from '@/test/e2e/pom/components/desktop-media-filter'
-import { SUPPORTED_ARTICLE_URL_PATTERN } from '@/test/e2e/pom/constants'
-import { TrendsPage } from '@/test/e2e/pom/trends-page'
+import { expect, test } from '../fixtures'
+import * as articleHelper from '../helper/article'
+import { ArticleDrawer } from '../pom/components/article-drawer'
+import { DesktopMediaFilter } from '../pom/components/desktop-media-filter'
+import { SUPPORTED_ARTICLE_URL_PATTERN } from '../pom/constants'
+import { TrendsPage } from '../pom/trends-page'
 
 const ARTICLE_COUNT = 10
 

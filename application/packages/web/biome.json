@@ -55,7 +55,7 @@
           }
         },
         "useValidAriaValues": "error",
-        "useValidAutocomplete": "off",
+        "useValidAutocomplete": "error",
         "useValidLang": "error"
       },
       "complexity": {
@@ -64,7 +64,7 @@
       "correctness": {
         "noChildrenProp": "error",
         "noVoidElementsWithChildren": "error",
-        "useJsxKeyInIterable": "off"
+        "useJsxKeyInIterable": "error"
       },
       "security": {
         "noBlankTarget": "error",

@@ -72,7 +72,7 @@
         "noGlobalEval": "error"
       },
       "style": {
-        "noCommonJs": "off",
+        "noCommonJs": "error",
         "noDefaultExport": "off",
         "noNegationElse": "off",
         "noNestedTernary": "error",

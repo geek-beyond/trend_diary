@@ -53,17 +53,35 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            git fetch --no-tags origin "${GITHUB_BASE_REF}"
-            NAMES=$(pnpm --filter "...[origin/${GITHUB_BASE_REF}]" -r exec pwd 2>/dev/null \
-              | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u || true)
+          all_pkg_names() {
+            pnpm -r exec pwd 2>/dev/null | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u || true
+          }
+
+          # 依存解決(pnpm-lock)・ワークスペース構成・共通tsconfig・CI定義/共通アクションなど、
+          # 全パッケージに影響しうる基盤ファイルが変わった場合は変更検知を諦めて全実行にする。
+          # (これらは特定パッケージ配下に無いため pnpm の差分検知では拾えず、変更検知の穴になる)
+          BASE="origin/${GITHUB_BASE_REF:-main}"
+          run_all=false
+          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
+            # main への push はリグレッションとして全実行
+            run_all=true
           else
-            # main への push は全パッケージを対象（リグレッション）
-            NAMES=$(pnpm -r exec pwd 2>/dev/null \
+            git fetch --no-tags origin "${GITHUB_BASE_REF}"
+            if [[ -n "$(git diff --name-only "$BASE" HEAD -- \
+                package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json \
+                ../.github/workflows/ci.yaml ../.github/actions)" ]]; then
+              run_all=true
+            fi
+          fi
+
+          if [[ "$run_all" == "true" ]]; then
+            NAMES=$(all_pkg_names)
+          else
+            NAMES=$(pnpm --filter "...[${BASE}]" -r exec pwd 2>/dev/null \
               | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u || true)
           fi
 
-          echo "検知したパッケージ:"
+          echo "検知したパッケージ (run_all=${run_all}):"
           echo "${NAMES:-(なし)}"
 
           # 指定パッケージが変更対象に含まれるか判定する(grep の非マッチで set -e に
@@ -87,9 +105,9 @@ jobs:
 
           # スキーマドリフト検査は datastore のスキーマ/マイグレーション変更時のみ。
           schema=false
-          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
+          if [[ "$run_all" == "true" ]]; then
             schema=true
-          elif git diff --name-only "origin/${GITHUB_BASE_REF}" HEAD -- \
+          elif git diff --name-only "$BASE" HEAD -- \
               packages/datastore/src/drizzle-orm/schema \
               packages/datastore/migrations \
               packages/datastore/drizzle.config.ts | grep -q .; then

@@ -1,6 +1,5 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
   "root": false,
-  "extends": ["./biome.base.json"],
-  "linter": { "rules": { "correctness": { "noUndeclaredDependencies": "off" } } }
+  "extends": ["./biome.base.json"]
 }

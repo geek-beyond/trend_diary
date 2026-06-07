@@ -19,5 +19,10 @@
     "drizzle-orm": "catalog:",
     "neverthrow": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "catalog:",
+    "vitest": "catalog:",
+    "vitest-mock-extended": "catalog:"
   }
 }

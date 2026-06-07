@@ -15,5 +15,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsgo --noEmit"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
   }
 }

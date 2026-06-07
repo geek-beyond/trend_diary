@@ -64,8 +64,7 @@
       "correctness": {
         "noChildrenProp": "error",
         "noVoidElementsWithChildren": "error",
-        "useJsxKeyInIterable": "off",
-        "noUndeclaredDependencies": "off"
+        "useJsxKeyInIterable": "off"
       },
       "security": {
         "noBlankTarget": "error",

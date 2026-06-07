@@ -16,5 +16,8 @@
     "@trend-diary/common": "workspace:*",
     "drizzle-orm": "catalog:",
     "neverthrow": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
   }
 }

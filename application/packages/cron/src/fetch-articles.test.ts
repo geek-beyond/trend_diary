@@ -16,8 +16,8 @@ vi.mock('rss-parser', () => ({
 
 import { env } from 'cloudflare:test'
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
-import { fetchHatenaArticles } from '@/cron/fetch-articles'
-import { testRdb as db } from '@/test/helper/rdb'
+import { fetchHatenaArticles } from './fetch-articles'
+import { testRdb as db } from './test-helper/rdb'
 
 const cronEnv = { DB: env.DB }
 

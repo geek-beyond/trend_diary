@@ -12,8 +12,8 @@
     "lint": "biome ci . && pnpm -r typecheck",
     "check": "biome check .",
     "check:fix": "biome check --write . --unsafe",
-    "db:generate": "drizzle-kit generate",
-    "db:check": "drizzle-kit check",
+    "db:generate": "pnpm --filter @trend-diary/datastore db:generate",
+    "db:check": "pnpm --filter @trend-diary/datastore db:check",
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
     "supabase:status": "supabase status",
     "supabase:stop": "supabase stop"

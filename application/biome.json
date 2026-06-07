@@ -9,7 +9,7 @@
       "!packages/web/src/client/components/shadcn",
       "!packages/web/src/client/components/customized",
       "!**/supabase",
-      "!migrations/meta"
+      "!packages/datastore/migrations/meta"
     ]
   },
   "formatter": {

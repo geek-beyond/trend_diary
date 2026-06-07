@@ -15,4 +15,4 @@ crons = ["0 */1 * * *"]
 binding = "DB"
 database_name = "trend-diary-db"
 database_id = "15dfd380-5a78-4237-8e59-49640c2e954f"
-migrations_dir = "../../migrations"
+migrations_dir = "../datastore/migrations"

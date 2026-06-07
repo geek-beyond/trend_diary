@@ -3,14 +3,15 @@ import { fileURLToPath } from 'node:url'
 import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import type { Plugin } from 'vite'
 
-// migrations は application ルートで一元管理しているため、パッケージ(packages/web)から相対参照する。
+// migrations は datastore パッケージで一元管理しているため、パッケージ(packages/web)から相対参照する。
 const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
+const MIGRATIONS_DIR = resolve(APP_ROOT, 'packages', 'datastore', 'migrations')
 
 export async function createWorkersPool(): Promise<{
   plugins: Plugin[]
   pool: ReturnType<typeof cloudflarePool>
 }> {
-  const migrations = await readD1Migrations(resolve(APP_ROOT, 'migrations'))
+  const migrations = await readD1Migrations(MIGRATIONS_DIR)
 
   const poolOptions = {
     miniflare: {

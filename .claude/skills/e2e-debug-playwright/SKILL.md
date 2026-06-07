@@ -33,7 +33,7 @@ pnpm run e2e \
 失敗シナリオを絞って連続実行する:
 
 ```bash
-pnpm run e2e src/test/e2e/scenario/signup-basic.test.ts \
+pnpm run e2e src/scenario/signup-basic.test.ts \
   --project=chromium \
   --repeat-each=5 \
   --retries=0 \

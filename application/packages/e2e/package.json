@@ -1,0 +1,27 @@
+{
+  "name": "@trend-diary/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test --config=playwright.config.ts",
+    "e2e:report": "playwright show-report playwright-report",
+    "e2e:gen": "playwright codegen --config=playwright.config.ts",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@trend-diary/common": "workspace:*",
+    "@trend-diary/datastore": "workspace:*",
+    "@trend-diary/domain": "workspace:*",
+    "@supabase/supabase-js": "^2.76.1",
+    "drizzle-orm": "catalog:",
+    "wrangler": "^4.95.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
+    "@faker-js/faker": "^10.4.0",
+    "@playwright/test": "^1.60.0",
+    "playwright": "^1.60.0"
+  }
+}

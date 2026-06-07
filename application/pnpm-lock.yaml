@@ -176,9 +176,6 @@ importers:
       '@hono/vite-dev-server':
         specifier: ^0.26.0
         version: 0.26.0(hono@4.12.23)(miniflare@4.20260601.0)(wrangler@4.96.0(@cloudflare/workers-types@4.20260507.1))
-      '@playwright/test':
-        specifier: ^1.60.0
-        version: 1.60.0
       '@react-router/dev':
         specifier: ^7.16.0
         version: 7.16.0(@types/node@25.9.1)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.16.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(tsx@4.22.4)(typescript@5.9.3)(vite@8.0.16(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.4))(wrangler@4.96.0(@cloudflare/workers-types@4.20260507.1))
@@ -333,6 +330,43 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+
+  packages/e2e:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.76.1
+        version: 2.106.1
+      '@trend-diary/common':
+        specifier: workspace:*
+        version: link:../common
+      '@trend-diary/datastore':
+        specifier: workspace:*
+        version: link:../datastore
+      '@trend-diary/domain':
+        specifier: workspace:*
+        version: link:../domain
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@4.20260507.1)(@libsql/client@0.17.3)
+      wrangler:
+        specifier: ^4.95.0
+        version: 4.97.0(@cloudflare/workers-types@4.20260507.1)
+    devDependencies:
+      '@cloudflare/vitest-pool-workers':
+        specifier: 'catalog:'
+        version: 0.16.12(@cloudflare/workers-types@4.20260507.1)(@vitest/runner@4.1.8)(@vitest/snapshot@4.1.8)(vitest@4.1.8)
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 4.20260507.1
+      '@faker-js/faker':
+        specifier: ^10.4.0
+        version: 10.4.0
+      '@playwright/test':
+        specifier: ^1.60.0
+        version: 1.60.0
+      playwright:
+        specifier: ^1.60.0
+        version: 1.60.0
 
   packages/notification: {}
 

@@ -7,7 +7,10 @@ on:
   pull_request:
     paths:
       - ".github/workflows/e2e.yaml"
-      - "application/src/test/e2e/**"
+      - "application/packages/e2e/**"
+      - "application/packages/common/**"
+      - "application/packages/datastore/**"
+      - "application/packages/domain/**"
       - "application/src/web/client/routes/**"
       - "application/package.json"
       - "application/pnpm-lock.yaml"
@@ -44,6 +47,9 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
+      - name: 型チェック
+        run: pnpm --filter @trend-diary/e2e typecheck
+
       - name: Create .dev.vars for Actions
         run: |
           cat > .dev.vars <<'EOF'
@@ -52,7 +58,7 @@ jobs:
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
           SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
           EOF
-          
+
       - name: E2Eテストの実行
         run: pnpm run e2e --fail-on-flaky-tests
 
@@ -61,7 +67,7 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-report-main-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/playwright-report/
+          path: application/packages/e2e/playwright-report/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -70,7 +76,7 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-test-results-main-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/test-results/
+          path: application/packages/e2e/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -98,6 +104,9 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
+      - name: 型チェック
+        run: pnpm --filter @trend-diary/e2e typecheck
+
       - name: Create .dev.vars for Actions
         run: |
           cat > .dev.vars <<'EOF'
@@ -115,7 +124,7 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-report-diff-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/playwright-report/
+          path: application/packages/e2e/playwright-report/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -124,7 +133,7 @@ jobs:
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-test-results-diff-${{ github.run_id }}-${{ github.run_attempt }}
-          path: application/test-results/
+          path: application/packages/e2e/test-results/
           if-no-files-found: ignore
           retention-days: 30
 

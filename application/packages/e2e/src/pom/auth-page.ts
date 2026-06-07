@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test'
-import { AUTH_FLOW_TIMEOUT } from '@/test/e2e/pom/constants'
+import { AUTH_FLOW_TIMEOUT } from './constants'
 
 export class AuthPage {
   private readonly emailInput: Locator

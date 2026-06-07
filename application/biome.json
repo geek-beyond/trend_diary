@@ -318,6 +318,16 @@
   },
   "html": { "formatter": { "selfCloseVoidElements": "always" } },
   "overrides": [
+    {
+      "includes": ["packages/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUndeclaredDependencies": "off"
+          }
+        }
+      }
+    },
     { "includes": ["**/*.tsx"], "linter": { "rules": {} } },
     {
       "includes": ["*.ts", "*.tsx"],

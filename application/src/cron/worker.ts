@@ -1,3 +1,4 @@
+import { DiscordWebhookClient } from '@trend-diary/notification'
 import Logger from '@/common/logger'
 import type { ArticleMedia } from '@/domain/article/media'
 import { runScheduledFetch } from './fetch-articles'
@@ -12,26 +13,14 @@ type CronWorkerEnv = {
 
 const MEDIA_LIST: ReadonlyArray<ArticleMedia> = ['qiita', 'zenn', 'hatena']
 
-async function notifyDiscord(webhookUrl: string, message: string) {
-  if (!webhookUrl) return
-
-  await fetch(webhookUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      content: message,
-    }),
-  })
-}
-
 export default {
   async scheduled(event: ScheduledController, env: CronWorkerEnv, ctx: ExecutionContext) {
     const logger = new Logger(env.LOG_LEVEL || 'info', {
       scope: 'cron-worker',
       cron: event.cron,
     })
+
+    const discord = new DiscordWebhookClient(env.DISCORD_WEBHOOK_URL)
 
     ctx.waitUntil(
       (async () => {
@@ -71,8 +60,7 @@ export default {
               },
               error,
             )
-            await notifyDiscord(
-              env.DISCORD_WEBHOOK_URL,
+            await discord.sendMessage(
               `[trend-diary cron] fetch failed\ncron: ${event.cron}\nmedia: ${media}\nerror: ${message}`,
             )
           }

@@ -1,36 +1,35 @@
-import { ChatNotifier, RequestInfo } from '@/web/middleware/error-handler'
+export type DiscordEmbedField = {
+  name: string
+  value: string
+  inline: boolean
+}
 
-type DiscordEmbed = {
+export type DiscordEmbed = {
   title: string
   color: number
-  fields: Array<{
-    name: string
-    value: string
-    inline: boolean
-  }>
+  fields: DiscordEmbedField[]
   timestamp: string
 }
 
-type DiscordWebhookPayload = {
+export type DiscordWebhookPayload = {
   content: string | null
-  embeds: DiscordEmbed[]
+  embeds?: DiscordEmbed[]
 }
 
-export class DiscordNotifier implements ChatNotifier {
+/**
+ * Discord Webhook への汎用送信クライアント。
+ */
+export class DiscordWebhookClient {
   private readonly webhookUrl: string
-
-  private readonly maxFieldLength = 1018 // Discord field limit (1024) minus code block chars (6)
 
   constructor(webhookUrl?: string) {
     this.webhookUrl = webhookUrl ?? ''
   }
 
-  async error(error: Error, requestInfo: RequestInfo): Promise<void> {
+  async send(payload: DiscordWebhookPayload): Promise<void> {
     if (this.webhookUrl === '') return
 
     try {
-      const payload = this.createErrorPayload(error, requestInfo)
-
       await fetch(this.webhookUrl, {
         method: 'POST',
         headers: {
@@ -39,13 +38,39 @@ export class DiscordNotifier implements ChatNotifier {
         body: JSON.stringify(payload),
       })
     } catch (notificationError) {
-      // Discord通知の失敗は元のエラー処理に影響させない
-      // biome-ignore lint/suspicious/noConsole: Discord通知の失敗はログに出力する
-      console.error('Failed to send error notification to Discord', notificationError)
+      // 通知の失敗は呼び出し元の処理に影響させない
+      // biome-ignore lint/suspicious/noConsole: 通知失敗はログに出力する
+      console.error('Failed to send notification to Discord', notificationError)
     }
   }
 
-  private createErrorPayload(error: Error, requestInfo: RequestInfo): DiscordWebhookPayload {
+  async sendMessage(content: string): Promise<void> {
+    await this.send({ content })
+  }
+}
+
+/** エラー通知に必要なリクエスト情報。 */
+export type ErrorRequestInfo = {
+  url: string
+  method: string
+  userAgent: string
+}
+
+/** 5xx エラーを Discord の embed 形式で通知する。 */
+export class DiscordNotifier {
+  private readonly client: DiscordWebhookClient
+
+  private readonly maxFieldLength = 1018 // Discord field limit (1024) minus code block chars (6)
+
+  constructor(webhookUrl?: string) {
+    this.client = new DiscordWebhookClient(webhookUrl)
+  }
+
+  async error(error: Error, requestInfo: ErrorRequestInfo): Promise<void> {
+    await this.client.send(this.createErrorPayload(error, requestInfo))
+  }
+
+  private createErrorPayload(error: Error, requestInfo: ErrorRequestInfo): DiscordWebhookPayload {
     const stackTrace = this.truncateField(error.stack || 'No stack trace available')
 
     return {

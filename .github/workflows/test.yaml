@@ -8,6 +8,7 @@ on:
       - '.github/workflows/test.yaml'
       - 'application/.storybook/**'
       - 'application/src/**'
+      - 'application/packages/**'
       - 'application/migrations/**'
       - 'application/package.json'
       - 'application/pnpm-lock.yaml'
@@ -18,6 +19,7 @@ on:
       - '.github/workflows/test.yaml'
       - 'application/.storybook/**'
       - 'application/src/**'
+      - 'application/packages/**'
       - 'application/migrations/**'
       - 'application/package.json'
       - 'application/pnpm-lock.yaml'
@@ -47,6 +49,7 @@ jobs:
       run_server_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-server.outputs.diff-count != 0 }}
       run_common_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-common.outputs.diff-count != 0 }}
       run_component_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-client.outputs.diff-count != 0 || steps.check-storybook.outputs.diff-count != 0 }}
+      run_notification_test: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || steps.check-test-config.outputs.diff-count != 0 || steps.check-notification.outputs.diff-count != 0 }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
@@ -80,6 +83,12 @@ jobs:
         uses: ./.github/actions/diff
         with:
           subdir: 'application/src/common'
+
+      - name: 通知パッケージの差分チェック
+        id: check-notification
+        uses: ./.github/actions/diff
+        with:
+          subdir: 'application/packages/notification'
 
       - name: Storybook設定の差分チェック
         id: check-storybook
@@ -173,6 +182,32 @@ jobs:
         uses: ./.github/actions/test_cov
         with:
           target: common
+
+  # node + vitest だけで完結する同質パッケージのテストはマトリクスにまとめる。
+  # 同質パッケージが増えたら matrix.package に追加する。
+  # 特殊な環境が要るもの(server=supabase, cron=miniflare, component=playwright)は専用ジョブのまま。
+  # 将来は packages/* を自動検出する動的マトリクス(fromJSON)へ移行予定。
+  package:
+    needs: setup
+    runs-on: ${{ needs.setup.outputs.test_runner }}
+    if: ${{ needs.setup.outputs.run_notification_test == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - notification
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: 型チェック
+        run: pnpm --filter @trend-diary/${{ matrix.package }} typecheck
+
+      - name: テスト
+        run: pnpm --filter @trend-diary/${{ matrix.package }} test
 
   component:
     needs: setup

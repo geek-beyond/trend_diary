@@ -1,0 +1,354 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# カバレッジの可視化で、コメントを残すための権限
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 共通の設定を定義
+env:
+  NODE_VERSION_FILE: .node-version
+  BIOME_VERSION: 2.4.16
+  DATABASE_URL: file:./test.db
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./application
+
+jobs:
+  # 変更パッケージを検知し、後続ジョブを「変更されたパッケージ＋その依存先」だけに絞り込む。
+  # 検知には pnpm の依存グラフ機能(--filter "...[<base>]")を使い、変更検知を1方式に統一する。
+  # main への push はリグレッションとして全パッケージを対象にする。
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+      web: ${{ steps.detect.outputs.web }}
+      e2e: ${{ steps.detect.outputs.e2e }}
+      schema: ${{ steps.detect.outputs.schema }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: 変更パッケージの検知
+        id: detect
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            git fetch --no-tags origin "${GITHUB_BASE_REF}"
+            NAMES=$(pnpm --filter "...[origin/${GITHUB_BASE_REF}]" -r exec pwd 2>/dev/null \
+              | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u || true)
+          else
+            # main への push は全パッケージを対象（リグレッション）
+            NAMES=$(pnpm -r exec pwd 2>/dev/null \
+              | sed -n 's#.*/packages/\([^/]*\)$#\1#p' | sort -u || true)
+          fi
+
+          echo "検知したパッケージ:"
+          echo "${NAMES:-(なし)}"
+
+          # node + vitest だけで完結する同質パッケージは matrix にまとめる。
+          # 特殊な環境が要るもの(web=supabase/playwright, e2e=playwright)は専用ジョブで扱う。
+          PACKAGES=$(for p in common datastore domain notification cron; do
+            grep -qx "$p" <<<"$NAMES" && echo "$p"
+          done | jq -R . | jq -cs .)
+
+          web=false
+          grep -qx web <<<"$NAMES" && web=true
+
+          # e2e は web をランタイム検証するため、web が変わったら必ず実行する。
+          e2e=false
+          { grep -qx e2e <<<"$NAMES" || [[ "$web" == "true" ]]; } && e2e=true
+
+          # スキーマドリフト検査は datastore のスキーマ/マイグレーション変更時のみ。
+          schema=false
+          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
+            schema=true
+          elif git diff --name-only "origin/${GITHUB_BASE_REF}" HEAD -- \
+              packages/datastore/src/drizzle-orm/schema \
+              packages/datastore/migrations \
+              packages/datastore/drizzle.config.ts | grep -q .; then
+            schema=true
+          fi
+
+          {
+            echo "packages=$PACKAGES"
+            echo "web=$web"
+            echo "e2e=$e2e"
+            echo "schema=$schema"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 検知結果の表示
+        run: |
+          echo "matrix packages: ${{ steps.detect.outputs.packages }}"
+          echo "web: ${{ steps.detect.outputs.web }} / e2e: ${{ steps.detect.outputs.e2e }} / schema: ${{ steps.detect.outputs.schema }}"
+
+  # Biome は高速かつリポジトリ全体が対象のため、変更検知に依らず常に実行する。
+  biome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Setup Biome
+        uses: biomejs/setup-biome@4c91541eaada48f67d7dbd7833600ce162b68f51 # v2
+        with:
+          version: ${{ env.BIOME_VERSION }}
+
+      - name: Run Biome CI
+        run: biome ci .
+
+  # 変更されたパッケージ(＋依存先)のうち、同質パッケージの型チェック/テストを動的 matrix で実行する。
+  unit:
+    needs: changes
+    if: ${{ needs.changes.outputs.packages != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.changes.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: 型チェック
+        run: pnpm --filter @trend-diary/${{ matrix.package }} typecheck
+
+      - name: テスト
+        run: pnpm --filter @trend-diary/${{ matrix.package }} test
+
+  web-build:
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: 型チェック
+        run: pnpm --filter @trend-diary/web typecheck
+
+      - name: ビルド
+        run: pnpm run build
+
+  web-client:
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: クライアントのテスト
+        uses: ./.github/actions/test_cov
+        with:
+          target: client
+
+  web-server:
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: Supabase Emulator のセットアップ
+        uses: rin2yh/supa-emu@002534b987244b792d8a075163abc754462cd44e # v0.1.1
+        with:
+          version: v0.1.1
+          addr: 127.0.0.1:54321
+
+      - name: サーバーのテスト
+        uses: ./.github/actions/test_cov
+        with:
+          target: server
+
+  web-component:
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: Playwrightブラウザのキャッシュ
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-storybook-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Playwrightのセットアップ(キャッシュミス)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @trend-diary/web exec playwright install chromium --with-deps
+
+      - name: Playwright依存のセットアップ(キャッシュヒット)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter @trend-diary/web exec playwright install-deps chromium
+
+      - name: コンポーネントのテスト
+        run: pnpm --filter @trend-diary/web test-storybook --coverage
+
+  schema:
+    needs: changes
+    if: ${{ needs.changes.outputs.schema == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: マイグレーション生成（未生成の差分があれば検出）
+        run: pnpm --filter @trend-diary/datastore db:generate
+
+      - name: 生成差分の検出（差分があればドリフト）
+        run: |
+          git add -N packages/datastore/migrations
+          git diff --exit-code -- packages/datastore/migrations
+
+      - name: journal整合の検証
+        run: pnpm --filter @trend-diary/datastore db:check
+
+  # main への push 時のフル E2E（リグレッション）
+  e2e:
+    name: E2E
+    needs: changes
+    if: ${{ needs.changes.outputs.e2e == 'true' && github.event_name == 'push' }}
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    environment: develop
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Supabaseのセットアップ
+        uses: ./.github/actions/setup_supabase
+
+      - name: E2E環境のセットアップ
+        uses: ./.github/actions/setup_e2e
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: Create .dev.vars for Actions
+        run: |
+          cat > packages/web/.dev.vars <<'EOF'
+          # Dev env for Actions (created from secrets)
+          DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
+          SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
+          SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
+          EOF
+
+      - name: E2Eテストの実行
+        run: pnpm --filter @trend-diary/e2e test --fail-on-flaky-tests
+
+      - name: Playwrightレポートを保存
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ always() && !cancelled() }}
+        with:
+          name: playwright-report-main-${{ github.run_id }}-${{ github.run_attempt }}
+          path: application/packages/e2e/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Playwright成果物を保存
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ always() && !cancelled() }}
+        with:
+          name: playwright-test-results-main-${{ github.run_id }}-${{ github.run_attempt }}
+          path: application/packages/e2e/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Cleanup .dev.vars
+        if: always()
+        run: rm -f packages/web/.dev.vars
+
+  # PR 時の差分 E2E（変更されたテストのみ）
+  e2e-diff:
+    name: E2E (Diff)
+    needs: changes
+    if: ${{ needs.changes.outputs.e2e == 'true' && github.event_name == 'pull_request' }}
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    environment: develop
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+
+      - id: setup-supabase
+        name: Supabaseのセットアップ
+        uses: ./.github/actions/setup_supabase
+
+      - name: E2E環境のセットアップ
+        uses: ./.github/actions/setup_e2e
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      - name: Create .dev.vars for Actions
+        run: |
+          cat > packages/web/.dev.vars <<'EOF'
+          # Dev env for Actions (created from secrets)
+          DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
+          SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
+          SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
+          EOF
+
+      - name: E2Eテストの差分実行
+        run: pnpm --filter @trend-diary/e2e test --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
+
+      - name: Playwrightレポートを保存
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ always() && !cancelled() }}
+        with:
+          name: playwright-report-diff-${{ github.run_id }}-${{ github.run_attempt }}
+          path: application/packages/e2e/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Playwright成果物を保存
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ always() && !cancelled() }}
+        with:
+          name: playwright-test-results-diff-${{ github.run_id }}-${{ github.run_attempt }}
+          path: application/packages/e2e/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Cleanup .dev.vars
+        if: always()
+        run: rm -f packages/web/.dev.vars

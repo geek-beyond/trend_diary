@@ -4,8 +4,15 @@ import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vi
 import type { Plugin } from 'vite'
 
 // migrations は datastore パッケージで一元管理しているため、パッケージ(packages/web)から相対参照する。
-const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
-const MIGRATIONS_DIR = resolve(APP_ROOT, 'packages', 'datastore', 'migrations')
+const MIGRATIONS_DIR = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+  '..',
+  'datastore',
+  'migrations',
+)
 
 export async function createWorkersPool(): Promise<{
   plugins: Plugin[]

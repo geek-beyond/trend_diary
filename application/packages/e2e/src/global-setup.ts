@@ -4,8 +4,13 @@ import { readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import { openTestD1 } from './d1'
 
 // migrations は datastore パッケージで一元管理しているため、パッケージ(packages/e2e)から相対参照する。
-const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
-const MIGRATIONS_DIR = resolve(APP_ROOT, 'packages', 'datastore', 'migrations')
+const MIGRATIONS_DIR = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'datastore',
+  'migrations',
+)
 
 export default async function globalSetup(): Promise<void> {
   const migrations = await readD1Migrations(MIGRATIONS_DIR)

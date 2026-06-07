@@ -18,7 +18,6 @@ concurrency:
 
 env:
   NODE_VERSION_FILE: .node-version
-  BIOME_VERSION: 2.4.16
   DATABASE_URL: file:./test.db
 
 defaults:
@@ -44,16 +43,17 @@ jobs:
           base: ${{ github.base_ref }}
 
   code-quality:
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Setup Biome
-        uses: biomejs/setup-biome@4c91541eaada48f67d7dbd7833600ce162b68f51 # v2
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
         with:
-          version: ${{ env.BIOME_VERSION }}
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
 
-      - name: Run Biome CI
-        run: biome ci .
+      - name: Lint
+        run: pnpm lint
 
   unit-test:
     needs: changes

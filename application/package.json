@@ -19,16 +19,9 @@
     "supabase:stop": "supabase stop"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.6",
-    "@cloudflare/workers-types": "^4.20260507.1",
-    "@faker-js/faker": "^10.4.0",
-    "@types/node": "^25.9.1",
+    "@biomejs/biome": "2.4.16",
+    "@trend-diary/lint": "workspace:*",
     "@typescript/native-preview": "^7.0.0-dev.20251209.1",
-    "@vitest/coverage-v8": "^4.1.8",
-    "drizzle-kit": "0.31.10",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.8",
-    "vitest-mock-extended": "^4.0.0",
-    "wrangler": "^4.95.0"
+    "typescript": "^5.9.3"
   }
 }

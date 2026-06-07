@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url'
 import { readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import { openTestD1 } from './d1'
 
-// migrations は datastore パッケージで一元管理しているため、パッケージ(packages/web)から相対参照する。
-const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
+// migrations は datastore パッケージで一元管理しているため、パッケージ(packages/e2e)から相対参照する。
+const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const MIGRATIONS_DIR = resolve(APP_ROOT, 'packages', 'datastore', 'migrations')
 
 export default async function globalSetup(): Promise<void> {

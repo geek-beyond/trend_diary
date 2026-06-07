@@ -73,7 +73,6 @@
 │   └── supabase.ts # Supabase接続
 ├── test # テスト関連
 │   ├── __mocks__ # モック
-│   ├── e2e # E2Eテスト
 │   ├── helper # テストヘルパー
 │   ├── vitest # Vitest設定
 │   │   ├── client # クライアント側テスト設定
@@ -90,7 +89,7 @@
 
 テストファイルの配置は以下のルールに従う:
 - ユニットテスト（`*.test.ts`）: 実装されているコードと同じ階層に配置
-- E2Eテスト: `src/test/e2e`に配置
+- E2Eテスト: `packages/e2e`に配置（`@trend-diary/e2e`パッケージ）
 - テストヘルパー: `src/test/helper`に配置
 - テストモック: `src/test/__mocks__`に配置（ドメイン層テストで使用）
 - Vitest設定: `src/test/vitest/config`に配置

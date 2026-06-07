@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // page.evaluate などブラウザコンテキストのコードで DOM 型を参照するため DOM を含める
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["@playwright/test", "node", "@cloudflare/workers-types/2023-07-01"]
+  },
+  "include": ["src", "playwright.config.ts"]
+}

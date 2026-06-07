@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
   "root": true,
   "extends": ["./packages/lint/biome.base.json"],
   "vcs": {
@@ -19,6 +19,7 @@
     ]
   },
   "plugins": ["./packages/lint/no-use-direct-dom-a-element.grit"],
+  "css": { "parser": { "tailwindDirectives": true } },
   "linter": {
     "rules": {
       "a11y": {

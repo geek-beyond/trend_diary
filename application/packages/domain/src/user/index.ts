@@ -9,10 +9,7 @@ import {
 import { AuthenticationSession, AuthInput, authInputSchema } from './schema/auth-schema'
 
 // 型
-export type { ActiveUser, ActiveUserInput, CurrentUser, AuthenticationSession, AuthInput }
-
+export type { ActiveUser, ActiveUserInput, AuthenticationSession, AuthInput, CurrentUser }
 // スキーマ
-export { activeUserSchema, activeUserInputSchema, authInputSchema }
-
 // ファクトリ
-export { createAuthUseCase }
+export { activeUserInputSchema, activeUserSchema, authInputSchema, createAuthUseCase }

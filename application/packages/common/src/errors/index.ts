@@ -6,10 +6,10 @@ import handleError from './handle'
 import ServerError from './server-error'
 
 export {
-  ClientError,
   AlreadyExistsError,
+  ClientError,
   ExternalServiceError,
+  handleError,
   NotFoundError,
   ServerError,
-  handleError,
 }

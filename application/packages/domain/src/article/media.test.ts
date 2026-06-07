@@ -25,21 +25,28 @@ describe('media', () => {
 
   describe('isArticleMedia', () => {
     describe('正常系', () => {
-      it.each(['qiita', 'zenn', 'hatena'])(
-        'サポート対象のメディア(%s)に対してtrueを返すこと',
-        (media) => {
-          expect(isArticleMedia(media)).toBe(true)
-        },
-      )
+      it.each([
+        'qiita',
+        'zenn',
+        'hatena',
+      ])('サポート対象のメディア(%s)に対してtrueを返すこと', (media) => {
+        expect(isArticleMedia(media)).toBe(true)
+      })
     })
 
     describe('異常系', () => {
-      it.each(['note', 'medium', 'invalid', 'Qiita', 'ZENN', '', ' qiita', 'qiita '])(
-        'サポート対象外の文字列(%s)に対してfalseを返すこと',
-        (value) => {
-          expect(isArticleMedia(value)).toBe(false)
-        },
-      )
+      it.each([
+        'note',
+        'medium',
+        'invalid',
+        'Qiita',
+        'ZENN',
+        '',
+        ' qiita',
+        'qiita ',
+      ])('サポート対象外の文字列(%s)に対してfalseを返すこと', (value) => {
+        expect(isArticleMedia(value)).toBe(false)
+      })
     })
   })
 })

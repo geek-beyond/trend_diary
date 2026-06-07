@@ -55,7 +55,7 @@ jobs:
       - name: Run Biome CI
         run: biome ci .
 
-  unit:
+  unit-test:
     needs: changes
     if: ${{ needs.changes.outputs.packages != '[]' }}
     runs-on: ubuntu-latest
@@ -295,7 +295,7 @@ jobs:
     needs:
       - changes
       - code-quality
-      - unit
+      - unit-test
       - web-build
       - web-client
       - web-server

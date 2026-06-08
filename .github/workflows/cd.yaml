@@ -15,6 +15,7 @@ on:
         type: choice
         options:
           - web
+          - cron
           - database
 
 permissions:
@@ -30,13 +31,65 @@ defaults:
     working-directory: ./application
 
 jobs:
-  web:
+  changes:
     runs-on: ubuntu-latest
-    environment: production
-    if: ${{ github.event.workflow_run && github.event.workflow_run.conclusion == 'success' || github.event.inputs.deploy_type == 'web' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      web: ${{ steps.detect.outputs.web }}
+      cron: ${{ steps.detect.outputs.cron }}
+      database: ${{ steps.detect.outputs.database }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
+          # CI を通過したコミットをデプロイ対象にする(手動実行時はデフォルトブランチ)
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          # ひとつ前のコミットとの差分を取るため
+          fetch-depth: 2
+          persist-credentials: false
+      - id: detect
+        env:
+          EVENT: ${{ github.event_name }}
+          DEPLOY_TYPE: ${{ github.event.inputs.deploy_type }}
+        run: |
+          set -euo pipefail
+
+          web=false
+          cron=false
+          database=false
+
+          if [[ "$EVENT" == "workflow_dispatch" ]]; then
+            case "$DEPLOY_TYPE" in
+              web) web=true ;;
+              cron) cron=true ;;
+              database) database=true ;;
+            esac
+          else
+            files=$(git diff --name-only HEAD~1 HEAD)
+
+            # web と cron が共通で依存するパッケージとルート設定(変わると両方を再デプロイ)
+            shared='application/packages/(common|datastore|domain|notification)/|application/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|tsconfig(\.base)?\.json)$'
+
+            if grep -qE "application/packages/web/|$shared" <<<"$files"; then web=true; fi
+            if grep -qE "application/packages/cron/|$shared" <<<"$files"; then cron=true; fi
+            if grep -qE 'application/packages/datastore/migrations/' <<<"$files"; then database=true; fi
+          fi
+
+          {
+            echo "web=$web"
+            echo "cron=$cron"
+            echo "database=$database"
+          } >> "$GITHUB_OUTPUT"
+          echo "デプロイ対象: web=$web cron=$cron database=$database"
+
+  web:
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
           persist-credentials: false
       - name: Node.jsの構築
         uses: ./.github/actions/setup_node
@@ -69,13 +122,49 @@ jobs:
           CMD_OUTPUT: ${{ steps.deploy.outputs.command-output }}
         run: echo $CMD_OUTPUT
 
-  database:
+  cron:
+    needs: changes
+    if: ${{ needs.changes.outputs.cron == 'true' }}
     runs-on: ubuntu-latest
     environment: production
-    if: ${{ github.event.workflow_run && github.event.workflow_run.conclusion == 'success' || github.event.inputs.deploy_type == 'database' }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          persist-credentials: false
+
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: .node-version
+
+      - name: Cron Workerをデプロイ
+        id: deploy
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ./application/packages/cron
+          command: deploy
+          secrets: |
+            DISCORD_WEBHOOK_URL
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      - name: デプロイの出力を表示
+        env:
+          CMD_OUTPUT: ${{ steps.deploy.outputs.command-output }}
+        run: echo "$CMD_OUTPUT"
+
+  database:
+    needs: changes
+    if: ${{ needs.changes.outputs.database == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
           persist-credentials: false
       - name: Node.jsの構築
         uses: ./.github/actions/setup_node

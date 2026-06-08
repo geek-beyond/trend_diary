@@ -5,9 +5,16 @@ import worker from './worker'
 const runScheduledFetchMock = vi.hoisted(() => vi.fn())
 const loggerInfoMock = vi.hoisted(() => vi.fn())
 const loggerErrorMock = vi.hoisted(() => vi.fn())
+const sendMessageMock = vi.hoisted(() => vi.fn())
 
 vi.mock('./fetch-articles', () => ({
   runScheduledFetch: runScheduledFetchMock,
+}))
+
+vi.mock('@trend-diary/notification', () => ({
+  DiscordWebhookClient: class {
+    sendMessage = sendMessageMock
+  },
 }))
 
 vi.mock('@trend-diary/common/logger', () => ({
@@ -27,6 +34,7 @@ describe('cron worker', () => {
     runScheduledFetchMock.mockReset()
     loggerInfoMock.mockReset()
     loggerErrorMock.mockReset()
+    sendMessageMock.mockReset()
   })
 
   it('既知のcron式でfetchジョブを実行する', async () => {
@@ -168,6 +176,39 @@ describe('cron worker', () => {
         failedCount: 1,
         insertedTotal: 4,
       }),
+    )
+    expect(sendMessageMock).toHaveBeenCalledWith(expect.stringContaining('media: qiita'))
+  })
+
+  it('ジョブ全体が予期せず失敗したらDiscordに通知し、Cloudflareにも失敗として伝播させる', async () => {
+    const failure = new Error('logger boom')
+    loggerInfoMock.mockImplementation((message: { msg?: string }) => {
+      if (message?.msg === 'cron job started') {
+        throw failure
+      }
+    })
+
+    const waitUntilCalls: Promise<unknown>[] = []
+    const event = { cron: '0 */1 * * *', scheduledTime: 4000 } as ScheduledController
+    const env = {
+      DB: {} as D1Database,
+      DISCORD_WEBHOOK_URL: 'https://example.com/webhook',
+      LOG_LEVEL: 'silent' as const,
+    }
+
+    await worker.scheduled(event, env, {
+      waitUntil: (promise: Promise<unknown>) => {
+        waitUntilCalls.push(promise)
+      },
+    } as ExecutionContext)
+
+    expect(waitUntilCalls).toHaveLength(1)
+    await expect(Promise.all(waitUntilCalls)).rejects.toThrow('logger boom')
+    expect(runScheduledFetchMock).not.toHaveBeenCalled()
+    expect(sendMessageMock).toHaveBeenCalledWith(expect.stringContaining('job failed'))
+    expect(loggerErrorMock).toHaveBeenCalledWith(
+      expect.objectContaining({ msg: 'cron job failed' }),
+      failure,
     )
   })
 })

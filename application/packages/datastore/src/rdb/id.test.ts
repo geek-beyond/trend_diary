@@ -4,34 +4,28 @@ import { fromDbId, toDbId, toDbIds } from './id'
 const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER)
 
 describe('toDbId', () => {
-  it('範囲内のbigintをnumberに変換すること', () => {
-    expect(toDbId(123n)).toBe(123)
+  it.each([
+    { label: '通常値', input: 123n, expected: 123 },
+    { label: '下限値0n', input: 0n, expected: 0 },
+    { label: '上限値Number.MAX_SAFE_INTEGER', input: MAX_SAFE, expected: Number.MAX_SAFE_INTEGER },
+  ])('$labelをnumberに変換すること', ({ input, expected }) => {
+    expect(toDbId(input)).toBe(expected)
   })
 
-  it('下限値0nを変換できること', () => {
-    expect(toDbId(0n)).toBe(0)
-  })
-
-  it('上限値Number.MAX_SAFE_INTEGERを変換できること', () => {
-    expect(toDbId(MAX_SAFE)).toBe(Number.MAX_SAFE_INTEGER)
-  })
-
-  it('負数の場合はRangeErrorを投げること', () => {
-    expect(() => toDbId(-1n)).toThrow(RangeError)
-  })
-
-  it('Number.MAX_SAFE_INTEGERを超える場合はRangeErrorを投げること', () => {
-    expect(() => toDbId(MAX_SAFE + 1n)).toThrow(RangeError)
+  it.each([
+    { label: '負数', input: -1n },
+    { label: 'Number.MAX_SAFE_INTEGERを超える値', input: MAX_SAFE + 1n },
+  ])('$labelの場合はRangeErrorを投げること', ({ input }) => {
+    expect(() => toDbId(input)).toThrow(RangeError)
   })
 })
 
 describe('toDbIds', () => {
-  it('bigint配列をnumber配列に変換すること', () => {
-    expect(toDbIds([1n, 2n, 3n])).toEqual([1, 2, 3])
-  })
-
-  it('空配列を空配列に変換すること', () => {
-    expect(toDbIds([])).toEqual([])
+  it.each([
+    { label: 'bigint配列', input: [1n, 2n, 3n], expected: [1, 2, 3] },
+    { label: '空配列', input: [], expected: [] },
+  ])('$labelをnumber配列に変換すること', ({ input, expected }) => {
+    expect(toDbIds(input)).toEqual(expected)
   })
 
   it('範囲外の値を含む場合はRangeErrorを投げること', () => {
@@ -40,27 +34,19 @@ describe('toDbIds', () => {
 })
 
 describe('fromDbId', () => {
-  it('numberをbigintに変換すること', () => {
-    expect(fromDbId(123)).toBe(123n)
+  it.each([
+    { label: 'number', input: 123, expected: 123n },
+    { label: '下限値0', input: 0, expected: 0n },
+    { label: 'bigint(そのまま返す)', input: 123n, expected: 123n },
+  ])('$labelをbigintに変換すること', ({ input, expected }) => {
+    expect(fromDbId(input)).toBe(expected)
   })
 
-  it('0を変換できること', () => {
-    expect(fromDbId(0)).toBe(0n)
-  })
-
-  it('bigintはそのまま返すこと', () => {
-    expect(fromDbId(123n)).toBe(123n)
-  })
-
-  it('負数のnumberの場合はRangeErrorを投げること', () => {
-    expect(() => fromDbId(-1)).toThrow(RangeError)
-  })
-
-  it('安全整数でないnumber(小数)の場合はRangeErrorを投げること', () => {
-    expect(() => fromDbId(1.5)).toThrow(RangeError)
-  })
-
-  it('Number.MAX_SAFE_INTEGERを超えるnumberの場合はRangeErrorを投げること', () => {
-    expect(() => fromDbId(Number.MAX_SAFE_INTEGER + 1)).toThrow(RangeError)
+  it.each([
+    { label: '負数のnumber', input: -1 },
+    { label: '安全整数でないnumber(小数)', input: 1.5 },
+    { label: 'Number.MAX_SAFE_INTEGERを超えるnumber', input: Number.MAX_SAFE_INTEGER + 1 },
+  ])('$labelの場合はRangeErrorを投げること', ({ input }) => {
+    expect(() => fromDbId(input)).toThrow(RangeError)
   })
 })

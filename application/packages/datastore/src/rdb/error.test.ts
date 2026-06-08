@@ -12,7 +12,6 @@ describe('wrapDbCall', () => {
   })
 
   it('causeにErrorを持つ例外の場合はcauseを取り出してerrを返すこと', async () => {
-    // Drizzleが DrizzleQueryError でラップし元のDBエラーを cause に格納する状況を模す
     const originalDbError = new Error('UNIQUE constraint failed: users.email')
     const wrappedError = new Error('Failed query: insert into users', { cause: originalDbError })
 

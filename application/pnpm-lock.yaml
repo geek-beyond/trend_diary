@@ -105,6 +105,9 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260507.1)(@libsql/client@0.17.3)
+      neverthrow:
+        specifier: 'catalog:'
+        version: 8.2.0
       rss-parser:
         specifier: ^3.13.0
         version: 3.13.0

@@ -1,7 +1,9 @@
+import { wrapAsyncCall } from '@trend-diary/common/result'
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { inArray } from 'drizzle-orm'
+import { err, ok, type Result } from 'neverthrow'
 import Parser from 'rss-parser'
 
 type CronEnv = {
@@ -39,21 +41,27 @@ function pickNonEmpty(...candidates: Array<string | undefined>): string | undefi
   return undefined
 }
 
-async function fetchRssFeed<T>(url: string) {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch rss feed: ${url}, status=${response.status}`)
-  }
+function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
+  return wrapAsyncCall(async () => {
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch rss feed: ${url}, status=${response.status}`)
+    }
 
-  const parser = new Parser<{ items: T[] }, T>()
-  const xml = await response.text()
-  const feed = await parser.parseString(xml)
-  return feed.items
+    const parser = new Parser<{ items: T[] }, T>()
+    const xml = await response.text()
+    const feed = await parser.parseString(xml)
+    return feed.items
+  })
 }
 
-async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEnv) {
+async function storeArticles(
+  media: ArticleMedia,
+  items: FeedItem[],
+  env: CronEnv,
+): Promise<Result<number, Error>> {
   const db = getRdbClient(env.DB)
-  if (items.length === 0) return 0
+  if (items.length === 0) return ok(0)
 
   const normalized = items.map((item) => ({
     media: truncateByCodePoint(media, MAX_LENGTH.media),
@@ -75,7 +83,7 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
       ),
   )
   if (existingResult.isErr()) {
-    throw existingResult.error
+    return err(existingResult.error)
   }
 
   const existingUrlSet = new Set(existingResult.value.map((item) => item.url))
@@ -88,7 +96,7 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
   }
   const toInsert = uniqueNormalized.filter((item) => !existingUrlSet.has(item.url))
 
-  if (toInsert.length === 0) return 0
+  if (toInsert.length === 0) return ok(0)
 
   let insertedCount = 0
   for (const article of toInsert) {
@@ -96,12 +104,12 @@ async function storeArticles(media: ArticleMedia, items: FeedItem[], env: CronEn
     const insertResult = await wrapDbCall(() => db.insert(articles).values(article))
     if (insertResult.isErr()) {
       if (isUniqueConstraintError(insertResult.error)) continue
-      throw insertResult.error
+      return err(insertResult.error)
     }
     insertedCount += 1
   }
 
-  return insertedCount
+  return ok(insertedCount)
 }
 
 // Drizzle はドライバエラーを DrizzleQueryError でラップし元エラーを cause に格納するため、
@@ -122,17 +130,18 @@ function isUniqueConstraintError(error: unknown): boolean {
   return false
 }
 
-export async function fetchQiitaArticles(env: CronEnv): Promise<number> {
-  const items = await fetchRssFeed<{
+export async function fetchQiitaArticles(env: CronEnv): Promise<Result<number, Error>> {
+  const itemsResult = await fetchRssFeed<{
     title: string
     author: string
     content: string
     link: string
   }>('https://qiita.com/popular-items/feed.atom')
+  if (itemsResult.isErr()) return err(itemsResult.error)
 
   return storeArticles(
     'qiita',
-    items.map((item) => ({
+    itemsResult.value.map((item) => ({
       title: item.title,
       author: item.author,
       description: item.content,
@@ -142,17 +151,18 @@ export async function fetchQiitaArticles(env: CronEnv): Promise<number> {
   )
 }
 
-export async function fetchZennArticles(env: CronEnv): Promise<number> {
-  const items = await fetchRssFeed<{
+export async function fetchZennArticles(env: CronEnv): Promise<Result<number, Error>> {
+  const itemsResult = await fetchRssFeed<{
     title: string
     creator: string
     content: string
     link: string
   }>('https://zenn.dev/feed')
+  if (itemsResult.isErr()) return err(itemsResult.error)
 
   return storeArticles(
     'zenn',
-    items.map((item) => ({
+    itemsResult.value.map((item) => ({
       title: item.title,
       author: item.creator,
       description: item.content,
@@ -162,8 +172,8 @@ export async function fetchZennArticles(env: CronEnv): Promise<number> {
   )
 }
 
-export async function fetchHatenaArticles(env: CronEnv): Promise<number> {
-  const items = await fetchRssFeed<{
+export async function fetchHatenaArticles(env: CronEnv): Promise<Result<number, Error>> {
+  const itemsResult = await fetchRssFeed<{
     title: string
     creator?: string
     content?: string
@@ -171,10 +181,11 @@ export async function fetchHatenaArticles(env: CronEnv): Promise<number> {
     contentSnippet?: string
     link: string
   }>('https://b.hatena.ne.jp/hotentry/it.rss')
+  if (itemsResult.isErr()) return err(itemsResult.error)
 
   return storeArticles(
     'hatena',
-    items.map((item) => ({
+    itemsResult.value.map((item) => ({
       title: item.title,
       author: pickNonEmpty(item.creator) || HATENA_FALLBACK_AUTHOR,
       description: pickNonEmpty(item.content, item['content:encoded'], item.contentSnippet) || '',
@@ -184,15 +195,15 @@ export async function fetchHatenaArticles(env: CronEnv): Promise<number> {
   )
 }
 
-export async function runScheduledFetch(media: ArticleMedia, env: CronEnv): Promise<number> {
-  let insertedCount: number
+export function runScheduledFetch(
+  media: ArticleMedia,
+  env: CronEnv,
+): Promise<Result<number, Error>> {
   if (media === 'qiita') {
-    insertedCount = await fetchQiitaArticles(env)
-  } else if (media === 'zenn') {
-    insertedCount = await fetchZennArticles(env)
-  } else {
-    insertedCount = await fetchHatenaArticles(env)
+    return fetchQiitaArticles(env)
   }
-
-  return insertedCount
+  if (media === 'zenn') {
+    return fetchZennArticles(env)
+  }
+  return fetchHatenaArticles(env)
 }

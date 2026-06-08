@@ -13,7 +13,7 @@ const VALID_LOG_LEVELS: ReadonlyArray<LogLevel> = [
 
 // 既定を info にすることで、PII(email等)を含むクエリログ(debug)は LOG_LEVEL=debug/trace
 // を明示したときだけ出力され、本番で常時ログ出力される事故を防ぐ。
-export function resolveLogLevel(): LogLevel {
+function resolveLogLevel(): LogLevel {
   const candidate = process.env.LOG_LEVEL?.trim()
   return VALID_LOG_LEVELS.includes(candidate as LogLevel) ? (candidate as LogLevel) : 'info'
 }

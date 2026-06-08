@@ -81,6 +81,20 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "デプロイ対象: web=$web cron=$cron database=$database"
 
+          # ジョブサマリにデプロイ対象を記載(対象が無い場合はスキップ相当である旨を明記)
+          {
+            echo "## CD デプロイ対象"
+            if [[ "$web" == "false" && "$cron" == "false" && "$database" == "false" ]]; then
+              echo "デプロイ対象なし（実質スキップ）"
+            else
+              echo "| リソース | デプロイ |"
+              echo "| --- | --- |"
+              echo "| web | $web |"
+              echo "| cron | $cron |"
+              echo "| database | $database |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   web:
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}

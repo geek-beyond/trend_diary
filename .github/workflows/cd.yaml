@@ -84,7 +84,7 @@ jobs:
           {
             echo "## CD デプロイ対象"
             if [[ "$web" == "false" && "$cron" == "false" && "$database" == "false" ]]; then
-              echo "デプロイ対象なし（実質スキップ）"
+              echo "デプロイ対象なし（スキップ）"
             else
               echo "| リソース | デプロイ |"
               echo "| --- | --- |"

@@ -81,6 +81,19 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "デプロイ対象: web=$web cron=$cron database=$database"
 
+          {
+            echo "## CD デプロイ対象"
+            if [[ "$web" == "false" && "$cron" == "false" && "$database" == "false" ]]; then
+              echo "デプロイ対象なし（スキップ）"
+            else
+              echo "| リソース | デプロイ |"
+              echo "| --- | --- |"
+              echo "| web | $web |"
+              echo "| cron | $cron |"
+              echo "| database | $database |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   web:
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}

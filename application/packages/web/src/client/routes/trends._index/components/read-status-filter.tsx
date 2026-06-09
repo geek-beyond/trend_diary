@@ -3,7 +3,7 @@ import { cn } from '@/client/components/shadcn/lib/utils'
 
 export type ReadStatusType = 'all' | 'unread'
 
-type Props = {
+interface Props {
   selectedReadStatus: ReadStatusType
   onReadStatusChange: (readStatus: ReadStatusType) => void
 }

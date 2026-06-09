@@ -2,7 +2,7 @@ import { Button } from '@/client/components/shadcn/button'
 import { cn } from '@/client/components/shadcn/lib/utils'
 import { DATE_PRESETS, type DatePresetType } from '../hooks/use-articles'
 
-type Props = {
+interface Props {
   selectedDatePreset: DatePresetType
   onDatePresetChange: (datePreset: DatePresetType) => void
 }

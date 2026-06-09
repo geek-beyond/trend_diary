@@ -25,7 +25,7 @@ export type Article = Omit<ArticleOutput, 'articleId'> & {
 export const DATE_PRESETS = ['today', 'last3days', 'last7days'] as const
 export type DatePresetType = (typeof DATE_PRESETS)[number]
 
-type Params = {
+interface Params {
   page: number
   limit: number
   media: MediaType
@@ -33,13 +33,13 @@ type Params = {
   datePreset: DatePresetType
 }
 
-type FilterParams = {
+interface FilterParams {
   media: MediaType
   readStatus: ReadStatusType
   datePreset: DatePresetType
 }
 
-type ArticlesResponse = {
+interface ArticlesResponse {
   data: Article[]
   page: number
   limit: number

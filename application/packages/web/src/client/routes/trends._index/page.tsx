@@ -19,7 +19,7 @@ import MediaFilter, { type MediaType } from './components/media-filter'
 import ReadStatusFilter, { type ReadStatusType } from './components/read-status-filter'
 import type { Article, DatePresetType } from './hooks/use-articles'
 
-type Props = {
+interface Props {
   date: Date
   articles: Article[]
   openDrawer: (article: Article) => void

@@ -1,6 +1,6 @@
 import getApiClientForClient from '../infrastructure/api'
 
-type ApiCallResponse = {
+interface ApiCallResponse {
   ok: boolean
   status: number
   statusText: string

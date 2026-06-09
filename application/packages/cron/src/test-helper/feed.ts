@@ -1,10 +1,8 @@
-export const FEED_URL = {
-  qiita: 'https://qiita.com/popular-items/feed.atom',
-  zenn: 'https://zenn.dev/feed',
-  hatena: 'https://b.hatena.ne.jp/hotentry/it.rss',
-} as const
+import { FEED_URL } from '../feed-config'
 
-export type FeedItem = {
+export { FEED_URL }
+
+export interface FeedItem {
   title: string
   url: string
   author?: string

@@ -5,7 +5,7 @@ import { AnchorLink } from '../../components/ui/link'
 import { AuthenticateForm } from '../../features/authenticate/authenticate-form'
 import { AuthenticateErrors } from '../../features/authenticate/validation'
 
-type Props = {
+interface Props {
   isSubmitting: boolean
   errors?: AuthenticateErrors
   formError?: string

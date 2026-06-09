@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import QueryImpl from './query-impl'
 
-type DateRangeSqlBuilders = {
+interface DateRangeSqlBuilders {
   buildClosedOpenDateRangeSql(columnName: string, fromDate: Date, toDateExclusive: Date): SQL
   buildDateRangeConditions(
     columnName: string,

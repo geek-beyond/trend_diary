@@ -1,13 +1,13 @@
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import createSWRFetcher from '@/client/features/create-swr-fetcher'
 
-export type DiarySource = {
+export interface DiarySource {
   media: ArticleMedia
   read: number
   skip: number
 }
 
-export type DiaryReadItemResponse = {
+export interface DiaryReadItemResponse {
   readHistoryId: string
   articleId: string
   media: ArticleMedia
@@ -16,7 +16,7 @@ export type DiaryReadItemResponse = {
   readAt: string
 }
 
-export type DiaryResponse = {
+export interface DiaryResponse {
   date: string
   sources: DiarySource[]
   reads: {
@@ -28,7 +28,7 @@ export type DiaryResponse = {
   }
 }
 
-export type DiaryRangeItemResponse = {
+export interface DiaryRangeItemResponse {
   date: string
   summary: {
     read: number
@@ -37,7 +37,7 @@ export type DiaryRangeItemResponse = {
   sources: DiarySource[]
 }
 
-type DiaryRangeResponse = {
+interface DiaryRangeResponse {
   data: DiaryRangeItemResponse[]
   reads?: DiaryResponse['reads']
 }

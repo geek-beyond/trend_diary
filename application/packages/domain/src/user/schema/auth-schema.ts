@@ -16,7 +16,7 @@ export type AuthInput = z.infer<typeof authInputSchema>
 /**
  * 認証ユーザーモデル
  */
-export type AuthenticationUser = {
+export interface AuthenticationUser {
   id: string
   email: string
   emailConfirmedAt?: Date | null
@@ -26,7 +26,7 @@ export type AuthenticationUser = {
 /**
  * 認証セッションモデル
  */
-export type AuthenticationSession = {
+export interface AuthenticationSession {
   accessToken: string
   refreshToken: string
   expiresIn: number

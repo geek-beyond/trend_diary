@@ -7,7 +7,7 @@ import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import { diaryQuerySchema } from './get-diary'
 
-type DiaryRangeResponse = {
+interface DiaryRangeResponse {
   data: Array<{
     date: string
     summary: {

@@ -10,7 +10,7 @@ import app from '../../../server'
 
 import { ArticleListResponse, ArticleWithReadStatusResponse } from './get-articles'
 
-type GetArticlesTestCase = {
+interface GetArticlesTestCase {
   name: string
   query: string
   status: number

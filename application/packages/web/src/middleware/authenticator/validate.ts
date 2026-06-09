@@ -8,7 +8,7 @@ import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import type { Env, SessionUser } from '../../env'
 import CONTEXT_KEY from '../context'
 
-type AuthValidationSuccess = {
+interface AuthValidationSuccess {
   sessionUser: SessionUser
 }
 

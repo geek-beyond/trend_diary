@@ -50,7 +50,7 @@ export const diaryQuerySchema = z
 
 type DiaryQuery = z.infer<typeof diaryQuerySchema>
 
-type DiaryRangeResponse = {
+interface DiaryRangeResponse {
   data: Array<{
     date: string
     summary: {

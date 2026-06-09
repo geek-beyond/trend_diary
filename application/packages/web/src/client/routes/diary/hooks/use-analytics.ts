@@ -12,13 +12,13 @@ import useDiaryApi, {
   type DiarySource,
 } from './use-diary-api'
 
-type DiaryPoint = {
+interface DiaryPoint {
   date: string
   read: number
   skip: number
 }
 
-type SummaryRangeData = {
+interface SummaryRangeData {
   points: DiaryPoint[]
   weeklySources: DiarySource[]
 }

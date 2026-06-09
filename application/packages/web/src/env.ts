@@ -1,23 +1,19 @@
-import { LoggerType, LogLevel } from '@trend-diary/common/logger'
+import type { WorkerBindings } from '@trend-diary/common/env'
+import { LoggerType } from '@trend-diary/common/logger'
 import { Nullable } from '@trend-diary/common/types/utility'
 import CONTEXT_KEY from './middleware/context'
 
-type D1Database = import('@cloudflare/workers-types').D1Database
-
-export type SessionUser = {
+export interface SessionUser {
   activeUserId: bigint
   displayName?: Nullable<string>
   email: string
 }
 
-export type Env = {
-  Bindings: {
-    DB: D1Database
-    DISCORD_WEBHOOK_URL: string
+export interface Env {
+  Bindings: WorkerBindings & {
     SUPABASE_URL: string
     SUPABASE_ANON_KEY: string
     SUPABASE_SERVICE_ROLE_KEY?: string
-    LOG_LEVEL?: LogLevel
   }
   Variables: {
     [CONTEXT_KEY.APP_LOG]: LoggerType

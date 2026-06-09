@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./env": "./src/env/index.ts",
     "./errors": "./src/errors/index.ts",
     "./locale": "./src/locale/index.ts",
     "./pagination": "./src/pagination/index.ts",
@@ -22,6 +23,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:",
     "vitest": "catalog:"
   }

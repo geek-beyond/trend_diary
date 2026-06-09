@@ -132,26 +132,68 @@ describe('fetchHatenaArticles', () => {
       if (result.isOk()) expect(result.value).toBe(2)
       expect(await countArticles()).toBe(2)
     })
+  })
 
-    it('description は content を content:encoded より優先する', async () => {
-      stubHatena([
-        {
-          title: '記事',
-          author: '投稿者',
-          content: 'content本文',
-          contentEncoded: 'encoded本文',
-          url: 'https://example.com/priority',
-        },
-      ])
+  describe('準正常系', () => {
+    const descriptionCases: { name: string; overrides: Partial<FeedItem>; expected: string }[] = [
+      {
+        name: 'content を content:encoded より優先する',
+        overrides: { content: 'content本文', contentEncoded: 'encoded本文' },
+        expected: 'content本文',
+      },
+      {
+        name: 'content 欠損時は content:encoded で補完する',
+        overrides: { contentEncoded: 'encoded本文' },
+        expected: 'encoded本文',
+      },
+      {
+        name: 'content 系がすべて欠損なら空にする',
+        overrides: {},
+        expected: '',
+      },
+    ]
+
+    it.each(descriptionCases)('description は $name', async ({ overrides, expected }) => {
+      const url = 'https://example.com/description'
+      stubHatena([{ title: '記事', author: '投稿者', url, ...overrides }])
 
       const result = await fetchHatenaArticles(cronEnv)
 
       expect(result.isOk()).toBe(true)
-      expect((await findByUrl('https://example.com/priority')).description).toBe('content本文')
+      expect((await findByUrl(url)).description).toBe(expected)
     })
-  })
 
-  describe('準正常系', () => {
+    const saveCountCases: { name: string; items: FeedItem[]; expected: number }[] = [
+      {
+        name: 'フィード内で同一URLが重複する場合は1件だけ保存する',
+        items: [
+          { title: '記事A', author: '投稿者A', content: '本文A', url: 'https://example.com/a' },
+          {
+            title: '記事A重複',
+            author: '投稿者A',
+            content: '本文A重複',
+            url: 'https://example.com/a',
+          },
+        ],
+        expected: 1,
+      },
+      {
+        name: '空フィードは何も保存しない',
+        items: [],
+        expected: 0,
+      },
+    ]
+
+    it.each(saveCountCases)('$name', async ({ items, expected }) => {
+      stubHatena(items)
+
+      const result = await fetchHatenaArticles(cronEnv)
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) expect(result.value).toBe(expected)
+      expect(await countArticles()).toBe(expected)
+    })
+
     it('creator が欠損した記事は author をはてなブックマークで補完する', async () => {
       stubHatena([{ title: 'はてな記事', content: 'はてな本文', url: 'https://example.com/h1' }])
 
@@ -159,31 +201,6 @@ describe('fetchHatenaArticles', () => {
 
       expect(result.isOk()).toBe(true)
       expect((await findByUrl('https://example.com/h1')).author).toBe('はてなブックマーク')
-    })
-
-    it('content が欠損した記事は content:encoded で補完する', async () => {
-      stubHatena([
-        {
-          title: '記事',
-          author: '投稿者',
-          contentEncoded: 'encoded本文',
-          url: 'https://example.com/encoded',
-        },
-      ])
-
-      const result = await fetchHatenaArticles(cronEnv)
-
-      expect(result.isOk()).toBe(true)
-      expect((await findByUrl('https://example.com/encoded')).description).toBe('encoded本文')
-    })
-
-    it('content 系がすべて欠損した記事は description を空にする', async () => {
-      stubHatena([{ title: '記事', author: '投稿者', url: 'https://example.com/empty-desc' }])
-
-      const result = await fetchHatenaArticles(cronEnv)
-
-      expect(result.isOk()).toBe(true)
-      expect((await findByUrl('https://example.com/empty-desc')).description).toBe('')
     })
 
     it('各フィールドを最大長で切り詰める', async () => {
@@ -224,24 +241,6 @@ describe('fetchHatenaArticles', () => {
       expect(saved.author).not.toContain('�')
     })
 
-    it('フィード内で同一URLが重複する場合は1件だけ保存する', async () => {
-      stubHatena([
-        { title: '記事A', author: '投稿者A', content: '本文A', url: 'https://example.com/a' },
-        {
-          title: '記事A重複',
-          author: '投稿者A',
-          content: '本文A重複',
-          url: 'https://example.com/a',
-        },
-      ])
-
-      const result = await fetchHatenaArticles(cronEnv)
-
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) expect(result.value).toBe(1)
-      expect(await countArticles()).toBe(1)
-    })
-
     it('既にDBへ保存済みのURLはスキップし新規分のみ保存する', async () => {
       stubHatena([
         { title: '記事A', author: '投稿者A', content: '本文A', url: 'https://example.com/a' },
@@ -259,16 +258,6 @@ describe('fetchHatenaArticles', () => {
       if (secondResult.isOk()) expect(secondResult.value).toBe(1)
       expect(await countArticles()).toBe(2)
       expect((await findByUrl('https://example.com/b')).author).toBe('投稿者B')
-    })
-
-    it('空フィードは何も保存しない', async () => {
-      stubHatena([])
-
-      const result = await fetchHatenaArticles(cronEnv)
-
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) expect(result.value).toBe(0)
-      expect(await countArticles()).toBe(0)
     })
   })
 

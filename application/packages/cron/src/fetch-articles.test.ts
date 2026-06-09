@@ -1,8 +1,8 @@
-import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchMock = vi.hoisted(() => vi.fn())
 const parseStringMock = vi.hoisted(() => vi.fn())
+const storeArticlesMock = vi.hoisted(() => vi.fn())
 
 vi.stubGlobal('fetch', fetchMock)
 
@@ -14,47 +14,29 @@ vi.mock('rss-parser', () => ({
   },
 }))
 
-import { env } from 'cloudflare:test'
-import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
+vi.mock('./store-articles', () => ({
+  storeArticles: storeArticlesMock,
+}))
+
+import { ok } from 'neverthrow'
 import { fetchHatenaArticles } from './fetch-articles'
-import { testRdb as db } from './test-helper/rdb'
 
-const cronEnv = { DB: env.DB }
-
-async function fetchHatenaInsertedCount(): Promise<number> {
-  const result = await fetchHatenaArticles(cronEnv)
-  expect(result.isOk()).toBe(true)
-  return result._unsafeUnwrap()
-}
-
-async function countArticles(): Promise<number> {
-  const rows = await db.select({ url: articles.url }).from(articles)
-  return rows.length
-}
-
-async function findByUrl(url: string) {
-  const [row] = await db.select().from(articles).where(eq(articles.url, url)).limit(1)
-  return row
-}
+const cronEnv = { DB: {} as D1Database }
 
 describe('fetchHatenaArticles', () => {
-  beforeEach(async () => {
-    await db.delete(articles)
-
+  beforeEach(() => {
     fetchMock.mockReset()
     parseStringMock.mockReset()
+    storeArticlesMock.mockReset()
 
+    storeArticlesMock.mockResolvedValue(ok(0))
     fetchMock.mockResolvedValue({
       ok: true,
       text: vi.fn().mockResolvedValue('<rss />'),
     })
   })
 
-  afterAll(async () => {
-    await db.delete(articles)
-  })
-
-  it('creatorが欠損した記事はauthorをフォールバック値で補完する', async () => {
+  it('creatorが欠損した記事はauthorをフォールバック値で補完してstoreArticlesへ渡す', async () => {
     parseStringMock.mockResolvedValue({
       items: [
         {
@@ -65,17 +47,24 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaInsertedCount()
+    await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(1)
     expect(fetchMock).toHaveBeenCalledWith('https://b.hatena.ne.jp/hotentry/it.rss')
-    const saved = await findByUrl('https://example.com/1')
-    expect(saved.author).toBe('はてなブックマーク')
-    expect(saved.description).toBe('本文')
-    expect(saved.media).toBe('hatena')
+    expect(storeArticlesMock).toHaveBeenCalledWith(
+      'hatena',
+      [
+        {
+          title: '記事タイトル',
+          author: 'はてなブックマーク',
+          description: '本文',
+          url: 'https://example.com/1',
+        },
+      ],
+      cronEnv,
+    )
   })
 
-  it('contentが欠損した記事は優先順位でdescriptionを補完する', async () => {
+  it('contentが欠損した記事は優先順位でdescriptionを補完してstoreArticlesへ渡す', async () => {
     parseStringMock.mockResolvedValue({
       items: [
         {
@@ -98,15 +87,35 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaInsertedCount()
+    await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(3)
-    expect((await findByUrl('https://example.com/1')).description).toBe('encoded本文')
-    expect((await findByUrl('https://example.com/2')).description).toBe('snippet本文')
-    expect((await findByUrl('https://example.com/3')).description).toBe('')
+    expect(storeArticlesMock).toHaveBeenCalledWith(
+      'hatena',
+      [
+        {
+          title: '記事1',
+          author: '投稿者1',
+          description: 'encoded本文',
+          url: 'https://example.com/1',
+        },
+        {
+          title: '記事2',
+          author: '投稿者2',
+          description: 'snippet本文',
+          url: 'https://example.com/2',
+        },
+        {
+          title: '記事3',
+          author: '投稿者3',
+          description: '',
+          url: 'https://example.com/3',
+        },
+      ],
+      cronEnv,
+    )
   })
 
-  it('RSS取得に失敗した場合はerrを返す', async () => {
+  it('RSS取得に失敗した場合はerrを返しstoreArticlesを呼ばない', async () => {
     fetchMock.mockResolvedValue({
       ok: false,
       status: 500,
@@ -116,6 +125,8 @@ describe('fetchHatenaArticles', () => {
 
     expect(result.isErr()).toBe(true)
     expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
-    expect(await countArticles()).toBe(0)
+    expect(storeArticlesMock).not.toHaveBeenCalled()
   })
 })
+
+type D1Database = import('@cloudflare/workers-types').D1Database

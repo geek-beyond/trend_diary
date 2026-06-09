@@ -4,7 +4,6 @@ import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vi
 import storybookTest from '@storybook/addon-vitest/vitest-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import { playwright } from '@vitest/browser-playwright'
-import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig(async () => {
@@ -23,8 +22,6 @@ export default defineConfig(async () => {
       },
     },
   }
-
-  process.env = { ...process.env, ...loadEnv('test', process.cwd(), '') }
 
   return {
     test: {

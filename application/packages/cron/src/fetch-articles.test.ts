@@ -21,12 +21,6 @@ import { testRdb as db } from './test-helper/rdb'
 
 const cronEnv = { DB: env.DB }
 
-async function fetchHatenaInsertedCount(): Promise<number> {
-  const result = await fetchHatenaArticles(cronEnv)
-  expect(result.isOk()).toBe(true)
-  return result._unsafeUnwrap()
-}
-
 async function countArticles(): Promise<number> {
   const rows = await db.select({ url: articles.url }).from(articles)
   return rows.length
@@ -65,9 +59,12 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaInsertedCount()
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(1)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(1)
+    }
     expect(fetchMock).toHaveBeenCalledWith('https://b.hatena.ne.jp/hotentry/it.rss')
     const saved = await findByUrl('https://example.com/1')
     expect(saved.author).toBe('はてなブックマーク')
@@ -93,9 +90,12 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaInsertedCount()
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(2)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(2)
+    }
     expect(await countArticles()).toBe(2)
     expect((await findByUrl('https://example.com/a')).author).toBe('投稿者A')
     expect((await findByUrl('https://example.com/b')).author).toBe('投稿者B')
@@ -119,9 +119,12 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaInsertedCount()
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(1)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(1)
+    }
     expect(await countArticles()).toBe(1)
   })
 
@@ -137,12 +140,18 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const firstCount = await fetchHatenaInsertedCount()
-    expect(firstCount).toBe(1)
+    const firstResult = await fetchHatenaArticles(cronEnv)
+    expect(firstResult.isOk()).toBe(true)
+    if (firstResult.isOk()) {
+      expect(firstResult.value).toBe(1)
+    }
     expect(await countArticles()).toBe(1)
 
-    const secondCount = await fetchHatenaInsertedCount()
-    expect(secondCount).toBe(0)
+    const secondResult = await fetchHatenaArticles(cronEnv)
+    expect(secondResult.isOk()).toBe(true)
+    if (secondResult.isOk()) {
+      expect(secondResult.value).toBe(0)
+    }
     expect(await countArticles()).toBe(1)
   })
 
@@ -176,9 +185,12 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaInsertedCount()
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(1)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(1)
+    }
     expect(await countArticles()).toBe(2)
     expect((await findByUrl('https://example.com/b')).author).toBe('投稿者B')
   })
@@ -192,7 +204,9 @@ describe('fetchHatenaArticles', () => {
     const result = await fetchHatenaArticles(cronEnv)
 
     expect(result.isErr()).toBe(true)
-    expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
+    if (result.isErr()) {
+      expect(result.error).toBeInstanceOf(Error)
+    }
     expect(await countArticles()).toBe(0)
   })
 
@@ -219,9 +233,12 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaInsertedCount()
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(3)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(3)
+    }
     expect((await findByUrl('https://example.com/1')).description).toBe('encoded本文')
     expect((await findByUrl('https://example.com/2')).description).toBe('snippet本文')
     expect((await findByUrl('https://example.com/3')).description).toBe('')

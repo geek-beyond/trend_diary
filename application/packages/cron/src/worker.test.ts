@@ -49,14 +49,9 @@ const HATENA_ITEMS: FeedItem[] = [
 ]
 const TOTAL_ITEMS = QIITA_ITEMS.length + ZENN_ITEMS.length + HATENA_ITEMS.length
 
-// fetch には文字列だけでなく Request が渡される場合があるため URL を正規化する。
-function resolveUrl(input: unknown): string {
-  return input instanceof Request ? input.url : String(input)
-}
-
 function setupFetchRouting(overrides?: { hatena?: () => unknown }): void {
   fetchMock.mockImplementation(async (input: unknown) => {
-    const target = resolveUrl(input)
+    const target = String(input)
     if (target.startsWith(TEST_ENV.DISCORD_WEBHOOK_URL)) return { ok: true, status: 204 }
     if (target === FEED_URL.qiita) return rssResponse(buildQiitaAtom(QIITA_ITEMS))
     if (target === FEED_URL.zenn) return rssResponse(buildZennRss(ZENN_ITEMS))
@@ -66,7 +61,7 @@ function setupFetchRouting(overrides?: { hatena?: () => unknown }): void {
   })
 }
 
-async function runScheduled(scheduledTime: number): Promise<void> {
+async function runScheduled(scheduledTime: number): Promise<Promise<unknown>[]> {
   const waitUntilCalls: Promise<unknown>[] = []
   const event = { cron: '0 */1 * * *', scheduledTime } as unknown as ScheduledController
   await worker.scheduled(event, TEST_ENV, {
@@ -74,18 +69,7 @@ async function runScheduled(scheduledTime: number): Promise<void> {
       waitUntilCalls.push(promise)
     },
   } as unknown as ExecutionContext)
-  await Promise.all(waitUntilCalls)
-}
-
-async function expectScheduledToReject(scheduledTime: number): Promise<void> {
-  const waitUntilCalls: Promise<unknown>[] = []
-  const event = { cron: '0 */1 * * *', scheduledTime } as unknown as ScheduledController
-  await worker.scheduled(event, TEST_ENV, {
-    waitUntil: (promise: Promise<unknown>) => {
-      waitUntilCalls.push(promise)
-    },
-  } as unknown as ExecutionContext)
-  await expect(Promise.all(waitUntilCalls)).rejects.toThrow()
+  return waitUntilCalls
 }
 
 async function savedUrls(): Promise<string[]> {
@@ -100,7 +84,7 @@ async function findByUrl(url: string) {
 
 function discordCallCount(): number {
   return fetchMock.mock.calls.filter((call) =>
-    resolveUrl(call[0]).startsWith(TEST_ENV.DISCORD_WEBHOOK_URL),
+    String(call[0]).startsWith(TEST_ENV.DISCORD_WEBHOOK_URL),
   ).length
 }
 
@@ -118,7 +102,7 @@ describe('cron worker scheduled', () => {
 
   describe('正常系', () => {
     it('全メディアのRSSを取得し記事をD1へ保存する', async () => {
-      await runScheduled(1000)
+      await Promise.all(await runScheduled(1000))
 
       const urls = await savedUrls()
       expect(urls).toHaveLength(TOTAL_ITEMS)
@@ -139,10 +123,10 @@ describe('cron worker scheduled', () => {
 
   describe('準正常系', () => {
     it('再実行しても既存URLはスキップされ記事は重複保存されない', async () => {
-      await runScheduled(2000)
+      await Promise.all(await runScheduled(2000))
       const firstCount = (await savedUrls()).length
 
-      await runScheduled(3000)
+      await Promise.all(await runScheduled(3000))
       const secondCount = (await savedUrls()).length
 
       expect(firstCount).toBe(TOTAL_ITEMS)
@@ -154,7 +138,7 @@ describe('cron worker scheduled', () => {
     it('一部メディアの取得が失敗しても残りを保存し、Discord通知のうえCloudflareへ失敗を伝播する', async () => {
       setupFetchRouting({ hatena: () => ({ ok: false, status: 500 }) })
 
-      await expectScheduledToReject(4000)
+      await expect(Promise.all(await runScheduled(4000))).rejects.toThrow()
 
       const urls = await savedUrls()
       expect(urls).toHaveLength(QIITA_ITEMS.length + ZENN_ITEMS.length)

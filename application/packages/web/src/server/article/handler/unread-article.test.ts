@@ -12,8 +12,10 @@ describe('DELETE /api/articles/:article_id/unread', () => {
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
 
   async function requestUnreadArticle(articleId: string, cookies: string) {
+    // ブラウザは同一オリジンの状態変更リクエストにOriginを付与するため、CSRFミドルウェアを通すよう再現する
     const headers: Record<string, string> = {
       Cookie: cookies,
+      Origin: 'http://localhost',
     }
 
     return app.request(

@@ -11,7 +11,8 @@ describe('POST /api/articles/:article_id/skip', () => {
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
 
   async function requestSkipArticle(articleId: string, cookies?: string) {
-    const headers: Record<string, string> = {}
+    // ブラウザは同一オリジンの状態変更リクエストにOriginを付与するため、CSRFミドルウェアを通すよう再現する
+    const headers: Record<string, string> = { Origin: 'http://localhost' }
     if (cookies) {
       headers.Cookie = cookies
     }

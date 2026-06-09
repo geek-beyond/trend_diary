@@ -65,7 +65,7 @@ import type { Env, SessionUser } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
 
 // コンテキストの型定義
-export type RequestContext<TParam = unknown, TJson = unknown, TQuery = unknown> = {
+export interface RequestContext<TParam = unknown, TJson = unknown, TQuery = unknown> {
   param: TParam
   json: TJson
   query: TQuery
@@ -74,7 +74,7 @@ export type RequestContext<TParam = unknown, TJson = unknown, TQuery = unknown> 
 }
 
 // 認証済みコンテキストの型定義（userは必須）
-export type AuthenticatedRequestContext<TParam = unknown, TJson = unknown, TQuery = unknown> = {
+export interface AuthenticatedRequestContext<TParam = unknown, TJson = unknown, TQuery = unknown> {
   param: TParam
   json: TJson
   query: TQuery
@@ -103,7 +103,7 @@ type ExtractQuery<T> =
       : unknown
 
 // 共通のハンドラー設定プロパティ
-type BaseHandlerConfig<TUseCase, TContext, TOutput, TResponse> = {
+interface BaseHandlerConfig<TUseCase, TContext, TOutput, TResponse> {
   // UseCaseファクトリー
   createUseCase: (rdb: RdbClient) => TUseCase
 

@@ -4,7 +4,7 @@ import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { drizzle } from 'drizzle-orm/d1'
 import { openTestD1 } from './d1'
 
-type WorkerFixtures = {
+interface WorkerFixtures {
   rdb: RdbClient
 }
 

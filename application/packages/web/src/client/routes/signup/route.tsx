@@ -17,7 +17,7 @@ import {
 } from '../../features/authenticate/validation'
 import SignupPage from './page'
 
-type SignupActionData = {
+interface SignupActionData {
   errors?: AuthenticateErrors
   formError?: string
 }

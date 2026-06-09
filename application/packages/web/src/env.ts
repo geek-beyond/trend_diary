@@ -3,13 +3,13 @@ import { LoggerType } from '@trend-diary/common/logger'
 import { Nullable } from '@trend-diary/common/types/utility'
 import CONTEXT_KEY from './middleware/context'
 
-export type SessionUser = {
+export interface SessionUser {
   activeUserId: bigint
   displayName?: Nullable<string>
   email: string
 }
 
-export type Env = {
+export interface Env {
   Bindings: WorkerBindings & {
     SUPABASE_URL: string
     SUPABASE_ANON_KEY: string

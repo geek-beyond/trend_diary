@@ -18,7 +18,7 @@ import MediaIcon, { type MediaType } from './media-icon'
 
 const DESCRIPTION_TOGGLE_THRESHOLD = 100
 
-type Props = {
+interface Props {
   article: Article
   isOpen: boolean
   onClose: () => void

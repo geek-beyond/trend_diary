@@ -1,17 +1,17 @@
-export type DiscordEmbedField = {
+export interface DiscordEmbedField {
   name: string
   value: string
   inline: boolean
 }
 
-export type DiscordEmbed = {
+export interface DiscordEmbed {
   title: string
   color: number
   fields: DiscordEmbedField[]
   timestamp: string
 }
 
-export type DiscordWebhookPayload = {
+export interface DiscordWebhookPayload {
   content: string | null
   embeds?: DiscordEmbed[]
 }
@@ -50,7 +50,7 @@ export class DiscordWebhookClient {
 }
 
 /** エラー通知に必要なリクエスト情報。 */
-export type ErrorRequestInfo = {
+export interface ErrorRequestInfo {
   url: string
   method: string
   userAgent: string

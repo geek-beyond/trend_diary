@@ -4,7 +4,7 @@ import { getPlatformProxy } from 'wrangler'
 
 type D1Database = import('@cloudflare/workers-types').D1Database
 
-type TestD1 = {
+interface TestD1 {
   db: D1Database
   dispose: () => Promise<void>
 }

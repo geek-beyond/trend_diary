@@ -1,6 +1,6 @@
 import type { ReadPagination } from '@/client/features/diary/types'
 
-type Props = {
+interface Props {
   onNextPage: () => void
   onPrevPage: () => void
   readPagination: ReadPagination

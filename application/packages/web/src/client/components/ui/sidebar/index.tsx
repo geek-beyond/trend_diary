@@ -51,7 +51,7 @@ export function getVisibleMenuItems(isLoggedIn: boolean): MenuItem[] {
   return isLoggedIn ? [...menuItems, ...loggedInMenuItems] : menuItems
 }
 
-type Props = {
+interface Props {
   isLoggedIn: boolean
 }
 

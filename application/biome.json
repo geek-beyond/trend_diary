@@ -82,6 +82,7 @@
         "noGlobalEval": "error"
       },
       "style": {
+        "useConsistentTypeDefinitions": "error",
         "noCommonJs": "error",
         "noDefaultExport": "off",
         "noNegationElse": "off",

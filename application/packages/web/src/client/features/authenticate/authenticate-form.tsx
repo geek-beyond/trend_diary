@@ -4,7 +4,7 @@ import { Input } from '../../components/shadcn/input'
 import { Label } from '../../components/shadcn/label'
 import { AuthenticateErrors } from './validation'
 
-type Props = {
+interface Props {
   submitButtonText: string
   loadingSubmitButtonText: string
   isSubmitting: boolean

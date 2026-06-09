@@ -11,7 +11,7 @@ type ArticleResponse = Omit<ArticleOutput, 'articleId'> & {
   articleId: string
 }
 
-type UnreadDigestionArticlesResponse = {
+interface UnreadDigestionArticlesResponse {
   data: ArticleResponse[]
 }
 

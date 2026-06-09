@@ -1,12 +1,12 @@
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 
-export type Source = {
+export interface Source {
   media: ArticleMedia
   read: number
   skip: number
 }
 
-export type ReadItem = {
+export interface ReadItem {
   readHistoryId: string
   articleId: string
   media: ArticleMedia
@@ -15,12 +15,12 @@ export type ReadItem = {
   readAt: Date
 }
 
-export type Summary = {
+export interface Summary {
   read: number
   skip: number
 }
 
-export type ReadPagination = {
+export interface ReadPagination {
   page: number
   totalPages: number
   hasNext: boolean

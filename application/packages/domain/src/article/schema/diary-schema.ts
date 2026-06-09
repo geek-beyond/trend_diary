@@ -28,14 +28,14 @@ export type DiarySummary = z.infer<typeof diarySummarySchema>
 export type DiarySource = z.infer<typeof diarySourceSchema>
 export type DiaryReadItem = z.infer<typeof diaryReadItemSchema>
 
-export type DailyDiary = {
+export interface DailyDiary {
   date: string
   summary: DiarySummary
   sources: DiarySource[]
   reads: OffsetPaginationResult<DiaryReadItem>
 }
 
-export type DailyDiaryRangeItem = {
+export interface DailyDiaryRangeItem {
   date: string
   summary: DiarySummary
   sources: DiarySource[]

@@ -5,7 +5,7 @@ import type { ReadItem } from '@/client/features/diary/types'
 import { toSafeExternalPath } from '@/client/lib/url'
 import MediaIcon from '@/client/routes/trends._index/components/media-icon'
 
-type Props = {
+interface Props {
   isLoading: boolean
   shouldShowDailyDetails: boolean
   reads: ReadItem[]

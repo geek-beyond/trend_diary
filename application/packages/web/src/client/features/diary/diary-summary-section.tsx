@@ -11,7 +11,7 @@ import {
 } from '@/client/components/shadcn/table'
 import type { Source, Summary } from '@/client/features/diary/types'
 
-type Props = {
+interface Props {
   sources: Source[]
   displaySummary: Summary
   targetDate?: string

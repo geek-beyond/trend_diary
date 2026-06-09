@@ -10,7 +10,7 @@ import {
   type Summary,
 } from '@/client/features/diary/types'
 
-type Props = {
+interface Props {
   isLoggedIn: boolean
   targetDate: string | null
   dateResolveError: boolean

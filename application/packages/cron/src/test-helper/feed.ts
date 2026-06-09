@@ -2,7 +2,7 @@ import { FEED_URL } from '../feed-config'
 
 export { FEED_URL }
 
-export type FeedItem = {
+export interface FeedItem {
   title: string
   url: string
   author?: string

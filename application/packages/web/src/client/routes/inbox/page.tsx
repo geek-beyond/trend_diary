@@ -8,7 +8,7 @@ import MediaFilter, {
 import MediaIcon, { type MediaType as IconMediaType } from '../trends._index/components/media-icon'
 import type { Article } from './hooks/use-unread-digestion'
 
-type Props = {
+interface Props {
   article: Article | null
   isLoading: boolean
   isJustCompleted: boolean

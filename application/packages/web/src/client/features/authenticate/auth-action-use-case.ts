@@ -4,7 +4,7 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAuthUseCase } from '@trend-diary/domain/user'
 import type { AppLoadContext } from 'react-router'
 
-type SupabaseAuthContext = {
+interface SupabaseAuthContext {
   cloudflare?: {
     env?: { SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string }
   }

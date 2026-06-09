@@ -20,7 +20,7 @@ import {
   type Summary,
 } from '@/client/features/diary/types'
 
-type SummaryRangePoint = {
+interface SummaryRangePoint {
   date: string
   read: number
   skip: number
@@ -31,7 +31,7 @@ type ChartClickState = {
   activeLabel?: string | number
 } | null
 
-type Props = {
+interface Props {
   isLoggedIn: boolean
   selectedDate: string | null
   dateResolveError: boolean

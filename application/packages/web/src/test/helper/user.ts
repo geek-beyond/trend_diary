@@ -75,18 +75,18 @@ async function createActiveUser(email: string, authenticationId: string): Promis
   }
 }
 
-export type CreateResult = {
+export interface CreateResult {
   activeUserId: bigint
   userId: bigint
   authenticationId: string
 }
 
-export type LoginResult = {
+export interface LoginResult {
   activeUserId: bigint
   cookies: string
 }
 
-export type CleanUpIds = {
+export interface CleanUpIds {
   userIds: bigint[]
   authIds: string[]
 }

@@ -6,7 +6,6 @@ interface TestPlatformBindings {
   DB: D1Database
 }
 
-// persist:false でテストプロセスごとに独立したインメモリ D1 になる。
 const proxy = await getPlatformProxy<TestPlatformBindings>({
   configPath: fileURLToPath(new URL('../../../wrangler.toml', import.meta.url)),
   persist: false,

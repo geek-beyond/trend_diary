@@ -3,7 +3,6 @@ import { readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import { afterAll } from 'vitest'
 import { disposePlatformProxy, platformEnv } from './platform-proxy'
 
-// readD1Migrations は drizzle の statement-breakpoint を解釈するため、トリガー等も正しく分割される。
 const migrationsDir = fileURLToPath(new URL('../../../../datastore/migrations', import.meta.url))
 const migrations = await readD1Migrations(migrationsDir)
 

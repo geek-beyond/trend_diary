@@ -29,10 +29,33 @@ function pickNonEmpty(...candidates: Array<string | undefined>): string | undefi
   return undefined
 }
 
+interface QiitaRawItem {
+  title: string
+  author: string
+  content: string
+  link: string
+}
+
+interface ZennRawItem {
+  title: string
+  creator: string
+  content: string
+  link: string
+}
+
+interface HatenaRawItem {
+  title: string
+  creator?: string
+  content?: string
+  'content:encoded'?: string
+  contentSnippet?: string
+  link: string
+}
+
 export const FEED_CONFIGS = {
   qiita: {
     url: FEED_URL.qiita,
-    mapItem: (item: { title: string; author: string; content: string; link: string }) => ({
+    mapItem: (item: QiitaRawItem) => ({
       title: item.title,
       author: item.author,
       description: item.content,
@@ -41,7 +64,7 @@ export const FEED_CONFIGS = {
   },
   zenn: {
     url: FEED_URL.zenn,
-    mapItem: (item: { title: string; creator: string; content: string; link: string }) => ({
+    mapItem: (item: ZennRawItem) => ({
       title: item.title,
       author: item.creator,
       description: item.content,
@@ -50,14 +73,7 @@ export const FEED_CONFIGS = {
   },
   hatena: {
     url: FEED_URL.hatena,
-    mapItem: (item: {
-      title: string
-      creator?: string
-      content?: string
-      'content:encoded'?: string
-      contentSnippet?: string
-      link: string
-    }) => ({
+    mapItem: (item: HatenaRawItem) => ({
       title: item.title,
       author: pickNonEmpty(item.creator) || HATENA_FALLBACK_AUTHOR,
       description: pickNonEmpty(item.content, item['content:encoded'], item.contentSnippet) || '',

@@ -9,11 +9,18 @@ export interface SessionUser {
   email: string
 }
 
+// Cloudflare Workers の Rate Limiting バインディングの型（workers-typesに含まれないため定義する）
+export interface RateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>
+}
+
 export interface Env {
   Bindings: WorkerBindings & {
     SUPABASE_URL: string
     SUPABASE_ANON_KEY: string
     SUPABASE_SERVICE_ROLE_KEY?: string
+    // ローカル開発などバインディング未設定の環境ではフェイルオープンするためoptional
+    AUTH_RATE_LIMITER?: RateLimiter
   }
   Variables: {
     [CONTEXT_KEY.APP_LOG]: LoggerType

@@ -13,3 +13,10 @@ binding = "DB"
 database_name = "trend-diary-db"
 database_id = "15dfd380-5a78-4237-8e59-49640c2e954f"
 migrations_dir = "../datastore/migrations"
+
+# 認証系エンドポイントへのブルートフォース・大量試行を抑止するためのレートリミット
+[[unsafe.bindings]]
+name = "AUTH_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }

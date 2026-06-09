@@ -1,9 +1,9 @@
 ---
-name: pr-review-fix
-description: GitHub Pull Requestのレビューコメント対応を、修正実装・検証・コミット・コメント返信・スレッド解決・再レビュー依頼まで一気通貫で実行する。『PRのレビュー修正』『レビューコメントにコミットID返信』『Geminiで再レビュー』の依頼で使う。
+name: pr-simplify
+description: GitHub Pull Requestのレビューコメント対応を、修正実装・検証・コミット・コメント返信・スレッド解決・simplifyまで一気通貫で実行する。『PRのレビュー修正』『レビューコメントにコミットID返信』『PR出したらsimplify』の依頼で使う。
 ---
 
-# PR Review Fix
+# PR Simplify
 
 ## 実行フロー
 
@@ -13,7 +13,7 @@ description: GitHub Pull Requestのレビューコメント対応を、修正実
 4. 変更をコミットして push する。
 5. 対応した各レビューコメントに、コミットID付きで返信する。
 6. 対応済みスレッドを resolve する。
-7. PR本体に `/gemini review` コメントを投稿して再レビューを依頼する。
+7. `/simplify` を実行して、push した変更を simplify する。
 
 ## 1) 未解決コメントの抽出
 
@@ -90,17 +90,13 @@ for thread in <thread_id_1> <thread_id_2> <thread_id_3>; do
 done
 ```
 
-## 7) Gemini再レビュー依頼（必須）
+## 7) simplify（必須）
 
-- レビュー修正が一通り終わったら、PRに `/gemini review` を投稿する。
-
-コマンド例:
-
-```bash
-gh pr comment <pr_number> --body '/gemini review'
-```
-
-- 投稿後、チェック状態も確認する。
+- レビュー修正が一通り終わったら、`/simplify` を実行して push した変更を simplify する。
+  - `/code-review` の指摘のうち simplify 対象（過剰設計 / YAGNI 違反）を最小コード変更で解消する。
+  - 詳細は `simplify` スキルを参照。
+- simplify で追加の修正が入った場合は、3)〜4) と同様に format/lint/test を再実行してから commit/push する。
+- 完了後、未解決スレッド数と CI チェック状況を確認する。
 
 確認コマンド例:
 

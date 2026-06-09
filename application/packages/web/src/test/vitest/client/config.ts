@@ -13,6 +13,12 @@ const exclude = [
 ]
 
 export default defineConfig({
+  // __IS_DEV__ は本来 vite.config のプラグインがビルド時に注入するが、
+  // この vitest 設定は vite.config を読み込まないため明示的に定義する。
+  define: {
+    // biome-ignore lint/style/useNamingConvention: build-time injected global
+    __IS_DEV__: 'false',
+  },
   resolve: {
     tsconfigPaths: true,
   },

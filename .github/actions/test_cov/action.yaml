@@ -12,7 +12,7 @@ runs:
     - name: テストの実行
       shell: bash
       working-directory: ./application/packages/web
-      run: pnpm run test:${{ inputs.target }} --coverage
+      run: pnpm run test --project ${{ inputs.target }} --coverage
 
     - name: カバレッジの可視化
       if: github.event_name == 'pull_request'
@@ -20,5 +20,4 @@ runs:
       with:
         name: ${{ inputs.target }}
         working-directory: ./application/packages/web
-        vite-config-path: ./application/packages/web/src/test/vitest/${{ inputs.target }}/config.ts
         comment-on: ${{ github.event_name == 'pull_request' && 'pr' || 'commit' }}

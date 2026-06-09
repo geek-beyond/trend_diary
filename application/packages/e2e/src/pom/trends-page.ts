@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test'
-import { INITIAL_LOAD_TIMEOUT, TIMEOUT } from './constants'
+import { TIMEOUT } from './constants'
 
 export class TrendsPage {
   private readonly articleCards: Locator
@@ -15,10 +15,9 @@ export class TrendsPage {
   }
 
   async waitForArticleCards(): Promise<void> {
-    // INFO: API依存の待機は環境差で不安定なので、UI描画を直接待つ。
-    // 初回はルートのコールドコンパイルで描画が遅れるため長めに待つ
+    // INFO: API依存の待機は環境差で不安定なので、UI描画を直接待つ
     await expect
-      .poll(async () => this.articleCards.count(), { timeout: INITIAL_LOAD_TIMEOUT })
+      .poll(async () => this.articleCards.count(), { timeout: TIMEOUT })
       .toBeGreaterThan(0)
 
     await expect(this.firstArticleCard()).toBeVisible({ timeout: TIMEOUT })

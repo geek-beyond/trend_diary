@@ -346,7 +346,11 @@ describe('ArticleUseCase', () => {
       }
 
       expect(queryMock.findArticleById).toHaveBeenCalledWith(articleId)
-      expect(commandMock.createReadHistory).toHaveBeenCalledWith(userId, articleId, readAt)
+      expect(commandMock.createReadHistory).toHaveBeenCalledWith(
+        userId,
+        mockArticle.articleId,
+        readAt,
+      )
     })
 
     it('データベースエラー時にServerErrorを返すこと', async () => {

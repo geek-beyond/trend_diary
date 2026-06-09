@@ -46,8 +46,8 @@ export class UseCase {
     articleId: bigint,
     readAt: Date,
   ): Promise<Result<ReadHistory, ServerError | NotFoundError>> {
-    return this.withValidatedArticle(articleId, () =>
-      this.command.createReadHistory(activeUserId, articleId, readAt),
+    return this.withValidatedArticle(articleId, (validatedArticleId) =>
+      this.command.createReadHistory(activeUserId, validatedArticleId, readAt),
     )
   }
 

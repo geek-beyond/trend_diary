@@ -1,4 +1,4 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
+import { ClientError, ExternalServiceError, ServerError } from '@trend-diary/common/errors'
 import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
@@ -88,53 +88,53 @@ describe('AuthUseCase', () => {
         expect(commandMock.createActiveWithAuthenticationId).not.toHaveBeenCalled()
       })
 
-      // describe('認証成功後', () => {
-      //   beforeEach(() => {
-      //     repositoryMock.signup.mockResolvedValue(
-      //       ok({
-      //         user: mockAuthUser,
-      //         session: mockSession,
-      //       }),
-      //     )
-      //   })
-      //
-      //   // it('ActiveUser作成失敗時、補償トランザクションを実行してエラーを返す', async () => {
-      //   //   // Arrange
-      //   //   const dbError = new ServerError('Database error')
-      //   //   commandMock.createActiveWithAuthenticationId.mockResolvedValue(err(dbError))
-      //   //   repositoryMock.deleteUser.mockResolvedValue(ok(undefined))
-      //   //
-      //   //   // Act
-      //   //   const result = await useCase.signup('test@example.com', 'Password1!')
-      //   //
-      //   //   // Assert
-      //   //   expect(result.isErr()).toBe(true)
-      //   //   if (result.isErr()) {
-      //   //     expect(result.error).toBe(dbError)
-      //   //   }
-      //   //   expect(repositoryMock.deleteUser).toHaveBeenCalledWith(mockAuthUser.id)
-      //   // })
-      //   //
-      //   // it('補償トランザクション失敗時、ExternalServiceErrorを返す', async () => {
-      //   //   // Arrange
-      //   //   const dbError = new ServerError('Database error')
-      //   //   commandMock.createActiveWithAuthenticationId.mockResolvedValue(err(dbError))
-      //   //   const deleteError = new ServerError('Delete failed')
-      //   //   repositoryMock.deleteUser.mockResolvedValue(err(deleteError))
-      //   //
-      //   //   // Act
-      //   //   const result = await useCase.signup('test@example.com', 'Password1!')
-      //   //
-      //   //   // Assert
-      //   //   expect(result.isErr()).toBe(true)
-      //   //   if (result.isErr()) {
-      //   //     expect(result.error).toBeInstanceOf(ExternalServiceError)
-      //   //     expect(result.error.message).toBe(
-      //   //       'Failed to delete Supabase Auth user during compensation',
-      //   //     )
-      //   //   }
-      //   // })
-      // })
+      describe('認証成功後', () => {
+        beforeEach(() => {
+          repositoryMock.signup.mockResolvedValue(
+            ok({
+              user: mockAuthUser,
+              session: mockSession,
+            }),
+          )
+        })
+
+        it('ActiveUser作成失敗時、補償トランザクションを実行してエラーを返す', async () => {
+          // Arrange
+          const dbError = new ServerError('Database error')
+          commandMock.createActiveWithAuthenticationId.mockResolvedValue(err(dbError))
+          repositoryMock.deleteUser.mockResolvedValue(ok(undefined))
+
+          // Act
+          const result = await useCase.signup('test@example.com', 'Password1!')
+
+          // Assert
+          expect(result.isErr()).toBe(true)
+          if (result.isErr()) {
+            expect(result.error).toBe(dbError)
+          }
+          expect(repositoryMock.deleteUser).toHaveBeenCalledWith(mockAuthUser.id)
+        })
+
+        it('補償トランザクション失敗時、ExternalServiceErrorを返す', async () => {
+          // Arrange
+          const dbError = new ServerError('Database error')
+          commandMock.createActiveWithAuthenticationId.mockResolvedValue(err(dbError))
+          const deleteError = new ServerError('Delete failed')
+          repositoryMock.deleteUser.mockResolvedValue(err(deleteError))
+
+          // Act
+          const result = await useCase.signup('test@example.com', 'Password1!')
+
+          // Assert
+          expect(result.isErr()).toBe(true)
+          if (result.isErr()) {
+            expect(result.error).toBeInstanceOf(ExternalServiceError)
+            expect(result.error.message).toBe(
+              'Failed to delete Supabase Auth user during compensation',
+            )
+          }
+        })
+      })
     })
   })
 

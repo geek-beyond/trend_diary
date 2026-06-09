@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
@@ -19,6 +18,10 @@ import { defineConfig, type UserConfig } from 'vitest/config'
 // mode が development/production になるため、default で storybook 設定を返す。
 
 const coverageReporter = ['text', 'json-summary', 'json']
+
+// このファイルが置かれているディレクトリ(= packages/web のルート)。
+// monorepo でカレントディレクトリが異なっても安定して参照できるよう process.cwd() ではなくこれを基準にする。
+const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url))
 
 // --- client ---------------------------------------------------------------
 
@@ -58,12 +61,7 @@ function clientConfig(): UserConfig {
 // --- server ---------------------------------------------------------------
 
 // migrations は datastore パッケージで一元管理しているため、パッケージ(packages/web)から相対参照する。
-const MIGRATIONS_DIR = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  '..',
-  'datastore',
-  'migrations',
-)
+const MIGRATIONS_DIR = resolve(PACKAGE_ROOT, '..', 'datastore', 'migrations')
 
 async function serverConfig(): Promise<UserConfig> {
   const migrations = await readD1Migrations(MIGRATIONS_DIR)
@@ -111,7 +109,7 @@ async function serverConfig(): Promise<UserConfig> {
 // --- storybook ------------------------------------------------------------
 
 function storybookConfig(mode: string): UserConfig {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = loadEnv(mode, PACKAGE_ROOT, '')
   process.env = { ...process.env, ...env }
 
   return {
@@ -184,12 +182,14 @@ function storybookConfig(mode: string): UserConfig {
 
 export default defineConfig(async ({ mode }) => {
   switch (mode) {
+    // 引数なしの bare `vitest`(mode='test')はブラウザを起動しない軽量な client を既定にする
+    case 'test':
     case 'client':
       return clientConfig()
     case 'server':
       return await serverConfig()
     default:
-      // storybook テスト(--mode storybook)と Storybook ビルダー(dev/build)の両方で利用
+      // --mode storybook、および Storybook ビルダー(viteConfigPath 経由, mode=development/production)で利用
       return storybookConfig(mode)
   }
 })

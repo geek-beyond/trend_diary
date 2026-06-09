@@ -1,4 +1,4 @@
 interface:
-  display_name: "PR Review Fixer"
+  display_name: "PR Simplifier"
   short_description: "GitHub PRレビュー修正とsimplifyを実行"
   default_prompt: "Use $pr-simplify to fix review comments, reply with commit IDs, and run /simplify."

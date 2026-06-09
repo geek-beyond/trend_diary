@@ -47,12 +47,12 @@ export interface Command {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, Error>>
+  ): Promise<Result<ReadHistory, ServerError>>
 
   createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, Error>>
+  ): Promise<Result<SkippedArticle, ServerError>>
 
-  deleteAllReadHistory(activeUserId: bigint, articleId: bigint): Promise<Result<void, Error>>
+  deleteAllReadHistory(activeUserId: bigint, articleId: bigint): Promise<Result<void, ServerError>>
 }

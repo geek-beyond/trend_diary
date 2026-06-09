@@ -45,7 +45,7 @@ export class UseCase {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, Error>> {
+  ): Promise<Result<ReadHistory, ServerError | NotFoundError>> {
     return this.withValidatedArticle(articleId, () =>
       this.command.createReadHistory(activeUserId, articleId, readAt),
     )
@@ -84,7 +84,7 @@ export class UseCase {
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, Error>> {
+  ): Promise<Result<SkippedArticle, ServerError | NotFoundError>> {
     return this.withValidatedArticle(articleId, (validatedArticleId) =>
       this.command.createSkippedArticle(activeUserId, validatedArticleId),
     )
@@ -93,7 +93,7 @@ export class UseCase {
   async deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<void, Error>> {
+  ): Promise<Result<void, ServerError | NotFoundError>> {
     return this.withValidatedArticle(articleId, (validatedArticleId) =>
       this.command.deleteAllReadHistory(activeUserId, validatedArticleId),
     )
@@ -101,15 +101,17 @@ export class UseCase {
 
   private async withValidatedArticle<T>(
     articleId: bigint,
-    action: (validatedArticleId: bigint) => Promise<Result<T, Error>>,
-  ): Promise<Result<T, Error>> {
+    action: (validatedArticleId: bigint) => Promise<Result<T, ServerError>>,
+  ): Promise<Result<T, ServerError | NotFoundError>> {
     const articleValidation = await this.validateArticleExists(articleId)
     if (articleValidation.isErr()) return err(articleValidation.error)
 
     return action(articleValidation.value.articleId)
   }
 
-  private async validateArticleExists(articleId: bigint): Promise<Result<Article, Error>> {
+  private async validateArticleExists(
+    articleId: bigint,
+  ): Promise<Result<Article, ServerError | NotFoundError>> {
     const res = await this.query.findArticleById(articleId)
     if (res.isErr()) return err(res.error)
 

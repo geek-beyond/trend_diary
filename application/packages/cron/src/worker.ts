@@ -1,7 +1,7 @@
 import Logger from '@trend-diary/common/logger'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import type { CronEnv } from './env'
-import { runCron } from './run-cron'
+import { fetchAllArticles } from './fetch-all-articles'
 
 export default {
   async scheduled(event: ScheduledController, env: CronEnv, ctx: ExecutionContext) {
@@ -13,7 +13,7 @@ export default {
     const discord = new DiscordWebhookClient(env.DISCORD_WEBHOOK_URL)
 
     ctx.waitUntil(
-      runCron({
+      fetchAllArticles({
         env,
         logger,
         discord,

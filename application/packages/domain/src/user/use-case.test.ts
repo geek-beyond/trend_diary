@@ -132,6 +132,10 @@ describe('AuthUseCase', () => {
             expect(result.error.message).toBe(
               'Failed to delete Supabase Auth user during compensation',
             )
+            const error = result.error as ExternalServiceError
+            expect(error.originalError).toBe(dbError)
+            expect(error.serviceError).toBe(deleteError)
+            expect(error.context).toEqual({ authenticationId: mockAuthUser.id })
           }
         })
       })

@@ -1,8 +1,8 @@
-import { env } from 'cloudflare:test'
 import { Env } from '@/env'
+import { platformEnv } from '@/test/setup/platform-proxy'
 
 const TEST_ENV = {
-  DB: env.DB,
+  DB: platformEnv.DB,
   DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL ?? '',
   // ローカルSupabase環境変数
   SUPABASE_URL: 'http://127.0.0.1:54321',

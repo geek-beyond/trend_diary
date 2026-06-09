@@ -1,8 +1,16 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
+import getRdbClient, { type RdbClient } from '@trend-diary/datastore/rdb'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { err, type Result } from 'neverthrow'
 import Parser from 'rss-parser'
-import { type CronEnv, storeArticles } from './store-articles'
+import { storeArticles } from './store-articles'
+
+type D1Database = import('@cloudflare/workers-types').D1Database
+
+type CronEnv = {
+  DB: D1Database
+  LOG_LEVEL?: import('@trend-diary/common/logger').LogLevel
+}
 
 const HATENA_FALLBACK_AUTHOR = 'はてなブックマーク'
 
@@ -32,7 +40,7 @@ async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
   })
 }
 
-export async function fetchQiitaArticles(env: CronEnv): Promise<Result<number, Error>> {
+export async function fetchQiitaArticles(db: RdbClient): Promise<Result<number, Error>> {
   const itemsResult = await fetchRssFeed<{
     title: string
     author: string
@@ -49,11 +57,11 @@ export async function fetchQiitaArticles(env: CronEnv): Promise<Result<number, E
       description: item.content,
       url: item.link,
     })),
-    env,
+    db,
   )
 }
 
-export async function fetchZennArticles(env: CronEnv): Promise<Result<number, Error>> {
+export async function fetchZennArticles(db: RdbClient): Promise<Result<number, Error>> {
   const itemsResult = await fetchRssFeed<{
     title: string
     creator: string
@@ -70,11 +78,11 @@ export async function fetchZennArticles(env: CronEnv): Promise<Result<number, Er
       description: item.content,
       url: item.link,
     })),
-    env,
+    db,
   )
 }
 
-export async function fetchHatenaArticles(env: CronEnv): Promise<Result<number, Error>> {
+export async function fetchHatenaArticles(db: RdbClient): Promise<Result<number, Error>> {
   const itemsResult = await fetchRssFeed<{
     title: string
     creator?: string
@@ -93,7 +101,7 @@ export async function fetchHatenaArticles(env: CronEnv): Promise<Result<number, 
       description: pickNonEmpty(item.content, item['content:encoded'], item.contentSnippet) || '',
       url: item.link,
     })),
-    env,
+    db,
   )
 }
 
@@ -101,11 +109,12 @@ export function runScheduledFetch(
   media: ArticleMedia,
   env: CronEnv,
 ): Promise<Result<number, Error>> {
+  const db = getRdbClient(env.DB)
   if (media === 'qiita') {
-    return fetchQiitaArticles(env)
+    return fetchQiitaArticles(db)
   }
   if (media === 'zenn') {
-    return fetchZennArticles(env)
+    return fetchZennArticles(db)
   }
-  return fetchHatenaArticles(env)
+  return fetchHatenaArticles(db)
 }

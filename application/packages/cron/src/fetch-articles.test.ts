@@ -18,10 +18,11 @@ vi.mock('./store-articles', () => ({
   storeArticles: storeArticlesMock,
 }))
 
+import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { ok } from 'neverthrow'
 import { fetchHatenaArticles } from './fetch-articles'
 
-const cronEnv = { DB: {} as D1Database }
+const db = {} as RdbClient
 
 describe('fetchHatenaArticles', () => {
   beforeEach(() => {
@@ -47,7 +48,7 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    await fetchHatenaArticles(cronEnv)
+    await fetchHatenaArticles(db)
 
     expect(fetchMock).toHaveBeenCalledWith('https://b.hatena.ne.jp/hotentry/it.rss')
     expect(storeArticlesMock).toHaveBeenCalledWith(
@@ -60,7 +61,7 @@ describe('fetchHatenaArticles', () => {
           url: 'https://example.com/1',
         },
       ],
-      cronEnv,
+      db,
     )
   })
 
@@ -87,7 +88,7 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    await fetchHatenaArticles(cronEnv)
+    await fetchHatenaArticles(db)
 
     expect(storeArticlesMock).toHaveBeenCalledWith(
       'hatena',
@@ -111,7 +112,7 @@ describe('fetchHatenaArticles', () => {
           url: 'https://example.com/3',
         },
       ],
-      cronEnv,
+      db,
     )
   })
 
@@ -121,12 +122,10 @@ describe('fetchHatenaArticles', () => {
       status: 500,
     })
 
-    const result = await fetchHatenaArticles(cronEnv)
+    const result = await fetchHatenaArticles(db)
 
     expect(result.isErr()).toBe(true)
     expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
     expect(storeArticlesMock).not.toHaveBeenCalled()
   })
 })
-
-type D1Database = import('@cloudflare/workers-types').D1Database

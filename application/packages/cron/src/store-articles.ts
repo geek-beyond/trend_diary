@@ -1,15 +1,8 @@
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
-import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
+import { type RdbClient, wrapDbCall } from '@trend-diary/datastore/rdb'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { inArray } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-
-type D1Database = import('@cloudflare/workers-types').D1Database
-
-export type CronEnv = {
-  DB: D1Database
-  LOG_LEVEL?: import('@trend-diary/common/logger').LogLevel
-}
 
 export type FeedItem = {
   title: string
@@ -32,9 +25,8 @@ function truncateByCodePoint(text: string, maxLength: number): string {
 export async function storeArticles(
   media: ArticleMedia,
   items: FeedItem[],
-  env: CronEnv,
+  db: RdbClient,
 ): Promise<Result<number, Error>> {
-  const db = getRdbClient(env.DB)
   if (items.length === 0) return ok(0)
 
   const normalized = items.map((item) => ({

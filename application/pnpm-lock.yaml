@@ -112,9 +112,6 @@ importers:
         specifier: ^3.13.0
         version: 3.13.0
     devDependencies:
-      '@cloudflare/vitest-pool-workers':
-        specifier: 'catalog:'
-        version: 0.16.12(@cloudflare/workers-types@4.20260507.1)(@vitest/runner@4.1.8)(@vitest/snapshot@4.1.8)(vitest@4.1.8)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 4.20260507.1

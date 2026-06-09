@@ -1,3 +1,4 @@
+import type Logger from '@trend-diary/common/logger'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
@@ -6,7 +7,12 @@ import { inArray } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import Parser from 'rss-parser'
 import type { FetchEnv } from './env'
-import { FEED_CONFIGS, type FeedConfig, type NormalizedItem } from './feed-config'
+import {
+  FEED_CONFIGS,
+  type FeedConfig,
+  type NormalizedItem,
+  normalizedItemSchema,
+} from './feed-config'
 
 const MAX_LENGTH = {
   media: 10,
@@ -111,30 +117,74 @@ function isUniqueConstraintError(error: unknown): boolean {
   return false
 }
 
+// 1件の不正itemでメディア全体の取込を止めないよう、不正itemは警告ログを残してスキップする。
+function selectValidItems(
+  media: ArticleMedia,
+  items: NormalizedItem[],
+  logger: Logger,
+): NormalizedItem[] {
+  const validItems: NormalizedItem[] = []
+  let skippedCount = 0
+
+  for (const item of items) {
+    const parsed = normalizedItemSchema.safeParse(item)
+    if (!parsed.success) {
+      skippedCount += 1
+      logger.warn({
+        msg: 'cron feed item skipped: validation failed',
+        media,
+        url: typeof item?.url === 'string' ? item.url : undefined,
+        issues: parsed.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+        })),
+      })
+      continue
+    }
+    validItems.push(parsed.data)
+  }
+
+  if (skippedCount > 0) {
+    logger.warn({
+      msg: 'cron feed items skipped',
+      media,
+      skippedCount,
+      totalCount: items.length,
+    })
+  }
+
+  return validItems
+}
+
 async function fetchAndStore<RawItem>(
   media: ArticleMedia,
   config: FeedConfig<RawItem>,
   env: FetchEnv,
+  logger: Logger,
 ): Promise<Result<number, Error>> {
   const itemsResult = await fetchRssFeed<RawItem>(config.url)
   if (itemsResult.isErr()) return err(itemsResult.error)
 
-  return storeArticles(media, itemsResult.value.map(config.mapItem), env)
+  const validItems = selectValidItems(media, itemsResult.value.map(config.mapItem), logger)
+  return storeArticles(media, validItems, env)
 }
 
-export function fetchQiitaArticles(env: FetchEnv): Promise<Result<number, Error>> {
-  return fetchAndStore('qiita', FEED_CONFIGS.qiita, env)
+export function fetchQiitaArticles(env: FetchEnv, logger: Logger): Promise<Result<number, Error>> {
+  return fetchAndStore('qiita', FEED_CONFIGS.qiita, env, logger)
 }
 
-export function fetchZennArticles(env: FetchEnv): Promise<Result<number, Error>> {
-  return fetchAndStore('zenn', FEED_CONFIGS.zenn, env)
+export function fetchZennArticles(env: FetchEnv, logger: Logger): Promise<Result<number, Error>> {
+  return fetchAndStore('zenn', FEED_CONFIGS.zenn, env, logger)
 }
 
-export function fetchHatenaArticles(env: FetchEnv): Promise<Result<number, Error>> {
-  return fetchAndStore('hatena', FEED_CONFIGS.hatena, env)
+export function fetchHatenaArticles(env: FetchEnv, logger: Logger): Promise<Result<number, Error>> {
+  return fetchAndStore('hatena', FEED_CONFIGS.hatena, env, logger)
 }
 
-const FETCHERS: Record<ArticleMedia, (env: FetchEnv) => Promise<Result<number, Error>>> = {
+const FETCHERS: Record<
+  ArticleMedia,
+  (env: FetchEnv, logger: Logger) => Promise<Result<number, Error>>
+> = {
   qiita: fetchQiitaArticles,
   zenn: fetchZennArticles,
   hatena: fetchHatenaArticles,
@@ -143,6 +193,7 @@ const FETCHERS: Record<ArticleMedia, (env: FetchEnv) => Promise<Result<number, E
 export function runScheduledFetch(
   media: ArticleMedia,
   env: FetchEnv,
+  logger: Logger,
 ): Promise<Result<number, Error>> {
-  return FETCHERS[media](env)
+  return FETCHERS[media](env, logger)
 }

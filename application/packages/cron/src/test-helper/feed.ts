@@ -3,8 +3,8 @@ import { FEED_URL } from '../feed-config'
 export { FEED_URL }
 
 export interface FeedItem {
-  title: string
-  url: string
+  title?: string
+  url?: string
   author?: string
   content?: string
   contentEncoded?: string
@@ -15,8 +15,8 @@ export function buildQiitaAtom(items: FeedItem[]): string {
     .map((item) =>
       [
         '  <entry>',
-        `    <title>${item.title}</title>`,
-        `    <link href="${item.url}"/>`,
+        item.title === undefined ? '' : `    <title>${item.title}</title>`,
+        item.url === undefined ? '' : `    <link href="${item.url}"/>`,
         item.author === undefined ? '' : `    <author><name>${item.author}</name></author>`,
         item.content === undefined ? '' : `    <content type="html">${item.content}</content>`,
         '  </entry>',
@@ -36,8 +36,8 @@ export function buildZennRss(items: FeedItem[]): string {
     .map((item) =>
       [
         '    <item>',
-        `      <title>${item.title}</title>`,
-        `      <link>${item.url}</link>`,
+        item.title === undefined ? '' : `      <title>${item.title}</title>`,
+        item.url === undefined ? '' : `      <link>${item.url}</link>`,
         item.content === undefined ? '' : `      <description>${item.content}</description>`,
         item.author === undefined ? '' : `      <dc:creator>${item.author}</dc:creator>`,
         '    </item>',

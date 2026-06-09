@@ -1,4 +1,5 @@
 import { env } from 'cloudflare:test'
+import Logger from '@trend-diary/common/logger'
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,6 +17,7 @@ const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)
 
 const cronEnv = { DB: env.DB }
+const logger = new Logger('silent')
 
 function stubFeed(xml: string): void {
   fetchMock.mockResolvedValue(rssResponse(xml))
@@ -55,7 +57,7 @@ describe('fetchQiitaArticles', () => {
         ]),
       )
 
-      const result = await fetchQiitaArticles(cronEnv)
+      const result = await fetchQiitaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(1)
@@ -64,6 +66,93 @@ describe('fetchQiitaArticles', () => {
       expect(saved.title).toBe('Qiita記事')
       expect(saved.author).toBe('qiita_author')
       expect(saved.description).toBe('Qiita本文')
+    })
+
+    it('content が欠損した記事は description を空文字で補完して保存する', async () => {
+      stubFeed(
+        buildQiitaAtom([
+          {
+            title: 'Qiita記事',
+            author: 'qiita_author',
+            url: 'https://qiita.com/u/items/no-content',
+          },
+        ]),
+      )
+
+      const result = await fetchQiitaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) expect(result.value).toBe(1)
+      expect((await findByUrl('https://qiita.com/u/items/no-content')).description).toBe('')
+    })
+  })
+
+  describe('準正常系', () => {
+    const skipCases: { name: string; item: FeedItem }[] = [
+      {
+        name: 'title が欠損した記事',
+        item: { author: 'qiita_author', content: '本文', url: 'https://qiita.com/u/items/skip' },
+      },
+      {
+        name: 'author が欠損した記事',
+        item: { title: 'Qiita記事', content: '本文', url: 'https://qiita.com/u/items/skip' },
+      },
+      {
+        name: 'url が欠損した記事',
+        item: { title: 'Qiita記事', author: 'qiita_author', content: '本文' },
+      },
+    ]
+
+    it.each(skipCases)('$name はスキップして保存しない', async ({ item }) => {
+      stubFeed(buildQiitaAtom([item]))
+
+      const result = await fetchQiitaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) expect(result.value).toBe(0)
+      expect(await countArticles()).toBe(0)
+    })
+
+    it('不正な記事を除外し正常な記事のみ保存する（部分成功）', async () => {
+      stubFeed(
+        buildQiitaAtom([
+          { author: 'qiita_author', content: '本文', url: 'https://qiita.com/u/items/skip' },
+          {
+            title: 'Qiita正常',
+            author: 'qiita_author',
+            content: '本文',
+            url: 'https://qiita.com/u/items/ok',
+          },
+        ]),
+      )
+
+      const result = await fetchQiitaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) expect(result.value).toBe(1)
+      expect(await countArticles()).toBe(1)
+      expect((await findByUrl('https://qiita.com/u/items/ok')).title).toBe('Qiita正常')
+    })
+
+    it('スキップした件数を警告ログに出力する', async () => {
+      const spyLogger = new Logger('silent')
+      const warnSpy = vi.spyOn(spyLogger, 'warn')
+      stubFeed(
+        buildQiitaAtom([
+          { author: 'qiita_author', content: '本文', url: 'https://qiita.com/u/items/skip1' },
+          { author: 'qiita_author', content: '本文', url: 'https://qiita.com/u/items/skip2' },
+        ]),
+      )
+
+      await fetchQiitaArticles(cronEnv, spyLogger)
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          msg: 'cron feed items skipped',
+          media: 'qiita',
+          skippedCount: 2,
+        }),
+      )
     })
   })
 })
@@ -82,7 +171,7 @@ describe('fetchZennArticles', () => {
         ]),
       )
 
-      const result = await fetchZennArticles(cronEnv)
+      const result = await fetchZennArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(1)
@@ -90,6 +179,54 @@ describe('fetchZennArticles', () => {
       expect(saved.media).toBe('zenn')
       expect(saved.author).toBe('zenn_creator')
       expect(saved.description).toBe('Zenn本文')
+    })
+  })
+
+  describe('準正常系', () => {
+    const skipCases: { name: string; item: FeedItem }[] = [
+      {
+        name: 'title が欠損した記事',
+        item: { author: 'zenn_creator', content: '本文', url: 'https://zenn.dev/u/articles/skip' },
+      },
+      {
+        name: 'creator が欠損した記事',
+        item: { title: 'Zenn記事', content: '本文', url: 'https://zenn.dev/u/articles/skip' },
+      },
+      {
+        name: 'link が欠損した記事',
+        item: { title: 'Zenn記事', author: 'zenn_creator', content: '本文' },
+      },
+    ]
+
+    it.each(skipCases)('$name はスキップして保存しない', async ({ item }) => {
+      stubFeed(buildZennRss([item]))
+
+      const result = await fetchZennArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) expect(result.value).toBe(0)
+      expect(await countArticles()).toBe(0)
+    })
+
+    it('不正な記事を除外し正常な記事のみ保存する（部分成功）', async () => {
+      stubFeed(
+        buildZennRss([
+          { author: 'zenn_creator', content: '本文', url: 'https://zenn.dev/u/articles/skip' },
+          {
+            title: 'Zenn正常',
+            author: 'zenn_creator',
+            content: '本文',
+            url: 'https://zenn.dev/u/articles/ok',
+          },
+        ]),
+      )
+
+      const result = await fetchZennArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) expect(result.value).toBe(1)
+      expect(await countArticles()).toBe(1)
+      expect((await findByUrl('https://zenn.dev/u/articles/ok')).title).toBe('Zenn正常')
     })
   })
 })
@@ -110,7 +247,7 @@ describe('fetchHatenaArticles', () => {
         },
       ])
 
-      const result = await fetchHatenaArticles(cronEnv)
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(1)
@@ -126,7 +263,7 @@ describe('fetchHatenaArticles', () => {
         { title: '記事B', author: '投稿者B', content: '本文B', url: 'https://example.com/b' },
       ])
 
-      const result = await fetchHatenaArticles(cronEnv)
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(2)
@@ -157,7 +294,7 @@ describe('fetchHatenaArticles', () => {
       const url = 'https://example.com/description'
       stubHatena([{ title: '記事', author: '投稿者', url, ...overrides }])
 
-      const result = await fetchHatenaArticles(cronEnv)
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
       expect((await findByUrl(url)).description).toBe(expected)
@@ -187,7 +324,7 @@ describe('fetchHatenaArticles', () => {
     it.each(saveCountCases)('$name', async ({ items, expected }) => {
       stubHatena(items)
 
-      const result = await fetchHatenaArticles(cronEnv)
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(expected)
@@ -197,7 +334,7 @@ describe('fetchHatenaArticles', () => {
     it('creator が欠損した記事は author をはてなブックマークで補完する', async () => {
       stubHatena([{ title: 'はてな記事', content: 'はてな本文', url: 'https://example.com/h1' }])
 
-      const result = await fetchHatenaArticles(cronEnv)
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
       expect((await findByUrl('https://example.com/h1')).author).toBe('はてなブックマーク')
@@ -213,7 +350,7 @@ describe('fetchHatenaArticles', () => {
         },
       ])
 
-      const result = await fetchHatenaArticles(cronEnv)
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
       const saved = await findByUrl('https://example.com/long')
@@ -233,7 +370,7 @@ describe('fetchHatenaArticles', () => {
         },
       ])
 
-      const result = await fetchHatenaArticles(cronEnv)
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
       const saved = await findByUrl('https://example.com/emoji')
@@ -245,14 +382,14 @@ describe('fetchHatenaArticles', () => {
       stubHatena([
         { title: '記事A', author: '投稿者A', content: '本文A', url: 'https://example.com/a' },
       ])
-      const firstResult = await fetchHatenaArticles(cronEnv)
+      const firstResult = await fetchHatenaArticles(cronEnv, logger)
       expect(firstResult.isOk()).toBe(true)
 
       stubHatena([
         { title: '記事A', author: '投稿者A', content: '本文A', url: 'https://example.com/a' },
         { title: '記事B', author: '投稿者B', content: '本文B', url: 'https://example.com/b' },
       ])
-      const secondResult = await fetchHatenaArticles(cronEnv)
+      const secondResult = await fetchHatenaArticles(cronEnv, logger)
 
       expect(secondResult.isOk()).toBe(true)
       if (secondResult.isOk()) expect(secondResult.value).toBe(1)
@@ -265,7 +402,7 @@ describe('fetchHatenaArticles', () => {
     it('RSS取得に失敗した場合は err を返し何も保存しない', async () => {
       fetchMock.mockResolvedValue({ ok: false, status: 500 })
 
-      const result = await fetchHatenaArticles(cronEnv)
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) expect(result.error).toBeInstanceOf(Error)

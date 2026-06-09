@@ -35,7 +35,7 @@ export async function fetchAllArticles({
     const mediaStartedAt = Date.now()
     logger.info({ msg: 'cron media fetch started', media })
 
-    const result = await runScheduledFetch(media, env)
+    const result = await runScheduledFetch(media, env, logger)
 
     if (result.isErr()) {
       failedCount += 1

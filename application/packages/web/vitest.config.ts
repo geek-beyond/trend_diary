@@ -1,6 +1,5 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import storybookTest from '@storybook/addon-vitest/vitest-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import { playwright } from '@vitest/browser-playwright'
@@ -8,21 +7,7 @@ import { defineConfig } from 'vitest/config'
 
 const rootDir = dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig(async () => {
-  const migrations = await readD1Migrations(resolve(rootDir, '..', 'datastore', 'migrations'))
-  const poolOptions = {
-    miniflare: {
-      compatibilityDate: '2025-04-01',
-      compatibilityFlags: ['nodejs_compat'],
-      d1Databases: { DB: 'test-db' },
-      bindings: {
-        TEST_MIGRATIONS: migrations,
-        NODE_ENV: 'test',
-        LOG_LEVEL: 'silent',
-      },
-    },
-  }
-
+export default defineConfig(() => {
   return {
     test: {
       projects: [
@@ -38,13 +23,12 @@ export default defineConfig(async () => {
           },
         },
         {
-          plugins: [cloudflareTest(poolOptions)],
           resolve: { tsconfigPaths: true },
           test: {
             name: 'server',
             globals: true,
-            pool: cloudflarePool(poolOptions),
-            setupFiles: ['src/test/setup/workers-d1.ts'],
+            environment: 'node',
+            setupFiles: ['src/test/setup/d1.ts'],
             include: ['src/server/**/*.test.ts'],
           },
         },
@@ -94,7 +78,7 @@ export default defineConfig(async () => {
         },
       ],
       coverage: {
-        provider: 'istanbul',
+        provider: 'v8',
         reporter: ['text', 'json-summary', 'json'],
         all: false,
         exclude: [

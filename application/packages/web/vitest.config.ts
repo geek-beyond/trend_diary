@@ -7,10 +7,7 @@ import { playwright } from '@vitest/browser-playwright'
 import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
-// 実行は projects 単位(`vitest --project <name>`)。
-// server は Workers Pool のため coverage provider は istanbul に統一する(provider はルートに1つのみ)。
 export default defineConfig(async () => {
-  // migrations は datastore パッケージで一元管理しているため相対参照する
   const migrations = await readD1Migrations(
     resolve(dirname(fileURLToPath(import.meta.url)), '..', 'datastore', 'migrations'),
   )
@@ -27,7 +24,6 @@ export default defineConfig(async () => {
     },
   }
 
-  // story が参照する .env を process.env へ展開する
   process.env = { ...process.env, ...loadEnv('test', process.cwd(), '') }
 
   return {
@@ -108,10 +104,8 @@ export default defineConfig(async () => {
       coverage: {
         provider: 'istanbul',
         reporter: ['text', 'json-summary', 'json'],
-        // project 単位で実行するため、読み込まれたファイルのみ集計する(all:false)
         all: false,
         exclude: [
-          // client/server 横断の共有プラグイン・インフラはカバレッジ対象外
           'src/env.ts',
           'src/server.ts',
           'src/worker.ts',
@@ -121,7 +115,6 @@ export default defineConfig(async () => {
           'src/client/components/shadcn/**',
           'src/client/routes.ts',
           'src/server/handler/factory.ts',
-          // 分岐や振る舞いを持たない純粋なラッパーは対象外
           'src/client/components/ui/legal',
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',

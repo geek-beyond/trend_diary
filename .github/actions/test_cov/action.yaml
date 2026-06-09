@@ -20,5 +20,5 @@ runs:
       with:
         name: ${{ inputs.target }}
         working-directory: ./application/packages/web
-        vite-config-path: ./application/packages/web/src/test/vitest/${{ inputs.target }}/config.ts
+        vite-config-path: ./application/packages/web/vitest.config.ts
         comment-on: ${{ github.event_name == 'pull_request' && 'pr' || 'commit' }}

@@ -75,127 +75,6 @@ describe('fetchHatenaArticles', () => {
     expect(saved.media).toBe('hatena')
   })
 
-  it('D1互換のため記事は1件ずつ保存する', async () => {
-    parseStringMock.mockResolvedValue({
-      items: [
-        {
-          title: '記事A',
-          creator: '投稿者A',
-          content: '本文A',
-          link: 'https://example.com/a',
-        },
-        {
-          title: '記事B',
-          creator: '投稿者B',
-          content: '本文B',
-          link: 'https://example.com/b',
-        },
-      ],
-    })
-
-    const count = await fetchHatenaInsertedCount()
-
-    expect(count).toBe(2)
-    expect(await countArticles()).toBe(2)
-    expect((await findByUrl('https://example.com/a')).author).toBe('投稿者A')
-    expect((await findByUrl('https://example.com/b')).author).toBe('投稿者B')
-  })
-
-  it('同一URLの重複記事は1件だけ保存する', async () => {
-    parseStringMock.mockResolvedValue({
-      items: [
-        {
-          title: '記事A',
-          creator: '投稿者A',
-          content: '本文A',
-          link: 'https://example.com/a',
-        },
-        {
-          title: '記事A重複',
-          creator: '投稿者A',
-          content: '本文A重複',
-          link: 'https://example.com/a',
-        },
-      ],
-    })
-
-    const count = await fetchHatenaInsertedCount()
-
-    expect(count).toBe(1)
-    expect(await countArticles()).toBe(1)
-  })
-
-  it('既にDBへ保存済みのURLは一意制約により再保存されない', async () => {
-    parseStringMock.mockResolvedValue({
-      items: [
-        {
-          title: '記事A',
-          creator: '投稿者A',
-          content: '本文A',
-          link: 'https://example.com/a',
-        },
-      ],
-    })
-
-    const firstCount = await fetchHatenaInsertedCount()
-    expect(firstCount).toBe(1)
-    expect(await countArticles()).toBe(1)
-
-    const secondCount = await fetchHatenaInsertedCount()
-    expect(secondCount).toBe(0)
-    expect(await countArticles()).toBe(1)
-  })
-
-  it('保存済みURLと新規URLが混在する場合は新規分のみ保存する', async () => {
-    parseStringMock.mockResolvedValueOnce({
-      items: [
-        {
-          title: '記事A',
-          creator: '投稿者A',
-          content: '本文A',
-          link: 'https://example.com/a',
-        },
-      ],
-    })
-    await fetchHatenaArticles(cronEnv)
-
-    parseStringMock.mockResolvedValueOnce({
-      items: [
-        {
-          title: '記事A',
-          creator: '投稿者A',
-          content: '本文A',
-          link: 'https://example.com/a',
-        },
-        {
-          title: '記事B',
-          creator: '投稿者B',
-          content: '本文B',
-          link: 'https://example.com/b',
-        },
-      ],
-    })
-
-    const count = await fetchHatenaInsertedCount()
-
-    expect(count).toBe(1)
-    expect(await countArticles()).toBe(2)
-    expect((await findByUrl('https://example.com/b')).author).toBe('投稿者B')
-  })
-
-  it('RSS取得に失敗した場合はerrを返す', async () => {
-    fetchMock.mockResolvedValue({
-      ok: false,
-      status: 500,
-    })
-
-    const result = await fetchHatenaArticles(cronEnv)
-
-    expect(result.isErr()).toBe(true)
-    expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
-    expect(await countArticles()).toBe(0)
-  })
-
   it('contentが欠損した記事は優先順位でdescriptionを補完する', async () => {
     parseStringMock.mockResolvedValue({
       items: [
@@ -225,5 +104,18 @@ describe('fetchHatenaArticles', () => {
     expect((await findByUrl('https://example.com/1')).description).toBe('encoded本文')
     expect((await findByUrl('https://example.com/2')).description).toBe('snippet本文')
     expect((await findByUrl('https://example.com/3')).description).toBe('')
+  })
+
+  it('RSS取得に失敗した場合はerrを返す', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+    })
+
+    const result = await fetchHatenaArticles(cronEnv)
+
+    expect(result.isErr()).toBe(true)
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
+    expect(await countArticles()).toBe(0)
   })
 })

@@ -3,50 +3,39 @@ import app from '../server'
 
 // app.requestが生成するリクエストURLのオリジン
 const SAME_ORIGIN = 'http://localhost'
+const CROSS_ORIGIN = 'https://evil.example.com'
 
 describe('CSRF対策ミドルウェア', () => {
-  async function requestLogin(headers: Record<string, string>, body: string) {
-    return app.request('/api/auth/login', { method: 'POST', headers, body }, TEST_ENV)
-  }
+  // バリデーションで422になる入力。CSRFを通過した場合に422、拒否された場合に403で区別する
+  const body = JSON.stringify({ email: 'not-an-email', password: 'short' })
 
-  it('フォーム送信かつクロスオリジンのOriginは403で拒否する', async () => {
-    const res = await requestLogin(
-      {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Origin: 'https://evil.example.com',
-      },
-      'email=attacker@example.com&password=Test@password123',
-    )
+  const testCases: Array<{ name: string; headers: Record<string, string>; status: number }> = [
+    {
+      name: 'フォーム送信かつクロスオリジンのOriginは403で拒否する',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: CROSS_ORIGIN },
+      status: 403,
+    },
+    {
+      name: 'Content-Typeが無い（text/plain扱い）クロスオリジンも403で拒否する',
+      headers: { Origin: CROSS_ORIGIN },
+      status: 403,
+    },
+    {
+      name: 'フォーム送信でも同一オリジンはCSRFを通過する',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: SAME_ORIGIN },
+      status: 422,
+    },
+    {
+      name: 'JSONリクエストはOriginが無くてもCSRFの検査対象外で通過する',
+      headers: { 'Content-Type': 'application/json' },
+      status: 422,
+    },
+  ]
 
-    expect(res.status).toBe(403)
-  })
-
-  it('Content-Typeが無いリクエスト（text/plain扱い）もクロスオリジンなら403で拒否する', async () => {
-    const res = await requestLogin({ Origin: 'https://evil.example.com' }, 'noop')
-
-    expect(res.status).toBe(403)
-  })
-
-  it('フォーム送信でも同一オリジンのOriginはCSRFで拒否しない', async () => {
-    const res = await requestLogin(
-      {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Origin: SAME_ORIGIN,
-      },
-      'email=user@example.com&password=Test@password123',
-    )
-
-    expect(res.status).not.toBe(403)
-  })
-
-  it('JSONリクエストはOriginが無くてもCSRFの検査対象外で通過する', async () => {
-    const res = await requestLogin(
-      { 'Content-Type': 'application/json' },
-      JSON.stringify({ email: 'not-an-email', password: 'short' }),
-    )
-
-    // CSRFで拒否されず、バリデーション（422）まで到達することを確認する
-    expect(res.status).not.toBe(403)
-    expect(res.status).toBe(422)
+  testCases.forEach(({ name, headers, status }) => {
+    it(name, async () => {
+      const res = await app.request('/api/auth/login', { method: 'POST', headers, body }, TEST_ENV)
+      expect(res.status).toBe(status)
+    })
   })
 })

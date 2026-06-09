@@ -25,23 +25,9 @@
 
 ### 重要な規約
 
-**インポート**: `src/`ルートからの絶対インポートを使用（TypeScript path mapping: `@/*`）
+コード規約（インポート・API層バリデーション・アーキテクチャ）は、ファイルパスにスコープした`.claude/rules/`へ分離した。該当ファイルを扱う際に自動でコンテキストへ読み込まれる。
 
-**バリデーション**:
-- データ検証にドメイン層のZodスキーマを使用
-- 全てのAPI層エンドポイントで`zodValidator`の使用が必須
-  - `query`: クエリパラメータのバリデーション
-  - `param`: パスパラメータのバリデーション
-  - `json`: リクエストボディのバリデーション
-- バリデーション失敗時は自動的に422ステータスで返却
-- `ZodValidatedContext`系の型を使用してハンドラー関数で型安全にデータアクセス
-- **バリデーション順序**: authenticator → zodValidator(param) → zodValidator(json) → handler
-
-**その他**:
-- utilsの作成は禁止
-  - 理由: 責任の所在が不明確になり、アーキテクチャ層の境界が曖昧になる。DDDの原則を遵守し、貧血性ドメインを防ぐため
-  - 代替案:
-    - 共通ロジックは`src/common/`配下の明確な目的を持ったディレクトリに配置
-    - ドメイン固有のロジックは各集約内に配置
-- Pinoロガーで構造化ログを使用
+- `.claude/rules/import.md` - インポート規約（`src/`配下のTS/TSX）
+- `.claude/rules/api-validation.md` - API層バリデーション規約（`web/src/server`配下）
+- `.claude/rules/architecture.md` - アーキテクチャ規約（utils禁止・Pinoロガー、`src/`配下のTS/TSX）
 

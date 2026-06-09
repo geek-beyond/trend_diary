@@ -181,6 +181,9 @@
         "useGetterReturn": "error",
         "useGuardForIn": "error",
         "noExplicitAny": "error"
+      },
+      "nursery": {
+        "useImportsFirst": "error"
       }
     }
   },

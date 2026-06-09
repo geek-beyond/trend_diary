@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+#
+# pre-push: PR を出す直前（push 時）に、push 対象の差分へ /simplify を自動適用するゲート。
+#
+# - GitHub Actions 不要のローカル自動化。Claude Code の `claude` CLI 経由で確定実行する。
+# - simplify が過剰設計 / YAGNI 違反 / 不要な防御コードを最小変更で削ぐ。
+# - simplify が変更を加えた場合は push を中断し、確認・コミットを促す（簡素化されていない
+#   コードをそのまま push させないため）。
+#
+# 有効化:  mise run setup-hooks   （または  git config core.hooksPath .githooks ）
+#
+set -uo pipefail
+
+# 再入防止: simplify 実行中に走る push では発火させない（無限ループ回避）
+[ "${PR_SIMPLIFY_RUNNING:-}" = "1" ] && exit 0
+
+# claude CLI が無ければ何もしない（CI など非対話環境ではスキップ）
+command -v claude >/dev/null 2>&1 || exit 0
+
+repo_root="$(git rev-parse --show-toplevel)" || exit 0
+cd "$repo_root" || exit 0
+
+echo "[pre-push] /simplify を実行して push 対象の差分を簡素化します..." >&2
+
+# push 対象（origin/<current>..HEAD 相当）を simplify の対象として明示的に渡す。
+# simplify は push せずコミットまでに留める。
+prompt='/simplify この push で送る差分（git diff @{upstream}..HEAD 相当、無ければ origin/main...HEAD）だけを対象にして。修正はコミットまでで止めて、push はしないで。'
+
+if ! PR_SIMPLIFY_RUNNING=1 claude -p "$prompt" >&2; then
+  echo "[pre-push] simplify 実行に失敗しました。push はそのまま継続します。" >&2
+  exit 0
+fi
+
+# simplify が未コミットの変更（working tree / index）を残したら push を止める
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "" >&2
+  echo "[pre-push] simplify が変更を加えました。内容を確認・コミットしてから再度 push してください。" >&2
+  exit 1
+fi
+
+echo "[pre-push] simplify 完了。push を継続します。" >&2
+exit 0

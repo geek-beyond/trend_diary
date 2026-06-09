@@ -4,3 +4,7 @@ pnpm = "11.5.1"
 
 [env]
 DISCORD_WEBHOOK_URL = ""
+
+[tasks.setup-hooks]
+description = "git フック（.githooks/pre-push で push 時に simplify を自動実行）を有効化する"
+run = "git config core.hooksPath .githooks"

@@ -15,7 +15,7 @@ import { getVisibleMenuItems } from '../sidebar'
 import useSidebar from '../sidebar/use-sidebar'
 import UserSection from '../user-section'
 
-type Props = {
+interface Props {
   isLoggedIn: boolean
 }
 

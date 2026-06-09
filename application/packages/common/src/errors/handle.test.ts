@@ -8,7 +8,7 @@ import ExternalServiceError from './external-service-error'
 import handleError from './handle'
 import ServerError from './server-error'
 
-type LoggerMock = {
+interface LoggerMock {
   with: ReturnType<typeof vi.fn>
   debug: ReturnType<typeof vi.fn>
   info: ReturnType<typeof vi.fn>

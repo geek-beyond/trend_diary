@@ -18,7 +18,7 @@ const mediaConfig: Record<MediaType, { iconImage: string; altText: string }> = {
   },
 }
 
-type Props = {
+interface Props {
   media: MediaType
   size?: IconSize
 }

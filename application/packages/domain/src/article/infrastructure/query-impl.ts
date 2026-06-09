@@ -14,7 +14,7 @@ import type { DailyDiary, DailyDiaryRangeItem, DiaryReadItem } from '../schema/d
 import { QueryParams } from '../schema/query-schema'
 import fromRdbToArticle from './mapper'
 
-type RawArticleRow = {
+interface RawArticleRow {
   articleId: number | bigint
   media: string
   title: string
@@ -26,35 +26,35 @@ type RawArticleRow = {
   isRead?: number | bigint | boolean | null
 }
 
-type RawCountRow = {
+interface RawCountRow {
   total: number | bigint
 }
 
-type RawDiarySourceRow = {
+interface RawDiarySourceRow {
   media: string
   count: number | bigint
 }
 
-type RawDiaryTypedSourceRow = {
+interface RawDiaryTypedSourceRow {
   sourceType: 'read' | 'skip'
   media: string
   count: number | bigint
 }
 
-type RawDiaryDateSourceRow = {
+interface RawDiaryDateSourceRow {
   date: string
   media: string
   count: number | bigint
 }
 
-type RawDiaryDateTypedSourceRow = {
+interface RawDiaryDateTypedSourceRow {
   sourceType: 'read' | 'skip'
   date: string
   media: string
   count: number | bigint
 }
 
-type RawDiaryReadRow = {
+interface RawDiaryReadRow {
   readHistoryId: number | bigint
   articleId: number | bigint
   media: string
@@ -64,7 +64,7 @@ type RawDiaryReadRow = {
   readAt: string | number | bigint
 }
 
-type DateRange = {
+interface DateRange {
   fromDate?: Date
   toDateExclusive?: Date
 }

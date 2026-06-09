@@ -7,7 +7,7 @@ import type { AuthenticationSession } from './schema/auth-schema'
 /**
  * サインアップ結果
  */
-export type SignupResult = {
+export interface SignupResult {
   session: AuthenticationSession | null
   activeUser: CurrentUser
 }
@@ -15,7 +15,7 @@ export type SignupResult = {
 /**
  * ログイン結果
  */
-export type LoginResult = {
+export interface LoginResult {
   session: AuthenticationSession
   activeUser: CurrentUser
 }

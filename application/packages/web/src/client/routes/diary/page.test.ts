@@ -28,7 +28,7 @@ vi.mock('@/client/components/shadcn/chart', () => ({
   ChartTooltipContent: () => createElement('div'),
 }))
 
-type Source = {
+interface Source {
   media: 'qiita' | 'zenn' | 'hatena'
   read: number
   skip: number

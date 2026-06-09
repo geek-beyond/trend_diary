@@ -1,7 +1,7 @@
 import { Button } from '../../shadcn/button'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../../shadcn/sidebar'
 
-type UserSectionProps = {
+interface UserSectionProps {
   variant: 'sidebar' | 'sheet'
   onLogout: () => void
   isLoading: boolean

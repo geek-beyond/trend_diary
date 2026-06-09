@@ -23,6 +23,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:",
     "vitest": "catalog:"
   }

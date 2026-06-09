@@ -10,7 +10,7 @@ export type Article = Omit<ArticleOutput, 'articleId'> & {
   articleId: string
 }
 
-type UnreadDigestionResponse = {
+interface UnreadDigestionResponse {
   data: Article[]
 }
 

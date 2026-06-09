@@ -4,7 +4,7 @@ import { cn } from '@/client/components/shadcn/lib/utils'
 
 export type MediaType = ArticleMedia | null
 
-type Props = {
+interface Props {
   selectedMedia: MediaType
   onMediaChange: (media: MediaType) => void
 }

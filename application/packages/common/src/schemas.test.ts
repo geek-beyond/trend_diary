@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createdAt, updatedAt } from './schemas'
 
-type TestCase = {
+interface TestCase {
   name: string
   input: unknown
   expected: boolean

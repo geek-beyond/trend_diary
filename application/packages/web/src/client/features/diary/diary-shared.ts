@@ -1,6 +1,6 @@
 import { toTodayJstDateString } from '@trend-diary/common/locale/date'
 
-type SourceSummary = {
+interface SourceSummary {
   read: number
   skip: number
 }

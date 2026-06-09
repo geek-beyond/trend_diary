@@ -3,7 +3,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../../shadcn/si
 import { AnchorLink } from '../link'
 import type { MenuItem } from '../sidebar'
 
-type NavMenuProps = {
+interface NavMenuProps {
   variant: 'sidebar' | 'sheet'
   menuItems: MenuItem[]
 }

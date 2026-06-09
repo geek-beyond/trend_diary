@@ -4,7 +4,7 @@ import * as articleHelper from '@/test/helper/article'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
-type UnreadDigestionResponse = {
+interface UnreadDigestionResponse {
   data: Array<{
     articleId: string
     title: string

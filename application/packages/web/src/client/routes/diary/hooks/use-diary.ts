@@ -6,7 +6,7 @@ import useSWR from 'swr'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/diary-shared'
 import useDiaryApi from './use-diary-api'
 
-type DiaryReadItem = {
+interface DiaryReadItem {
   readHistoryId: string
   articleId: string
   media: ArticleMedia

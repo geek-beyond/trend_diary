@@ -5,7 +5,7 @@ import { cn } from '@/client/components/shadcn/lib/utils'
 import type { Article } from '../hooks/use-articles'
 import MediaIcon, { type MediaType } from './media-icon'
 
-type Props = {
+interface Props {
   article: Article
   onCardClick: (article: Article) => void
   onToggleRead?: (articleId: string, isRead: boolean) => void

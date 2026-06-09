@@ -17,7 +17,7 @@ import {
 } from '../../features/authenticate/validation'
 import LoginPage from './page'
 
-type LoginActionData = {
+interface LoginActionData {
   errors?: AuthenticateErrors
   formError?: string
 }

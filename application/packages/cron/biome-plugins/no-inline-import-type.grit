@@ -1,0 +1,6 @@
+language js
+
+$node where {
+  $node <: r"import\([^)]*\)\.[A-Za-z0-9_$]+",
+  register_diagnostic(span=$node, message="Do not use inline `import('...').Type`. Use a top-level `import type { Type } from '...'` instead.", severity="error")
+}

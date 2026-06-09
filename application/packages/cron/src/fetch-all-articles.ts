@@ -1,0 +1,79 @@
+import type Logger from '@trend-diary/common/logger'
+import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
+import type { DiscordWebhookClient } from '@trend-diary/notification'
+import type { CronEnv } from './env'
+import { runScheduledFetch } from './fetch-articles'
+
+export interface FetchAllArticlesParams {
+  env: CronEnv
+  logger: Logger
+  discord: DiscordWebhookClient
+  cron: string
+  scheduledTime: number
+}
+
+export async function fetchAllArticles({
+  env,
+  logger,
+  discord,
+  cron,
+  scheduledTime,
+}: FetchAllArticlesParams): Promise<void> {
+  const jobStartedAt = Date.now()
+
+  let successCount = 0
+  let failedCount = 0
+  let insertedTotal = 0
+
+  logger.info({
+    msg: 'cron job started',
+    scheduledTime,
+    mediaCount: ARTICLE_MEDIA.length,
+  })
+
+  for (const media of ARTICLE_MEDIA) {
+    const mediaStartedAt = Date.now()
+    logger.info({ msg: 'cron media fetch started', media })
+
+    const result = await runScheduledFetch(media, env)
+
+    if (result.isErr()) {
+      failedCount += 1
+      const error = result.error
+      logger.error(
+        {
+          msg: 'cron media fetch failed',
+          media,
+          durationMs: Date.now() - mediaStartedAt,
+        },
+        error,
+      )
+      await discord.sendMessage(
+        `[trend-diary cron] fetch failed\ncron: ${cron}\nmedia: ${media}\nerror: ${error.message}`,
+      )
+      continue
+    }
+
+    const insertedCount = result.value
+    successCount += 1
+    insertedTotal += insertedCount
+    logger.info({
+      msg: 'cron media fetch completed',
+      media,
+      insertedCount,
+      durationMs: Date.now() - mediaStartedAt,
+    })
+  }
+
+  logger.info({
+    msg: 'cron job completed',
+    successCount,
+    failedCount,
+    insertedTotal,
+    durationMs: Date.now() - jobStartedAt,
+  })
+
+  if (failedCount > 0) {
+    throw new Error(`cron job failed: ${failedCount}/${ARTICLE_MEDIA.length} media failed`)
+  }
+}

@@ -5,7 +5,7 @@ import AppHeader from '../components/ui/app-header'
 import AppSidebar from '../components/ui/sidebar'
 import getApiClientForClient from '../infrastructure/api'
 
-export type AppLayoutOutletContext = {
+export interface AppLayoutOutletContext {
   isLoggedIn: boolean
 }
 

@@ -82,6 +82,7 @@
         "noGlobalEval": "error"
       },
       "style": {
+        "useConsistentTypeDefinitions": "error",
         "noCommonJs": "error",
         "noDefaultExport": "off",
         "noNegationElse": "off",
@@ -181,6 +182,9 @@
         "useGetterReturn": "error",
         "useGuardForIn": "error",
         "noExplicitAny": "error"
+      },
+      "nursery": {
+        "useImportsFirst": "error"
       }
     }
   },

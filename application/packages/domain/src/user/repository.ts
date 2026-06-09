@@ -24,7 +24,7 @@ export interface Command {
 /**
  * 認証のサインアップ結果
  */
-export type AuthSignupResult = {
+export interface AuthSignupResult {
   user: AuthenticationUser
   session: AuthenticationSession | null
 }
@@ -32,7 +32,7 @@ export type AuthSignupResult = {
 /**
  * 認証のログイン結果
  */
-export type AuthLoginResult = {
+export interface AuthLoginResult {
   user: AuthenticationUser
   session: AuthenticationSession
 }

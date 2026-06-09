@@ -5,56 +5,17 @@ import storybookTest from '@storybook/addon-vitest/vitest-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import { playwright } from '@vitest/browser-playwright'
 import { loadEnv } from 'vite'
-import { defineConfig, type UserConfig } from 'vitest/config'
+import { defineConfig } from 'vitest/config'
 
-// client/server/storybook はカバレッジの provider・閾値・実行環境が異なり、1回の coverage run に
-// 統合できない(server は Workers Pool のため istanbul 必須、client/storybook は v8 系)。
-// そのため projects ではなく --mode で設定を出し分け、独立した vitest run として実行する。
+const dirName = dirname(fileURLToPath(import.meta.url))
 
-const coverageReporter = ['text', 'json-summary', 'json']
+// migrations は datastore パッケージで一元管理しているため相対参照する。
+const MIGRATIONS_DIR = resolve(dirName, '..', 'datastore', 'migrations')
 
-// monorepo でカレントディレクトリが異なっても安定するよう process.cwd() ではなくこのファイルの位置を基準にする。
-const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url))
-
-function clientConfig(): UserConfig {
-  const exclude = [
-    'src/client/components/shadcn/**/*',
-    'src/client/**/*.tsx',
-    // React Routerのルート定義はユニットテスト対象外
-    'src/client/routes.ts',
-  ]
-
-  return {
-    resolve: {
-      tsconfigPaths: true,
-    },
-    test: {
-      globals: true,
-      environment: 'jsdom',
-      setupFiles: ['./src/test/vitest/client/setup.ts'],
-      include: ['src/client/**/*.test.ts'],
-      exclude,
-      // テストファイルがない場合にエラーになるため、テストファイルがない場合でも正常終了とする
-      passWithNoTests: true,
-      coverage: {
-        reporter: coverageReporter,
-        include: ['src/client/**/*.ts'],
-        exclude,
-        thresholds: {
-          branches: 80, // 分岐網羅
-          functions: 60, // 関数網羅
-        },
-      },
-    },
-  }
-}
-
-// migrations は datastore パッケージで一元管理しているため、パッケージ(packages/web)から相対参照する。
-const MIGRATIONS_DIR = resolve(PACKAGE_ROOT, '..', 'datastore', 'migrations')
-
-async function serverConfig(): Promise<UserConfig> {
+// 実行は projects 単位(`vitest --project <name>`)。
+// server は Workers Pool のため coverage provider は istanbul に統一する(provider はルートに1つのみ)。
+export default defineConfig(async () => {
   const migrations = await readD1Migrations(MIGRATIONS_DIR)
-
   const poolOptions = {
     miniflare: {
       compatibilityDate: '2025-04-01',
@@ -68,116 +29,103 @@ async function serverConfig(): Promise<UserConfig> {
     },
   }
 
+  // story が参照する .env を process.env へ展開する
+  process.env = { ...process.env, ...loadEnv('test', process.cwd(), '') }
+
   return {
-    plugins: [cloudflareTest(poolOptions)],
-    resolve: {
-      tsconfigPaths: true,
-    },
     test: {
-      globals: true,
-      pool: cloudflarePool(poolOptions),
-      setupFiles: ['src/test/setup/workers-d1.ts'],
-      include: ['src/server/**/*.test.ts'],
+      projects: [
+        {
+          resolve: { tsconfigPaths: true },
+          test: {
+            name: 'client',
+            globals: true,
+            environment: 'jsdom',
+            setupFiles: ['./src/test/vitest/client/setup.ts'],
+            include: ['src/client/**/*.test.ts'],
+            passWithNoTests: true,
+          },
+        },
+        {
+          plugins: [cloudflareTest(poolOptions)],
+          resolve: { tsconfigPaths: true },
+          test: {
+            name: 'server',
+            globals: true,
+            pool: cloudflarePool(poolOptions),
+            setupFiles: ['src/test/setup/workers-d1.ts'],
+            include: ['src/server/**/*.test.ts'],
+          },
+        },
+        {
+          plugins: [tailwindcss(), storybookTest({ configDir: resolve(dirName, '.storybook') })],
+          resolve: { tsconfigPaths: true },
+          optimizeDeps: {
+            noDiscovery: true,
+            include: [
+              'react',
+              'react-dom',
+              'react-dom/client',
+              'react/jsx-runtime',
+              'react/jsx-dev-runtime',
+              'react-router',
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-label',
+              '@radix-ui/react-separator',
+              '@radix-ui/react-slot',
+              '@radix-ui/react-tooltip',
+              'class-variance-authority',
+              'clsx',
+              'tailwind-merge',
+              'lucide-react',
+              'sonner',
+              'vaul',
+              'neverthrow',
+              'zod',
+              'swr/mutation',
+              'hono/client',
+              'storybook/test',
+              'storybook/preview-api',
+              '@storybook/react-vite',
+              'react-dom/test-utils',
+            ],
+          },
+          test: {
+            name: 'storybook',
+            globals: true,
+            browser: {
+              enabled: true,
+              headless: true,
+              provider: playwright(),
+              instances: [{ browser: 'chromium' }],
+            },
+          },
+        },
+      ],
       coverage: {
-        provider: 'istanbul' as const,
-        reporter: coverageReporter,
+        provider: 'istanbul',
+        reporter: ['text', 'json-summary', 'json'],
+        // project 単位で実行するため、対象 project が読み込んだファイルのみを集計する
+        all: false,
         // ベタガキしないと、Github Actionsに閾値が反映されない
         thresholds: {
-          statements: 60, // 命令網羅, ソースコードの全ての命令が実行されるかどうか
-          branches: 80, // 分岐網羅, 処理のパスの通過率とほぼ同義
-          functions: 60, // 関数網羅, 関数の実行パスの通過率
-          lines: 60, // 行網羅, ソースコードの全ての行が実行されるかどうか
+          'src/client/**/*.ts': { branches: 80, functions: 60 },
+          'src/server/**': { statements: 60, branches: 80, functions: 60, lines: 60 },
+          'src/client/**/*.tsx': { statements: 75, branches: 75, functions: 75, lines: 75 },
         },
-        include: ['src/server/**/*'],
-        exclude: ['src/server/handler/factory.ts'],
-      },
-    },
-  }
-}
-
-function storybookConfig(mode: string): UserConfig {
-  const env = loadEnv(mode, PACKAGE_ROOT, '')
-  process.env = { ...process.env, ...env }
-
-  return {
-    resolve: {
-      tsconfigPaths: true,
-    },
-    plugins: [tailwindcss(), storybookTest()],
-    optimizeDeps: {
-      noDiscovery: true,
-      include: [
-        'react',
-        'react-dom',
-        'react-dom/client',
-        'react/jsx-runtime',
-        'react/jsx-dev-runtime',
-        'react-router',
-        '@radix-ui/react-dialog',
-        '@radix-ui/react-label',
-        '@radix-ui/react-separator',
-        '@radix-ui/react-slot',
-        '@radix-ui/react-tooltip',
-        'class-variance-authority',
-        'clsx',
-        'tailwind-merge',
-        'lucide-react',
-        'sonner',
-        'vaul',
-        'neverthrow',
-        'zod',
-        'swr/mutation',
-        'hono/client',
-        'storybook/test',
-        'storybook/preview-api',
-        '@storybook/react-vite',
-        'react-dom/test-utils',
-      ],
-    },
-    test: {
-      globals: true,
-      browser: {
-        enabled: true,
-        headless: true,
-        provider: playwright(),
-        instances: [
-          {
-            browser: 'chromium',
-          },
-        ],
-      },
-      coverage: {
-        include: ['src/client/components/**/*.tsx', 'src/client/features/**/*.tsx'],
         exclude: [
-          'src/client/components/shadcn',
-          // 分岐や振る舞いを持たない純粋なラッパーは結合検証の対象が無いためStory・カバレッジ対象外とする
+          // client: shadcn と React Router のルート定義はユニットテスト対象外
+          'src/client/components/shadcn/**',
+          'src/client/routes.ts',
+          // server
+          'src/server/handler/factory.ts',
+          // storybook: 分岐や振る舞いを持たない純粋なラッパーは対象外
           'src/client/components/ui/legal',
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',
           'src/client/features/diary/diary-login-required.tsx',
         ],
-        thresholds: {
-          statements: 75,
-          branches: 75,
-          functions: 75,
-          lines: 75,
-        },
       },
     },
-  }
-}
-
-// Storybook ビルダーは .storybook/main.ts の viteConfigPath からこの設定を mode='test' で読み込む。
-// そのため 'test'(引数なしの bare `vitest` も含む)では storybook 設定を返さないと、ビルダーの
-// プラグイン(`virtual:/@storybook/builder-vite/project-annotations.js` の提供など)が解決されず
-// storybook テストが壊れる。client/server を動かすときは明示的に --mode client / --mode server を指定する。
-export default defineConfig(({ mode }) => {
-  switch (mode) {
-    case 'client':
-      return clientConfig()
-    case 'server':
-      return serverConfig()
-    default:
-      return storybookConfig(mode)
   }
 })

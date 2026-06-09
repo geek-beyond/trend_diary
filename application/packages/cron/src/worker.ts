@@ -41,19 +41,11 @@ export default {
             const mediaStartedAt = Date.now()
             logger.info({ msg: 'cron media fetch started', media })
 
-            try {
-              const insertedCount = await runScheduledFetch(media, env)
-              successCount += 1
-              insertedTotal += insertedCount
-              logger.info({
-                msg: 'cron media fetch completed',
-                media,
-                insertedCount,
-                durationMs: Date.now() - mediaStartedAt,
-              })
-            } catch (error) {
+            const result = await runScheduledFetch(media, env)
+
+            if (result.isErr()) {
               failedCount += 1
-              const message = error instanceof Error ? error.message : String(error)
+              const error = result.error
               logger.error(
                 {
                   msg: 'cron media fetch failed',
@@ -63,9 +55,20 @@ export default {
                 error,
               )
               await discord.sendMessage(
-                `[trend-diary cron] fetch failed\ncron: ${event.cron}\nmedia: ${media}\nerror: ${message}`,
+                `[trend-diary cron] fetch failed\ncron: ${event.cron}\nmedia: ${media}\nerror: ${error.message}`,
               )
+              continue
             }
+
+            const insertedCount = result.value
+            successCount += 1
+            insertedTotal += insertedCount
+            logger.info({
+              msg: 'cron media fetch completed',
+              media,
+              insertedCount,
+              durationMs: Date.now() - mediaStartedAt,
+            })
           }
 
           logger.info({
@@ -75,6 +78,10 @@ export default {
             insertedTotal,
             durationMs: Date.now() - jobStartedAt,
           })
+
+          if (failedCount > 0) {
+            throw new Error(`cron job failed: ${failedCount}/${MEDIA_LIST.length} media failed`)
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error)
           logger.error({ msg: 'cron job failed', durationMs: Date.now() - jobStartedAt }, error)

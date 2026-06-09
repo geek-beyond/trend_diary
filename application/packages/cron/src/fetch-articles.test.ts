@@ -59,9 +59,12 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(cronEnv)
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(1)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(1)
+    }
     expect(fetchMock).toHaveBeenCalledWith('https://b.hatena.ne.jp/hotentry/it.rss')
     const saved = await findByUrl('https://example.com/1')
     expect(saved.author).toBe('はてなブックマーク')
@@ -87,9 +90,12 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(cronEnv)
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(2)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(2)
+    }
     expect(await countArticles()).toBe(2)
     expect((await findByUrl('https://example.com/a')).author).toBe('投稿者A')
     expect((await findByUrl('https://example.com/b')).author).toBe('投稿者B')
@@ -113,9 +119,12 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(cronEnv)
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(1)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(1)
+    }
     expect(await countArticles()).toBe(1)
   })
 
@@ -131,12 +140,18 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const firstCount = await fetchHatenaArticles(cronEnv)
-    expect(firstCount).toBe(1)
+    const firstResult = await fetchHatenaArticles(cronEnv)
+    expect(firstResult.isOk()).toBe(true)
+    if (firstResult.isOk()) {
+      expect(firstResult.value).toBe(1)
+    }
     expect(await countArticles()).toBe(1)
 
-    const secondCount = await fetchHatenaArticles(cronEnv)
-    expect(secondCount).toBe(0)
+    const secondResult = await fetchHatenaArticles(cronEnv)
+    expect(secondResult.isOk()).toBe(true)
+    if (secondResult.isOk()) {
+      expect(secondResult.value).toBe(0)
+    }
     expect(await countArticles()).toBe(1)
   })
 
@@ -170,11 +185,29 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(cronEnv)
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(1)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(1)
+    }
     expect(await countArticles()).toBe(2)
     expect((await findByUrl('https://example.com/b')).author).toBe('投稿者B')
+  })
+
+  it('RSS取得に失敗した場合はerrを返す', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+    })
+
+    const result = await fetchHatenaArticles(cronEnv)
+
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error).toBeInstanceOf(Error)
+    }
+    expect(await countArticles()).toBe(0)
   })
 
   it('contentが欠損した記事は優先順位でdescriptionを補完する', async () => {
@@ -200,9 +233,12 @@ describe('fetchHatenaArticles', () => {
       ],
     })
 
-    const count = await fetchHatenaArticles(cronEnv)
+    const result = await fetchHatenaArticles(cronEnv)
 
-    expect(count).toBe(3)
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe(3)
+    }
     expect((await findByUrl('https://example.com/1')).description).toBe('encoded本文')
     expect((await findByUrl('https://example.com/2')).description).toBe('snippet本文')
     expect((await findByUrl('https://example.com/3')).description).toBe('')

@@ -1,4 +1,5 @@
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
+import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import worker from './worker'
 
@@ -38,7 +39,7 @@ describe('cron worker', () => {
   })
 
   it('既知のcron式でfetchジョブを実行する', async () => {
-    runScheduledFetchMock.mockResolvedValue(3)
+    runScheduledFetchMock.mockResolvedValue(ok(3))
 
     const waitUntilCalls: Promise<unknown>[] = []
     const event = { cron: '0 */8 * * *', scheduledTime: 1000 } as ScheduledController
@@ -109,7 +110,7 @@ describe('cron worker', () => {
   })
 
   it('cron式に関係なくfetchジョブを実行する', async () => {
-    runScheduledFetchMock.mockResolvedValue(0)
+    runScheduledFetchMock.mockResolvedValue(ok(0))
 
     const waitUntilCalls: Promise<unknown>[] = []
     const event = { cron: '5 * * * *', scheduledTime: 2000 } as ScheduledController
@@ -133,13 +134,13 @@ describe('cron worker', () => {
     expect(runScheduledFetchMock).toHaveBeenNthCalledWith(3, 'hatena', env)
   })
 
-  it('片方のmediaで失敗しても残りのmediaは実行する', async () => {
+  it('片方のmediaで失敗(err)しても残りのmediaを実行し、最上位でthrowする', async () => {
     runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) => {
       if (media === 'qiita') {
-        throw new Error('qiita failed')
+        return err(new Error('qiita failed'))
       }
 
-      return 2
+      return ok(2)
     })
 
     const waitUntilCalls: Promise<unknown>[] = []
@@ -157,7 +158,7 @@ describe('cron worker', () => {
     } as ExecutionContext)
 
     expect(waitUntilCalls).toHaveLength(1)
-    await Promise.all(waitUntilCalls)
+    await expect(Promise.all(waitUntilCalls)).rejects.toThrow()
     expect(runScheduledFetchMock).toHaveBeenCalledTimes(ARTICLE_MEDIA.length)
     expect(runScheduledFetchMock).toHaveBeenNthCalledWith(1, 'qiita', env)
     expect(runScheduledFetchMock).toHaveBeenNthCalledWith(2, 'zenn', env)

@@ -19,6 +19,7 @@
     "@trend-diary/domain": "workspace:*",
     "@trend-diary/notification": "workspace:*",
     "drizzle-orm": "catalog:",
+    "neverthrow": "catalog:",
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {

@@ -174,7 +174,7 @@ jobs:
         run: pnpm --filter @trend-diary/web exec playwright install-deps chromium
 
       - name: コンポーネントのテスト
-        run: pnpm --filter @trend-diary/web test-storybook --coverage
+        run: pnpm --filter @trend-diary/web test --mode storybook --coverage
 
   schema:
     needs: changes

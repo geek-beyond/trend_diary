@@ -7,23 +7,14 @@ import { playwright } from '@vitest/browser-playwright'
 import { loadEnv } from 'vite'
 import { defineConfig, type UserConfig } from 'vitest/config'
 
-// client/server/storybook はカバレッジの provider・閾値・実行環境がそれぞれ異なり、
-// 1回の coverage run に統合できない(server は Workers Pool のため istanbul 必須、
-// client/storybook は v8 系)。そのため projects ではなく --mode で設定を出し分け、
-// 3つの独立した vitest run として実行する。
-//   pnpm test:client    -> --mode client
-//   pnpm test:server    -> --mode server
-//   pnpm test-storybook -> --mode storybook
-// Storybook ビルダー(dev/build)が viteConfigPath 経由で読み込む場合は
-// mode が development/production になるため、default で storybook 設定を返す。
+// client/server/storybook はカバレッジの provider・閾値・実行環境が異なり、1回の coverage run に
+// 統合できない(server は Workers Pool のため istanbul 必須、client/storybook は v8 系)。
+// そのため projects ではなく --mode で設定を出し分け、独立した vitest run として実行する。
 
 const coverageReporter = ['text', 'json-summary', 'json']
 
-// このファイルが置かれているディレクトリ(= packages/web のルート)。
-// monorepo でカレントディレクトリが異なっても安定して参照できるよう process.cwd() ではなくこれを基準にする。
+// monorepo でカレントディレクトリが異なっても安定するよう process.cwd() ではなくこのファイルの位置を基準にする。
 const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url))
-
-// --- client ---------------------------------------------------------------
 
 function clientConfig(): UserConfig {
   const exclude = [
@@ -57,8 +48,6 @@ function clientConfig(): UserConfig {
     },
   }
 }
-
-// --- server ---------------------------------------------------------------
 
 // migrations は datastore パッケージで一元管理しているため、パッケージ(packages/web)から相対参照する。
 const MIGRATIONS_DIR = resolve(PACKAGE_ROOT, '..', 'datastore', 'migrations')
@@ -105,8 +94,6 @@ async function serverConfig(): Promise<UserConfig> {
     },
   }
 }
-
-// --- storybook ------------------------------------------------------------
 
 function storybookConfig(mode: string): UserConfig {
   const env = loadEnv(mode, PACKAGE_ROOT, '')
@@ -180,23 +167,17 @@ function storybookConfig(mode: string): UserConfig {
   }
 }
 
-// NOTE: この関数は async にしないこと。
-// Storybook ビルダーは .storybook/main.ts の viteConfigPath からこの設定を読み込むが、
-// その際 config 関数の戻り値を await しない。async にすると storybook/client 分岐でも
-// Promise が返り、ビルダーのプラグイン(project-annotations の virtual module 提供など)が
-// 解決されず `virtual:/@storybook/builder-vite/project-annotations.js` の解決に失敗する。
-// そのため同期的に設定オブジェクトを返し、Promise を返すのは server 分岐のみとする
-// (vitest は Promise を await するため server は問題ない)。
+// Storybook ビルダーは .storybook/main.ts の viteConfigPath からこの設定を mode='test' で読み込む。
+// そのため 'test'(引数なしの bare `vitest` も含む)では storybook 設定を返さないと、ビルダーの
+// プラグイン(`virtual:/@storybook/builder-vite/project-annotations.js` の提供など)が解決されず
+// storybook テストが壊れる。client/server を動かすときは明示的に --mode client / --mode server を指定する。
 export default defineConfig(({ mode }) => {
   switch (mode) {
-    // 引数なしの bare `vitest`(mode='test')はブラウザを起動しない軽量な client を既定にする
-    case 'test':
     case 'client':
       return clientConfig()
     case 'server':
       return serverConfig()
     default:
-      // --mode storybook、および Storybook ビルダー(viteConfigPath 経由, mode=development/production)で利用
       return storybookConfig(mode)
   }
 })

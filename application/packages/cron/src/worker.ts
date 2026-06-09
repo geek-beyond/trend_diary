@@ -15,19 +15,18 @@ const MEDIA_LIST: ReadonlyArray<ArticleMedia> = ['qiita', 'zenn', 'hatena']
 
 export default {
   async scheduled(event: ScheduledController, env: CronWorkerEnv, ctx: ExecutionContext) {
+    const logger = new Logger(env.LOG_LEVEL || 'info', {
+      scope: 'cron-worker',
+      cron: event.cron,
+    })
+
     const discord = new DiscordWebhookClient(env.DISCORD_WEBHOOK_URL)
 
     ctx.waitUntil(
       (async () => {
         const jobStartedAt = Date.now()
-        let logger: Logger | undefined
 
         try {
-          logger = new Logger(env.LOG_LEVEL || 'info', {
-            scope: 'cron-worker',
-            cron: event.cron,
-          })
-
           let successCount = 0
           let failedCount = 0
           let insertedTotal = 0
@@ -77,14 +76,12 @@ export default {
             durationMs: Date.now() - jobStartedAt,
           })
         } catch (error) {
-          // 個別 media の失敗はループ内で捕捉済みのため、ここに到達するのは
-          // ジョブ全体を巻き込む予期しない失敗(ロガー初期化やループ外の例外など)。
-          // ロガーが壊れていても通知だけは欠かさないよう、Discord 送信を最優先する。
+          // per-media の失敗はループ内で捕捉済み。ここに到達するのはジョブ全体を巻き込む想定外の失敗。
           const message = error instanceof Error ? error.message : String(error)
+          logger.error({ msg: 'cron job failed', durationMs: Date.now() - jobStartedAt }, error)
           await discord.sendMessage(
             `[trend-diary cron] job failed\ncron: ${event.cron}\nerror: ${message}`,
           )
-          logger?.error({ msg: 'cron job failed', durationMs: Date.now() - jobStartedAt }, error)
           // Cloudflare 側でも失敗として記録させるため再スローする
           throw error
         }

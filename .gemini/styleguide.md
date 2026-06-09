@@ -1,1 +1,1 @@
-docs/development_rule.md
+../docs/development_rule.md

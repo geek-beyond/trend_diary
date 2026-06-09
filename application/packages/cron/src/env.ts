@@ -1,4 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types'
+import type { WorkerBindings } from '@trend-diary/common/env'
 import type { LogLevel } from '@trend-diary/common/logger'
 
 export interface FetchEnv {
@@ -6,6 +7,4 @@ export interface FetchEnv {
   LOG_LEVEL?: LogLevel
 }
 
-export interface CronEnv extends FetchEnv {
-  DISCORD_WEBHOOK_URL: string
-}
+export type CronEnv = WorkerBindings

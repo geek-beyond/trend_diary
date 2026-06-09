@@ -27,8 +27,6 @@ export default defineConfig(() => {
           test: {
             name: 'server',
             globals: true,
-            // server コードは Node 上で実行し、D1 は getPlatformProxy（miniflare 由来）で供給する。
-            // workerd を使わないことで coverage provider を v8 に統一できる。
             environment: 'node',
             setupFiles: ['src/test/setup/d1.ts'],
             include: ['src/server/**/*.test.ts'],

@@ -5,20 +5,8 @@ import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { inArray } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import Parser from 'rss-parser'
-
-type CronEnv = {
-  DB: D1Database
-  LOG_LEVEL?: import('@trend-diary/common/logger').LogLevel
-}
-
-type D1Database = import('@cloudflare/workers-types').D1Database
-
-type FeedItem = {
-  title: string
-  author: string
-  description: string
-  url: string
-}
+import type { FetchEnv } from './env'
+import { FEED_CONFIGS, type FeedConfig, type NormalizedItem } from './feed-config'
 
 const MAX_LENGTH = {
   media: 10,
@@ -26,19 +14,9 @@ const MAX_LENGTH = {
   author: 30,
   description: 1024,
 }
-const HATENA_FALLBACK_AUTHOR = 'はてなブックマーク'
 
 function truncateByCodePoint(text: string, maxLength: number): string {
   return [...text].slice(0, maxLength).join('')
-}
-
-function pickNonEmpty(...candidates: Array<string | undefined>): string | undefined {
-  for (const candidate of candidates) {
-    if (typeof candidate !== 'string') continue
-    const trimmed = candidate.trim()
-    if (trimmed.length > 0) return trimmed
-  }
-  return undefined
 }
 
 async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
@@ -60,8 +38,8 @@ async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
 
 async function storeArticles(
   media: ArticleMedia,
-  items: FeedItem[],
-  env: CronEnv,
+  items: NormalizedItem[],
+  env: FetchEnv,
 ): Promise<Result<number, Error>> {
   const db = getRdbClient(env.DB)
   if (items.length === 0) return ok(0)
@@ -133,80 +111,39 @@ function isUniqueConstraintError(error: unknown): boolean {
   return false
 }
 
-export async function fetchQiitaArticles(env: CronEnv): Promise<Result<number, Error>> {
-  const itemsResult = await fetchRssFeed<{
-    title: string
-    author: string
-    content: string
-    link: string
-  }>('https://qiita.com/popular-items/feed.atom')
+// RSSを取得し、メディアごとのマッピングで正規化してから保存する共通処理。
+async function fetchAndStore<RawItem>(
+  media: ArticleMedia,
+  config: FeedConfig<RawItem>,
+  env: FetchEnv,
+): Promise<Result<number, Error>> {
+  const itemsResult = await fetchRssFeed<RawItem>(config.url)
   if (itemsResult.isErr()) return err(itemsResult.error)
 
-  return storeArticles(
-    'qiita',
-    itemsResult.value.map((item) => ({
-      title: item.title,
-      author: item.author,
-      description: item.content,
-      url: item.link,
-    })),
-    env,
-  )
+  return storeArticles(media, itemsResult.value.map(config.mapItem), env)
 }
 
-export async function fetchZennArticles(env: CronEnv): Promise<Result<number, Error>> {
-  const itemsResult = await fetchRssFeed<{
-    title: string
-    creator: string
-    content: string
-    link: string
-  }>('https://zenn.dev/feed')
-  if (itemsResult.isErr()) return err(itemsResult.error)
-
-  return storeArticles(
-    'zenn',
-    itemsResult.value.map((item) => ({
-      title: item.title,
-      author: item.creator,
-      description: item.content,
-      url: item.link,
-    })),
-    env,
-  )
+export function fetchQiitaArticles(env: FetchEnv): Promise<Result<number, Error>> {
+  return fetchAndStore('qiita', FEED_CONFIGS.qiita, env)
 }
 
-export async function fetchHatenaArticles(env: CronEnv): Promise<Result<number, Error>> {
-  const itemsResult = await fetchRssFeed<{
-    title: string
-    creator?: string
-    content?: string
-    'content:encoded'?: string
-    contentSnippet?: string
-    link: string
-  }>('https://b.hatena.ne.jp/hotentry/it.rss')
-  if (itemsResult.isErr()) return err(itemsResult.error)
+export function fetchZennArticles(env: FetchEnv): Promise<Result<number, Error>> {
+  return fetchAndStore('zenn', FEED_CONFIGS.zenn, env)
+}
 
-  return storeArticles(
-    'hatena',
-    itemsResult.value.map((item) => ({
-      title: item.title,
-      author: pickNonEmpty(item.creator) || HATENA_FALLBACK_AUTHOR,
-      description: pickNonEmpty(item.content, item['content:encoded'], item.contentSnippet) || '',
-      url: item.link,
-    })),
-    env,
-  )
+export function fetchHatenaArticles(env: FetchEnv): Promise<Result<number, Error>> {
+  return fetchAndStore('hatena', FEED_CONFIGS.hatena, env)
+}
+
+const FETCHERS: Record<ArticleMedia, (env: FetchEnv) => Promise<Result<number, Error>>> = {
+  qiita: fetchQiitaArticles,
+  zenn: fetchZennArticles,
+  hatena: fetchHatenaArticles,
 }
 
 export function runScheduledFetch(
   media: ArticleMedia,
-  env: CronEnv,
+  env: FetchEnv,
 ): Promise<Result<number, Error>> {
-  if (media === 'qiita') {
-    return fetchQiitaArticles(env)
-  }
-  if (media === 'zenn') {
-    return fetchZennArticles(env)
-  }
-  return fetchHatenaArticles(env)
+  return FETCHERS[media](env)
 }

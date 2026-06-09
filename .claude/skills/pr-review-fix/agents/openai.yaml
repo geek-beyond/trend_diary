@@ -1,4 +1,0 @@
-interface:
-  display_name: "PR Review Fixer"
-  short_description: "GitHub PRレビュー修正とGemini再レビュー依頼を実行"
-  default_prompt: "Use $pr-review-fix to fix review comments, reply with commit IDs, and post /gemini review."

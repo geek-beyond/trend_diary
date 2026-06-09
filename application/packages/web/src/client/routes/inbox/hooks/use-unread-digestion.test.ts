@@ -1,12 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { SWRConfig } from 'swr'
-import createSWRFetcher from '@/client/features/create-swr-fetcher'
+import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import type { MediaType } from '../../trends._index/components/media-filter'
 import useReadArticle from '../../trends._index/hooks/use-read-article'
 import useUnreadDigestion, { type Article } from './use-unread-digestion'
 
-vi.mock('@/client/features/create-swr-fetcher', () => ({
+vi.mock('@/client/infrastructure/create-swr-fetcher', () => ({
   default: vi.fn(),
 }))
 

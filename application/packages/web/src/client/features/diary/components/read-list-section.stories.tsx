@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect } from 'storybook/test'
-import DiaryReadListSection from './diary-read-list-section'
-import type { ReadItem } from './types'
+import type { ReadItem } from '@/client/features/diary/types'
+import DiaryReadListSection from './read-list-section'
 
 const reads: ReadItem[] = [
   {

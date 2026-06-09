@@ -1,9 +1,9 @@
 import { renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import createSWRFetcher from '@/client/features/create-swr-fetcher'
+import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useDiaryApi, { type DiaryRangeItemResponse, type DiaryResponse } from './use-diary-api'
 
-vi.mock('@/client/features/create-swr-fetcher', () => ({
+vi.mock('@/client/infrastructure/create-swr-fetcher', () => ({
   default: vi.fn(),
 }))
 

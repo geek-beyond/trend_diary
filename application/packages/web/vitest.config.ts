@@ -94,7 +94,7 @@ export default defineConfig(() => {
           'src/client/components/ui/legal',
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',
-          'src/client/features/diary/diary-login-required.tsx',
+          'src/client/features/diary/components/login-required.tsx',
         ],
         // ベタガキしないと、Github Actionsに閾値が反映されない
         thresholds: {

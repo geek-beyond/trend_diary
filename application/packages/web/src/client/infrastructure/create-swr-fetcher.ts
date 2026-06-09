@@ -1,4 +1,4 @@
-import getApiClientForClient from '../infrastructure/api'
+import getApiClientForClient from '@/client/infrastructure/api'
 
 interface ApiCallResponse {
   ok: boolean

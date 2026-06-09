@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent } from 'storybook/test'
-import DiaryReadPagination from './diary-read-pagination'
+import DiaryReadPagination from './read-pagination'
 
 const meta: Meta<typeof DiaryReadPagination> = {
   component: DiaryReadPagination,

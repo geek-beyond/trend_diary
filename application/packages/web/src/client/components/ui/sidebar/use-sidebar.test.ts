@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import useSidebar from './use-sidebar'
 
-vi.mock('../../features/create-swr-fetcher', () => {
+vi.mock('@/client/infrastructure/create-swr-fetcher', () => {
   const mockClient = {
     account: {
       logout: {
@@ -15,7 +15,7 @@ vi.mock('../../features/create-swr-fetcher', () => {
   const mockApiCall = vi.fn()
 
   return {
-    createSWRFetcher: () => ({
+    default: () => ({
       client: mockClient,
       apiCall: mockApiCall,
     }),

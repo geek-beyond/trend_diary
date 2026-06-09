@@ -5,7 +5,7 @@ import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/me
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
-import { getTodayJst, sumSourceSummary } from '@/client/features/diary/diary-shared'
+import { getTodayJst, sumSourceSummary } from '@/client/features/diary/daily-summary'
 import useDiaryApi, {
   type DiaryRangeItemResponse,
   type DiaryResponse,

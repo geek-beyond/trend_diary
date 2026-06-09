@@ -1,6 +1,6 @@
 import { AuthInput, authInputSchema } from '@trend-diary/domain/user'
 import { z } from 'zod'
-import { newValidationError, newValidationSuccess, ValidationResult } from '../validation'
+import { newValidationError, newValidationSuccess, ValidationResult } from '@/client/lib/validation'
 
 // biome-ignore lint/style/useConsistentTypeDefinitions: Record<string, unknown> 制約を満たすため type エイリアスを使う
 export type AuthenticateErrors = {

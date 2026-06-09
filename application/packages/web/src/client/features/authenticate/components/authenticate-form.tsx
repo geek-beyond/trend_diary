@@ -1,8 +1,8 @@
 import { Form } from 'react-router'
-import { Button } from '../../components/shadcn/button'
-import { Input } from '../../components/shadcn/input'
-import { Label } from '../../components/shadcn/label'
-import { AuthenticateErrors } from './validation'
+import { Button } from '@/client/components/shadcn/button'
+import { Input } from '@/client/components/shadcn/input'
+import { Label } from '@/client/components/shadcn/label'
+import { AuthenticateErrors } from '@/client/features/authenticate/validation'
 
 interface Props {
   submitButtonText: string

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect } from 'storybook/test'
-import DiaryPageLayout from './diary-page-layout'
+import DiaryPageLayout from './page-layout'
 
 const meta: Meta<typeof DiaryPageLayout> = {
   component: DiaryPageLayout,

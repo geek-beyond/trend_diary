@@ -1,8 +1,8 @@
-import DiaryLoginRequired from '@/client/features/diary/diary-login-required'
-import DiaryPageLayout from '@/client/features/diary/diary-page-layout'
-import DiaryReadListSection from '@/client/features/diary/diary-read-list-section'
-import DiaryReadPagination from '@/client/features/diary/diary-read-pagination'
-import DiarySummarySection from '@/client/features/diary/diary-summary-section'
+import DiaryLoginRequired from '@/client/features/diary/components/login-required'
+import DiaryPageLayout from '@/client/features/diary/components/page-layout'
+import DiaryReadListSection from '@/client/features/diary/components/read-list-section'
+import DiaryReadPagination from '@/client/features/diary/components/read-pagination'
+import DiarySummarySection from '@/client/features/diary/components/summary-section'
 import {
   type ReadItem,
   type ReadPagination,

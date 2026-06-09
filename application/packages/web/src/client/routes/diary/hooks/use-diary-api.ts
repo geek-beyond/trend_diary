@@ -1,5 +1,5 @@
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
-import createSWRFetcher from '@/client/features/create-swr-fetcher'
+import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 
 export interface DiarySource {
   media: ArticleMedia

@@ -1,9 +1,9 @@
 import * as dateModule from '@trend-diary/common/locale/date'
 import { err, ok } from 'neverthrow'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getTodayJst, sumSourceSummary } from './diary-shared'
+import { getTodayJst, sumSourceSummary } from './daily-summary'
 
-describe('diary-shared', () => {
+describe('daily-summary', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })

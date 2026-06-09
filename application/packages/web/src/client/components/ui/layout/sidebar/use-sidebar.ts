@@ -1,7 +1,7 @@
 import { NavigateFunction } from 'react-router'
 import { toast } from 'sonner'
 import useSWRMutation from 'swr/mutation'
-import createSWRFetcher from '@/client/features/create-swr-fetcher'
+import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 
 export default function useSidebar(navigate: NavigateFunction) {
   const { client, apiCall } = createSWRFetcher()

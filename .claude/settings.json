@@ -118,15 +118,6 @@
             "timeout": 120
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/enable-githooks.sh",
-            "timeout": 30
-          }
-        ]
       }
     ]
   }

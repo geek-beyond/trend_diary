@@ -12,7 +12,7 @@ import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
-import createSWRFetcher from '@/client/features/create-swr-fetcher'
+import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import type { MediaType } from '../components/media-filter'
 import type { ReadStatusType } from '../components/read-status-filter'
 

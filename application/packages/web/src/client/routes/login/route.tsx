@@ -14,7 +14,7 @@ import {
 import {
   type AuthenticateErrors,
   validateAuthenticateForm,
-} from '../../features/authenticate/validation'
+} from '@/client/features/authenticate/validation'
 import LoginPage from './page'
 
 interface LoginActionData {

@@ -1,5 +1,4 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
-import { isDevelopmentNodeEnv } from '@trend-diary/common/env'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 
@@ -27,7 +26,7 @@ export function createSupabaseAuthClient(c: Context) {
         cookiesToSet.forEach(({ name, value, options }) => {
           const mergedOptions = {
             httpOnly: true,
-            secure: !isDevelopmentNodeEnv(),
+            secure: !__IS_DEV__,
             sameSite: 'lax' as const,
             ...options,
           }

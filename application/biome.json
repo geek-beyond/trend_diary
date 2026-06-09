@@ -186,6 +186,7 @@
   },
   "javascript": {
     "globals": [
+      "__IS_DEV__",
       "describe",
       "it",
       "test",

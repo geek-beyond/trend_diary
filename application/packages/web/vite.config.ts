@@ -6,10 +6,27 @@ import adapter from '@hono/vite-dev-server/cloudflare'
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
 import serverAdapter from 'hono-react-router-adapter/vite'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import babel from 'vite-plugin-babel'
 
 const ReactCompilerConfig = {}
+
+// dev サーバ（command === 'serve'）でのみ true となるグローバル定数 __IS_DEV__ を
+// ビルド時に静的に埋め込むプラグイン。Cookie の secure フラグ判定などに使う。
+function injectIsDevPlugin(): Plugin {
+  return {
+    name: 'trend-diary:inject-is-dev',
+    config(_config, { command }) {
+      return {
+        define: {
+          // Vite が静的置換するビルド時定数（命名は Vite 慣習の前後アンダースコア）
+          // biome-ignore lint/style/useNamingConvention: build-time injected global
+          __IS_DEV__: JSON.stringify(command === 'serve'),
+        },
+      }
+    },
+  }
+}
 
 export default defineConfig({
   resolve: {
@@ -21,6 +38,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    injectIsDevPlugin(),
     tailwindcss(),
     reactRouter(),
     babel({

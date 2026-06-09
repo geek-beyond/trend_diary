@@ -1,4 +1,0 @@
-interface:
-  display_name: "PR Simplifier"
-  short_description: "PR作成時に差分へsimplifyを自動実行"
-  default_prompt: "Use $pr-simplify to run /simplify on the diff of a just-created PR and push the result."

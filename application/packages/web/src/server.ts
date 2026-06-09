@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import { secureHeaders } from 'hono/secure-headers'
 import { timeout } from 'hono/timeout'
-import { AppLoadContext, createRequestHandler } from 'react-router'
 import { Env } from './env'
 import errorHandler from './middleware/error-handler'
 import requestLogger from './middleware/request-logger'
@@ -16,19 +15,7 @@ app.onError(errorHandler)
 app.use('/api', timeout(5000))
 app.route('/api', apiApp)
 
-// hotReload用
-if (process.env.NODE_ENV === 'development')
-  app.all('*', async (c) => {
-    // ビルド結果をhonoにうまく繋ぎこむために使う virtual import
-    // @ts-ignore
-    const build = await import('virtual:react-router/server-build')
-    const handler = createRequestHandler(build, 'development')
-    const remixContext = {
-      cloudflare: {
-        env: c.env,
-      },
-    } as unknown as AppLoadContext
-    return handler(c.req.raw, remixContext)
-  })
-
+// SSR/ホットリロードのリクエスト処理は hono-react-router-adapter が担う:
+// - dev: serverAdapter(@hono/vite-dev-server) が virtual:react-router/server-build を catch-all で処理
+// - 本番: worker.ts の handle(build, server) が production モードで処理
 export default app

@@ -52,7 +52,7 @@ export function createAuthActionUseCase(request: Request, context: AppLoadContex
         cookiesToSet.forEach(({ name, value, options }) => {
           const mergedOptions = {
             httpOnly: true,
-            secure: !__IS_DEV__,
+            secure: true,
             sameSite: 'lax' as const,
             ...options,
           }

@@ -2,5 +2,5 @@
   "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
   "root": false,
   "extends": ["../../biome.json"],
-  "plugins": ["../../biome-plugins/no-inline-import-type.grit"]
+  "plugins": ["./biome-plugins/no-inline-import-type.grit"]
 }

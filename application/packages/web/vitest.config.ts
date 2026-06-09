@@ -6,10 +6,10 @@ import tailwindcss from '@tailwindcss/vite'
 import { playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
 
+const rootDir = dirname(fileURLToPath(import.meta.url))
+
 export default defineConfig(async () => {
-  const migrations = await readD1Migrations(
-    resolve(dirname(fileURLToPath(import.meta.url)), '..', 'datastore', 'migrations'),
-  )
+  const migrations = await readD1Migrations(resolve(rootDir, '..', 'datastore', 'migrations'))
   const poolOptions = {
     miniflare: {
       compatibilityDate: '2025-04-01',
@@ -49,12 +49,7 @@ export default defineConfig(async () => {
           },
         },
         {
-          plugins: [
-            tailwindcss(),
-            storybookTest({
-              configDir: resolve(dirname(fileURLToPath(import.meta.url)), '.storybook'),
-            }),
-          ],
+          plugins: [tailwindcss(), storybookTest({ configDir: resolve(rootDir, '.storybook') })],
           resolve: { tsconfigPaths: true },
           optimizeDeps: {
             noDiscovery: true,

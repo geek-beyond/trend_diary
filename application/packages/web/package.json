@@ -6,9 +6,7 @@
   "scripts": {
     "dev": "react-router dev",
     "build": "react-router build",
-    "test:client": "vitest run -c src/test/vitest/client/config.ts",
-    "test:server": "vitest run -c src/test/vitest/server/config.ts",
-    "test-storybook": "vitest run -c src/test/vitest/storybook/config.ts",
+    "test": "vitest run",
     "e2e": "playwright test --config=src/test/e2e/playwright.config.ts",
     "e2e:report": "playwright show-report src/test/e2e/playwright-report",
     "e2e:gen": "playwright codegen --config=src/test/e2e/playwright.config.ts",

@@ -1,4 +1,5 @@
 import extractTrimmed from '@trend-diary/common/sanitization'
+import { z } from 'zod'
 
 export const FEED_URL = {
   qiita: 'https://qiita.com/popular-items/feed.atom',
@@ -14,6 +15,21 @@ export interface NormalizedItem {
   description: string
   url: string
 }
+
+// 外部フィードは欠落フィールドを undefined で返すため、保存前に実行時検証する。
+// title / author / url は欠落・空文字なら不正としてスキップ対象にし、
+// description は欠落しても致命的でないため空文字で補完する。
+const requiredText = z.string().trim().min(1)
+
+export const normalizedItemSchema = z.object({
+  title: requiredText,
+  author: requiredText,
+  description: z
+    .string()
+    .optional()
+    .transform((value) => value ?? ''),
+  url: requiredText,
+})
 
 export interface FeedConfig<RawItem> {
   url: string

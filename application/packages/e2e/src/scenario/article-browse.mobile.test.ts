@@ -17,10 +17,13 @@ test.describe('記事閲覧シナリオ(モバイル)', () => {
     const createdArticleIds: bigint[] = []
 
     test.beforeAll(async ({ rdb }) => {
-      const articles = await Promise.all(
-        Array.from({ length: ARTICLE_COUNT }, () => articleHelper.createArticle(rdb)),
+      // 途中で作成が失敗しても作成済み分をクリーンアップできるよう、成功の都度登録する
+      await Promise.all(
+        Array.from({ length: ARTICLE_COUNT }, async () => {
+          const article = await articleHelper.createArticle(rdb)
+          createdArticleIds.push(article.articleId)
+        }),
       )
-      createdArticleIds.push(...articles.map((a) => a.articleId))
     })
 
     test.afterAll(async ({ rdb }) => {

@@ -10,7 +10,7 @@
 
 開発に必要なローカルツール。バージョンは`mise.toml` / `.node-version` / `package.json`を正とする（以下は記載時点の参考値）。
 
-- **Node.js** `22.13.0`（`engines`は`^20.19.0 || >=22.13.0`、`.node-version`で固定）
+- **Node.js** `22.13.0`（`engines`は`^20.19.0 || >=22.13.0`、`.node-version` や `mise.toml` 等で固定）
 - **pnpm** `11.5.1`（パッケージマネージャー。`corepack enable`で有効化、バージョンは`package.json`の`packageManager`に従う）
 - **mise**（Node / pnpmのバージョン管理。`mise.toml`で定義）
 - **Docker**（DB等のローカル実行環境。Macの場合はOrbStack推奨）

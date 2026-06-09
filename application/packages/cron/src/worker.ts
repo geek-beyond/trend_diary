@@ -81,7 +81,6 @@ export default {
           await discord.sendMessage(
             `[trend-diary cron] job failed\ncron: ${event.cron}\nerror: ${message}`,
           )
-          // Cloudflare 側でも失敗として記録させるため再スローする
           throw error
         }
       })(),

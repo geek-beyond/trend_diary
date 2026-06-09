@@ -1,0 +1,5 @@
+# local SQLite (drizzle)
+*.db
+*.db-shm
+*.db-wal
+*.db-journal

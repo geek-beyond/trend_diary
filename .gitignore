@@ -1,6 +1,7 @@
-# dev
-.yarn/
-!.yarn/releases
+# OS
+.DS_Store
+
+# Editor / IDE
 .vscode/*
 !.vscode/launch.json
 !.vscode/*.code-snippets
@@ -10,5 +11,6 @@
 .idea/usage.statistics.xml
 .idea/shelf
 
-# misc
-.DS_Store
+# Yarn
+.yarn/
+!.yarn/releases

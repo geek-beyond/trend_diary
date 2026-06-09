@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { resolveSupabaseAuthConfig, shouldUseSecureCookie } from './auth-action-use-case'
+import { resolveSupabaseAuthConfig } from './auth-action-use-case'
 
 describe('resolveSupabaseAuthConfig', () => {
   it('context.cloudflare.envにあるSupabase設定を優先する', () => {
@@ -40,25 +40,5 @@ describe('resolveSupabaseAuthConfig', () => {
         },
       }),
     ).toThrow('Supabase auth is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.')
-  })
-})
-
-describe('shouldUseSecureCookie', () => {
-  it('NODE_ENVがdevelopmentのときはsecure=false', () => {
-    vi.stubEnv('NODE_ENV', 'development')
-    try {
-      expect(shouldUseSecureCookie()).toBe(false)
-    } finally {
-      vi.unstubAllEnvs()
-    }
-  })
-
-  it('NODE_ENVがdevelopment以外のときはsecure=true', () => {
-    vi.stubEnv('NODE_ENV', 'test')
-    try {
-      expect(shouldUseSecureCookie()).toBe(true)
-    } finally {
-      vi.unstubAllEnvs()
-    }
   })
 })

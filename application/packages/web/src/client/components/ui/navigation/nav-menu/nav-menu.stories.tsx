@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Inbox, TrendingUp } from 'lucide-react'
 import { expect } from 'storybook/test'
-import { Sheet } from '../../shadcn/sheet'
-import { SidebarProvider } from '../../shadcn/sidebar'
-import type { MenuItem } from '../sidebar'
+import { Sheet } from '@/client/components/shadcn/sheet'
+import { SidebarProvider } from '@/client/components/shadcn/sidebar'
+import type { MenuItem } from '@/client/components/ui/layout/sidebar'
 import NavMenu from './index'
 
 const menuItems: MenuItem[] = [

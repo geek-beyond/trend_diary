@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { createElement } from 'react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
-import { AnchorLink } from '@/client/components/ui/link'
+import { AnchorLink } from '@/client/components/ui/navigation/link'
 
 describe('AnchorLink', () => {
   it('内部リンクでonClickを渡したときにクリック時に実行される', () => {

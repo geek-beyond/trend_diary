@@ -1,7 +1,7 @@
-import { SheetClose } from '../../shadcn/sheet'
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../../shadcn/sidebar'
-import { AnchorLink } from '../link'
-import type { MenuItem } from '../sidebar'
+import { SheetClose } from '@/client/components/shadcn/sheet'
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/client/components/shadcn/sidebar'
+import type { MenuItem } from '@/client/components/ui/layout/sidebar'
+import { AnchorLink } from '@/client/components/ui/navigation/link'
 
 interface NavMenuProps {
   variant: 'sidebar' | 'sheet'

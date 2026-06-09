@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent } from 'storybook/test'
 import { vi } from 'vitest'
-import { SidebarProvider } from '../../shadcn/sidebar'
+import { SidebarProvider } from '@/client/components/shadcn/sidebar'
 import AppSidebar from './index'
 import useSidebar from './use-sidebar'
 

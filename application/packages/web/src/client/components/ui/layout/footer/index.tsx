@@ -1,4 +1,4 @@
-import { AnchorLink } from '../link'
+import { AnchorLink } from '@/client/components/ui/navigation/link'
 
 const CONTACT_FORM_URL = 'https://forms.gle/HgaE9qMXq6MJAxNG9'
 

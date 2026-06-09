@@ -1,1 +1,0 @@
-../docs/development_rule.md

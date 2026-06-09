@@ -1,5 +1,5 @@
 import { AuthenticateForm } from '@/client/features/authenticate/components/authenticate-form'
-import { AuthenticateErrors } from '@/client/features/authenticate/validation'
+import type { AuthenticateErrors } from '@/client/features/authenticate/validation'
 import {
   Card,
   CardContent,

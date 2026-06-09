@@ -1,88 +1,23 @@
+import type { ExecutionContext, ScheduledController } from '@cloudflare/workers-types'
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-// e2e: worker.scheduled を実 D1・実 rss-parser で貫通させ、
-// 外部境界（RSSフィード取得 / Discord通知）のみ global fetch でスタブする。
-const fetchMock = vi.hoisted(() => vi.fn())
-
-vi.stubGlobal('fetch', fetchMock)
-
-import { env } from 'cloudflare:test'
+import TEST_ENV from './test-helper/env'
+import {
+  buildHatenaRdf,
+  buildQiitaAtom,
+  buildZennRss,
+  FEED_URL,
+  type FeedItem,
+  rssResponse,
+} from './test-helper/feed'
 import { testRdb as db } from './test-helper/rdb'
 import worker from './worker'
 
-const QIITA_FEED_URL = 'https://qiita.com/popular-items/feed.atom'
-const ZENN_FEED_URL = 'https://zenn.dev/feed'
-const HATENA_FEED_URL = 'https://b.hatena.ne.jp/hotentry/it.rss'
-const DISCORD_WEBHOOK_URL = 'https://discord.test/webhook'
+const fetchMock = vi.fn()
+vi.stubGlobal('fetch', fetchMock)
 
-type FeedArticle = { title: string; author: string; content: string; url: string }
-
-function buildQiitaAtom(items: FeedArticle[]): string {
-  const entries = items
-    .map(
-      (item) => `  <entry>
-    <title>${item.title}</title>
-    <link href="${item.url}"/>
-    <author><name>${item.author}</name></author>
-    <content type="html">${item.content}</content>
-  </entry>`,
-    )
-    .join('\n')
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-${entries}
-</feed>`
-}
-
-function buildZennRss(items: FeedArticle[]): string {
-  const entries = items
-    .map(
-      (item) => `    <item>
-      <title>${item.title}</title>
-      <link>${item.url}</link>
-      <description>${item.content}</description>
-      <dc:creator>${item.author}</dc:creator>
-    </item>`,
-    )
-    .join('\n')
-  return `<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
-  <channel>
-${entries}
-  </channel>
-</rss>`
-}
-
-function buildHatenaRdf(items: FeedArticle[]): string {
-  const lis = items.map((item) => `<rdf:li rdf:resource="${item.url}"/>`).join('')
-  const entries = items
-    .map(
-      (item) => `  <item rdf:about="${item.url}">
-    <title>${item.title}</title>
-    <link>${item.url}</link>
-    <description>${item.content}</description>
-    <dc:creator>${item.author}</dc:creator>
-  </item>`,
-    )
-    .join('\n')
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/">
-  <channel rdf:about="${HATENA_FEED_URL}">
-    <title>はてブIT</title>
-    <link>https://b.hatena.ne.jp/hotentry/it</link>
-    <items><rdf:Seq>${lis}</rdf:Seq></items>
-  </channel>
-${entries}
-</rdf:RDF>`
-}
-
-function rssResponse(xml: string) {
-  return { ok: true, status: 200, text: async () => xml }
-}
-
-const QIITA_ITEMS: FeedArticle[] = [
+const QIITA_ITEMS: FeedItem[] = [
   {
     title: 'Qiita記事1',
     author: 'qiita_author1',
@@ -96,7 +31,7 @@ const QIITA_ITEMS: FeedArticle[] = [
     url: 'https://qiita.com/u/items/q2',
   },
 ]
-const ZENN_ITEMS: FeedArticle[] = [
+const ZENN_ITEMS: FeedItem[] = [
   {
     title: 'Zenn記事1',
     author: 'zenn_creator1',
@@ -104,7 +39,7 @@ const ZENN_ITEMS: FeedArticle[] = [
     url: 'https://zenn.dev/u/articles/z1',
   },
 ]
-const HATENA_ITEMS: FeedArticle[] = [
+const HATENA_ITEMS: FeedItem[] = [
   {
     title: 'はてな記事1',
     author: 'hatena_creator1',
@@ -112,47 +47,48 @@ const HATENA_ITEMS: FeedArticle[] = [
     url: 'https://example.com/hatena/h1',
   },
 ]
+const TOTAL_ITEMS = QIITA_ITEMS.length + ZENN_ITEMS.length + HATENA_ITEMS.length
 
-// 各メディアのフィードを返す既定ルーティング。media ごとに上書き可能。
-function setupFetchRouting(overrides?: {
-  qiita?: () => unknown
-  zenn?: () => unknown
-  hatena?: () => unknown
-}): void {
-  fetchMock.mockImplementation(async (url: string) => {
-    const target = String(url)
-    if (target.startsWith(DISCORD_WEBHOOK_URL)) return { ok: true, status: 204 }
-    if (target === QIITA_FEED_URL)
-      return (overrides?.qiita ?? (() => rssResponse(buildQiitaAtom(QIITA_ITEMS))))()
-    if (target === ZENN_FEED_URL)
-      return (overrides?.zenn ?? (() => rssResponse(buildZennRss(ZENN_ITEMS))))()
-    if (target === HATENA_FEED_URL)
+// fetch には文字列だけでなく Request が渡される場合があるため URL を正規化する。
+function resolveUrl(input: unknown): string {
+  return input instanceof Request ? input.url : String(input)
+}
+
+function setupFetchRouting(overrides?: { hatena?: () => unknown }): void {
+  fetchMock.mockImplementation(async (input: unknown) => {
+    const target = resolveUrl(input)
+    if (target.startsWith(TEST_ENV.DISCORD_WEBHOOK_URL)) return { ok: true, status: 204 }
+    if (target === FEED_URL.qiita) return rssResponse(buildQiitaAtom(QIITA_ITEMS))
+    if (target === FEED_URL.zenn) return rssResponse(buildZennRss(ZENN_ITEMS))
+    if (target === FEED_URL.hatena)
       return (overrides?.hatena ?? (() => rssResponse(buildHatenaRdf(HATENA_ITEMS))))()
     throw new Error(`unexpected fetch: ${target}`)
   })
 }
 
-function buildEnv() {
-  return {
-    DB: env.DB,
-    DISCORD_WEBHOOK_URL,
-    LOG_LEVEL: 'silent' as const,
-  }
-}
-
-// worker.scheduled を実行し、waitUntil に登録された Promise を回収する。
-async function runScheduled(cron: string, scheduledTime: number): Promise<Promise<unknown>[]> {
+async function runScheduled(scheduledTime: number): Promise<void> {
   const waitUntilCalls: Promise<unknown>[] = []
-  const event = { cron, scheduledTime } as ScheduledController
-  await worker.scheduled(event, buildEnv(), {
+  const event = { cron: '0 */1 * * *', scheduledTime } as unknown as ScheduledController
+  await worker.scheduled(event, TEST_ENV, {
     waitUntil: (promise: Promise<unknown>) => {
       waitUntilCalls.push(promise)
     },
-  } as ExecutionContext)
-  return waitUntilCalls
+  } as unknown as ExecutionContext)
+  await Promise.all(waitUntilCalls)
 }
 
-async function fetchedUrls(): Promise<string[]> {
+async function expectScheduledToReject(scheduledTime: number): Promise<void> {
+  const waitUntilCalls: Promise<unknown>[] = []
+  const event = { cron: '0 */1 * * *', scheduledTime } as unknown as ScheduledController
+  await worker.scheduled(event, TEST_ENV, {
+    waitUntil: (promise: Promise<unknown>) => {
+      waitUntilCalls.push(promise)
+    },
+  } as unknown as ExecutionContext)
+  await expect(Promise.all(waitUntilCalls)).rejects.toThrow()
+}
+
+async function savedUrls(): Promise<string[]> {
   const rows = await db.select({ url: articles.url }).from(articles)
   return rows.map((row) => row.url)
 }
@@ -163,11 +99,12 @@ async function findByUrl(url: string) {
 }
 
 function discordCallCount(): number {
-  return fetchMock.mock.calls.filter((call) => String(call[0]).startsWith(DISCORD_WEBHOOK_URL))
-    .length
+  return fetchMock.mock.calls.filter((call) =>
+    resolveUrl(call[0]).startsWith(TEST_ENV.DISCORD_WEBHOOK_URL),
+  ).length
 }
 
-describe('cron worker（e2e: 実D1貫通）', () => {
+describe('cron worker scheduled', () => {
   beforeEach(async () => {
     await db.delete(articles)
     fetchMock.mockReset()
@@ -176,61 +113,53 @@ describe('cron worker（e2e: 実D1貫通）', () => {
 
   afterAll(async () => {
     await db.delete(articles)
+    vi.unstubAllGlobals()
   })
 
-  it('全メディアのRSSを取得し、記事をD1へ保存する', async () => {
-    const waitUntilCalls = await runScheduled('0 */1 * * *', 1000)
+  describe('正常系', () => {
+    it('全メディアのRSSを取得し記事をD1へ保存する', async () => {
+      await runScheduled(1000)
 
-    expect(waitUntilCalls).toHaveLength(1)
-    await Promise.all(waitUntilCalls)
-
-    const urls = await fetchedUrls()
-    expect(urls).toHaveLength(QIITA_ITEMS.length + ZENN_ITEMS.length + HATENA_ITEMS.length)
-    expect(urls).toEqual(
-      expect.arrayContaining([
-        'https://qiita.com/u/items/q1',
-        'https://qiita.com/u/items/q2',
-        'https://zenn.dev/u/articles/z1',
-        'https://example.com/hatena/h1',
-      ]),
-    )
-
-    expect((await findByUrl('https://qiita.com/u/items/q1')).media).toBe('qiita')
-    expect((await findByUrl('https://zenn.dev/u/articles/z1')).author).toBe('zenn_creator1')
-    expect((await findByUrl('https://example.com/hatena/h1')).description).toBe('はてな本文1')
-
-    // 全件成功時は Discord 通知されない。
-    expect(discordCallCount()).toBe(0)
+      const urls = await savedUrls()
+      expect(urls).toHaveLength(TOTAL_ITEMS)
+      expect(urls).toEqual(
+        expect.arrayContaining([
+          'https://qiita.com/u/items/q1',
+          'https://qiita.com/u/items/q2',
+          'https://zenn.dev/u/articles/z1',
+          'https://example.com/hatena/h1',
+        ]),
+      )
+      expect((await findByUrl('https://qiita.com/u/items/q1')).media).toBe('qiita')
+      expect((await findByUrl('https://zenn.dev/u/articles/z1')).author).toBe('zenn_creator1')
+      expect((await findByUrl('https://example.com/hatena/h1')).description).toBe('はてな本文1')
+      expect(discordCallCount()).toBe(0)
+    })
   })
 
-  it('一部メディアの取得が失敗しても残りは保存し、Discord通知のうえCloudflareへ失敗を伝播する', async () => {
-    setupFetchRouting({ hatena: () => ({ ok: false, status: 500 }) })
+  describe('準正常系', () => {
+    it('再実行しても既存URLはスキップされ記事は重複保存されない', async () => {
+      await runScheduled(2000)
+      const firstCount = (await savedUrls()).length
 
-    const waitUntilCalls = await runScheduled('0 */1 * * *', 2000)
+      await runScheduled(3000)
+      const secondCount = (await savedUrls()).length
 
-    expect(waitUntilCalls).toHaveLength(1)
-    await expect(Promise.all(waitUntilCalls)).rejects.toThrow()
-
-    // qiita / zenn は保存される。
-    const urls = await fetchedUrls()
-    expect(urls).toHaveLength(QIITA_ITEMS.length + ZENN_ITEMS.length)
-    expect(urls).not.toContain('https://example.com/hatena/h1')
-
-    // 失敗メディア通知 + ジョブ失敗通知で Discord が呼ばれる。
-    expect(discordCallCount()).toBeGreaterThanOrEqual(1)
+      expect(firstCount).toBe(TOTAL_ITEMS)
+      expect(secondCount).toBe(TOTAL_ITEMS)
+    })
   })
 
-  it('再実行しても既存URLはスキップされ、記事は重複保存されない（冪等性）', async () => {
-    await Promise.all(await runScheduled('0 */1 * * *', 3000))
-    const firstCount = (await fetchedUrls()).length
+  describe('異常系', () => {
+    it('一部メディアの取得が失敗しても残りを保存し、Discord通知のうえCloudflareへ失敗を伝播する', async () => {
+      setupFetchRouting({ hatena: () => ({ ok: false, status: 500 }) })
 
-    await Promise.all(await runScheduled('0 */1 * * *', 4000))
-    const secondCount = (await fetchedUrls()).length
+      await expectScheduledToReject(4000)
 
-    expect(secondCount).toBe(firstCount)
-    expect(secondCount).toBe(QIITA_ITEMS.length + ZENN_ITEMS.length + HATENA_ITEMS.length)
+      const urls = await savedUrls()
+      expect(urls).toHaveLength(QIITA_ITEMS.length + ZENN_ITEMS.length)
+      expect(urls).not.toContain('https://example.com/hatena/h1')
+      expect(discordCallCount()).toBeGreaterThanOrEqual(1)
+    })
   })
 })
-
-type ScheduledController = import('@cloudflare/workers-types').ScheduledController
-type ExecutionContext = import('@cloudflare/workers-types').ExecutionContext

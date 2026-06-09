@@ -126,7 +126,7 @@ describe('cron worker', () => {
     expect(runScheduledFetchMock).toHaveBeenNthCalledWith(3, 'hatena', env)
   })
 
-  it('片方のmediaで失敗(err)しても残りのmediaは実行する', async () => {
+  it('片方のmediaで失敗(err)しても残りのmediaを実行し、最上位でthrowする', async () => {
     runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) => {
       if (media === 'qiita') {
         return err(new Error('qiita failed'))
@@ -143,18 +143,21 @@ describe('cron worker', () => {
       LOG_LEVEL: 'silent' as const,
     }
 
-    await worker.scheduled(event, env, {
-      waitUntil: (promise: Promise<unknown>) => {
-        waitUntilCalls.push(promise)
-      },
-    } as ExecutionContext)
+    // 下位はResultで返し、失敗時はscheduled最上位がthrowしてcron実行を失敗扱いにする
+    await expect(
+      worker.scheduled(event, env, {
+        waitUntil: (promise: Promise<unknown>) => {
+          waitUntilCalls.push(promise)
+        },
+      } as ExecutionContext),
+    ).rejects.toThrow()
 
     expect(waitUntilCalls).toHaveLength(1)
-    await Promise.all(waitUntilCalls)
     expect(runScheduledFetchMock).toHaveBeenCalledTimes(ARTICLE_MEDIA.length)
     expect(runScheduledFetchMock).toHaveBeenNthCalledWith(1, 'qiita', env)
     expect(runScheduledFetchMock).toHaveBeenNthCalledWith(2, 'zenn', env)
     expect(runScheduledFetchMock).toHaveBeenNthCalledWith(3, 'hatena', env)
+    // 失敗mediaも含め全mediaを試行し、Discord通知・errログを出した上でthrowする
     expect(loggerErrorMock).toHaveBeenCalledWith(
       expect.objectContaining({
         msg: 'cron media fetch failed',

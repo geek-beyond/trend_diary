@@ -41,13 +41,16 @@ function pickNonEmpty(...candidates: Array<string | undefined>): string | undefi
   return undefined
 }
 
-function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
-  return wrapAsyncCall(async () => {
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`Failed to fetch rss feed: ${url}, status=${response.status}`)
-    }
+async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
+  const responseResult = await wrapAsyncCall(() => fetch(url))
+  if (responseResult.isErr()) return err(responseResult.error)
 
+  const response = responseResult.value
+  if (!response.ok) {
+    return err(new Error(`Failed to fetch rss feed: ${url}, status=${response.status}`))
+  }
+
+  return wrapAsyncCall(async () => {
     const parser = new Parser<{ items: T[] }, T>()
     const xml = await response.text()
     const feed = await parser.parseString(xml)

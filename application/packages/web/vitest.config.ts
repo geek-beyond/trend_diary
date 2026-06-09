@@ -105,26 +105,32 @@ export default defineConfig(async () => {
       coverage: {
         provider: 'istanbul',
         reporter: ['text', 'json-summary', 'json'],
-        // project 単位で実行するため、対象 project が読み込んだファイルのみを集計する
+        // project 単位で実行するため、読み込まれたファイルのみ集計する(all:false)
         all: false,
-        // ベタガキしないと、Github Actionsに閾値が反映されない
-        thresholds: {
-          'src/client/**/*.ts': { branches: 80, functions: 60 },
-          'src/server/**': { statements: 60, branches: 80, functions: 60, lines: 60 },
-          'src/client/**/*.tsx': { statements: 75, branches: 75, functions: 75, lines: 75 },
-        },
         exclude: [
-          // client: shadcn と React Router のルート定義はユニットテスト対象外
+          // client/server 横断の共有プラグイン・インフラはカバレッジ対象外
+          'src/env.ts',
+          'src/server.ts',
+          'src/worker.ts',
+          'src/infrastructure/**',
+          'src/middleware/**',
+          'src/test/**',
           'src/client/components/shadcn/**',
           'src/client/routes.ts',
-          // server
           'src/server/handler/factory.ts',
-          // storybook: 分岐や振る舞いを持たない純粋なラッパーは対象外
+          // 分岐や振る舞いを持たない純粋なラッパーは対象外
           'src/client/components/ui/legal',
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',
           'src/client/features/diary/diary-login-required.tsx',
         ],
+        // ベタガキしないと、Github Actionsに閾値が反映されない
+        thresholds: {
+          statements: 75,
+          branches: 75,
+          functions: 75,
+          lines: 75,
+        },
       },
     },
   }

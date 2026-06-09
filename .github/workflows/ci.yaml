@@ -117,7 +117,6 @@ jobs:
         uses: ./.github/actions/test_cov
         with:
           target: client
-          coverage-include: src/client/**/*.ts
 
   server-test:
     name: integration-test (web server)
@@ -143,7 +142,6 @@ jobs:
         uses: ./.github/actions/test_cov
         with:
           target: server
-          coverage-include: src/server/**
 
   component-test:
     name: integration-test (web component)
@@ -176,7 +174,7 @@ jobs:
         run: pnpm --filter @trend-diary/web exec playwright install-deps chromium
 
       - name: コンポーネントのテスト
-        run: pnpm --filter @trend-diary/web test --project storybook --coverage "--coverage.include=src/client/components/**/*.tsx" "--coverage.include=src/client/features/**/*.tsx"
+        run: pnpm --filter @trend-diary/web test --project storybook --coverage
 
   schema:
     needs: changes

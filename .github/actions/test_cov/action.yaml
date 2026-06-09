@@ -5,9 +5,6 @@ inputs:
   target:
     description: 'テスト対象 (client, server)'
     required: true
-  coverage-include:
-    description: 'カバレッジ集計対象のglob (project単位で測定範囲を限定する)'
-    required: true
 
 runs:
   using: 'composite'
@@ -15,7 +12,7 @@ runs:
     - name: テストの実行
       shell: bash
       working-directory: ./application/packages/web
-      run: pnpm run test --project ${{ inputs.target }} --coverage "--coverage.include=${{ inputs.coverage-include }}"
+      run: pnpm run test --project ${{ inputs.target }} --coverage
 
     - name: カバレッジの可視化
       if: github.event_name == 'pull_request'

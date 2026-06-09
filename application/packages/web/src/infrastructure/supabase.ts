@@ -24,11 +24,12 @@ export function createSupabaseAuthClient(c: Context) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
+          // SDKが渡すoptionsでセキュリティ属性が無効化されないよう、自前の属性を後勝ちにする
           const mergedOptions = {
+            ...options,
             httpOnly: true,
             secure: true,
             sameSite: 'lax' as const,
-            ...options,
           }
           c.header('Set-Cookie', serializeCookieHeader(name, value, mergedOptions), {
             append: true,

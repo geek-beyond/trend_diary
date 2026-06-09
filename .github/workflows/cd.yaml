@@ -67,7 +67,7 @@ jobs:
             files=$(git diff --name-only HEAD~1 HEAD)
 
             # web と cron が共通で依存するパッケージとルート設定(変わると両方を再デプロイ)
-            shared='application/packages/(common|datastore|domain|notification)/|application/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|tsconfig(\.base)?\.json)$'
+            shared='application/packages/(common|datastore|domain|notification)/|application/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|tsconfig\.json)$'
 
             if grep -qE "application/packages/web/|$shared" <<<"$files"; then web=true; fi
             if grep -qE "application/packages/cron/|$shared" <<<"$files"; then cron=true; fi

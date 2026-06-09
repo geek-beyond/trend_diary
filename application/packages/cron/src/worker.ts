@@ -76,7 +76,6 @@ export default {
             durationMs: Date.now() - jobStartedAt,
           })
         } catch (error) {
-          // per-media の失敗はループ内で捕捉済み。ここに到達するのはジョブ全体を巻き込む想定外の失敗。
           const message = error instanceof Error ? error.message : String(error)
           logger.error({ msg: 'cron job failed', durationMs: Date.now() - jobStartedAt }, error)
           await discord.sendMessage(

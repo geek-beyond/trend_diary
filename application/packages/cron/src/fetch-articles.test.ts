@@ -399,13 +399,64 @@ describe('fetchHatenaArticles', () => {
   })
 
   describe('異常系', () => {
-    it('RSS取得に失敗した場合は err を返し何も保存しない', async () => {
-      fetchMock.mockResolvedValue({ ok: false, status: 500 })
+    it('fetch にタイムアウト用の AbortSignal を渡す', async () => {
+      stubHatena([
+        {
+          title: 'はてな記事',
+          author: 'hatena_creator',
+          content: '本文',
+          url: 'https://example.com/h1',
+        },
+      ])
 
-      const result = await fetchHatenaArticles(cronEnv, logger)
+      await fetchHatenaArticles(cronEnv, logger)
 
+      const [, options] = fetchMock.mock.calls[0] ?? []
+      expect(options?.signal).toBeInstanceOf(AbortSignal)
+    })
+
+    it('一時的な取得失敗はリトライし、回復後は成功する', async () => {
+      vi.useFakeTimers()
+      fetchMock
+        .mockRejectedValueOnce(new Error('network error'))
+        .mockResolvedValueOnce(rssResponse(buildHatenaRdf([])))
+
+      const promise = fetchHatenaArticles(cronEnv, logger)
+      await vi.runAllTimersAsync()
+      const result = await promise
+      vi.useRealTimers()
+
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(result.isOk()).toBe(true)
+    })
+
+    it('全試行が失敗した場合は最大3回試行し err を返し何も保存しない', async () => {
+      vi.useFakeTimers()
+      fetchMock.mockRejectedValue(new Error('network error'))
+
+      const promise = fetchHatenaArticles(cronEnv, logger)
+      await vi.runAllTimersAsync()
+      const result = await promise
+      vi.useRealTimers()
+
+      expect(fetchMock).toHaveBeenCalledTimes(3)
       expect(result.isErr()).toBe(true)
       if (result.isErr()) expect(result.error).toBeInstanceOf(Error)
+      expect(await countArticles()).toBe(0)
+    })
+
+    it('レスポンスが ok でない場合もリトライ対象とし、最終的に err を返す', async () => {
+      vi.useFakeTimers()
+      fetchMock.mockResolvedValue({ ok: false, status: 500 })
+
+      const promise = fetchHatenaArticles(cronEnv, logger)
+      await vi.runAllTimersAsync()
+      const result = await promise
+      vi.useRealTimers()
+
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) expect(result.error.message).toContain('status=500')
       expect(await countArticles()).toBe(0)
     })
   })

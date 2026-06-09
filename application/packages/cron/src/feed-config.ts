@@ -29,27 +29,26 @@ function pickNonEmpty(...candidates: Array<string | undefined>): string | undefi
   return undefined
 }
 
-interface QiitaRawItem {
+interface RawFeedItem {
   title: string
+  link: string
+}
+
+interface QiitaRawItem extends RawFeedItem {
   author: string
   content: string
-  link: string
 }
 
-interface ZennRawItem {
-  title: string
+interface ZennRawItem extends RawFeedItem {
   creator: string
   content: string
-  link: string
 }
 
-interface HatenaRawItem {
-  title: string
+interface HatenaRawItem extends RawFeedItem {
   creator?: string
   content?: string
   'content:encoded'?: string
   contentSnippet?: string
-  link: string
 }
 
 export const FEED_CONFIGS = {

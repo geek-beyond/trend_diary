@@ -1,18 +1,36 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
-import getRdbClient, { type RdbClient } from '@trend-diary/datastore/rdb'
+import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
+import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
-import { err, type Result } from 'neverthrow'
+import { inArray } from 'drizzle-orm'
+import { err, ok, type Result } from 'neverthrow'
 import Parser from 'rss-parser'
-import { storeArticles } from './store-articles'
-
-type D1Database = import('@cloudflare/workers-types').D1Database
 
 type CronEnv = {
   DB: D1Database
   LOG_LEVEL?: import('@trend-diary/common/logger').LogLevel
 }
 
+type D1Database = import('@cloudflare/workers-types').D1Database
+
+type FeedItem = {
+  title: string
+  author: string
+  description: string
+  url: string
+}
+
+const MAX_LENGTH = {
+  media: 10,
+  title: 100,
+  author: 30,
+  description: 1024,
+}
 const HATENA_FALLBACK_AUTHOR = 'はてなブックマーク'
+
+function truncateByCodePoint(text: string, maxLength: number): string {
+  return [...text].slice(0, maxLength).join('')
+}
 
 function pickNonEmpty(...candidates: Array<string | undefined>): string | undefined {
   for (const candidate of candidates) {
@@ -40,7 +58,82 @@ async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
   })
 }
 
-export async function fetchQiitaArticles(db: RdbClient): Promise<Result<number, Error>> {
+async function storeArticles(
+  media: ArticleMedia,
+  items: FeedItem[],
+  env: CronEnv,
+): Promise<Result<number, Error>> {
+  const db = getRdbClient(env.DB)
+  if (items.length === 0) return ok(0)
+
+  const normalized = items.map((item) => ({
+    media: truncateByCodePoint(media, MAX_LENGTH.media),
+    title: truncateByCodePoint(item.title, MAX_LENGTH.title),
+    author: truncateByCodePoint(item.author, MAX_LENGTH.author),
+    description: truncateByCodePoint(item.description, MAX_LENGTH.description),
+    url: item.url,
+  }))
+
+  const existingResult = await wrapDbCall(() =>
+    db
+      .select({ url: articles.url })
+      .from(articles)
+      .where(
+        inArray(
+          articles.url,
+          normalized.map((item) => item.url),
+        ),
+      ),
+  )
+  if (existingResult.isErr()) {
+    return err(existingResult.error)
+  }
+
+  const existingUrlSet = new Set(existingResult.value.map((item) => item.url))
+  const feedUrlSet = new Set<string>()
+  const uniqueNormalized: typeof normalized = []
+  for (const article of normalized) {
+    if (feedUrlSet.has(article.url)) continue
+    feedUrlSet.add(article.url)
+    uniqueNormalized.push(article)
+  }
+  const toInsert = uniqueNormalized.filter((item) => !existingUrlSet.has(item.url))
+
+  if (toInsert.length === 0) return ok(0)
+
+  let insertedCount = 0
+  for (const article of toInsert) {
+    // INFO: D1互換のため記事は1件ずつ保存する
+    const insertResult = await wrapDbCall(() => db.insert(articles).values(article))
+    if (insertResult.isErr()) {
+      if (isUniqueConstraintError(insertResult.error)) continue
+      return err(insertResult.error)
+    }
+    insertedCount += 1
+  }
+
+  return ok(insertedCount)
+}
+
+// Drizzle はドライバエラーを DrizzleQueryError でラップし元エラーを cause に格納するため、
+// cause チェーンを辿って 'UNIQUE constraint failed'(D1/SQLite共通)を探す。
+function isUniqueConstraintError(error: unknown): boolean {
+  let current: unknown = error
+  for (let depth = 0; depth < 5 && current != null; depth += 1) {
+    if (typeof current !== 'object') break
+    const candidate = current as { message?: unknown; cause?: unknown }
+    if (
+      typeof candidate.message === 'string' &&
+      candidate.message.includes('UNIQUE constraint failed')
+    ) {
+      return true
+    }
+    current = candidate.cause
+  }
+  return false
+}
+
+export async function fetchQiitaArticles(env: CronEnv): Promise<Result<number, Error>> {
   const itemsResult = await fetchRssFeed<{
     title: string
     author: string
@@ -57,11 +150,11 @@ export async function fetchQiitaArticles(db: RdbClient): Promise<Result<number, 
       description: item.content,
       url: item.link,
     })),
-    db,
+    env,
   )
 }
 
-export async function fetchZennArticles(db: RdbClient): Promise<Result<number, Error>> {
+export async function fetchZennArticles(env: CronEnv): Promise<Result<number, Error>> {
   const itemsResult = await fetchRssFeed<{
     title: string
     creator: string
@@ -78,11 +171,11 @@ export async function fetchZennArticles(db: RdbClient): Promise<Result<number, E
       description: item.content,
       url: item.link,
     })),
-    db,
+    env,
   )
 }
 
-export async function fetchHatenaArticles(db: RdbClient): Promise<Result<number, Error>> {
+export async function fetchHatenaArticles(env: CronEnv): Promise<Result<number, Error>> {
   const itemsResult = await fetchRssFeed<{
     title: string
     creator?: string
@@ -101,7 +194,7 @@ export async function fetchHatenaArticles(db: RdbClient): Promise<Result<number,
       description: pickNonEmpty(item.content, item['content:encoded'], item.contentSnippet) || '',
       url: item.link,
     })),
-    db,
+    env,
   )
 }
 
@@ -109,12 +202,11 @@ export function runScheduledFetch(
   media: ArticleMedia,
   env: CronEnv,
 ): Promise<Result<number, Error>> {
-  const db = getRdbClient(env.DB)
   if (media === 'qiita') {
-    return fetchQiitaArticles(db)
+    return fetchQiitaArticles(env)
   }
   if (media === 'zenn') {
-    return fetchZennArticles(db)
+    return fetchZennArticles(env)
   }
-  return fetchHatenaArticles(db)
+  return fetchHatenaArticles(env)
 }

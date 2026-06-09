@@ -1,0 +1,8 @@
+# Cloudflare Workers
+.wrangler
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

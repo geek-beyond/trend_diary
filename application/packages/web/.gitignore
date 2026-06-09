@@ -1,0 +1,21 @@
+# build output
+build/
+.react-router/
+
+# Cloudflare Workers
+.wrangler
+
+# Storybook
+storybook-static
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# local D1 (SQLite)
+*.db
+*.db-shm
+*.db-wal
+*.db-journal

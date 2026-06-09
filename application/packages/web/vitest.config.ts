@@ -7,15 +7,13 @@ import { playwright } from '@vitest/browser-playwright'
 import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
-const dirName = dirname(fileURLToPath(import.meta.url))
-
-// migrations は datastore パッケージで一元管理しているため相対参照する。
-const MIGRATIONS_DIR = resolve(dirName, '..', 'datastore', 'migrations')
-
 // 実行は projects 単位(`vitest --project <name>`)。
 // server は Workers Pool のため coverage provider は istanbul に統一する(provider はルートに1つのみ)。
 export default defineConfig(async () => {
-  const migrations = await readD1Migrations(MIGRATIONS_DIR)
+  // migrations は datastore パッケージで一元管理しているため相対参照する
+  const migrations = await readD1Migrations(
+    resolve(dirname(fileURLToPath(import.meta.url)), '..', 'datastore', 'migrations'),
+  )
   const poolOptions = {
     miniflare: {
       compatibilityDate: '2025-04-01',

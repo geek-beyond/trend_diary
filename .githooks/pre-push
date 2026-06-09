@@ -7,7 +7,8 @@
 # - simplify が変更を加えた場合は push を中断し、確認・コミットを促す（簡素化されていない
 #   コードをそのまま push させないため）。
 #
-# 有効化:  mise run setup-hooks   （または  git config core.hooksPath .githooks ）
+# 有効化: Claude Code のセッション開始時に .claude/hooks/enable-githooks.sh が
+#         core.hooksPath=.githooks を自動設定する（人間が手で叩く必要はない）。
 #
 set -uo pipefail
 

@@ -1,0 +1,5 @@
+# Cloudflare Workers
+.wrangler
+
+# local D1 (SQLite)
+*.db

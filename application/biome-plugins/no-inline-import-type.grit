@@ -1,0 +1,8 @@
+language js
+
+// インライン `import('...').Type` 型記法を禁止する。
+// 代わりに top-level の `import type { Type } from '...'` を使うこと。
+$node where {
+  $node <: r"import\([^)]*\)\.[A-Za-z0-9_$]+",
+  register_diagnostic(span=$node, message="インライン import 型記法 `import('...').Type` は禁止です。top-level の `import type { Type } from '...'` を使ってください。", severity="error")
+}

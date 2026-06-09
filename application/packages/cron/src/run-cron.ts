@@ -4,7 +4,7 @@ import type { DiscordWebhookClient } from '@trend-diary/notification'
 import type { CronEnv } from './env'
 import { runScheduledFetch } from './fetch-articles'
 
-export type RunCronParams = {
+export interface RunCronParams {
   env: CronEnv
   logger: Logger
   discord: DiscordWebhookClient

@@ -8,14 +8,14 @@ export const FEED_URL = {
 
 const HATENA_FALLBACK_AUTHOR = 'はてなブックマーク'
 
-export type NormalizedItem = {
+export interface NormalizedItem {
   title: string
   author: string
   description: string
   url: string
 }
 
-export type FeedConfig<RawItem> = {
+export interface FeedConfig<RawItem> {
   url: string
   mapItem: (item: RawItem) => NormalizedItem
 }
@@ -64,5 +64,4 @@ export const FEED_CONFIGS = {
       url: item.link,
     }),
   },
-  // biome-ignore lint/suspicious/noExplicitAny: satisfies での網羅検証用。各configのmapItem引数型は保持される
-} as const satisfies Record<ArticleMedia, FeedConfig<any>>
+} as const satisfies Record<ArticleMedia, FeedConfig<never>>

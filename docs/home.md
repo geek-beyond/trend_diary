@@ -74,12 +74,10 @@
 ├── test # テスト関連
 │   ├── __mocks__ # モック
 │   ├── helper # テストヘルパー
-│   ├── vitest # Vitest設定
-│   │   ├── client # クライアント側テスト設定
-│   │   ├── common # 共通テスト設定
-│   │   ├── domain # ドメイン層テスト設定
-│   │   ├── server # サーバー側テスト設定
-│   │   └── storybook # Storybook用テスト設定
+│   ├── setup # Vitestセットアップ
+│   │   ├── client.ts # クライアント側テスト設定
+│   │   ├── d1.ts # D1テスト設定
+│   │   └── platform-proxy.ts # platform proxy設定
 │   └── env.ts # テスト環境設定
 ├── plugin # カスタムプラグイン
 │   └── biome # Biomeプラグイン
@@ -92,4 +90,4 @@
 - E2Eテスト: `packages/e2e`に配置（`@trend-diary/e2e`パッケージ）
 - テストヘルパー: `src/test/helper`に配置
 - テストモック: `src/test/__mocks__`に配置（ドメイン層テストで使用）
-- Vitest設定: `src/test/vitest/config`に配置
+- Vitestセットアップ: `src/test/setup`に配置

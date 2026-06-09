@@ -1,4 +1,7 @@
+import type { RdbClient } from '@trend-diary/datastore/rdb'
+import { ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fetchHatenaArticles } from './fetch-articles'
 
 const fetchMock = vi.hoisted(() => vi.fn())
 const parseStringMock = vi.hoisted(() => vi.fn())
@@ -17,10 +20,6 @@ vi.mock('rss-parser', () => ({
 vi.mock('./store-articles', () => ({
   storeArticles: storeArticlesMock,
 }))
-
-import type { RdbClient } from '@trend-diary/datastore/rdb'
-import { ok } from 'neverthrow'
-import { fetchHatenaArticles } from './fetch-articles'
 
 const db = {} as RdbClient
 

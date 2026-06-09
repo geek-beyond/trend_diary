@@ -180,14 +180,21 @@ function storybookConfig(mode: string): UserConfig {
   }
 }
 
-export default defineConfig(async ({ mode }) => {
+// NOTE: この関数は async にしないこと。
+// Storybook ビルダーは .storybook/main.ts の viteConfigPath からこの設定を読み込むが、
+// その際 config 関数の戻り値を await しない。async にすると storybook/client 分岐でも
+// Promise が返り、ビルダーのプラグイン(project-annotations の virtual module 提供など)が
+// 解決されず `virtual:/@storybook/builder-vite/project-annotations.js` の解決に失敗する。
+// そのため同期的に設定オブジェクトを返し、Promise を返すのは server 分岐のみとする
+// (vitest は Promise を await するため server は問題ない)。
+export default defineConfig(({ mode }) => {
   switch (mode) {
     // 引数なしの bare `vitest`(mode='test')はブラウザを起動しない軽量な client を既定にする
     case 'test':
     case 'client':
       return clientConfig()
     case 'server':
-      return await serverConfig()
+      return serverConfig()
     default:
       // --mode storybook、および Storybook ビルダー(viteConfigPath 経由, mode=development/production)で利用
       return storybookConfig(mode)

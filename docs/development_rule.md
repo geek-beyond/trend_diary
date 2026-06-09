@@ -29,5 +29,6 @@
 
 - `.claude/rules/import.md` - インポート規約（`src/`配下のTS/TSX）
 - `.claude/rules/api-validation.md` - API層バリデーション規約（`web/src/server`配下）
-- `.claude/rules/architecture.md` - アーキテクチャ規約（utils禁止・Pinoロガー、`src/`配下のTS/TSX）
+- `.claude/rules/architecture.md` - アーキテクチャ規約（utils禁止、`src/`配下のTS/TSX）
+- `.claude/rules/logging.md` - ロギング規約（Pinoロガー、`web/server`・`cron`配下）
 

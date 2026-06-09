@@ -15,7 +15,4 @@ app.onError(errorHandler)
 app.use('/api', timeout(5000))
 app.route('/api', apiApp)
 
-// SSR/ホットリロードのリクエスト処理は hono-react-router-adapter が担う:
-// - dev: serverAdapter(@hono/vite-dev-server) が virtual:react-router/server-build を catch-all で処理
-// - 本番: worker.ts の handle(build, server) が production モードで処理
 export default app

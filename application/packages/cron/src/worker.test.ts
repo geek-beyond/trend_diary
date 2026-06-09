@@ -1,217 +1,149 @@
-import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
-import { err, ok } from 'neverthrow'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ExecutionContext, ScheduledController } from '@cloudflare/workers-types'
+import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
+import { eq } from 'drizzle-orm'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import TEST_ENV from './test-helper/env'
+import {
+  buildHatenaRdf,
+  buildQiitaAtom,
+  buildZennRss,
+  FEED_URL,
+  type FeedItem,
+  rssResponse,
+} from './test-helper/feed'
+import { testRdb as db } from './test-helper/rdb'
 import worker from './worker'
 
-const runScheduledFetchMock = vi.hoisted(() => vi.fn())
-const loggerInfoMock = vi.hoisted(() => vi.fn())
-const loggerErrorMock = vi.hoisted(() => vi.fn())
-const sendMessageMock = vi.hoisted(() => vi.fn())
+const fetchMock = vi.fn()
+vi.stubGlobal('fetch', fetchMock)
 
-vi.mock('./fetch-articles', () => ({
-  runScheduledFetch: runScheduledFetchMock,
-}))
-
-vi.mock('@trend-diary/notification', () => ({
-  DiscordWebhookClient: class {
-    sendMessage = sendMessageMock
+const QIITA_ITEMS: FeedItem[] = [
+  {
+    title: 'Qiita記事1',
+    author: 'qiita_author1',
+    content: 'Qiita本文1',
+    url: 'https://qiita.com/u/items/q1',
   },
-}))
-
-vi.mock('@trend-diary/common/logger', () => ({
-  default: class MockLogger {
-    info(message: unknown) {
-      loggerInfoMock(message)
-    }
-
-    error(message: unknown, error: unknown) {
-      loggerErrorMock(message, error)
-    }
+  {
+    title: 'Qiita記事2',
+    author: 'qiita_author2',
+    content: 'Qiita本文2',
+    url: 'https://qiita.com/u/items/q2',
   },
-}))
+]
+const ZENN_ITEMS: FeedItem[] = [
+  {
+    title: 'Zenn記事1',
+    author: 'zenn_creator1',
+    content: 'Zenn本文1',
+    url: 'https://zenn.dev/u/articles/z1',
+  },
+]
+const HATENA_ITEMS: FeedItem[] = [
+  {
+    title: 'はてな記事1',
+    author: 'hatena_creator1',
+    content: 'はてな本文1',
+    url: 'https://example.com/hatena/h1',
+  },
+]
+const TOTAL_ITEMS = QIITA_ITEMS.length + ZENN_ITEMS.length + HATENA_ITEMS.length
 
-describe('cron worker', () => {
-  beforeEach(() => {
-    runScheduledFetchMock.mockReset()
-    loggerInfoMock.mockReset()
-    loggerErrorMock.mockReset()
-    sendMessageMock.mockReset()
+function setupFetchRouting(overrides?: { hatena?: () => unknown }): void {
+  fetchMock.mockImplementation(async (input: unknown) => {
+    const target = String(input)
+    if (target.startsWith(TEST_ENV.DISCORD_WEBHOOK_URL)) return { ok: true, status: 204 }
+    if (target === FEED_URL.qiita) return rssResponse(buildQiitaAtom(QIITA_ITEMS))
+    if (target === FEED_URL.zenn) return rssResponse(buildZennRss(ZENN_ITEMS))
+    if (target === FEED_URL.hatena)
+      return (overrides?.hatena ?? (() => rssResponse(buildHatenaRdf(HATENA_ITEMS))))()
+    throw new Error(`unexpected fetch: ${target}`)
+  })
+}
+
+async function runScheduled(scheduledTime: number): Promise<Promise<unknown>[]> {
+  const waitUntilCalls: Promise<unknown>[] = []
+  const event = { cron: '0 */1 * * *', scheduledTime } as unknown as ScheduledController
+  await worker.scheduled(event, TEST_ENV, {
+    waitUntil: (promise: Promise<unknown>) => {
+      waitUntilCalls.push(promise)
+    },
+  } as unknown as ExecutionContext)
+  return waitUntilCalls
+}
+
+async function savedUrls(): Promise<string[]> {
+  const rows = await db.select({ url: articles.url }).from(articles)
+  return rows.map((row) => row.url)
+}
+
+async function findByUrl(url: string) {
+  const [row] = await db.select().from(articles).where(eq(articles.url, url)).limit(1)
+  return row
+}
+
+function discordCallCount(): number {
+  return fetchMock.mock.calls.filter((call) =>
+    String(call[0]).startsWith(TEST_ENV.DISCORD_WEBHOOK_URL),
+  ).length
+}
+
+describe('cron worker scheduled', () => {
+  beforeEach(async () => {
+    await db.delete(articles)
+    fetchMock.mockReset()
+    setupFetchRouting()
   })
 
-  it('既知のcron式でfetchジョブを実行する', async () => {
-    runScheduledFetchMock.mockResolvedValue(ok(3))
-
-    const waitUntilCalls: Promise<unknown>[] = []
-    const event = { cron: '0 */8 * * *', scheduledTime: 1000 } as ScheduledController
-    const env = {
-      DB: {} as D1Database,
-      DISCORD_WEBHOOK_URL: '',
-      LOG_LEVEL: 'silent' as const,
-    }
-
-    await worker.scheduled(event, env, {
-      waitUntil: (promise: Promise<unknown>) => {
-        waitUntilCalls.push(promise)
-      },
-    } as ExecutionContext)
-
-    expect(waitUntilCalls).toHaveLength(1)
-    await Promise.all(waitUntilCalls)
-    expect(runScheduledFetchMock).toHaveBeenCalledTimes(ARTICLE_MEDIA.length)
-    expect(runScheduledFetchMock).toHaveBeenNthCalledWith(1, 'qiita', env)
-    expect(runScheduledFetchMock).toHaveBeenNthCalledWith(2, 'zenn', env)
-    expect(runScheduledFetchMock).toHaveBeenNthCalledWith(3, 'hatena', env)
-
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        msg: 'cron job started',
-        scheduledTime: 1000,
-        mediaCount: ARTICLE_MEDIA.length,
-      }),
-    )
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.objectContaining({ msg: 'cron media fetch started', media: 'qiita' }),
-    )
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.objectContaining({ msg: 'cron media fetch started', media: 'zenn' }),
-    )
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.objectContaining({ msg: 'cron media fetch started', media: 'hatena' }),
-    )
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        msg: 'cron media fetch completed',
-        media: 'qiita',
-        insertedCount: 3,
-      }),
-    )
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        msg: 'cron media fetch completed',
-        media: 'zenn',
-        insertedCount: 3,
-      }),
-    )
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        msg: 'cron media fetch completed',
-        media: 'hatena',
-        insertedCount: 3,
-      }),
-    )
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        msg: 'cron job completed',
-        successCount: ARTICLE_MEDIA.length,
-        failedCount: 0,
-        insertedTotal: 9,
-      }),
-    )
+  afterAll(async () => {
+    await db.delete(articles)
+    vi.unstubAllGlobals()
   })
 
-  it('cron式に関係なくfetchジョブを実行する', async () => {
-    runScheduledFetchMock.mockResolvedValue(ok(0))
+  describe('正常系', () => {
+    it('全メディアのRSSを取得し記事をD1へ保存する', async () => {
+      await Promise.all(await runScheduled(1000))
 
-    const waitUntilCalls: Promise<unknown>[] = []
-    const event = { cron: '5 * * * *', scheduledTime: 2000 } as ScheduledController
-    const env = {
-      DB: {} as D1Database,
-      DISCORD_WEBHOOK_URL: '',
-      LOG_LEVEL: 'silent' as const,
-    }
-
-    await worker.scheduled(event, env, {
-      waitUntil: (promise: Promise<unknown>) => {
-        waitUntilCalls.push(promise)
-      },
-    } as ExecutionContext)
-
-    expect(waitUntilCalls).toHaveLength(1)
-    await Promise.all(waitUntilCalls)
-    expect(runScheduledFetchMock).toHaveBeenCalledTimes(ARTICLE_MEDIA.length)
-    expect(runScheduledFetchMock).toHaveBeenNthCalledWith(1, 'qiita', env)
-    expect(runScheduledFetchMock).toHaveBeenNthCalledWith(2, 'zenn', env)
-    expect(runScheduledFetchMock).toHaveBeenNthCalledWith(3, 'hatena', env)
-  })
-
-  it('片方のmediaで失敗(err)しても残りのmediaを実行し、最上位でthrowする', async () => {
-    runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) => {
-      if (media === 'qiita') {
-        return err(new Error('qiita failed'))
-      }
-
-      return ok(2)
+      const urls = await savedUrls()
+      expect(urls).toHaveLength(TOTAL_ITEMS)
+      expect(urls).toEqual(
+        expect.arrayContaining([
+          'https://qiita.com/u/items/q1',
+          'https://qiita.com/u/items/q2',
+          'https://zenn.dev/u/articles/z1',
+          'https://example.com/hatena/h1',
+        ]),
+      )
+      expect((await findByUrl('https://qiita.com/u/items/q1')).media).toBe('qiita')
+      expect((await findByUrl('https://zenn.dev/u/articles/z1')).author).toBe('zenn_creator1')
+      expect((await findByUrl('https://example.com/hatena/h1')).description).toBe('はてな本文1')
+      expect(discordCallCount()).toBe(0)
     })
-
-    const waitUntilCalls: Promise<unknown>[] = []
-    const event = { cron: '0 */8 * * *', scheduledTime: 3000 } as ScheduledController
-    const env = {
-      DB: {} as D1Database,
-      DISCORD_WEBHOOK_URL: '',
-      LOG_LEVEL: 'silent' as const,
-    }
-
-    await worker.scheduled(event, env, {
-      waitUntil: (promise: Promise<unknown>) => {
-        waitUntilCalls.push(promise)
-      },
-    } as ExecutionContext)
-
-    expect(waitUntilCalls).toHaveLength(1)
-    await expect(Promise.all(waitUntilCalls)).rejects.toThrow()
-    expect(runScheduledFetchMock).toHaveBeenCalledTimes(ARTICLE_MEDIA.length)
-    expect(runScheduledFetchMock).toHaveBeenNthCalledWith(1, 'qiita', env)
-    expect(runScheduledFetchMock).toHaveBeenNthCalledWith(2, 'zenn', env)
-    expect(runScheduledFetchMock).toHaveBeenNthCalledWith(3, 'hatena', env)
-    expect(loggerErrorMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        msg: 'cron media fetch failed',
-        media: 'qiita',
-      }),
-      expect.any(Error),
-    )
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        msg: 'cron job completed',
-        successCount: 2,
-        failedCount: 1,
-        insertedTotal: 4,
-      }),
-    )
-    expect(sendMessageMock).toHaveBeenCalledWith(expect.stringContaining('media: qiita'))
   })
 
-  it('ジョブ全体が予期せず失敗したらDiscordに通知し、Cloudflareにも失敗として伝播させる', async () => {
-    const failure = new Error('logger boom')
-    loggerInfoMock.mockImplementation((message: { msg?: string }) => {
-      if (message?.msg === 'cron job started') {
-        throw failure
-      }
+  describe('準正常系', () => {
+    it('再実行しても既存URLはスキップされ記事は重複保存されない', async () => {
+      await Promise.all(await runScheduled(2000))
+      const firstCount = (await savedUrls()).length
+
+      await Promise.all(await runScheduled(3000))
+      const secondCount = (await savedUrls()).length
+
+      expect(firstCount).toBe(TOTAL_ITEMS)
+      expect(secondCount).toBe(TOTAL_ITEMS)
     })
+  })
 
-    const waitUntilCalls: Promise<unknown>[] = []
-    const event = { cron: '0 */1 * * *', scheduledTime: 4000 } as ScheduledController
-    const env = {
-      DB: {} as D1Database,
-      DISCORD_WEBHOOK_URL: 'https://example.com/webhook',
-      LOG_LEVEL: 'silent' as const,
-    }
+  describe('異常系', () => {
+    it('一部メディアの取得が失敗しても残りを保存し、Discord通知のうえCloudflareへ失敗を伝播する', async () => {
+      setupFetchRouting({ hatena: () => ({ ok: false, status: 500 }) })
 
-    await worker.scheduled(event, env, {
-      waitUntil: (promise: Promise<unknown>) => {
-        waitUntilCalls.push(promise)
-      },
-    } as ExecutionContext)
+      await expect(Promise.all(await runScheduled(4000))).rejects.toThrow()
 
-    expect(waitUntilCalls).toHaveLength(1)
-    await expect(Promise.all(waitUntilCalls)).rejects.toThrow('logger boom')
-    expect(runScheduledFetchMock).not.toHaveBeenCalled()
-    expect(sendMessageMock).toHaveBeenCalledWith(expect.stringContaining('job failed'))
-    expect(loggerErrorMock).toHaveBeenCalledWith(
-      expect.objectContaining({ msg: 'cron job failed' }),
-      failure,
-    )
+      const urls = await savedUrls()
+      expect(urls).toHaveLength(QIITA_ITEMS.length + ZENN_ITEMS.length)
+      expect(urls).not.toContain('https://example.com/hatena/h1')
+      expect(discordCallCount()).toBeGreaterThanOrEqual(1)
+    })
   })
 })
-
-type D1Database = import('@cloudflare/workers-types').D1Database

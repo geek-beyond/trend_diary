@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router'
 import { SidebarProvider } from '../components/shadcn/sidebar'
-import AppHeader from '../components/ui/app-header'
-import AppSidebar from '../components/ui/sidebar'
+import AppHeader from '../components/ui/layout/app-header'
+import AppSidebar from '../components/ui/layout/sidebar'
 import getApiClientForClient from '../infrastructure/api'
 
 export interface AppLayoutOutletContext {

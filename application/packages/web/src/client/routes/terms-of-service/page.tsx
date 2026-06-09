@@ -1,6 +1,6 @@
-import Footer from '../../components/ui/footer'
-import LandingHeader from '../../components/ui/landing-header'
-import { Heading1, Heading2, Paragraph } from '../../components/ui/legal'
+import Footer from '../../components/ui/layout/footer'
+import LandingHeader from '../../components/ui/layout/landing-header'
+import { Heading1, Heading2, Paragraph } from '../../components/ui/typography/legal'
 
 export default function TermsOfServicePage() {
   return (

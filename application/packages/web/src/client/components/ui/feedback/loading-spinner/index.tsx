@@ -1,4 +1,4 @@
-import SpinnerCircle3 from '../../customized/spinner/spinner-09'
+import SpinnerCircle3 from '@/client/components/customized/spinner/spinner-09'
 
 export default function LoadingSpinner() {
   return (

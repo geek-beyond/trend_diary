@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
-import Footer from '../../components/ui/footer'
-import LandingHeader from '../../components/ui/landing-header'
-import { AnchorLink } from '../../components/ui/link'
+import Footer from '../../components/ui/layout/footer'
+import LandingHeader from '../../components/ui/layout/landing-header'
+import { AnchorLink } from '../../components/ui/navigation/link'
 import { AuthenticateForm } from '../../features/authenticate/authenticate-form'
 import { AuthenticateErrors } from '../../features/authenticate/validation'
 

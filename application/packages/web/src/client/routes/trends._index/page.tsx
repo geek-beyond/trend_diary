@@ -12,7 +12,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/client/components/shadcn/pagination'
-import LoadingSpinner from '../../components/ui/loading-spinner'
+import LoadingSpinner from '../../components/ui/feedback/loading-spinner'
 import ArticleCard from './components/article-card'
 import DatePresetFilter from './components/date-preset-filter'
 import MediaFilter, { type MediaType } from './components/media-filter'

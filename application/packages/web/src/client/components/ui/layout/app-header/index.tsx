@@ -1,6 +1,6 @@
 import { Menu, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router'
-import { Button } from '../../shadcn/button'
+import { Button } from '@/client/components/shadcn/button'
 import {
   Sheet,
   SheetContent,
@@ -8,12 +8,12 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '../../shadcn/sheet'
-import { AnchorLink } from '../link'
-import NavMenu from '../nav-menu'
-import { getVisibleMenuItems } from '../sidebar'
-import useSidebar from '../sidebar/use-sidebar'
-import UserSection from '../user-section'
+} from '@/client/components/shadcn/sheet'
+import { getVisibleMenuItems } from '@/client/components/ui/layout/sidebar'
+import useSidebar from '@/client/components/ui/layout/sidebar/use-sidebar'
+import { AnchorLink } from '@/client/components/ui/navigation/link'
+import NavMenu from '@/client/components/ui/navigation/nav-menu'
+import UserSection from '@/client/components/ui/navigation/user-section'
 
 interface Props {
   isLoggedIn: boolean

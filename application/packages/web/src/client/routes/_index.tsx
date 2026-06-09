@@ -1,9 +1,9 @@
 import { BookOpen, Calendar, Monitor, TrendingUp, Users } from 'lucide-react'
 import type { MetaFunction } from 'react-router'
-import { ClipText } from '../components/ui/clip-text'
-import Footer from '../components/ui/footer'
-import LandingHeader from '../components/ui/landing-header'
-import { AnchorLink } from '../components/ui/link'
+import Footer from '../components/ui/layout/footer'
+import LandingHeader from '../components/ui/layout/landing-header'
+import { AnchorLink } from '../components/ui/navigation/link'
+import { ClipText } from '../components/ui/typography/clip-text'
 
 export const meta: MetaFunction = () => [
   { property: 'og:title', content: 'TrendDiary | 技術トレンドを効率的に管理' },

@@ -1,5 +1,5 @@
 import { TrendingUp } from 'lucide-react'
-import { AnchorLink } from '../link'
+import { AnchorLink } from '@/client/components/ui/navigation/link'
 
 export default function LandingHeader() {
   return (

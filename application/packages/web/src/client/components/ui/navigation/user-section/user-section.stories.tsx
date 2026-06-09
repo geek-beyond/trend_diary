@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent } from 'storybook/test'
-import { SidebarProvider } from '../../shadcn/sidebar'
+import { SidebarProvider } from '@/client/components/shadcn/sidebar'
 import UserSection from './index'
 
 const meta: Meta<typeof UserSection> = {

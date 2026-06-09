@@ -1,6 +1,5 @@
 import { BarChart3, BookOpenCheck, Inbox, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router'
-import { InternalPath } from '../../../routes'
 import {
   Sidebar,
   SidebarContent,
@@ -9,10 +8,11 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-} from '../../shadcn/sidebar'
-import { AnchorLink } from '../link'
-import NavMenu from '../nav-menu'
-import UserSection from '../user-section'
+} from '@/client/components/shadcn/sidebar'
+import { AnchorLink } from '@/client/components/ui/navigation/link'
+import NavMenu from '@/client/components/ui/navigation/nav-menu'
+import UserSection from '@/client/components/ui/navigation/user-section'
+import { InternalPath } from '@/client/routes'
 import useSidebar from './use-sidebar'
 
 export interface MenuItem {

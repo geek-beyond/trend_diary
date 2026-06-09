@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { cn } from '../../shadcn/lib/utils'
+import { cn } from '@/client/components/shadcn/lib/utils'
 
 interface HeadingProps {
   children: ReactNode

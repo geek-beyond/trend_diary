@@ -1,5 +1,4 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
-import { isDevelopmentNodeEnv } from '@trend-diary/common/env'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAuthUseCase } from '@trend-diary/domain/user'
 import type { AppLoadContext } from 'react-router'
@@ -23,10 +22,6 @@ function readNodeEnv(key: 'SUPABASE_URL' | 'SUPABASE_ANON_KEY') {
     return undefined
   }
   return readEnv(process.env[key])
-}
-
-export function shouldUseSecureCookie() {
-  return !isDevelopmentNodeEnv()
 }
 
 export function resolveSupabaseAuthConfig(context: SupabaseAuthContext) {
@@ -57,7 +52,7 @@ export function createAuthActionUseCase(request: Request, context: AppLoadContex
         cookiesToSet.forEach(({ name, value, options }) => {
           const mergedOptions = {
             httpOnly: true,
-            secure: shouldUseSecureCookie(),
+            secure: true,
             sameSite: 'lax' as const,
             ...options,
           }

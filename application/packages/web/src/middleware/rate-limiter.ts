@@ -1,6 +1,7 @@
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 import { Env } from '../env'
+import CONTEXT_KEY from './context'
 
 // IP単位でブルートフォース・大量試行を抑止するため、認証系エンドポイントに適用する
 const rateLimiter = createMiddleware<Env>(async (c, next) => {
@@ -15,9 +16,18 @@ const rateLimiter = createMiddleware<Env>(async (c, next) => {
   const ip = c.req.header('CF-Connecting-IP') ?? 'unknown'
   const key = `${c.req.path}:${ip}`
 
-  const { success } = await limiter.limit({ key })
-  if (!success) {
-    throw new HTTPException(429, { message: 'too many requests' })
+  try {
+    const { success } = await limiter.limit({ key })
+    if (!success) {
+      throw new HTTPException(429, { message: 'too many requests' })
+    }
+  } catch (error) {
+    if (error instanceof HTTPException) {
+      throw error
+    }
+
+    // Rate Limiting API自体の障害で認証を止めないよう、フェイルオープンする
+    c.get(CONTEXT_KEY.APP_LOG)?.warn('rate limiter unavailable, failing open', error)
   }
 
   return next()

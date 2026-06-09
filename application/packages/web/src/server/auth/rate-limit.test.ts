@@ -13,6 +13,18 @@ describe('認証エンドポイントのレートリミット', () => {
     }
   }
 
+  // limit()が例外をスローする障害時を再現する
+  function buildErrorEnv(): Env['Bindings'] {
+    return {
+      ...TEST_ENV,
+      AUTH_RATE_LIMITER: {
+        limit: async () => {
+          throw new Error('rate limiter unavailable')
+        },
+      },
+    }
+  }
+
   function requestAuth(path: string, env: Env['Bindings']) {
     return app.request(
       path,
@@ -52,6 +64,17 @@ describe('認証エンドポイントのレートリミット', () => {
     it('レートリミットをスキップし429にはならない', async () => {
       const res = await requestAuth('/api/auth/login', TEST_ENV)
       expect(res.status).not.toBe(429)
+    })
+  })
+
+  describe('レートリミッターが例外をスローした場合', () => {
+    it('フェイルオープンしバインディング未設定時と同じ挙動になる', async () => {
+      const errorRes = await requestAuth('/api/auth/login', buildErrorEnv())
+      const skipRes = await requestAuth('/api/auth/login', TEST_ENV)
+
+      // 例外を握りつぶして後続処理に進むため、制限スキップ時と同じ結果になる
+      expect(errorRes.status).toBe(skipRes.status)
+      expect(errorRes.status).not.toBe(429)
     })
   })
 })

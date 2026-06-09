@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import { afterAll } from 'vitest'
-import { disposePlatformProxy, platformEnv } from './platform-proxy'
+import { disposePlatformProxy, platformEnv } from '@/test/setup/platform-proxy'
 
 const migrationsDir = fileURLToPath(new URL('../../../../datastore/migrations', import.meta.url))
 const migrations = await readD1Migrations(migrationsDir)

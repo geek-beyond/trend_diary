@@ -16,7 +16,7 @@ export interface NormalizedItem {
   url: string
 }
 
-// 外部フィードは欠落フィールドを undefined で返すため、保存前に実行時検証する。
+// 外部フィードは欠落フィールドを undefined / null で返すため、保存前に実行時検証する。
 // title / author / url は欠落・空文字なら不正としてスキップ対象にし、
 // description は欠落しても致命的でないため空文字で補完する。
 const requiredText = z.string().trim().min(1)
@@ -26,7 +26,7 @@ export const normalizedItemSchema = z.object({
   author: requiredText,
   description: z
     .string()
-    .optional()
+    .nullish()
     .transform((value) => value ?? ''),
   url: requiredText,
 })

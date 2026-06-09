@@ -1,4 +1,4 @@
-import type { ArticleMedia } from '@trend-diary/domain/article/media'
+import extractTrimmed from '@trend-diary/common/sanitization'
 
 export const FEED_URL = {
   qiita: 'https://qiita.com/popular-items/feed.atom',
@@ -18,15 +18,6 @@ export interface NormalizedItem {
 export interface FeedConfig<RawItem> {
   url: string
   mapItem: (item: RawItem) => NormalizedItem
-}
-
-function pickNonEmpty(...candidates: Array<string | undefined>): string | undefined {
-  for (const candidate of candidates) {
-    if (typeof candidate !== 'string') continue
-    const trimmed = candidate.trim()
-    if (trimmed.length > 0) return trimmed
-  }
-  return undefined
 }
 
 interface RawFeedItem {
@@ -60,7 +51,7 @@ export const FEED_CONFIGS = {
       description: item.content,
       url: item.link,
     }),
-  },
+  } satisfies FeedConfig<QiitaRawItem>,
   zenn: {
     url: FEED_URL.zenn,
     mapItem: (item: ZennRawItem) => ({
@@ -69,14 +60,18 @@ export const FEED_CONFIGS = {
       description: item.content,
       url: item.link,
     }),
-  },
+  } satisfies FeedConfig<ZennRawItem>,
   hatena: {
     url: FEED_URL.hatena,
     mapItem: (item: HatenaRawItem) => ({
       title: item.title,
-      author: pickNonEmpty(item.creator) || HATENA_FALLBACK_AUTHOR,
-      description: pickNonEmpty(item.content, item['content:encoded'], item.contentSnippet) || '',
+      author: extractTrimmed(item.creator) ?? HATENA_FALLBACK_AUTHOR,
+      description:
+        extractTrimmed(item.content) ??
+        extractTrimmed(item['content:encoded']) ??
+        extractTrimmed(item.contentSnippet) ??
+        '',
       url: item.link,
     }),
-  },
-} as const satisfies Record<ArticleMedia, FeedConfig<never>>
+  } satisfies FeedConfig<HatenaRawItem>,
+}

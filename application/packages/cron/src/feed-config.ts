@@ -1,7 +1,5 @@
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 
-// NOTE: src/test-helper/feed.ts の FEED_URL と同値であること
-//       （worker.test が本番URLでfetchをルーティングしてモックするため乖離禁止）
 export const FEED_URL = {
   qiita: 'https://qiita.com/popular-items/feed.atom',
   zenn: 'https://zenn.dev/feed',
@@ -10,7 +8,6 @@ export const FEED_URL = {
 
 const HATENA_FALLBACK_AUTHOR = 'はてなブックマーク'
 
-// 正規化前の記事（保存時に最大長などの正規化を行う）
 export type NormalizedItem = {
   title: string
   author: string
@@ -20,7 +17,6 @@ export type NormalizedItem = {
 
 export type FeedConfig<RawItem> = {
   url: string
-  // メディアごとに異なる生itemを共通の形へマッピングする
   mapItem: (item: RawItem) => NormalizedItem
 }
 
@@ -33,7 +29,6 @@ function pickNonEmpty(...candidates: Array<string | undefined>): string | undefi
   return undefined
 }
 
-// メディアごとの取得設定。3メディアの差分（URL・生item型・マッピング）をここへ集約する。
 export const FEED_CONFIGS = {
   qiita: {
     url: FEED_URL.qiita,

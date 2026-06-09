@@ -8,7 +8,6 @@ export type FetchEnv = {
   LOG_LEVEL?: LogLevel
 }
 
-// scheduled handler 全体で必要となる env
 export type CronEnv = FetchEnv & {
   DISCORD_WEBHOOK_URL: string
 }

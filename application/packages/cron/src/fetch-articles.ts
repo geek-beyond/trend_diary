@@ -111,7 +111,6 @@ function isUniqueConstraintError(error: unknown): boolean {
   return false
 }
 
-// RSSを取得し、メディアごとのマッピングで正規化してから保存する共通処理。
 async function fetchAndStore<RawItem>(
   media: ArticleMedia,
   config: FeedConfig<RawItem>,

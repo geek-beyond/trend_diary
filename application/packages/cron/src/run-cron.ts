@@ -12,8 +12,6 @@ export type RunCronParams = {
   scheduledTime: number
 }
 
-// 全メディアを逐次取得・保存し、成否集計・ロギング・Discord通知を行う。
-// 1件でも失敗した場合は throw して Cloudflare へジョブ失敗を伝播する。
 export async function runCron({
   env,
   logger,

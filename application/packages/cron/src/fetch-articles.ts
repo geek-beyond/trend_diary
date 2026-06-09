@@ -50,8 +50,8 @@ async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
     return err(new Error(`Failed to fetch rss feed: ${url}, status=${response.status}`))
   }
 
+  const parser = new Parser<{ items: T[] }, T>()
   return wrapAsyncCall(async () => {
-    const parser = new Parser<{ items: T[] }, T>()
     const xml = await response.text()
     const feed = await parser.parseString(xml)
     return feed.items

@@ -21,7 +21,6 @@ import { testRdb as db } from './test-helper/rdb'
 
 const cronEnv = { DB: env.DB }
 
-// 成功(ok)を前提に保存件数を取り出すヘルパー
 async function fetchHatenaInsertedCount(): Promise<number> {
   const result = await fetchHatenaArticles(cronEnv)
   expect(result.isOk()).toBe(true)

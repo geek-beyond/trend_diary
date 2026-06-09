@@ -77,13 +77,10 @@ export default {
       })
 
       if (failedCount > 0) {
-        // 下位はResultで返し、throwは最上位のここだけ。
-        // 失敗時はcron実行自体を失敗扱いにしてCloudflareへ伝播させる
         throw new Error(`cron job failed: ${failedCount}/${MEDIA_LIST.length} media failed`)
       }
     })()
 
-    // waitUntilで実行時間を確保しつつ、awaitで失敗をscheduledの結果へ伝播させる
     ctx.waitUntil(job)
     await job
   },

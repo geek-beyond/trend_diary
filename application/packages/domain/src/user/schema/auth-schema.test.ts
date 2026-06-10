@@ -54,6 +54,11 @@ describe('authInputSchema', () => {
         email: 'user@domain.com',
         password: 'VeryLongPassword123!@$',
       },
+      {
+        name: '72文字ちょうどのパスワードで検証できる',
+        email: 'user@domain.com',
+        password: `Aa1!${'a'.repeat(68)}`,
+      },
     ]
 
     it.each(validTestCases)('$name', ({ email, password }) => {
@@ -108,6 +113,11 @@ describe('authInputSchema', () => {
         name: '1文字のパスワードでは検証に失敗する',
         email: 'test@example.com',
         password: 'a',
+      },
+      {
+        name: '73文字のパスワードでは検証に失敗する',
+        email: 'test@example.com',
+        password: `Aa1!${'a'.repeat(69)}`,
       },
     ]
 

@@ -8,7 +8,7 @@ export function mapToActiveUser(activeUser: RdbActiveUser): CurrentUser {
     userId: fromDbId(activeUser.userId),
     email: activeUser.email,
     displayName: activeUser.displayName,
-    authenticationId: activeUser.authenticationId ?? undefined,
+    authenticationId: activeUser.authenticationId,
     createdAt: activeUser.createdAt,
     updatedAt: activeUser.updatedAt,
   }

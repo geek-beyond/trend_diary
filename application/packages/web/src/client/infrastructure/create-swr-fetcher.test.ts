@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { ApiError } from '@/client/lib/error'
 import { createSWRFetcher } from './create-swr-fetcher'
 
 global.fetch = vi.fn()
@@ -44,7 +45,11 @@ describe('createSWRFetcher', () => {
 
       const { fetcher } = createSWRFetcher()
 
-      await expect(fetcher('http://example.com/api')).rejects.toThrow('HTTP 404: Not Found')
+      await expect(fetcher('http://example.com/api')).rejects.toMatchObject({
+        name: 'ApiError',
+        statusCode: 404,
+      })
+      await expect(fetcher('http://example.com/api')).rejects.toBeInstanceOf(ApiError)
     })
   })
 
@@ -122,7 +127,11 @@ describe('createSWRFetcher', () => {
 
       const { apiCall } = createSWRFetcher()
 
-      await expect(apiCall(mockApiFunction)).rejects.toThrow('HTTP 500: Internal Server Error')
+      await expect(apiCall(mockApiFunction)).rejects.toMatchObject({
+        name: 'ApiError',
+        statusCode: 500,
+      })
+      await expect(apiCall(mockApiFunction)).rejects.toBeInstanceOf(ApiError)
     })
   })
 })

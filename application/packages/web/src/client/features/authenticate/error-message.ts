@@ -11,17 +11,7 @@ const getStatusCode = (error: unknown): number | null => {
     }
   }
 
-  if (!(error instanceof Error)) {
-    return null
-  }
-
-  const matched = /^HTTP (\d{3}):/.exec(error.message)
-  if (!matched) {
-    return null
-  }
-
-  const statusCode = Number(matched[1])
-  return Number.isNaN(statusCode) ? null : statusCode
+  return null
 }
 
 export const resolveLoginErrorMessage = (error: unknown): string => {

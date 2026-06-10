@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getApiErrorMessage } from './error'
+import { ApiError, getApiErrorMessage } from './error'
 
 describe('getApiErrorMessage', () => {
   const defaultMessage = 'デフォルトメッセージ'
@@ -65,5 +65,16 @@ describe('getApiErrorMessage', () => {
     it(outline, () => {
       expect(getApiErrorMessage(error, defaultMessage)).toBe(expected)
     })
+  })
+})
+
+describe('ApiError', () => {
+  it('statusCodeとmessageを保持する', () => {
+    const error = new ApiError(404, 'Not Found')
+
+    expect(error).toBeInstanceOf(Error)
+    expect(error.name).toBe('ApiError')
+    expect(error.statusCode).toBe(404)
+    expect(error.message).toBe('Not Found')
   })
 })

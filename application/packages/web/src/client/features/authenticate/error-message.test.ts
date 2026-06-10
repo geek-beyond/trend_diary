@@ -1,4 +1,5 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
+import { ApiError } from '@/client/lib/error'
 import {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,
@@ -21,8 +22,8 @@ describe('authenticate error-message', () => {
       )
     })
 
-    it('HTTPメッセージからもstatusCodeを解釈できる', () => {
-      expect(resolveLoginErrorMessage(new Error('HTTP 404: Not Found'))).toBe(
+    it('ApiErrorのstatusCodeを解釈できる', () => {
+      expect(resolveLoginErrorMessage(new ApiError(404, 'Not Found'))).toBe(
         'メールアドレスまたはパスワードが正しくありません',
       )
     })
@@ -45,8 +46,8 @@ describe('authenticate error-message', () => {
       )
     })
 
-    it('HTTPメッセージからもstatusCodeを解釈できる', () => {
-      expect(resolveSignupErrorMessage(new Error('HTTP 409: Conflict'))).toBe(
+    it('ApiErrorのstatusCodeを解釈できる', () => {
+      expect(resolveSignupErrorMessage(new ApiError(409, 'Conflict'))).toBe(
         'このメールアドレスは既に使用されています',
       )
     })

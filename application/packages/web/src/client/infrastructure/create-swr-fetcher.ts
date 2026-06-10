@@ -1,4 +1,5 @@
 import getApiClientForClient from '@/client/infrastructure/api'
+import { ApiError } from '@/client/lib/error'
 
 interface ApiCallResponse {
   ok: boolean
@@ -16,7 +17,7 @@ export const createSWRFetcher = () => {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      throw new ApiError(response.status, response.statusText)
     }
 
     return response.json()
@@ -26,7 +27,7 @@ export const createSWRFetcher = () => {
     const response = await apiCall()
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      throw new ApiError(response.status, response.statusText)
     }
 
     switch (response.status) {

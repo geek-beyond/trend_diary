@@ -92,3 +92,14 @@ describe('fetchWithTimeout', () => {
     })
   })
 })
+
+describe('fetchWithTimeout().safeJson', () => {
+  it('レスポンスボディを呼び出し側が指定した型として返す', async () => {
+    mockFetch.mockResolvedValue(new Response(JSON.stringify({ message: 'ok' })))
+
+    const response = await fetchWithTimeout('https://example.com')
+    const body = await response.safeJson<{ message: string }>()
+
+    expect(body).toEqual({ message: 'ok' })
+  })
+})

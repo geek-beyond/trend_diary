@@ -25,7 +25,7 @@ export const createSWRFetcher = () => {
       throw toHttpError(response.status, response.statusText)
     }
 
-    return response.json()
+    return response.safeJson<T>()
   }
 
   const apiCall = async <T>(apiCall: () => Promise<ApiCallResponse>): Promise<T | null> => {

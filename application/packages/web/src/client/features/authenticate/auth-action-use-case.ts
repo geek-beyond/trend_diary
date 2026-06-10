@@ -1,4 +1,5 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
+import Logger from '@trend-diary/common/logger'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAuthUseCase } from '@trend-diary/domain/user'
 import { DiscordWebhookClient } from '@trend-diary/notification'
@@ -65,7 +66,10 @@ export function createAuthActionUseCase(request: Request, context: AppLoadContex
 
   const rdb = getRdbClient(context.cloudflare.env.DB)
   const useCase = createAuthUseCase(client, rdb)
-  const notifier = new DiscordWebhookClient(context.cloudflare.env.DISCORD_WEBHOOK_URL)
+  const logger = new Logger(context.cloudflare.env.LOG_LEVEL ?? 'info', {
+    module: 'web/client/features/authenticate/auth-action-use-case',
+  })
+  const notifier = new DiscordWebhookClient(context.cloudflare.env.DISCORD_WEBHOOK_URL, logger)
 
   return {
     headers,

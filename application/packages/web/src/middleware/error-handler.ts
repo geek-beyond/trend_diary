@@ -1,4 +1,4 @@
-import { LoggerType } from '@trend-diary/common/logger'
+import Logger, { LoggerType } from '@trend-diary/common/logger'
 import { DiscordNotifier } from '@trend-diary/notification'
 import { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
@@ -22,7 +22,11 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
     userAgent: c.req.header('User-Agent') || '',
   }
 
-  const discordNotifier = new DiscordNotifier(discordWebhookUrl, { logger })
+  // request-logger未設定時でも通知失敗を記録できるようフォールバックのLoggerを用意する
+  const discordNotifier = new DiscordNotifier(
+    discordWebhookUrl,
+    logger ?? new Logger(c.env.LOG_LEVEL || 'info'),
+  )
   if (err instanceof HTTPException) {
     if (err.status >= 500) {
       if (logger && typeof logger.error === 'function') {

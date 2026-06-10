@@ -19,7 +19,6 @@ export interface DiscordWebhookPayload {
 }
 
 export interface DiscordWebhookClientOptions {
-  logger?: LoggerType
   maxRetries?: number
   baseDelayMs?: number
   timeoutMs?: number
@@ -35,7 +34,7 @@ const DEFAULT_TIMEOUT_MS = 5000
 export class DiscordWebhookClient {
   private readonly webhookUrl: string
 
-  private readonly logger?: LoggerType
+  private readonly logger: LoggerType
 
   private readonly maxRetries: number
 
@@ -43,9 +42,13 @@ export class DiscordWebhookClient {
 
   private readonly timeoutMs: number
 
-  constructor(webhookUrl?: string, options: DiscordWebhookClientOptions = {}) {
+  constructor(
+    webhookUrl: string | undefined,
+    logger: LoggerType,
+    options: DiscordWebhookClientOptions = {},
+  ) {
     this.webhookUrl = webhookUrl ?? ''
-    this.logger = options.logger
+    this.logger = logger
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES
     this.baseDelayMs = options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
@@ -54,7 +57,7 @@ export class DiscordWebhookClient {
   async send(payload: DiscordWebhookPayload): Promise<void> {
     if (this.webhookUrl === '') {
       // 未設定のまま稼働すると障害通知が無音で失われ、本来気づくべき障害を見逃すため警告する
-      this.logger?.warn('Discord webhook URL is not configured; skipping notification')
+      this.logger.warn('Discord webhook URL is not configured; skipping notification')
       return
     }
 
@@ -97,7 +100,7 @@ export class DiscordWebhookClient {
     }
 
     // 通知の失敗は呼び出し元の処理に影響させない
-    this.logger?.error({ msg: 'Failed to send notification to Discord', attempts }, lastError)
+    this.logger.error({ msg: 'Failed to send notification to Discord', attempts }, lastError)
   }
 
   async sendMessage(content: string): Promise<void> {
@@ -122,8 +125,12 @@ export class DiscordNotifier {
 
   private readonly maxFieldLength = 1018 // Discord field limit (1024) minus code block chars (6)
 
-  constructor(webhookUrl?: string, options: DiscordWebhookClientOptions = {}) {
-    this.client = new DiscordWebhookClient(webhookUrl, options)
+  constructor(
+    webhookUrl: string | undefined,
+    logger: LoggerType,
+    options: DiscordWebhookClientOptions = {},
+  ) {
+    this.client = new DiscordWebhookClient(webhookUrl, logger, options)
   }
 
   async error(error: Error, requestInfo: ErrorRequestInfo): Promise<void> {

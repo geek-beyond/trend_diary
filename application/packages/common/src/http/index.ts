@@ -8,6 +8,30 @@ export interface FetchWithTimeoutOptions {
   timeoutMs?: number
 }
 
+// AbortSignal.any 未対応環境向けに、複数signalのいずれかの中断を伝播する合成signalを生成する。
+// 中断後はリスナーを解放できるよう、解放用のクリーンアップ関数もあわせて返す。
+const combineSignals = (
+  signal: AbortSignal,
+  timeoutSignal: AbortSignal,
+): { signal: AbortSignal; cleanup: () => void } => {
+  const controller = new AbortController()
+  const onSignalAbort = () => controller.abort(signal.reason)
+  const onTimeoutAbort = () => controller.abort(timeoutSignal.reason)
+
+  if (signal.aborted) {
+    controller.abort(signal.reason)
+  } else {
+    signal.addEventListener('abort', onSignalAbort)
+    timeoutSignal.addEventListener('abort', onTimeoutAbort)
+  }
+
+  const cleanup = () => {
+    signal.removeEventListener('abort', onSignalAbort)
+    timeoutSignal.removeEventListener('abort', onTimeoutAbort)
+  }
+  return { signal: controller.signal, cleanup }
+}
+
 /**
  * タイムアウト付きの fetch ラッパ。
  *
@@ -20,7 +44,18 @@ export const fetchWithTimeout = (
 ): Promise<Response> => {
   const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, signal, ...rest } = init
   const timeoutSignal = AbortSignal.timeout(timeoutMs)
-  // 呼び出し元が渡したsignalによる中断とタイムアウトの両方を尊重する
-  const combinedSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal
-  return fetch(input, { ...rest, signal: combinedSignal })
+
+  // 呼び出し元のsignalが無ければタイムアウトのみを適用する
+  if (!signal) {
+    return fetch(input, { ...rest, signal: timeoutSignal })
+  }
+
+  // AbortSignal.any はリスナー解放まで内部で面倒を見るため、対応環境では優先利用する
+  if (typeof AbortSignal.any === 'function') {
+    return fetch(input, { ...rest, signal: AbortSignal.any([signal, timeoutSignal]) })
+  }
+
+  // iOS 16 等の AbortSignal.any 未対応環境ではリスナーリークを避けつつ手動で合成する
+  const { signal: combinedSignal, cleanup } = combineSignals(signal, timeoutSignal)
+  return fetch(input, { ...rest, signal: combinedSignal }).finally(cleanup)
 }

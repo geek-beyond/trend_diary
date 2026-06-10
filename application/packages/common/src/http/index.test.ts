@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout } from './index'
 
 const mockFetch = vi.fn()
@@ -42,22 +42,6 @@ describe('fetchWithTimeout', () => {
     expect(mockFetch.mock.calls[0][1]).not.toHaveProperty('timeoutMs')
   })
 
-  it('指定したtimeoutMs経過でリクエストを中断すること', async () => {
-    mockFetch.mockImplementation(neverResolvingFetch)
-
-    await expect(fetchWithTimeout('https://example.com', { timeoutMs: 10 })).rejects.toThrow()
-  })
-
-  it('呼び出し元のsignalによる中断も尊重すること', async () => {
-    mockFetch.mockImplementation(neverResolvingFetch)
-
-    const controller = new AbortController()
-    const promise = fetchWithTimeout('https://example.com', { signal: controller.signal })
-    controller.abort(new Error('caller aborted'))
-
-    await expect(promise).rejects.toThrow('caller aborted')
-  })
-
   it('成功時はResponseをそのまま返すこと', async () => {
     const response = { ok: true, status: 200 }
     mockFetch.mockResolvedValueOnce(response)
@@ -71,33 +55,30 @@ describe('fetchWithTimeout', () => {
     expect(DEFAULT_FETCH_TIMEOUT_MS).toBe(5000)
   })
 
-  // iOS 16 等のAbortSignal.any未対応環境を想定し、フォールバック経路を検証する
-  describe('AbortSignal.any未対応環境', () => {
+  // AbortSignal.any 対応環境と未対応環境(iOS 16 等)の双方で中断が伝播することを検証する
+  describe.each([
+    { env: 'AbortSignal.any対応環境', anyImpl: AbortSignal.any },
+    { env: 'AbortSignal.any未対応環境', anyImpl: undefined },
+  ])('$env', ({ anyImpl }) => {
     let originalAny: typeof AbortSignal.any
 
     beforeEach(() => {
       originalAny = AbortSignal.any
-      // biome-ignore lint/suspicious/noExplicitAny: 未対応環境を再現するため一時的に除去する
-      ;(AbortSignal as any).any = undefined
+      // biome-ignore lint/suspicious/noExplicitAny: 環境差を再現するため一時的に差し替える
+      ;(AbortSignal as any).any = anyImpl
+      mockFetch.mockImplementation(neverResolvingFetch)
     })
 
     afterEach(() => {
       AbortSignal.any = originalAny
     })
 
-    it('タイムアウト経過でリクエストを中断すること', async () => {
-      mockFetch.mockImplementation(neverResolvingFetch)
-      const controller = new AbortController()
-
-      await expect(
-        fetchWithTimeout('https://example.com', { timeoutMs: 10, signal: controller.signal }),
-      ).rejects.toThrow()
+    it('指定したtimeoutMs経過でリクエストを中断すること', async () => {
+      await expect(fetchWithTimeout('https://example.com', { timeoutMs: 10 })).rejects.toThrow()
     })
 
     it('呼び出し元のsignalによる中断も尊重すること', async () => {
-      mockFetch.mockImplementation(neverResolvingFetch)
       const controller = new AbortController()
-
       const promise = fetchWithTimeout('https://example.com', { signal: controller.signal })
       controller.abort(new Error('caller aborted'))
 
@@ -105,8 +86,6 @@ describe('fetchWithTimeout', () => {
     })
 
     it('既にabort済みのsignalでも中断を伝播すること', async () => {
-      mockFetch.mockImplementation(neverResolvingFetch)
-
       await expect(
         fetchWithTimeout('https://example.com', { signal: AbortSignal.abort(new Error('pre')) }),
       ).rejects.toThrow('pre')

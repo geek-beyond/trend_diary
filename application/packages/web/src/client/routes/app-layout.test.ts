@@ -4,24 +4,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createAuthActionUseCase } from '@/client/features/authenticate/auth-action-use-case'
 import { loader } from './app-layout'
 
-const { getCurrentActiveUser } = vi.hoisted(() => ({ getCurrentActiveUser: vi.fn() }))
+const { getCurrentActiveUser, headers } = vi.hoisted(() => {
+  const headers = new Headers()
+  // Supabaseのセッション更新で付与される Set-Cookie を模す
+  headers.append('Set-Cookie', 'sb-access-token=refreshed; Path=/')
+  return { getCurrentActiveUser: vi.fn(), headers }
+})
 
 vi.mock('@/client/features/authenticate/auth-action-use-case', () => ({
-  createAuthActionUseCase: vi.fn(() => ({
-    useCase: { getCurrentActiveUser },
-    headers: new Headers(),
-  })),
+  createAuthActionUseCase: vi.fn(() => ({ useCase: { getCurrentActiveUser }, headers })),
 }))
 
 function buildLoaderArgs(): LoaderFunctionArgs {
   const request = new Request('http://localhost/trends')
   return {
     request,
-    context: {} as LoaderFunctionArgs['context'],
-    params: {},
     url: new URL(request.url),
     pattern: '/trends',
-  } as LoaderFunctionArgs
+    params: {},
+    context: {},
+  }
 }
 
 describe('app-layout loader', () => {
@@ -39,12 +41,6 @@ describe('app-layout loader', () => {
 
   it('セッション更新で付与されたSet-Cookieヘッダーがレスポンスに転送される', async () => {
     getCurrentActiveUser.mockResolvedValue(ok({ userId: 'user-1', displayName: 'テスト' }))
-    const headers = new Headers()
-    headers.append('Set-Cookie', 'sb-access-token=refreshed; Path=/')
-    vi.mocked(createAuthActionUseCase).mockReturnValueOnce({
-      useCase: { getCurrentActiveUser },
-      headers,
-    } as unknown as ReturnType<typeof createAuthActionUseCase>)
 
     const result = await loader(buildLoaderArgs())
 

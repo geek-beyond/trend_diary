@@ -15,7 +15,7 @@ export default class CommandImpl implements Command {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, Error>> {
+  ): Promise<Result<ReadHistory, ServerError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
     const result = await wrapDbCall(() =>
@@ -49,7 +49,7 @@ export default class CommandImpl implements Command {
   async deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<void, Error>> {
+  ): Promise<Result<void, ServerError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
     const result = await wrapDbCall(() =>
@@ -72,7 +72,7 @@ export default class CommandImpl implements Command {
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, Error>> {
+  ): Promise<Result<SkippedArticle, ServerError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 

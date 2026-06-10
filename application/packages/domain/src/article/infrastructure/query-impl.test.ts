@@ -18,6 +18,7 @@ const dateRangeSqlBuilders = QueryImpl as unknown as DateRangeSqlBuilders
 interface DateRangeEnumerator {
   enumerateJstDateRange(fromDateJst: string, toDateJst: string): Result<string[], Error>
 }
+// biome-ignore lint/plugin: privateなstaticメソッドをホワイトボックステストするため、型システムを意図的に迂回する必要があるためです
 const dateRangeEnumerator = QueryImpl as unknown as DateRangeEnumerator
 
 describe('QueryImpl', () => {

@@ -1,6 +1,25 @@
 type FetchInput = Parameters<typeof fetch>[0]
 type FetchInit = NonNullable<Parameters<typeof fetch>[1]>
 
+/**
+ * fetchWithTimeout が返す Response の拡張。
+ *
+ * 標準の `json()` は `any` を返し型安全でないため、呼び出し側が指定する型として
+ * ボディを取得する `safeJson<T>()` を追加し、型宣言やアサーションの重複を防ぐ。
+ */
+export interface FetchWithTimeoutResponse extends Response {
+  safeJson<T>(): Promise<T>
+}
+
+// JSON は実行時まで型が確定しないため、型適用を safeJson に集約して Response へ付与する
+const attachSafeJson = (response: Response): FetchWithTimeoutResponse =>
+  Object.assign(response, {
+    safeJson: async <T>(): Promise<T> => {
+      // biome-ignore lint/plugin: JSON デシリアライズ結果は実行時まで型が定まらず、呼び出し側が指定する T へ橋渡しする境界のため許可する
+      return (await response.json()) as T
+    },
+  })
+
 // 応答が遅い相手でハングするとWorkersの実行時間制限に直結するため、共通の既定値を設ける
 export const DEFAULT_FETCH_TIMEOUT_MS = 5000
 
@@ -40,21 +59,25 @@ const combineSignals = (signals: AbortSignal[]): { signal: AbortSignal; cleanup:
 export const fetchWithTimeout = (
   input: FetchInput,
   init: FetchInit & FetchWithTimeoutOptions = {},
-): Promise<Response> => {
+): Promise<FetchWithTimeoutResponse> => {
   const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, signal, ...rest } = init
   const timeoutSignal = AbortSignal.timeout(timeoutMs)
 
   // 呼び出し元のsignalが無ければタイムアウトのみを適用する
   if (!signal) {
-    return fetch(input, { ...rest, signal: timeoutSignal })
+    return fetch(input, { ...rest, signal: timeoutSignal }).then(attachSafeJson)
   }
 
   // AbortSignal.any はリスナー解放まで内部で面倒を見るため、対応環境では優先利用する
   if (typeof AbortSignal.any === 'function') {
-    return fetch(input, { ...rest, signal: AbortSignal.any([signal, timeoutSignal]) })
+    return fetch(input, { ...rest, signal: AbortSignal.any([signal, timeoutSignal]) }).then(
+      attachSafeJson,
+    )
   }
 
   // iOS 16 等の AbortSignal.any 未対応環境ではリスナーリークを避けつつ手動で合成する
   const { signal: combinedSignal, cleanup } = combineSignals([signal, timeoutSignal])
-  return fetch(input, { ...rest, signal: combinedSignal }).finally(cleanup)
+  return fetch(input, { ...rest, signal: combinedSignal })
+    .finally(cleanup)
+    .then(attachSafeJson)
 }

@@ -4,12 +4,14 @@ import { mapToActiveUser } from './mapper'
 
 describe('mapToActiveUser', () => {
   // テストデータ作成ヘルパー
+  // スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
+  // テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
   const createMockRdbActiveUser = (
     overrides: Partial<Record<keyof RdbActiveUser, unknown>> = {},
   ): RdbActiveUser => {
     const now = new Date('2024-01-15T09:30:00Z')
 
-    return {
+    const rdbActiveUser = {
       activeUserId: 12345n,
       userId: 67890n,
       email: 'john.doe@example.com',
@@ -18,7 +20,9 @@ describe('mapToActiveUser', () => {
       createdAt: new Date('2023-11-20T10:15:30Z'),
       updatedAt: now,
       ...overrides,
-    } as unknown as RdbActiveUser
+    }
+    // biome-ignore lint/plugin: ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
+    return rdbActiveUser as unknown as RdbActiveUser
   }
 
   describe('基本動作', () => {

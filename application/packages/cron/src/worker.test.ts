@@ -63,11 +63,14 @@ function setupFetchRouting(overrides?: { hatena?: () => unknown }): void {
 
 async function runScheduled(scheduledTime: number): Promise<Promise<unknown>[]> {
   const waitUntilCalls: Promise<unknown>[] = []
+  // Cloudflare の ScheduledController / ExecutionContext は多数のプロパティを持つ外部型のため、テストでは必要最小限のモックで代替する
+  // biome-ignore lint/plugin: 外部型のモックのため、必要なプロパティのみのオブジェクトをアサーションで渡す
   const event = { cron: '0 */1 * * *', scheduledTime } as unknown as ScheduledController
   await worker.scheduled(event, TEST_ENV, {
     waitUntil: (promise: Promise<unknown>) => {
       waitUntilCalls.push(promise)
     },
+    // biome-ignore lint/plugin: 外部型のモックのため、必要なプロパティのみのオブジェクトをアサーションで渡す
   } as unknown as ExecutionContext)
   return waitUntilCalls
 }

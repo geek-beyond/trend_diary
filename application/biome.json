@@ -249,5 +249,6 @@
         }
       }
     }
-  ]
+  ],
+  "plugins": ["./biome-plugins/no-as-assertion.grit"]
 }

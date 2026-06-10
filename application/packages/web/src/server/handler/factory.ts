@@ -82,25 +82,49 @@ export interface AuthenticatedRequestContext<TParam = unknown, TJson = unknown, 
   logger: LoggerType
 }
 
-// RequestContextから型パラメータを抽出するヘルパー型
-type ExtractParam<T> =
-  T extends RequestContext<infer P, unknown, unknown>
-    ? P
-    : T extends AuthenticatedRequestContext<infer P, unknown, unknown>
-      ? P
-      : unknown
-type ExtractJson<T> =
-  T extends RequestContext<unknown, infer J, unknown>
-    ? J
-    : T extends AuthenticatedRequestContext<unknown, infer J, unknown>
-      ? J
-      : unknown
-type ExtractQuery<T> =
-  T extends RequestContext<unknown, unknown, infer Q>
-    ? Q
-    : T extends AuthenticatedRequestContext<unknown, unknown, infer Q>
-      ? Q
-      : unknown
+// バリデーション済みデータを保持する中間表現
+// Hono clientの型推論を迂回してミドルウェア検証済みの値を取り出すための器
+interface ValidatedRequestData {
+  param: unknown
+  json: unknown
+  query: unknown
+}
+
+// Hono clientの型推論はミドルウェアのバリデーション結果を静的に解決できないため、
+// 検証済みデータの取り出しはこのヘルパーに型ハックを閉じ込めて一元管理する
+function extractValidatedData(c: Context<Env>): ValidatedRequestData {
+  if (!c.req.valid) {
+    return { param: undefined, json: undefined, query: undefined }
+  }
+  // valid は内部で this（c.req）を参照するメソッドのため、変数へ取り出すとレシーバが外れて壊れる。
+  // bind でレシーバを固定する。ジェネリックな Context では引数型が never に潰れるため呼び出しキーの型のみ補う。
+  // biome-ignore lint/plugin: ジェネリックな Context では valid() の引数型が never に潰れ、検証キーの型を補うアサーションが避けられないため
+  const valid = c.req.valid.bind(c.req) as (key: 'param' | 'json' | 'query') => unknown
+  return {
+    param: valid('param'),
+    json: valid('json'),
+    query: valid('query'),
+  }
+}
+
+// 検証済みデータとユーザー・ロガーから、ハンドラーが要求する具象コンテキスト型を構築する
+// ValidatedRequestData の各値は実行時にミドルウェアで TContext に整合する形へ検証済みのため、
+// ジェネリックな TContext への橋渡しはこのヘルパーに集約する
+function buildRequestContext<TContext extends RequestContext | AuthenticatedRequestContext>(
+  data: ValidatedRequestData,
+  user: SessionUser | undefined,
+  logger: LoggerType,
+): TContext {
+  const context: RequestContext = {
+    param: data.param,
+    json: data.json,
+    query: data.query,
+    user,
+    logger,
+  }
+  // biome-ignore lint/plugin: ミドルウェア検証済みの値をジェネリックな TContext へ橋渡しする唯一の地点で、静的型では表現できないため許可する
+  return context as TContext
+}
 
 // 共通のハンドラー設定プロパティ
 interface BaseHandlerConfig<TUseCase, TContext, TOutput, TResponse> {
@@ -188,6 +212,7 @@ function executeHandlerLogic<
     }
 
     const responseData = config.transform ? config.transform(result.value) : result.value
+    // biome-ignore lint/plugin: 204 を分岐済みで残るのはボディを持つステータスのみだが、StatusCode から ContentfulStatusCode への絞り込みを型で表現できないため許可する
     return c.json(responseData, statusCode as ContentfulStatusCode)
   })()
 }
@@ -239,18 +264,7 @@ export function createSimpleApiHandler<
     const logger = c.get(CONTEXT_KEY.APP_LOG)
     const rdb = getRdbClient(c.env.DB)
 
-    // バリデーションミドルウェアで検証済みのデータを取得するための型ハック
-    const validParam = c.req.valid ? c.req.valid('param' as never) : undefined
-    const validJson = c.req.valid ? c.req.valid('json' as never) : undefined
-    const validQuery = c.req.valid ? c.req.valid('query' as never) : undefined
-
-    const context = {
-      param: validParam as ExtractParam<TContext>,
-      json: validJson as ExtractJson<TContext>,
-      query: validQuery as ExtractQuery<TContext>,
-      user: undefined,
-      logger,
-    } as TContext
+    const context = buildRequestContext<TContext>(extractValidatedData(c), undefined, logger)
 
     return executeHandlerLogic(config, context, rdb, c)
   }
@@ -304,18 +318,11 @@ export function createAuthenticatedApiHandler<
       throw new HTTPException(401, { message: 'Unauthorized' })
     }
 
-    // バリデーションミドルウェアで検証済みのデータを取得するための型ハック
-    const validParam = c.req.valid ? c.req.valid('param' as never) : undefined
-    const validJson = c.req.valid ? c.req.valid('json' as never) : undefined
-    const validQuery = c.req.valid ? c.req.valid('query' as never) : undefined
-
-    const authenticatedContext = {
-      param: validParam as ExtractParam<TContext>,
-      json: validJson as ExtractJson<TContext>,
-      query: validQuery as ExtractQuery<TContext>,
+    const authenticatedContext = buildRequestContext<TContext>(
+      extractValidatedData(c),
       user,
       logger,
-    } as TContext
+    )
 
     return executeHandlerLogic(config, authenticatedContext, rdb, c)
   }

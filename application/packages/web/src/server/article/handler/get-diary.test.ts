@@ -156,7 +156,7 @@ describe('GET /api/articles/diary (単日詳細)', () => {
     const response = await requestDiaryRange(`from=${todayJst}&to=${todayJst}&page=1`, authCookies)
 
     expect(response.status).toBe(200)
-    const json = (await response.json()) as DiaryRangeResponse
+    const json: DiaryRangeResponse = await response.json()
     expect(json.data).toHaveLength(1)
     expect(json.data[0]).toEqual({
       date: todayJst,
@@ -176,7 +176,7 @@ describe('GET /api/articles/diary (単日詳細)', () => {
     const response = await requestDiaryRange(`from=${todayJst}&to=${todayJst}&page=2`, authCookies)
 
     expect(response.status).toBe(200)
-    const json = (await response.json()) as DiaryRangeResponse
+    const json: DiaryRangeResponse = await response.json()
     expect(json.reads?.page).toBe(2)
     expect(json.reads?.data).toHaveLength(0)
     expect(json.reads?.hasPrev).toBe(true)
@@ -195,7 +195,7 @@ describe('GET /api/articles/diary (単日詳細)', () => {
   it('存在しない日付は422', async () => {
     const response = await requestDiaryRange(`from=2026-02-30&to=2026-02-30&page=1`, authCookies)
     expect(response.status).toBe(422)
-    const json = (await response.json()) as { message: string }
+    const json: { message: string } = await response.json()
     expect(json.message).toBe('Invalid input')
   })
 
@@ -295,7 +295,7 @@ describe('GET /api/articles/diary', () => {
     const response = await requestDiaryRange(`from=${fromResult.value}&to=${todayJst}`, authCookies)
 
     expect(response.status).toBe(200)
-    const json = (await response.json()) as DiaryRangeResponse
+    const json: DiaryRangeResponse = await response.json()
     expect(json.reads).toBeUndefined()
     expect(json.data).toHaveLength(7)
     const today = json.data.find((item) => item.date === todayJst)
@@ -329,7 +329,7 @@ describe('GET /api/articles/diary', () => {
   it('存在しない日付を含む期間は422', async () => {
     const response = await requestDiaryRange(`from=2026-02-30&to=${todayJst}`, authCookies)
     expect(response.status).toBe(422)
-    const json = (await response.json()) as { message: string }
+    const json: { message: string } = await response.json()
     expect(json.message).toBe('Invalid input')
   })
 

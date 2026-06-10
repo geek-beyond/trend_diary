@@ -8,6 +8,7 @@ import ServerError from './server-error'
 export default function handleError(error: unknown, logger: LoggerType): HTTPException {
   if (error instanceof ClientError) {
     logger.warn('client error', error)
+    // biome-ignore lint/plugin: statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
     return new HTTPException(error.statusCode as ContentfulStatusCode, {
       message: error.message,
     })
@@ -29,6 +30,7 @@ export default function handleError(error: unknown, logger: LoggerType): HTTPExc
       },
       error,
     )
+    // biome-ignore lint/plugin: statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
     return new HTTPException(error.statusCode as ContentfulStatusCode, {
       message: error.message,
     })
@@ -36,6 +38,7 @@ export default function handleError(error: unknown, logger: LoggerType): HTTPExc
 
   if (error instanceof ServerError) {
     logger.error('internal server error', error)
+    // biome-ignore lint/plugin: statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
     return new HTTPException(error.statusCode as ContentfulStatusCode, {
       message: error.message,
     })

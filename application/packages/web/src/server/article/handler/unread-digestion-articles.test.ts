@@ -115,7 +115,7 @@ describe('GET /api/articles/unread-digestion', () => {
 
     if (status !== 200) return
 
-    const json = (await response.json()) as UnreadDigestionResponse
+    const json: UnreadDigestionResponse = await response.json()
     expect(json.data.map((item) => item.title)).toEqual(expect.arrayContaining(expectedTitles!))
     expect(json.data).toHaveLength(expectedTitles!.length)
   })

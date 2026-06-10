@@ -12,7 +12,8 @@ export interface RequestInfo {
 }
 
 const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
-  const logger = c.get(CONTEXT_KEY.APP_LOG) as LoggerType | undefined
+  // errorHandler はロガーミドルウェア確立前にも起動しうるため、未設定の可能性を型に残す
+  const logger: LoggerType | undefined = c.get(CONTEXT_KEY.APP_LOG)
 
   // Discord通知を送信（5xxエラーの場合）
   const discordWebhookUrl = c.env.DISCORD_WEBHOOK_URL

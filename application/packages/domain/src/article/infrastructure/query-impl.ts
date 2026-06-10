@@ -475,6 +475,7 @@ export default class QueryImpl implements Query {
       unwrapped.push(result.value)
     }
 
+    // biome-ignore lint/plugin: 各要素のResultをアンラップした配列がタプルTに一致することはTypeScriptでは表現できないためです
     return ok(unwrapped as unknown as T)
   }
 
@@ -567,6 +568,7 @@ export default class QueryImpl implements Query {
     return {
       readHistoryId: fromDbId(row.readHistoryId),
       articleId: fromDbId(row.articleId),
+      // biome-ignore lint/plugin: DBのmediaカラムは登録時にArticleMediaへ制約済みのため安全に絞り込めます
       media: row.media as ArticleMedia,
       title: row.title,
       url: row.url,
@@ -621,8 +623,8 @@ export default class QueryImpl implements Query {
   }
 
   private static mergeDiarySources(readRows: RawDiarySourceRow[], skipRows: RawDiarySourceRow[]) {
-    const readMap = new Map(readRows.map((row) => [row.media as ArticleMedia, Number(row.count)]))
-    const skipMap = new Map(skipRows.map((row) => [row.media as ArticleMedia, Number(row.count)]))
+    const readMap = new Map<string, number>(readRows.map((row) => [row.media, Number(row.count)]))
+    const skipMap = new Map<string, number>(skipRows.map((row) => [row.media, Number(row.count)]))
 
     return ARTICLE_MEDIA.map((media) => ({
       media,

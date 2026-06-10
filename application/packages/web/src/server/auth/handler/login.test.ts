@@ -39,7 +39,7 @@ describe('POST /api/auth/login', () => {
     const res = await requestLogin(JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }))
 
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { displayName: string | null }
+    const body: { displayName: string | null } = await res.json()
     expect(body).toHaveProperty('displayName')
   })
 

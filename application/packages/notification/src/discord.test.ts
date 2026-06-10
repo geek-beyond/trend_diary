@@ -12,6 +12,7 @@ const createMockLogger = () =>
     warn: vi.fn(),
     error: vi.fn(),
     with: vi.fn(),
+    // biome-ignore lint/plugin: Loggerはprivateフィールドを持ち構造的に代入できないため、テスト用モックの注入には二重アサーションが避けられないため
   }) as unknown as LoggerType
 
 // リトライ待機を待たずにテストするため

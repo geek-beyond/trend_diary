@@ -22,7 +22,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
     userAgent: c.req.header('User-Agent') || '',
   }
 
-  // request-logger未設定時でも通知失敗を記録できるようフォールバックのLoggerを用意する
+  // request-logger未設定時でも通知失敗を記録できるようにする
   const discordNotifier = new DiscordNotifier(
     discordWebhookUrl,
     logger ?? new Logger(c.env.LOG_LEVEL || 'info'),

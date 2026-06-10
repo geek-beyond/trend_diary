@@ -2,11 +2,9 @@ import type { LoggerType } from '@trend-diary/common/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiscordNotifier, DiscordWebhookClient } from './discord'
 
-// fetchをモック
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
-// Logger注入の検証用モック
 const createMockLogger = () =>
   ({
     debug: vi.fn(),
@@ -16,7 +14,7 @@ const createMockLogger = () =>
     with: vi.fn(),
   }) as unknown as LoggerType
 
-// リトライ待機を待たずにテストするため、backoffの基準遅延を0にする
+// リトライ待機を待たずにテストするため
 const noDelay = { baseDelayMs: 0 }
 
 const webhookUrl = 'https://discord.com/api/webhooks/test'
@@ -262,7 +260,6 @@ describe('DiscordNotifier', () => {
         })
 
         const error = new Error('Test error')
-        // 1000文字以上のスタックトレースを作成
         error.stack = `Error: Test error\n${'a'.repeat(1000)}`
 
         await notifier.error(error, {
@@ -277,7 +274,7 @@ describe('DiscordNotifier', () => {
           (field: { name: string; value: string }) => field.name === 'Stack Trace',
         )
 
-        // Discordの制限（1024文字）以下になっているか確認
+        // 1024はDiscordのフィールド上限
         expect(stackTraceField.value.length).toBeLessThanOrEqual(1024)
         expect(stackTraceField.value).toContain('...(truncated)')
       })

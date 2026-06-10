@@ -115,6 +115,18 @@ describe('QueryImpl', () => {
       expect(rawSql).toContain('skipped_articles')
     })
 
+    it('日時式ではなくarticle_idの降順でソートする', async () => {
+      mockRdbExecutor
+        .mockResolvedValueOnce({ rows: [{ total: 0 }] })
+        .mockResolvedValueOnce({ rows: [] })
+
+      await queryImpl.searchArticles({ page: 1, limit: 20 })
+
+      const articleSql = String(mockRdbExecutor.mock.calls[1]?.[0] ?? '')
+      expect(articleSql).toContain('ORDER BY article_id DESC')
+      expect(articleSql).not.toContain('unixepoch')
+    })
+
     it('件数取得失敗時はエラーを返す', async () => {
       mockRdbExecutor.mockRejectedValue(new Error('count failed'))
 

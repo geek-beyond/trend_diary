@@ -113,7 +113,7 @@ export default class QueryImpl implements Query {
             ${readStatusSql} as isRead
           FROM articles
           ${whereSql}
-          ORDER BY ${QueryImpl.getNormalizedDateTimeSql('created_at')} DESC, article_id DESC
+          ORDER BY article_id DESC
           LIMIT ${limit}
           OFFSET ${(page - 1) * limit}
         `),
@@ -190,7 +190,7 @@ export default class QueryImpl implements Query {
               AND sa.active_user_id = ${dbActiveUserId}
           )
           ${mediaCondition}
-        ORDER BY ${QueryImpl.getNormalizedDateTimeSql('created_at')} DESC, article_id DESC
+        ORDER BY article_id DESC
       `),
     )
     if (result.isErr()) {

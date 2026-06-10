@@ -1,6 +1,6 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
-import type { AuthRepository, Command, Query } from './repository'
+import type { AuthRepository, Command, Notifier, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
 import type { AuthenticationSession } from './schema/auth-schema'
 
@@ -30,6 +30,7 @@ export class AuthUseCase {
   async signup(
     email: string,
     password: string,
+    notifier: Notifier,
   ): Promise<Result<SignupResult, ClientError | ServerError>> {
     // 認証でユーザー作成
     const authResult = await this.repository.signup(email, password)
@@ -37,10 +38,11 @@ export class AuthUseCase {
 
     const { user, session } = authResult.value
 
-    // active_userを作成
+    // active_userを作成（補償失敗による孤児user発生時はnotifierで通知する）
     const activeUserResult = await this.userCommand.createActiveWithAuthenticationId(
       user.email,
       user.id,
+      notifier,
     )
 
     if (activeUserResult.isErr()) {

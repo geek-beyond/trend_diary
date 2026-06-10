@@ -13,19 +13,20 @@ export interface Query {
   ): Promise<Result<Nullable<CurrentUser>, Error>>
 }
 
-export interface Command {
-  createActiveWithAuthenticationId(
-    email: string,
-    authenticationId: string,
-    displayName?: string | null,
-  ): Promise<Result<CurrentUser, ServerError>>
-}
-
 /**
  * 手動対応が必要な事象（サインアップ補償失敗による孤児user等）を通知する汎用ポート
  */
 export interface Notifier {
   sendMessage(content: string): Promise<void>
+}
+
+export interface Command {
+  createActiveWithAuthenticationId(
+    email: string,
+    authenticationId: string,
+    notifier: Notifier,
+    displayName?: string | null,
+  ): Promise<Result<CurrentUser, ServerError>>
 }
 
 /**

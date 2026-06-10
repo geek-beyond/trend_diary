@@ -11,26 +11,16 @@ import { mapToActiveUser } from './mapper'
 // 補償失敗は手動対応が必要なため、デフォルトのログレベルをerrorに設定する
 const defaultLogger = new Logger('error', { component: 'user-command' })
 
-interface CommandImplOptions {
-  logger?: Logger
-  notifier?: Notifier
-}
-
 export default class CommandImpl implements Command {
-  private readonly logger: Logger
-  private readonly notifier?: Notifier
-
   constructor(
     private readonly db: RdbClient,
-    options: CommandImplOptions = {},
-  ) {
-    this.logger = options.logger ?? defaultLogger
-    this.notifier = options.notifier
-  }
+    private readonly logger: Logger = defaultLogger,
+  ) {}
 
   async createActiveWithAuthenticationId(
     email: string,
     authenticationId: string,
+    notifier: Notifier,
     displayName?: string | null,
   ): Promise<Result<CurrentUser, ServerError>> {
     // INFO: D1はインタラクティブトランザクション非対応のため、users→active_usersを逐次insertし、
@@ -59,7 +49,7 @@ export default class CommandImpl implements Command {
           compensateResult.error,
         )
         // 通知失敗は補償処理の結果に影響させない（通知基盤側で握りつぶす）
-        await this.notifier?.sendMessage(
+        await notifier.sendMessage(
           `🚨 孤児ユーザー検出（サインアップ補償トランザクション失敗）\nuserId: ${userId}\nerror: ${compensateResult.error.message}`,
         )
       }

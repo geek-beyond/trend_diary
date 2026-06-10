@@ -49,17 +49,23 @@ export type ZodValidatedParamContext<T, P extends string = ''> = ZodValidatedCon
   P
 >
 
-export type ZodValidatedParamJsonContext<ParamType, JsonType, P extends string = ''> = Context<
+// param は transform でリクエスト時の型（z.input）と検証後の型（z.output）が異なりうるため、
+// Hono client の RPC 型推論にはスキーマから in / out を別々に導く必要がある
+export type ZodValidatedParamJsonContext<
+  ParamSchema extends ZodSchema,
+  JsonSchema extends ZodSchema,
+  P extends string = '',
+> = Context<
   Env,
   P,
   {
     in: {
-      param: ParamType
-      json: JsonType
+      param: z.input<ParamSchema>
+      json: z.input<JsonSchema>
     }
     out: {
-      param: ParamType
-      json: JsonType
+      param: z.output<ParamSchema>
+      json: z.output<JsonSchema>
     }
   }
 >

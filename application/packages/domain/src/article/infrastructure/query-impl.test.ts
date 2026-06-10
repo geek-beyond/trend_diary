@@ -394,12 +394,17 @@ describe('QueryImpl', () => {
       }
     })
 
-    it('日付加算に失敗した場合は欠けたリストを返さずエラーを伝播する', () => {
-      const result = dateRangeEnumerator.enumerateJstDateRange('invalid', 'invalid')
+    it.each([
+      // fromDateJstが不正だと辞書順比較次第で空配列を正常値として返しうるため、検証してエラーにする
+      { name: 'fromDateJstが不正', from: 'invalid', to: '2026-03-08', invalid: 'invalid' },
+      // toDateJstが不正だと辞書順比較で常にcurrentより大きく、Date上限まで巨大ループになるのを防ぐ
+      { name: 'toDateJstが不正', from: '2026-03-06', to: 'invalid', invalid: 'invalid' },
+    ])('$nameな場合は欠けたリストを返さずエラーを伝播する', ({ from, to, invalid }) => {
+      const result = dateRangeEnumerator.enumerateJstDateRange(from, to)
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error.message).toBe('不正な日付文字列です: invalid')
+        expect(result.error.message).toBe(`不正な日付文字列です: ${invalid}`)
       }
     })
   })

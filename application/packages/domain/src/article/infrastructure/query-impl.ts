@@ -635,6 +635,14 @@ export default class QueryImpl implements Query {
     fromDateJst: string,
     toDateJst: string,
   ): Result<string[], Error> {
+    // 不正なtoDateJstは辞書順比較で常にcurrentより大きく評価され、Date上限到達まで巨大ループになる。
+    // 不正なfromDateJstは空配列を正常値として返してしまう。両端を先に検証して両方を防ぐ
+    for (const dateJst of [fromDateJst, toDateJst]) {
+      if (Number.isNaN(toJstDate(dateJst).getTime())) {
+        return err(new Error(`不正な日付文字列です: ${dateJst}`))
+      }
+    }
+
     const dates: string[] = []
     let current = fromDateJst
     while (current <= toDateJst) {

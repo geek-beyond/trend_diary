@@ -6,3 +6,4 @@
 - [ADRの作成方法](adr_snippet.md)
 - [データベース接続とマイグレーション](database_migration_guide.md)
 - [APIレートリミット設定](rate_limit_setup.md)
+- [運用ガイド（ログ・監視・復旧）](operations_guide.md)

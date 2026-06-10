@@ -64,8 +64,8 @@ describe('fetchWithTimeout', () => {
 
     beforeEach(() => {
       originalAny = AbortSignal.any
-      // biome-ignore lint/suspicious/noExplicitAny: 環境差を再現するため一時的に差し替える
-      ;(AbortSignal as any).any = anyImpl
+      // AbortSignal.any は非optionalのため、未対応環境を再現する undefined 代入は Reflect.set で行う
+      Reflect.set(AbortSignal, 'any', anyImpl)
       mockFetch.mockImplementation(neverResolvingFetch)
     })
 
@@ -90,5 +90,16 @@ describe('fetchWithTimeout', () => {
         fetchWithTimeout('https://example.com', { signal: AbortSignal.abort(new Error('pre')) }),
       ).rejects.toThrow('pre')
     })
+  })
+})
+
+describe('fetchWithTimeout().safeJson', () => {
+  it('レスポンスボディを呼び出し側が指定した型として返す', async () => {
+    mockFetch.mockResolvedValue(new Response(JSON.stringify({ message: 'ok' })))
+
+    const response = await fetchWithTimeout('https://example.com')
+    const body = await response.safeJson<{ message: string }>()
+
+    expect(body).toEqual({ message: 'ok' })
   })
 })

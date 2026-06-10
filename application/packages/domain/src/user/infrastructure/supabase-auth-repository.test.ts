@@ -11,6 +11,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
 import { SupabaseAuthRepository } from './supabase-auth-repository'
 
+type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> | null } : T
+
+// Supabase SDKの戻り値は判別共用体で、部分的なエラー形のモックでは正確な型を満たせないため、
+// 解決値の型推論を一箇所に閉じ込めてキャストを集約する
+const resolveAuthMock = <T>(
+  mockFn: { mockResolvedValue: (value: T) => unknown },
+  value: DeepPartial<T>,
+): void => {
+  // biome-ignore lint/plugin: Supabase SDKの判別共用体な戻り値型を、部分的なモック payload で満たす手段が他にないためです
+  mockFn.mockResolvedValue(value as T)
+}
+
 const buildSupabaseUser = (overrides: Partial<User> = {}): User => ({
   id: 'auth-user-id-123',
   app_metadata: {},
@@ -45,10 +57,10 @@ describe('SupabaseAuthRepository', () => {
       it('セッションを含むサインアップ結果を返すこと', async () => {
         const supabaseUser = buildSupabaseUser()
         const supabaseSession = buildSupabaseSession({ user: supabaseUser })
-        client.auth.signUp.mockResolvedValue({
+        resolveAuthMock(client.auth.signUp, {
           data: { user: supabaseUser, session: supabaseSession },
           error: null,
-        } as never)
+        })
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
@@ -70,10 +82,10 @@ describe('SupabaseAuthRepository', () => {
 
       it('セッションがnullの場合もサインアップ結果を返すこと', async () => {
         const supabaseUser = buildSupabaseUser()
-        client.auth.signUp.mockResolvedValue({
+        resolveAuthMock(client.auth.signUp, {
           data: { user: supabaseUser, session: null },
           error: null,
-        } as never)
+        })
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
@@ -85,10 +97,10 @@ describe('SupabaseAuthRepository', () => {
 
       it('emailConfirmedAtが未設定の場合はnullになること', async () => {
         const supabaseUser = buildSupabaseUser({ email_confirmed_at: undefined })
-        client.auth.signUp.mockResolvedValue({
+        resolveAuthMock(client.auth.signUp, {
           data: { user: supabaseUser, session: null },
           error: null,
-        } as never)
+        })
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
@@ -101,10 +113,10 @@ describe('SupabaseAuthRepository', () => {
       it('Supabaseのemailが空でもfallbackEmailを使用すること', async () => {
         const supabaseUser = buildSupabaseUser({ email: undefined })
         const supabaseSession = buildSupabaseSession({ user: supabaseUser, expires_in: undefined })
-        client.auth.signUp.mockResolvedValue({
+        resolveAuthMock(client.auth.signUp, {
           data: { user: supabaseUser, session: supabaseSession },
           error: null,
-        } as never)
+        })
 
         const result = await repository.signup('fallback@example.com', 'Password1!')
 
@@ -129,10 +141,10 @@ describe('SupabaseAuthRepository', () => {
       })
 
       it('既に登録済みのユーザーの場合AlreadyExistsErrorを返すこと', async () => {
-        client.auth.signUp.mockResolvedValue({
+        resolveAuthMock(client.auth.signUp, {
           data: { user: null, session: null },
           error: { message: 'User already registered', name: 'AuthError', status: 400 },
-        } as never)
+        })
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
@@ -144,10 +156,10 @@ describe('SupabaseAuthRepository', () => {
       })
 
       it('それ以外のエラーはServerErrorで包んで返すこと', async () => {
-        client.auth.signUp.mockResolvedValue({
+        resolveAuthMock(client.auth.signUp, {
           data: { user: null, session: null },
           error: { message: 'unexpected', name: 'AuthError', status: 500 },
-        } as never)
+        })
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
@@ -159,10 +171,10 @@ describe('SupabaseAuthRepository', () => {
       })
 
       it('ユーザーが返却されない場合ServerErrorを返すこと', async () => {
-        client.auth.signUp.mockResolvedValue({
+        resolveAuthMock(client.auth.signUp, {
           data: { user: null, session: null },
           error: null,
-        } as never)
+        })
 
         const result = await repository.signup('test@example.com', 'Password1!')
 
@@ -175,10 +187,10 @@ describe('SupabaseAuthRepository', () => {
 
       it('emailもfallbackEmailも無い場合ServerErrorを返すこと', async () => {
         const supabaseUser = buildSupabaseUser({ email: undefined })
-        client.auth.signUp.mockResolvedValue({
+        resolveAuthMock(client.auth.signUp, {
           data: { user: supabaseUser, session: null },
           error: null,
-        } as never)
+        })
 
         const result = await repository.signup('', 'Password1!')
 
@@ -196,10 +208,10 @@ describe('SupabaseAuthRepository', () => {
       it('ログイン結果を返すこと', async () => {
         const supabaseUser = buildSupabaseUser()
         const supabaseSession = buildSupabaseSession({ user: supabaseUser })
-        client.auth.signInWithPassword.mockResolvedValue({
+        resolveAuthMock(client.auth.signInWithPassword, {
           data: { user: supabaseUser, session: supabaseSession },
           error: null,
-        } as never)
+        })
 
         const result = await repository.login('test@example.com', 'Password1!')
 
@@ -225,41 +237,45 @@ describe('SupabaseAuthRepository', () => {
 
       it('AuthInvalidCredentialsError(instanceofヒット)時はClientError(401)を返すこと', async () => {
         const authError = new AuthInvalidCredentialsError('Invalid login credentials')
-        client.auth.signInWithPassword.mockResolvedValue({
+        resolveAuthMock(client.auth.signInWithPassword, {
           data: { user: null, session: null },
           error: authError,
-        } as never)
+        })
 
         const result = await repository.login('test@example.com', 'WrongPassword!')
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ClientError)
-          expect((result.error as ClientError).statusCode).toBe(401)
+          if (result.error instanceof ClientError) {
+            expect(result.error.statusCode).toBe(401)
+          }
           expect(result.error.message).toBe('Invalid email or password')
         }
       })
 
       it('Invalid login credentials メッセージのフォールバック判定でClientErrorを返すこと', async () => {
-        client.auth.signInWithPassword.mockResolvedValue({
+        resolveAuthMock(client.auth.signInWithPassword, {
           data: { user: null, session: null },
           error: { message: 'Invalid login credentials', name: 'AuthError', status: 400 },
-        } as never)
+        })
 
         const result = await repository.login('test@example.com', 'WrongPassword!')
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ClientError)
-          expect((result.error as ClientError).statusCode).toBe(401)
+          if (result.error instanceof ClientError) {
+            expect(result.error.statusCode).toBe(401)
+          }
         }
       })
 
       it('Invalid credentials メッセージでもClientErrorを返すこと', async () => {
-        client.auth.signInWithPassword.mockResolvedValue({
+        resolveAuthMock(client.auth.signInWithPassword, {
           data: { user: null, session: null },
           error: { message: 'Invalid credentials', name: 'AuthError', status: 400 },
-        } as never)
+        })
 
         const result = await repository.login('test@example.com', 'WrongPassword!')
 
@@ -270,10 +286,10 @@ describe('SupabaseAuthRepository', () => {
       })
 
       it('それ以外のエラーはServerErrorを返すこと', async () => {
-        client.auth.signInWithPassword.mockResolvedValue({
+        resolveAuthMock(client.auth.signInWithPassword, {
           data: { user: null, session: null },
           error: { message: 'database error', name: 'AuthError', status: 500 },
-        } as never)
+        })
 
         const result = await repository.login('test@example.com', 'Password1!')
 
@@ -285,10 +301,10 @@ describe('SupabaseAuthRepository', () => {
 
       it('userまたはsessionが欠落している場合ServerErrorを返すこと', async () => {
         const supabaseUser = buildSupabaseUser()
-        client.auth.signInWithPassword.mockResolvedValue({
+        resolveAuthMock(client.auth.signInWithPassword, {
           data: { user: supabaseUser, session: null },
           error: null,
-        } as never)
+        })
 
         const result = await repository.login('test@example.com', 'Password1!')
 
@@ -301,13 +317,13 @@ describe('SupabaseAuthRepository', () => {
 
       it('emailが取得できない場合ServerErrorを返すこと', async () => {
         const supabaseUser = buildSupabaseUser({ email: undefined })
-        client.auth.signInWithPassword.mockResolvedValue({
+        resolveAuthMock(client.auth.signInWithPassword, {
           data: {
             user: supabaseUser,
             session: buildSupabaseSession({ user: supabaseUser }),
           },
           error: null,
-        } as never)
+        })
 
         const result = await repository.login('', 'Password1!')
 
@@ -323,7 +339,7 @@ describe('SupabaseAuthRepository', () => {
   describe('logout', () => {
     describe('正常系', () => {
       it('ログアウト成功時にvoidを返すこと', async () => {
-        client.auth.signOut.mockResolvedValue({ error: null } as never)
+        resolveAuthMock(client.auth.signOut, { error: null })
 
         const result = await repository.logout()
 
@@ -344,9 +360,9 @@ describe('SupabaseAuthRepository', () => {
       })
 
       it('errorが存在する場合ServerErrorを返すこと', async () => {
-        client.auth.signOut.mockResolvedValue({
+        resolveAuthMock(client.auth.signOut, {
           error: { message: 'logout error', name: 'AuthError', status: 500 },
-        } as never)
+        })
 
         const result = await repository.logout()
 
@@ -363,10 +379,10 @@ describe('SupabaseAuthRepository', () => {
     describe('正常系', () => {
       it('現在のユーザーを返すこと', async () => {
         const supabaseUser = buildSupabaseUser()
-        client.auth.getUser.mockResolvedValue({
+        resolveAuthMock(client.auth.getUser, {
           data: { user: supabaseUser },
           error: null,
-        } as never)
+        })
 
         const result = await repository.getCurrentUser()
 
@@ -387,8 +403,9 @@ describe('SupabaseAuthRepository', () => {
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
           expect(result.error).toBeInstanceOf(UnauthorizedError)
-          const unauthorized = result.error as UnauthorizedError
-          expect(unauthorized.context?.sessionExists).toBe(false)
+          if (result.error instanceof UnauthorizedError) {
+            expect(result.error.context?.sessionExists).toBe(false)
+          }
         }
       })
 
@@ -404,27 +421,28 @@ describe('SupabaseAuthRepository', () => {
       })
 
       it('userがnullの場合UnauthorizedError(sessionExists=true)を返すこと', async () => {
-        client.auth.getUser.mockResolvedValue({
+        resolveAuthMock(client.auth.getUser, {
           data: { user: null },
           error: null,
-        } as never)
+        })
 
         const result = await repository.getCurrentUser()
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
           expect(result.error).toBeInstanceOf(UnauthorizedError)
-          const unauthorized = result.error as UnauthorizedError
-          expect(unauthorized.context?.sessionExists).toBe(true)
+          if (result.error instanceof UnauthorizedError) {
+            expect(result.error.context?.sessionExists).toBe(true)
+          }
         }
       })
 
       it('emailが取得できない場合ServerErrorを返すこと', async () => {
         const supabaseUser = buildSupabaseUser({ email: undefined })
-        client.auth.getUser.mockResolvedValue({
+        resolveAuthMock(client.auth.getUser, {
           data: { user: supabaseUser },
           error: null,
-        } as never)
+        })
 
         const result = await repository.getCurrentUser()
 
@@ -441,10 +459,10 @@ describe('SupabaseAuthRepository', () => {
       it('セッション更新成功時に新セッションを返すこと', async () => {
         const supabaseUser = buildSupabaseUser()
         const supabaseSession = buildSupabaseSession({ user: supabaseUser })
-        client.auth.refreshSession.mockResolvedValue({
+        resolveAuthMock(client.auth.refreshSession, {
           data: { user: supabaseUser, session: supabaseSession },
           error: null,
-        } as never)
+        })
 
         const result = await repository.refreshSession()
 
@@ -469,10 +487,10 @@ describe('SupabaseAuthRepository', () => {
       })
 
       it('errorが存在する場合ServerErrorを返すこと', async () => {
-        client.auth.refreshSession.mockResolvedValue({
+        resolveAuthMock(client.auth.refreshSession, {
           data: { user: null, session: null },
           error: { message: 'refresh failed', name: 'AuthError', status: 401 },
-        } as never)
+        })
 
         const result = await repository.refreshSession()
 
@@ -483,10 +501,10 @@ describe('SupabaseAuthRepository', () => {
       })
 
       it('sessionがnullの場合ServerErrorを返すこと', async () => {
-        client.auth.refreshSession.mockResolvedValue({
+        resolveAuthMock(client.auth.refreshSession, {
           data: { user: null, session: null },
           error: null,
-        } as never)
+        })
 
         const result = await repository.refreshSession()
 
@@ -498,13 +516,13 @@ describe('SupabaseAuthRepository', () => {
 
       it('emailが取得できない場合ServerErrorを返すこと', async () => {
         const supabaseUser = buildSupabaseUser({ email: undefined })
-        client.auth.refreshSession.mockResolvedValue({
+        resolveAuthMock(client.auth.refreshSession, {
           data: {
             user: supabaseUser,
             session: buildSupabaseSession({ user: supabaseUser }),
           },
           error: null,
-        } as never)
+        })
 
         const result = await repository.refreshSession()
 
@@ -519,10 +537,10 @@ describe('SupabaseAuthRepository', () => {
   describe('deleteUser', () => {
     describe('正常系', () => {
       it('削除成功時にvoidを返すこと', async () => {
-        client.auth.admin.deleteUser.mockResolvedValue({
+        resolveAuthMock(client.auth.admin.deleteUser, {
           data: { user: null },
           error: null,
-        } as never)
+        })
 
         const result = await repository.deleteUser('auth-user-id-123')
 
@@ -543,10 +561,10 @@ describe('SupabaseAuthRepository', () => {
       })
 
       it('errorが存在する場合ServerErrorを返すこと', async () => {
-        client.auth.admin.deleteUser.mockResolvedValue({
+        resolveAuthMock(client.auth.admin.deleteUser, {
           data: { user: null },
           error: { message: 'delete failed', name: 'AuthError', status: 500 },
-        } as never)
+        })
 
         const result = await repository.deleteUser('auth-user-id-123')
 

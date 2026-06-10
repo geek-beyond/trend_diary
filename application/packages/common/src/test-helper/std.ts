@@ -31,6 +31,7 @@ export class StdTestHelper {
       return true
     }
 
+    // biome-ignore lint/plugin: process.stdout.writeはオーバーロードされた型であり、単一シグネチャのimplを直接代入できないため
     spy.mockImplementation(impl as typeof process.stdout.write)
 
     return {

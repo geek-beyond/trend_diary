@@ -131,7 +131,7 @@ describe('POST /api/articles/:article_id/read', () => {
       const response = await requestReadArticle(testArticleId.toString(), authCookies, fixedReadAt)
 
       expect(response.status).toBe(201)
-      const json = (await response.json()) as { message: string }
+      const json: { message: string } = await response.json()
       expect(json.message).toBe('記事を既読にしました')
 
       // DBに実際に記録されていることを確認

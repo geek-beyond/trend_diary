@@ -8,6 +8,8 @@ export const ARTICLE_MEDIA_LABELS: Record<ArticleMedia, string> = {
   hatena: 'はてブ',
 }
 
+const ARTICLE_MEDIA_SET: ReadonlySet<string> = new Set(ARTICLE_MEDIA)
+
 export function isArticleMedia(value: string): value is ArticleMedia {
-  return (ARTICLE_MEDIA as readonly string[]).includes(value)
+  return ARTICLE_MEDIA_SET.has(value)
 }

@@ -30,7 +30,11 @@ export const Default: Story = {
     await step('スピナーが回転アニメーションしていることを確認', async () => {
       const container = canvas.getByRole('status', { name: 'Loading...' })
       const spinner = container.querySelector('div > div')
-      const spinnerStyle = window.getComputedStyle(spinner as Element)
+      await expect(spinner).not.toBeNull()
+      if (!spinner) {
+        throw new Error('spinner element not found')
+      }
+      const spinnerStyle = window.getComputedStyle(spinner)
       await expect(spinnerStyle.animation).toContain('spin')
     })
   },

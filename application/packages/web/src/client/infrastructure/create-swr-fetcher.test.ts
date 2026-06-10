@@ -23,6 +23,7 @@ describe('createSWRFetcher', () => {
         json: vi.fn().mockResolvedValue({ data: 'test' }),
       }
       // biome-ignore lint/suspicious/noExplicitAny: fetchのモックの型が不明なためanyを使用
+      // biome-ignore lint/plugin: テスト用に最小限のフィールドだけ持つモックを Response として渡す必要があるため許可する
       vi.mocked(fetch).mockResolvedValue(mockResponse as any)
 
       const { fetcher } = createSWRFetcher()
@@ -46,6 +47,7 @@ describe('createSWRFetcher', () => {
         statusText: 'Not Found',
       }
       // biome-ignore lint/suspicious/noExplicitAny: fetchのモックの型が不明なためanyを使用
+      // biome-ignore lint/plugin: テスト用に最小限のフィールドだけ持つモックを Response として渡す必要があるため許可する
       vi.mocked(fetch).mockResolvedValue(mockResponse as any)
 
       const { fetcher } = createSWRFetcher()

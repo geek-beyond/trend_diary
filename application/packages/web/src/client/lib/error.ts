@@ -6,7 +6,8 @@
  */
 export function getApiErrorMessage(error: unknown, defaultMessage: string): string {
   if (error && typeof error === 'object' && 'message' in error) {
-    return (error as { message?: string }).message ?? defaultMessage
+    const { message } = error
+    return typeof message === 'string' ? message : defaultMessage
   }
   return defaultMessage
 }

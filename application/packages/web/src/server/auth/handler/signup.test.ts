@@ -43,7 +43,7 @@ describe('POST /api/auth/signup', () => {
     const res = await requestSignup(JSON.stringify({ email, password: 'Test@password123' }))
 
     expect(res.status).toBe(201)
-    const body = (await res.json()) as Record<string, never>
+    const body: Record<string, never> = await res.json()
     expect(body).toEqual({})
   })
 

@@ -1,8 +1,11 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 import { TIMEOUT } from '../constants'
 
-type WindowWithLastOpenedUrl = Window & {
-  lastOpenedUrl?: string
+// page.evaluate のブラウザコンテキストで window にテスト用の値を保持するため、Window 型へ拡張する
+declare global {
+  interface Window {
+    lastOpenedUrl?: string
+  }
 }
 
 export class ArticleDrawer {
@@ -70,10 +73,9 @@ export class ArticleDrawer {
 
   async mockWindowOpen(): Promise<void> {
     await this.page.evaluate(() => {
-      const currentWindow = window as WindowWithLastOpenedUrl
       window.open = (url: string | URL | undefined) => {
         if (url) {
-          currentWindow.lastOpenedUrl = url.toString()
+          window.lastOpenedUrl = url.toString()
         }
 
         return null
@@ -83,8 +85,7 @@ export class ArticleDrawer {
 
   async getLastOpenedUrl(): Promise<string> {
     return this.page.evaluate(() => {
-      const currentWindow = window as WindowWithLastOpenedUrl
-      return currentWindow.lastOpenedUrl ?? ''
+      return window.lastOpenedUrl ?? ''
     })
   }
 }

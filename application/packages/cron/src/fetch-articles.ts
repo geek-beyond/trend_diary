@@ -141,14 +141,14 @@ function isUniqueConstraintError(error: unknown): boolean {
   let current: unknown = error
   for (let depth = 0; depth < 5 && current != null; depth += 1) {
     if (typeof current !== 'object') break
-    const candidate = current as { message?: unknown; cause?: unknown }
     if (
-      typeof candidate.message === 'string' &&
-      candidate.message.includes('UNIQUE constraint failed')
+      'message' in current &&
+      typeof current.message === 'string' &&
+      current.message.includes('UNIQUE constraint failed')
     ) {
       return true
     }
-    current = candidate.cause
+    current = 'cause' in current ? current.cause : undefined
   }
   return false
 }

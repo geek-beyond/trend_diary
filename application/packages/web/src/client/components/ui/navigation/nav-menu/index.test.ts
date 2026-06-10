@@ -13,6 +13,10 @@ const menuItems: MenuItem[] = [
   },
 ]
 
+function hasChildren(props: unknown): props is { children: ReactNode } {
+  return typeof props === 'object' && props !== null && 'children' in props
+}
+
 describe('NavMenu', () => {
   it('sheet表示では各メニュー項目がSheetCloseでラップされる', () => {
     const element = NavMenu({ variant: 'sheet', menuItems })
@@ -21,7 +25,10 @@ describe('NavMenu', () => {
       throw new Error('NavMenuがReactElementを返さなかった')
     }
 
-    const children = (element.props as { children: ReactNode[] }).children
+    if (!hasChildren(element.props)) {
+      throw new Error('NavMenuの戻り値がchildrenを持たなかった')
+    }
+    const children = element.props.children
     const menuItemElement = Children.toArray(children).find(
       (child) => isValidElement(child) && child.type === SheetClose,
     )

@@ -116,7 +116,7 @@ describe('ArticleUseCase', () => {
 
         queryMock.searchArticles.mockResolvedValue(ok(mockPaginationResult))
 
-        const result = await useCase.searchArticles(params as QueryParams)
+        const result = await useCase.searchArticles(params)
 
         expect(result).toEqual(ok(mockPaginationResult))
         expect(queryMock.searchArticles).toHaveBeenCalledTimes(1)
@@ -133,7 +133,7 @@ describe('ArticleUseCase', () => {
 
         queryMock.searchArticles.mockResolvedValue(ok(mockPaginationResult))
 
-        const result = await useCase.searchArticles(params as QueryParams)
+        const result = await useCase.searchArticles(params)
 
         expect(result).toEqual(ok(mockPaginationResult))
         expect(queryMock.searchArticles).toHaveBeenCalledWith(
@@ -155,7 +155,7 @@ describe('ArticleUseCase', () => {
 
         queryMock.searchArticles.mockResolvedValue(ok(mockPaginationResult))
 
-        const result = await useCase.searchArticles(params as QueryParams)
+        const result = await useCase.searchArticles(params)
 
         expect(result).toEqual(ok(mockPaginationResult))
         expect(queryMock.searchArticles).toHaveBeenCalledWith(
@@ -177,7 +177,7 @@ describe('ArticleUseCase', () => {
 
         queryMock.searchArticles.mockResolvedValue(ok(mockPaginationResult))
 
-        const result = await useCase.searchArticles(params as QueryParams)
+        const result = await useCase.searchArticles(params)
 
         expect(result).toEqual(ok(mockPaginationResult))
         expect(queryMock.searchArticles).toHaveBeenCalledWith(
@@ -199,7 +199,7 @@ describe('ArticleUseCase', () => {
 
         queryMock.searchArticles.mockResolvedValue(ok(mockPaginationResult))
 
-        const result = await useCase.searchArticles(params as QueryParams)
+        const result = await useCase.searchArticles(params)
 
         expect(result).toEqual(ok(mockPaginationResult))
         expect(queryMock.searchArticles).toHaveBeenCalledWith(
@@ -221,7 +221,7 @@ describe('ArticleUseCase', () => {
 
         queryMock.searchArticles.mockResolvedValue(ok(mockPaginationResult))
 
-        const result = await useCase.searchArticles(params as QueryParams)
+        const result = await useCase.searchArticles(params)
 
         expect(result).toEqual(ok(mockPaginationResult))
         expect(queryMock.searchArticles).toHaveBeenCalledWith(
@@ -244,7 +244,7 @@ describe('ArticleUseCase', () => {
 
         queryMock.searchArticles.mockResolvedValue(ok(mockPaginationResult))
 
-        const result = await useCase.searchArticles(params as QueryParams)
+        const result = await useCase.searchArticles(params)
 
         expect(result).toEqual(ok(mockPaginationResult))
         expect(queryMock.searchArticles).toHaveBeenCalledWith(
@@ -267,7 +267,7 @@ describe('ArticleUseCase', () => {
 
         queryMock.searchArticles.mockResolvedValue(ok(mockPaginationResult))
 
-        const result = await useCase.searchArticles(params as QueryParams)
+        const result = await useCase.searchArticles(params)
 
         expect(result).toEqual(ok(mockPaginationResult))
         expect(queryMock.searchArticles).toHaveBeenCalledWith(

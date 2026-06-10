@@ -38,7 +38,7 @@ export class AuthUseCase {
 
     const { user, session } = authResult.value
 
-    // active_userを作成（補償失敗による孤児user発生時はnotifierで通知する）
+    // active_userを作成（補償失敗でusersレコードが孤立した場合はnotifierで通知する）
     const activeUserResult = await this.userCommand.createActiveWithAuthenticationId(
       user.email,
       user.id,

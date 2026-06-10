@@ -37,8 +37,8 @@ export default class CommandImpl implements Command {
     const { userId } = createdUser
 
     // INFO: active_users insert失敗時の補償。作成済みusersを削除しエラーを返す。
-    //       補償自体の失敗は元のエラーを優先して返すが、孤児users(active_usersを持たない行)が
-    //       残り自動検知できないため、手動対応に必要なuserIdと補償エラーをerrorログに残す
+    //       補償自体の失敗は元のエラーを優先して返すが、active_usersを持たないusersレコードが
+    //       孤立して残り自動検知できないため、手動対応に必要なuserIdと補償エラーをerrorログに残す
     const compensateAndFail = async (): Promise<Result<CurrentUser, ServerError>> => {
       const compensateResult = await wrapDbCall(() =>
         this.db.delete(users).where(eq(users.userId, userId)),
@@ -50,7 +50,7 @@ export default class CommandImpl implements Command {
         )
         // 通知失敗は補償処理の結果に影響させない（通知基盤側で握りつぶす）
         await notifier.sendMessage(
-          `🚨 孤児ユーザー検出（サインアップ補償トランザクション失敗）\nuserId: ${userId}\nerror: ${compensateResult.error.message}`,
+          `🚨 整合性エラー: active_usersを持たないusersレコードが孤立（サインアップ補償トランザクション失敗）\nuserId: ${userId}\nerror: ${compensateResult.error.message}`,
         )
       }
       return err(new ServerError('Failed to create active user'))

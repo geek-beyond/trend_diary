@@ -14,7 +14,7 @@ export interface Query {
 }
 
 /**
- * 手動対応が必要な事象（サインアップ補償失敗による孤児user等）を通知する汎用ポート
+ * 手動対応が必要な事象（サインアップ補償失敗によるusersレコードの孤立等）を通知する汎用ポート
  */
 export interface Notifier {
   sendMessage(content: string): Promise<void>

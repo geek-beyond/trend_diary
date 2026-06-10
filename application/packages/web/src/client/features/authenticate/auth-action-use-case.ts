@@ -65,7 +65,7 @@ export function createAuthActionUseCase(request: Request, context: AppLoadContex
 
   const rdb = getRdbClient(context.cloudflare.env.DB)
   const useCase = createAuthUseCase(client, rdb)
-  // 補償（users削除）失敗で孤児userが残った場合にDiscordへ通知する
+  // 補償（users削除）失敗でusersレコードが孤立した場合にDiscordへ通知する
   const notifier = new DiscordWebhookClient(context.cloudflare.env.DISCORD_WEBHOOK_URL)
 
   return {

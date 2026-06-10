@@ -209,7 +209,7 @@ describe('CommandImpl', () => {
       expect(deleteCall).toBeDefined()
     })
 
-    it('補償delete失敗時は孤児user検知のためuserIdと補償エラーをerrorログに出力する', async () => {
+    it('補償delete失敗時はusersレコード孤立検知のためuserIdと補償エラーをerrorログに出力する', async () => {
       // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete失敗
       const errorSpy = vi.spyOn(logger, 'error')
       const compensationError = new Error('compensation delete failed')
@@ -231,7 +231,7 @@ describe('CommandImpl', () => {
       )
     })
 
-    it('補償delete失敗時は孤児userをnotifierへ通知する', async () => {
+    it('補償delete失敗時は孤立したusersレコードをnotifierへ通知する', async () => {
       // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete失敗
       const compensationError = new Error('compensation delete failed')
       mockRdbExecutor

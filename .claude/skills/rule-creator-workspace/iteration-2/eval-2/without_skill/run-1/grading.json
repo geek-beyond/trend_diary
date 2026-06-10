@@ -1,0 +1,81 @@
+{
+  "expectations": [
+    {
+      "text": "paths の glob が components 配下の .tsx に絞り込まれている（例: **/web/src/client/components/**/*.tsx 等）",
+      "passed": true,
+      "evidence": "outputs/component-naming.md の frontmatter は `paths:` 配下に `- \"**/packages/web/src/client/components/**/*.tsx\"` を持つ。パスに `components` を含み拡張子を `*.tsx` に限定しており、components 配下の .tsx に絞り込まれている。リポジトリ実体でもこの glob は実在する 41 件の .tsx（find で確認）にマッチする。"
+    },
+    {
+      "text": "paths が server / domain / cron など無関係なディレクトリまで巻き込む過度に広い glob になっていない（負アサーション: スコープが要求どおり components に限定）",
+      "passed": true,
+      "evidence": "glob は `**/packages/web/src/client/components/**/*.tsx` のみ。`client/components/` を必須セグメントとして含むため server / domain / cron などの他ディレクトリにはマッチしない。`*.ts` も除外され .tsx のみが対象。過度に広いワイルドカード（例: `**/*.tsx` 単体や `**/web/**/*.tsx`）は採用されていない。"
+    },
+    {
+      "text": "フロントマターのキー名が正しく paths である",
+      "passed": true,
+      "evidence": "outputs/component-naming.md の 1-4 行目が `---` / `paths:` / `  - \"...\"` / `---` の YAML frontmatter。キー名は既存ルール（api-validation.md 等）と同じ `paths` で正しい。"
+    },
+    {
+      "text": "成果物は .claude/rules/ 配下想定の Markdown で、本文が日本語かつ理由(why)を含む",
+      "passed": true,
+      "evidence": "成果物は Markdown（component-naming.md）で、見出し `# コンポーネント命名規約`、本文「コンポーネントは PascalCase で名付ける」とその下に「理由: React の慣習に従い…視覚的に区別できるようにするため」と why を明記。全文日本語。既存 .claude/rules/ のフォーマット（paths frontmatter + 見出し + 箇条書き + 理由）に整合している。"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 5,
+    "errors_encountered": 0,
+    "output_chars": 359,
+    "transcript_chars": 3067
+  },
+  "timing": {
+    "executor_duration_seconds": 51.9,
+    "total_duration_seconds": 51.9,
+    "total_tokens": 18102,
+    "duration_ms": 51856
+  },
+  "claims": [
+    {
+      "claim": "ターゲットディレクトリ配下に 41 件の .tsx が実在し、採用 glob がマッチする",
+      "type": "factual",
+      "verified": true,
+      "evidence": "find /home/user/trend_diary/application/packages/web/src/client/components/ -name '*.tsx' | wc -l => 41。サブディレクトリ ui/ customized/ shadcn/ も存在し、`**/` 配置で深さ非依存にマッチする。"
+    },
+    {
+      "claim": "既存ルールは paths frontmatter + 日本語本文 + 理由 という共通構造を取る",
+      "type": "factual",
+      "verified": true,
+      "evidence": ".claude/rules/api-validation.md は `paths:` frontmatter（`**/web/src/server/**/*.ts`）と日本語の規約本文を持つ。成果物はこのフォーマットに準拠。"
+    },
+    {
+      "claim": "実リポジトリの .claude/rules/ や CLAUDE.md は変更せず outputs にのみ書き込んだ",
+      "type": "process",
+      "verified": true,
+      "evidence": ".claude/rules/ には既存 5 ファイルのみで component-naming.md は存在せず、成果物は outputs/ 配下にのみ生成されている。"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "paths の glob が components 配下の .tsx に絞り込まれている",
+        "reason": "「絞り込まれている」だけだと `**/components/**` を含むが過度に広い glob（例: web 全体の components 以外もマッチするような書き方）でも通り得る。負アサーション(2)と合わせて初めて discriminating になっているため、(1) 単体では server/domain にマッチしない事を直接確認する文言にするとより堅い。"
+      },
+      {
+        "reason": "実ファイルへのマッチ件数（41 件など）を検証する assertion が無い。glob が文字列として正しくても実体にマッチしない（typo・パスずれ）ケースを捕捉できないため、「glob が実在する .tsx に >=1 件マッチする」という assertion を追加すると、表層的な文字列一致を超えた実効性を検証できる。"
+      }
+    ],
+    "overall": "4 つの assertion はキー名・スコープ限定・負アサーション・言語/理由を多面的にカバーしており妥当。負アサーション(2)が glob の過剰広範化を捕捉できる点が良い。実マッチ件数の検証を加えるとさらに堅牢。"
+  }
+}

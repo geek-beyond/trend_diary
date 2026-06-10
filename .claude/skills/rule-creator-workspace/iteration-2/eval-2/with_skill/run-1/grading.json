@@ -1,0 +1,85 @@
+{
+  "expectations": [
+    {
+      "text": "paths の glob が components 配下の .tsx に絞り込まれている（例: **/web/src/client/components/**/*.tsx 等）",
+      "passed": true,
+      "evidence": "outputs/naming.md のフロントマターに `paths: - \"**/packages/web/src/client/components/**/*.tsx\"` が記載されている。実リポジトリ検証でも components 配下に .tsx が 41 件存在し全てマッチ、glob 末尾が `components/**/*.tsx` で components サブツリーかつ拡張子 .tsx に正しく限定されている。"
+    },
+    {
+      "text": "paths が server / domain / cron など無関係なディレクトリまで巻き込む過度に広い glob になっていない（負アサーション: スコープが要求どおり components に限定）",
+      "passed": true,
+      "evidence": "glob は `**/packages/web/src/client/components/**/*.tsx` で、`server` / `domain` / `cron` はおろか同じ client 配下の `features` / `routes` / `infrastructure` / `lib` にもマッチしない。`**/src/**/*.{ts,tsx}` のような広域 glob を意図的に避けた旨が transcript L50-52 に記載され、実ファイル構造（server/domain/cron ディレクトリ）はこのパスにマッチしない。"
+    },
+    {
+      "text": "フロントマターのキー名が正しく paths である",
+      "passed": true,
+      "evidence": "outputs/naming.md の 1-4 行目が `---` で囲まれた YAML フロントマターで、キー名は `paths`（配列）。`path` や `glob` 等の誤キーではない。"
+    },
+    {
+      "text": "成果物は .claude/rules/ 配下想定の Markdown で、本文が日本語かつ理由(why)を含む",
+      "passed": true,
+      "evidence": "naming.md は `.claude/rules/` 想定の Markdown（テスト制約により workspace の outputs/ に出力）。見出し『# 命名規約』、本文『コンポーネントは PascalCase で名付ける』は日本語。ネストで『理由: JSX では小文字始まりのタグは HTML 要素として解釈されるため...React の慣例にも沿う』と why を明記。CLAUDE.md の『コメントは why だけを書く』方針にも合致。"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 4,
+    "errors_encountered": 0,
+    "output_chars": 425,
+    "transcript_chars": 4513,
+    "note": "metrics.json が存在しないため tool_calls 等は transcript からの推定。transcript 上は Read(SKILL.md, .claude/rules 既存ルール), Grep(命名重複チェック), Glob(.tsx 確認) の使用が記述されている。"
+  },
+  "timing": {
+    "executor_duration_seconds": 83.6,
+    "total_tokens": 23831,
+    "duration_ms": 83550,
+    "total_duration_seconds": 83.6
+  },
+  "claims": [
+    {
+      "claim": "components 配下の .tsx は 41 件あり、すべて対象に入る",
+      "type": "factual",
+      "verified": true,
+      "evidence": "`find .../components -name '*.tsx' | wc -l` の結果が 41 件で一致。"
+    },
+    {
+      "claim": "components/shadcn/hooks/use-mobile.ts や components/shadcn/lib/utils.ts のような .ts ファイルも同居しているが、命名規約の対象外",
+      "type": "factual",
+      "verified": true,
+      "evidence": "実リポジトリに shadcn/hooks/use-mobile.ts, shadcn/lib/utils.ts が存在し、glob `*.tsx` ではマッチしないため正しく除外されている。.ts は計 6 件存在。"
+    },
+    {
+      "claim": "client 配下には features / routes / infrastructure / lib 等もあるが components に明示限定した",
+      "type": "process",
+      "verified": true,
+      "evidence": "glob が `client/components/**/*.tsx` で終わっており、client 直下の他サブツリーにはマッチしない。負アサーションの意図と整合。"
+    },
+    {
+      "claim": "実リポジトリの .claude/rules/ には書き込まず outputs/ のみに出力、git commit/push もしていない",
+      "type": "process",
+      "verified": true,
+      "evidence": "成果物は outputs/naming.md のみに存在。transcript L62-65 に明記。"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": ["テスト制約により実 .claude/rules/ ではなく workspace の outputs/ に出力した"]
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "paths の glob が components 配下の .tsx に絞り込まれている",
+        "reason": "glob の存在と末尾パターンは検証できるが、拡張子を .tsx に限定したこと（.ts の use-mobile.ts / utils.ts を除外する判断）が本ケースの妙所。`{ts,tsx}` を含めても assertion 1・3 は通ってしまうため、『.ts を含めない』を別アサーションとして明示すると識別力が上がる。"
+      }
+    ],
+    "overall": "4 アサーションは全て妥当に通過。スコープ限定（components 限定・.tsx 限定・無関係ディレクトリ非巻き込み）と why を含む日本語本文という核心要件をよく捉えている。唯一、.ts 除外を直接検証するアサーションがあると更に堅牢。"
+  }
+}

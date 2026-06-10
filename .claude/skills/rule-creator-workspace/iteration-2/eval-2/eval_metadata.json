@@ -1,0 +1,11 @@
+{
+  "eval_id": 2,
+  "eval_name": "precise-component-scope-not-overbroad",
+  "prompt": "client のコンポーネントファイル（application/packages/web/src/client/components 配下の .tsx）にだけ効く命名規約を追加したいです。内容は「コンポーネントは PascalCase で名付ける」。",
+  "assertions": [
+    "paths の glob が components 配下の .tsx に絞り込まれている（例: **/web/src/client/components/**/*.tsx 等）",
+    "paths が server / domain / cron など無関係なディレクトリまで巻き込む過度に広い glob になっていない（負アサーション: スコープが要求どおり components に限定されている）",
+    "フロントマターのキー名が正しく paths である",
+    "成果物は .claude/rules/ 配下想定の Markdown で、本文が日本語かつ理由(why)を含む"
+  ]
+}

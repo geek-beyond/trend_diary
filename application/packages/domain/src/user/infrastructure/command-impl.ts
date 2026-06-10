@@ -8,8 +8,8 @@ import { Command } from '../repository'
 import type { CurrentUser } from '../schema/active-user-schema'
 import { mapToActiveUser } from './mapper'
 
-// 補償失敗は手動対応が必要なため、LOG_LEVELの設定に関わらずerrorログが確実に出力されるよう既定をinfoにする
-const defaultLogger = new Logger('info', { component: 'user-command' })
+// 補償失敗は手動対応が必要なため、デフォルトのログレベルをerrorに設定する
+const defaultLogger = new Logger('error', { component: 'user-command' })
 
 export default class CommandImpl implements Command {
   constructor(

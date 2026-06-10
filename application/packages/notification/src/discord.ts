@@ -26,10 +26,13 @@ export interface DiscordWebhookClientOptions {
   maxRetries?: number
   /** exponential backoff の基準遅延（ミリ秒）。 */
   baseDelayMs?: number
+  /** 1回の送信のタイムアウト（ミリ秒）。 */
+  timeoutMs?: number
 }
 
 const DEFAULT_MAX_RETRIES = 3
 const DEFAULT_BASE_DELAY_MS = 200
+const DEFAULT_TIMEOUT_MS = 5000
 
 /**
  * Discord Webhook への汎用送信クライアント。
@@ -43,11 +46,14 @@ export class DiscordWebhookClient {
 
   private readonly baseDelayMs: number
 
+  private readonly timeoutMs: number
+
   constructor(webhookUrl?: string, options: DiscordWebhookClientOptions = {}) {
     this.webhookUrl = webhookUrl ?? ''
     this.logger = options.logger
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES
     this.baseDelayMs = options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS
+    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
   }
 
   async send(payload: DiscordWebhookPayload): Promise<void> {
@@ -61,6 +67,9 @@ export class DiscordWebhookClient {
     let attempts = 0
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       attempts = attempt
+      // 応答が遅い相手で処理がハングするのを防ぐ（Workers の実行時間制限対策）。タイムアウトは catch でリトライ対象として扱われる
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs)
       try {
         const response = await fetch(this.webhookUrl, {
           method: 'POST',
@@ -68,6 +77,7 @@ export class DiscordWebhookClient {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
+          signal: controller.signal,
         })
 
         if (response.ok) return
@@ -82,6 +92,8 @@ export class DiscordWebhookClient {
           notificationError instanceof Error
             ? notificationError
             : new Error(String(notificationError))
+      } finally {
+        clearTimeout(timeoutId)
       }
 
       if (attempt < this.maxRetries) {

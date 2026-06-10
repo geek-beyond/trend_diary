@@ -160,6 +160,15 @@ describe('DiscordWebhookClient', () => {
       expect(logger.error).toHaveBeenCalledTimes(1)
     })
 
+    it('ハング防止のためAbortControllerのsignalを付与して送信する', async () => {
+      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test')
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
+
+      await client.send({ content: 'test' })
+
+      expect(mockFetch.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
+    })
+
     it('送信が失敗してもエラーを投げない', async () => {
       const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', noDelay)
       mockFetch.mockRejectedValue(new Error('Network error'))

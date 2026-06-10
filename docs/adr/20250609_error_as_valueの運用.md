@@ -1,6 +1,4 @@
-# Title
-
-<!-- Title という文字を消してこの ADR のタイトルを書いてください -->
+# error_as_valueの運用
 
 Status: Accepted
 

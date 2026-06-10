@@ -2,13 +2,13 @@ import { ServerError } from '@trend-diary/common/errors'
 import Logger from '@trend-diary/common/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
-import type { OrphanedUserNotifier } from '../repository'
+import type { Notifier } from '../repository'
 import CommandImpl from './command-impl'
 
 describe('CommandImpl', () => {
   let useCase: CommandImpl
   let logger: Logger
-  let notifier: OrphanedUserNotifier
+  let notifier: Notifier
 
   // INFO: Drizzleのinsert returningは「カラム順の配列」で行を返す
   // users:        user_id, created_at
@@ -32,7 +32,7 @@ describe('CommandImpl', () => {
 
   beforeEach(() => {
     logger = new Logger('silent')
-    notifier = { orphanedUser: vi.fn().mockResolvedValue(undefined) }
+    notifier = { sendMessage: vi.fn().mockResolvedValue(undefined) }
     useCase = new CommandImpl(getRdbClient(), { logger, notifier })
   })
 
@@ -237,8 +237,11 @@ describe('CommandImpl', () => {
       // Act
       await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123')
 
-      // Assert: userId(=2)と補償エラーを通知すること
-      expect(notifier.orphanedUser).toHaveBeenCalledWith(2, compensationError)
+      // Assert: userId(=2)と補償エラーを含むメッセージを通知すること
+      expect(notifier.sendMessage).toHaveBeenCalledWith(expect.stringContaining('userId: 2'))
+      expect(notifier.sendMessage).toHaveBeenCalledWith(
+        expect.stringContaining('compensation delete failed'),
+      )
     })
 
     it('補償delete成功時はerrorログ出力も通知も行わない', async () => {
@@ -254,7 +257,7 @@ describe('CommandImpl', () => {
 
       // Assert: 補償が成功した場合はログも通知も出さないこと
       expect(errorSpy).not.toHaveBeenCalled()
-      expect(notifier.orphanedUser).not.toHaveBeenCalled()
+      expect(notifier.sendMessage).not.toHaveBeenCalled()
     })
   })
 })

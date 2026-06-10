@@ -6,6 +6,7 @@ import {
   RouteConfigEntry,
   route,
 } from '@react-router/dev/routes'
+import { href } from 'react-router'
 
 const PATH_INDEX = '/'
 
@@ -57,58 +58,9 @@ const routing: RouteConfig = groupRoutes.flatMap(buildGroupRoute)
 export default routing
 
 /**
- * CombinePrefix<P, Path>
- *
- * グループの prefix (P) とルートの path (Path) を結合して
- * 実際のパス文字列リテラルを生成するユーティリティ型。
- *
- * 型の振る舞い:
- * - Path が '/' の場合（インデックスルート）
- *   - P === '' -> '/'
- *   - P !== '' -> `/${P}` (末尾スラッシュなし)
- *
- * - Path が '/<Rest>' の場合
- *   - P === '' -> `/${Rest}`
- *   - P !== '' -> `/${P}/${Rest}`
- *
- * - それ以外の形式の Path は `never` を返す（未想定のパターン）
- *
- * 注意:
- * - `groupRoutes` の値は `as const` にしてリテラル型を保持すること。
- * - `prefix` および `path` は文字列リテラルとして評価される必要がある。
- *
- * @template P グループの prefix（例: 'admin' または ''）
- * @template Path ルートの path（例: '/' または '/users'）
- */
-type CombinePrefix<P extends string, Path extends string> = Path extends '/'
-  ? P extends ''
-    ? '/'
-    : `/${P}`
-  : Path extends `/${infer Rest}`
-    ? P extends ''
-      ? `/${Rest}`
-      : `/${P}/${Rest}`
-    : never
-
-/**
- * Paths<T>
- *
- * groupRoutes の型から全てのパス文字列リテラルのユニオンを生成する型。
- * ジェネリックは明示的に `GroupRoute` 配列を受け取るようにして、
- * `any` による曖昧なケースを排除する。
- *
- * @template T groupRoutes のリテラル配列型（readonly GroupRoute[]）
- */
-type Paths<T extends readonly GroupRoute[]> = T[number] extends infer Item
-  ? Item extends GroupRoute
-    ? CombinePrefix<Item['prefix'], Item['routes'][number]['path']>
-    : never
-  : never
-
-/**
  * InternalPath
  *
- * 実際にアプリケーションで使用されるパスのユニオン型。
- * `groupRoutes` を `as const` のまま保持していることで具体的なリテラルが推論される。
+ * アプリケーションで使用される内部パスのユニオン型。
+ * React Router の href ヘルパーの引数型（型生成されたルート定義が正）から導出する。
  */
-export type InternalPath = Paths<typeof groupRoutes>
+export type InternalPath = Parameters<typeof href>[0]

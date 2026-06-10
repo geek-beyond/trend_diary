@@ -14,9 +14,7 @@ export default function useReadArticle() {
 
     const result = await wrapAsyncCall(async () => {
       const client = getApiClientForClient()
-      // biome-ignore lint/suspicious/noExplicitAny: Hono client の型定義が param と json の同時指定に対応していない
-      // biome-ignore lint/plugin: 上記 Hono client の型制約を回避するためのアサーションで、静的型では表現できないため許可する
-      const res = await (client.articles[':article_id'].read.$post as any)(
+      const res = await client.articles[':article_id'].read.$post(
         {
           param: { article_id: articleId },
           json: { read_at: new Date().toISOString() },

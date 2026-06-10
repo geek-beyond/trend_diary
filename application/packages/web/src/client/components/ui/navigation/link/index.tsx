@@ -30,7 +30,7 @@ function InternalLink({ to, children, ...props }: PropsWithChildren<InternalLink
   )
 }
 
-export function isExternalPath(to: string): to is ExternalPath {
+function isExternalPath(to: string): to is ExternalPath {
   return /^https?:\/\//.test(to)
 }
 

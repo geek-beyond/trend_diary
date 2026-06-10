@@ -28,9 +28,14 @@ describe('createSWRFetcher', () => {
       const { fetcher } = createSWRFetcher()
       const result = await fetcher('http://example.com/api')
 
-      expect(fetch).toHaveBeenCalledWith('http://example.com/api', {
-        credentials: 'include',
-      })
+      expect(fetch).toHaveBeenCalledWith(
+        'http://example.com/api',
+        expect.objectContaining({
+          credentials: 'include',
+          // ハング防止のためタイムアウトsignalを付与している
+          signal: expect.any(AbortSignal),
+        }),
+      )
       expect(result).toEqual({ data: 'test' })
     })
 

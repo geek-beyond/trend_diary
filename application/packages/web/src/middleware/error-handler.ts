@@ -22,7 +22,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
     userAgent: c.req.header('User-Agent') || '',
   }
 
-  const discordNotifier = new DiscordNotifier(discordWebhookUrl)
+  const discordNotifier = new DiscordNotifier(discordWebhookUrl, { logger })
   if (err instanceof HTTPException) {
     if (err.status >= 500) {
       if (logger && typeof logger.error === 'function') {

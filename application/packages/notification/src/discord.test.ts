@@ -1,9 +1,23 @@
+import type { LoggerType } from '@trend-diary/common/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiscordNotifier, DiscordWebhookClient } from './discord'
 
 // fetchをモック
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
+
+// Logger注入の検証用モック
+const createMockLogger = () =>
+  ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    with: vi.fn(),
+  }) as unknown as LoggerType
+
+// リトライ待機を待たずにテストするため、backoffの基準遅延を0にする
+const noDelay = { baseDelayMs: 0 }
 
 describe('DiscordWebhookClient', () => {
   beforeEach(() => {
@@ -20,6 +34,15 @@ describe('DiscordWebhookClient', () => {
       await client.send({ content: 'test' })
 
       expect(mockFetch).not.toHaveBeenCalled()
+    })
+
+    it('Webhook URLが未設定の場合は警告ログを記録する', async () => {
+      const logger = createMockLogger()
+      const client = new DiscordWebhookClient('', { logger })
+
+      await client.send({ content: 'test' })
+
+      expect(logger.warn).toHaveBeenCalledTimes(1)
     })
 
     it('指定したペイロードをDiscord Webhookに送信する', async () => {
@@ -51,9 +74,95 @@ describe('DiscordWebhookClient', () => {
       expect(body).toEqual(payload)
     })
 
+    it('送信が成功した場合はリトライしない', async () => {
+      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', noDelay)
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
+
+      await client.send({ content: 'test' })
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('ネットワークエラー時はexponential backoffでリトライする', async () => {
+      const logger = createMockLogger()
+      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', {
+        ...noDelay,
+        logger,
+      })
+      mockFetch
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce({ ok: true, status: 204 })
+
+      await client.send({ content: 'test' })
+
+      expect(mockFetch).toHaveBeenCalledTimes(3)
+      expect(logger.error).not.toHaveBeenCalled()
+    })
+
+    it('5xxレスポンスはリトライ対象として扱う', async () => {
+      const logger = createMockLogger()
+      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', {
+        ...noDelay,
+        logger,
+      })
+      mockFetch
+        .mockResolvedValueOnce({ ok: false, status: 500 })
+        .mockResolvedValueOnce({ ok: true, status: 204 })
+
+      await client.send({ content: 'test' })
+
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(logger.error).not.toHaveBeenCalled()
+    })
+
+    it('429レスポンス（レートリミット）はリトライ対象として扱う', async () => {
+      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', noDelay)
+      mockFetch
+        .mockResolvedValueOnce({ ok: false, status: 429 })
+        .mockResolvedValueOnce({ ok: true, status: 204 })
+
+      await client.send({ content: 'test' })
+
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+    })
+
+    it.each([
+      { label: '401（Webhook失効）', status: 401 },
+      { label: '404（Webhook削除）', status: 404 },
+    ])('恒久的な失敗（$label）はリトライせず1回で打ち切りエラーログを記録する', async ({
+      status,
+    }) => {
+      const logger = createMockLogger()
+      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', {
+        ...noDelay,
+        logger,
+      })
+      mockFetch.mockResolvedValue({ ok: false, status })
+
+      await client.send({ content: 'test' })
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      expect(logger.error).toHaveBeenCalledTimes(1)
+    })
+
+    it('最大リトライ回数を使い切った場合はエラーログを記録する', async () => {
+      const logger = createMockLogger()
+      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', {
+        ...noDelay,
+        logger,
+      })
+      mockFetch.mockResolvedValue({ ok: false, status: 500 })
+
+      await client.send({ content: 'test' })
+
+      expect(mockFetch).toHaveBeenCalledTimes(3)
+      expect(logger.error).toHaveBeenCalledTimes(1)
+    })
+
     it('送信が失敗してもエラーを投げない', async () => {
-      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test')
-      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', noDelay)
+      mockFetch.mockRejectedValue(new Error('Network error'))
 
       await expect(client.send({ content: 'test' })).resolves.not.toThrow()
     })
@@ -157,9 +266,9 @@ describe('DiscordNotifier', () => {
 
     it('Discord Webhook送信が失敗してもエラーを投げない', async () => {
       const webhookUrl = 'https://discord.com/api/webhooks/test'
-      const notifier = new DiscordNotifier(webhookUrl)
+      const notifier = new DiscordNotifier(webhookUrl, noDelay)
 
-      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+      mockFetch.mockRejectedValue(new Error('Network error'))
 
       const error = new Error('Internal Server Error')
 
@@ -170,6 +279,23 @@ describe('DiscordNotifier', () => {
           userAgent: 'test-agent',
         }),
       ).resolves.not.toThrow()
+    })
+
+    it('注入したLoggerに通知失敗を記録する', async () => {
+      const logger = createMockLogger()
+      const notifier = new DiscordNotifier('https://discord.com/api/webhooks/test', {
+        ...noDelay,
+        logger,
+      })
+      mockFetch.mockResolvedValue({ ok: false, status: 500 })
+
+      await notifier.error(new Error('Internal Server Error'), {
+        url: '/api/test',
+        method: 'GET',
+        userAgent: 'test-agent',
+      })
+
+      expect(logger.error).toHaveBeenCalledTimes(1)
     })
 
     it('スタックトレースが長い場合は適切に切り詰める', async () => {

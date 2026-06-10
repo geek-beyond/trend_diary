@@ -45,23 +45,27 @@ export function resolveSupabaseAuthConfig(context: SupabaseAuthContext) {
 }
 
 /**
+ * context優先・なければprocess.envの順でTurnstile設定値を解決する。未設定の場合はundefinedを返す。
+ */
+function resolveTurnstileEnv(contextValue: string | undefined, key: string): string | undefined {
+  const fromContext = readEnv(contextValue)
+  if (fromContext) return fromContext
+  if (typeof process === 'undefined') return undefined
+  return readEnv(process.env[key])
+}
+
+/**
  * Turnstileのサイトキー（公開値）を解決する。未設定の場合はundefinedを返し、ウィジェットを描画しない。
  */
 export function resolveTurnstileSiteKey(context: TurnstileContext): string | undefined {
-  const fromContext = readEnv(context.cloudflare?.env?.TURNSTILE_SITE_KEY)
-  if (fromContext) return fromContext
-  if (typeof process === 'undefined') return undefined
-  return readEnv(process.env.TURNSTILE_SITE_KEY)
+  return resolveTurnstileEnv(context.cloudflare?.env?.TURNSTILE_SITE_KEY, 'TURNSTILE_SITE_KEY')
 }
 
 /**
  * Turnstileのシークレットキーを解決する。未設定の場合はundefinedを返し、サーバー側の検証をスキップする。
  */
 export function resolveTurnstileSecret(context: TurnstileContext): string | undefined {
-  const fromContext = readEnv(context.cloudflare?.env?.TURNSTILE_SECRET_KEY)
-  if (fromContext) return fromContext
-  if (typeof process === 'undefined') return undefined
-  return readEnv(process.env.TURNSTILE_SECRET_KEY)
+  return resolveTurnstileEnv(context.cloudflare?.env?.TURNSTILE_SECRET_KEY, 'TURNSTILE_SECRET_KEY')
 }
 
 export function createAuthActionUseCase(request: Request, context: AppLoadContext) {

@@ -92,9 +92,7 @@ describe('POST /api/articles/:article_id/skip', () => {
       const response = await requestSkipArticle(testArticleId.toString(), authCookies)
       expect(response.status).toBe(201)
 
-      // 操作したユーザーAにはスキップ状態が作成される
       expect(await articleHelper.countSkippedArticles(testActiveUserId, testArticleId)).toBe(1)
-      // 他ユーザーBのスキップ状態には影響しない
       expect(await articleHelper.countSkippedArticles(userB.activeUserId, testArticleId)).toBe(0)
     })
   })

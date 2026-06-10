@@ -122,11 +122,9 @@ describe('DELETE /api/articles/:article_id/unread', () => {
       createdUserIds.authIds.push(userB.authenticationId)
       const userBLogin = await userHelper.login('unread-cross-user@example.com', 'Test@password123')
 
-      // 既読履歴を持たないユーザーBが同一記事をunreadする
       const response = await requestUnreadArticle(testArticleId.toString(), userBLogin.cookies)
       expect(response.status).toBe(200)
 
-      // ユーザーAの既読履歴は削除されない
       expect(await articleHelper.countReadHistories(testActiveUserId, testArticleId)).toBe(1)
     })
   })

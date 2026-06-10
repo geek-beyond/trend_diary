@@ -176,9 +176,7 @@ describe('POST /api/articles/:article_id/read', () => {
       const response = await requestReadArticle(testArticleId.toString(), authCookies)
       expect(response.status).toBe(201)
 
-      // 操作したユーザーAには既読履歴が作成される
       expect(await articleHelper.findReadHistory(testActiveUserId, testArticleId)).toBeTruthy()
-      // 他ユーザーBの既読履歴には影響しない
       expect(await articleHelper.findReadHistory(userB.activeUserId, testArticleId)).toBeNull()
     })
   })

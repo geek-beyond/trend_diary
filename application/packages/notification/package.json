@@ -16,6 +16,9 @@
     "test": "vitest run",
     "typecheck": "tsgo --noEmit"
   },
+  "dependencies": {
+    "@trend-diary/common": "workspace:*"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
     "vitest": "catalog:"

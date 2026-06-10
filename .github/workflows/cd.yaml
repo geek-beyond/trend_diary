@@ -135,6 +135,42 @@ jobs:
           CMD_OUTPUT: ${{ steps.deploy.outputs.command-output }}
         run: echo $CMD_OUTPUT
 
+      - name: スモークテスト(ヘルスチェック)
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          set -euo pipefail
+
+          # デプロイ直後はWorkerの反映に数秒のラグがあるためリトライする
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS --max-time 10 "${DEPLOYMENT_URL}/api/health"; then
+              echo "ヘルスチェック成功"
+              exit 0
+            fi
+            echo "ヘルスチェック失敗 (試行 ${attempt}/5)。5秒後にリトライします"
+            sleep 5
+          done
+
+          echo "ヘルスチェックが規定回数失敗しました"
+          exit 1
+
+      - name: スモークテスト失敗をDiscordへ通知
+        if: ${{ failure() && steps.deploy.conclusion == 'success' }}
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${DISCORD_WEBHOOK_URL}" ]]; then
+            echo "DISCORD_WEBHOOK_URLが未設定のため通知をスキップします"
+            exit 0
+          fi
+
+          curl -fsS -H "Content-Type: application/json" \
+            -d "{\"content\": \":rotating_light: webデプロイ後のヘルスチェックに失敗しました\n${RUN_URL}\"}" \
+            "${DISCORD_WEBHOOK_URL}"
+
   cron:
     needs: changes
     if: ${{ needs.changes.outputs.cron == 'true' }}

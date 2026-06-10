@@ -1,4 +1,6 @@
+import { Hono } from 'hono'
 import type { Env } from '@/env'
+import rateLimiter from '@/middleware/rate-limiter'
 import TEST_ENV from '@/test/env'
 import app from '../../server'
 
@@ -77,6 +79,56 @@ describe('認証エンドポイントのレートリミット', () => {
       // 例外を握りつぶして後続処理に進むため、制限スキップ時と同じ結果になる
       expect(errorRes.status).toBe(skipRes.status)
       expect(errorRes.status).not.toBe(429)
+    })
+  })
+
+  // フェイルオープンの検知体制を検証する。Supabase等の後続処理が混在しないよう、
+  // rateLimiterのみを載せた最小アプリで通知の有無だけを確認する
+  describe('フェイルオープン検知', () => {
+    const miniApp = new Hono<Env>().post('/api/auth/login', rateLimiter, (c) =>
+      c.json({ ok: true }),
+    )
+
+    const mockFetch = vi.fn()
+
+    function requestMini(env: Env['Bindings']) {
+      return miniApp.request(
+        '/api/auth/login',
+        { method: 'POST', headers: { 'CF-Connecting-IP': '203.0.113.1' } },
+        env,
+      )
+    }
+
+    function buildErrorEnvWithWebhook(): Env['Bindings'] {
+      return {
+        ...buildErrorEnv(),
+        DISCORD_WEBHOOK_URL: 'https://discord.com/api/webhooks/test',
+      }
+    }
+
+    beforeEach(() => {
+      vi.stubGlobal('fetch', mockFetch)
+      mockFetch.mockResolvedValue({ ok: true, status: 204 })
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      mockFetch.mockReset()
+    })
+
+    it('フェイルオープン時はDiscordへアラートを送信する', async () => {
+      await requestMini(buildErrorEnvWithWebhook())
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+      expect(body.embeds[0].title).toBe('⚠️ Rate Limiter Failing Open')
+      expect(body.embeds[0].fields[0].value).toContain('/api/auth/login')
+    })
+
+    it('制限内ならアラートを送信しない', async () => {
+      await requestMini(buildEnv(true))
+
+      expect(mockFetch).not.toHaveBeenCalled()
     })
   })
 })

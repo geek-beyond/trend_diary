@@ -313,4 +313,51 @@ describe('DiscordNotifier', () => {
       })
     })
   })
+
+  describe('alert', () => {
+    describe('正常系', () => {
+      it('指定したタイトルとフィールドをamberのembedとして送信する', async () => {
+        const notifier = new DiscordNotifier(webhookUrl, createMockLogger())
+        mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
+
+        await notifier.alert('⚠️ Rate Limiter Failing Open', [
+          { name: 'Detail', value: 'Path: /api/auth/login', inline: false },
+        ])
+
+        const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+        expect(body).toEqual({
+          content: null,
+          embeds: [
+            {
+              title: '⚠️ Rate Limiter Failing Open',
+              color: 16098851,
+              fields: [{ name: 'Detail', value: 'Path: /api/auth/login', inline: false }],
+              timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+            },
+          ],
+        })
+      })
+    })
+
+    describe('準正常系', () => {
+      it('Webhook URLが設定されていない場合は何もしない', async () => {
+        const notifier = new DiscordNotifier('', createMockLogger())
+
+        await notifier.alert('title', [{ name: 'n', value: 'v', inline: false }])
+
+        expect(mockFetch).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('異常系', () => {
+      it('Discord Webhook送信が失敗してもエラーを投げない', async () => {
+        const notifier = new DiscordNotifier(webhookUrl, createMockLogger(), noDelay)
+        mockFetch.mockRejectedValue(new Error('Network error'))
+
+        await expect(
+          notifier.alert('title', [{ name: 'n', value: 'v', inline: false }]),
+        ).resolves.not.toThrow()
+      })
+    })
+  })
 })

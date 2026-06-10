@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test'
-import { TIMEOUT } from './constants'
+import { TIMEOUT } from '../constants'
 
 // デスクトップ表示のサイドバー(`hidden md:block`)を操作する。
 // モバイル幅では Sheet 側に同等メニューが出るため、デスクトップ viewport を前提とする。

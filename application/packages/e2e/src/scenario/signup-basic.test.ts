@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker'
 import { test } from '../fixtures'
 import * as userHelper from '../helper/user'
-import { AppSidebar } from '../pom/app-sidebar'
 import { AuthPage } from '../pom/auth-page'
+import { AppSidebar } from '../pom/components/app-sidebar'
 import { Toast } from '../pom/components/toast'
 import { AUTH_SCENARIO_TIMEOUT } from '../pom/constants'
 

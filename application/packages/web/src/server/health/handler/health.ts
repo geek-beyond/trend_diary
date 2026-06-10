@@ -1,5 +1,0 @@
-import type { Context } from 'hono'
-
-export default function health(c: Context) {
-  return c.json({ status: 'ok' })
-}

@@ -33,7 +33,7 @@ describe('CommandImpl', () => {
   beforeEach(() => {
     logger = new Logger('silent')
     notifier = { orphanedUser: vi.fn().mockResolvedValue(undefined) }
-    useCase = new CommandImpl(getRdbClient(), logger, notifier)
+    useCase = new CommandImpl(getRdbClient(), { logger, notifier })
   })
 
   describe('createActiveWithAuthenticationId', () => {

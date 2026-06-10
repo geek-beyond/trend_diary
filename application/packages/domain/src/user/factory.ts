@@ -12,7 +12,7 @@ export function createAuthUseCase(
   notifier?: OrphanedUserNotifier,
 ): AuthUseCase {
   const repository = new SupabaseAuthRepository(client)
-  const userCommand = new CommandImpl(db, undefined, notifier)
+  const userCommand = new CommandImpl(db, { notifier })
   const userQuery = new QueryImpl(db)
   return new AuthUseCase(repository, userCommand, userQuery)
 }

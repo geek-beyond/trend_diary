@@ -11,12 +11,22 @@ import { mapToActiveUser } from './mapper'
 // 補償失敗は手動対応が必要なため、デフォルトのログレベルをerrorに設定する
 const defaultLogger = new Logger('error', { component: 'user-command' })
 
+interface CommandImplOptions {
+  logger?: Logger
+  notifier?: OrphanedUserNotifier
+}
+
 export default class CommandImpl implements Command {
+  private readonly logger: Logger
+  private readonly notifier?: OrphanedUserNotifier
+
   constructor(
     private readonly db: RdbClient,
-    private readonly logger: Logger = defaultLogger,
-    private readonly notifier?: OrphanedUserNotifier,
-  ) {}
+    options: CommandImplOptions = {},
+  ) {
+    this.logger = options.logger ?? defaultLogger
+    this.notifier = options.notifier
+  }
 
   async createActiveWithAuthenticationId(
     email: string,

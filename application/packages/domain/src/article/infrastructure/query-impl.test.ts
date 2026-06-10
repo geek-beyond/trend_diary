@@ -1,5 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm'
 import { SQLiteSyncDialect } from 'drizzle-orm/sqlite-core'
+import { type Result } from 'neverthrow'
 import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import QueryImpl from './query-impl'
@@ -12,6 +13,11 @@ interface DateRangeSqlBuilders {
   ): SQL[]
 }
 const dateRangeSqlBuilders = QueryImpl as unknown as DateRangeSqlBuilders
+
+interface DateRangeEnumerator {
+  enumerateJstDateRange(fromDateJst: string, toDateJst: string): Result<string[], Error>
+}
+const dateRangeEnumerator = QueryImpl as unknown as DateRangeEnumerator
 
 describe('QueryImpl', () => {
   let queryImpl: QueryImpl
@@ -374,6 +380,26 @@ describe('QueryImpl', () => {
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
         expect(result.error.message).toBe('daily diary range failed')
+      }
+    })
+  })
+
+  describe('enumerateJstDateRange', () => {
+    it('範囲内の日付を列挙できる', () => {
+      const result = dateRangeEnumerator.enumerateJstDateRange('2026-03-06', '2026-03-08')
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value).toEqual(['2026-03-06', '2026-03-07', '2026-03-08'])
+      }
+    })
+
+    it('日付加算に失敗した場合は欠けたリストを返さずエラーを伝播する', () => {
+      const result = dateRangeEnumerator.enumerateJstDateRange('invalid', 'invalid')
+
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error.message).toBe('不正な日付文字列です: invalid')
       }
     })
   })

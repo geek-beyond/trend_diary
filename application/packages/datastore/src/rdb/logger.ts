@@ -1,5 +1,6 @@
 import AppLogger, { type LogLevel } from '@trend-diary/common/logger'
 import type { Logger as DrizzleLogger } from 'drizzle-orm'
+import { maskQueryParams } from './mask'
 
 const VALID_LOG_LEVELS: ReadonlyArray<LogLevel> = [
   'trace',
@@ -32,11 +33,12 @@ function getDrizzleLogger(): AppLogger {
   return drizzleLogger
 }
 
-// クエリの params には email 等の PII が含まれ得るため、出力ゲートを AppLogger(pino) の
-// レベルフィルタに委譲し、debug ログは LOG_LEVEL=debug/trace のときだけ実出力させる。
+// クエリの params には email 等の PII が含まれ得るため、(1)出力ゲートを AppLogger(pino) の
+// レベルフィルタに委譲して debug ログを LOG_LEVEL=debug/trace のときだけ実出力させ、
+// (2)さらに文字列の bind 値をマスクして、debug 出力時にも PII がログ基盤へ流出しないようにする。
 class DrizzleQueryLogger implements DrizzleLogger {
   logQuery(query: string, params: unknown[]): void {
-    getDrizzleLogger().debug({ msg: 'drizzle query', query, params })
+    getDrizzleLogger().debug({ msg: 'drizzle query', query, params: maskQueryParams(params) })
   }
 }
 

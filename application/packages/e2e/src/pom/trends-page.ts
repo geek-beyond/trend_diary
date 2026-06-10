@@ -3,11 +3,15 @@ import { TIMEOUT } from './constants'
 
 export class TrendsPage {
   private readonly articleCards: Locator
+  private readonly loadingSpinner: Locator
+  private readonly noArticlesText: Locator
 
   constructor(private readonly page: Page) {
     this.articleCards = page
       .getByRole('button')
       .filter({ has: page.getByRole('img', { name: /(?:qiita|zenn|hatena) icon/ }) })
+    this.loadingSpinner = page.getByRole('status', { name: 'Loading...' })
+    this.noArticlesText = page.getByText('記事がありません')
   }
 
   async goto(path = '/trends'): Promise<void> {
@@ -36,5 +40,17 @@ export class TrendsPage {
     const articleCard = this.articleCards.filter({ hasText: title }).first()
     await expect(articleCard).toBeVisible({ timeout: TIMEOUT })
     await articleCard.click()
+  }
+
+  async expectLoadingVisible(): Promise<void> {
+    await expect(this.loadingSpinner).toBeVisible({ timeout: TIMEOUT })
+  }
+
+  async expectLoadingHidden(): Promise<void> {
+    await expect(this.loadingSpinner).toBeHidden({ timeout: TIMEOUT })
+  }
+
+  async expectNoArticles(): Promise<void> {
+    await expect(this.noArticlesText).toBeVisible({ timeout: TIMEOUT })
   }
 }

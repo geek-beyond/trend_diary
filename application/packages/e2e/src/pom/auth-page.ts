@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test'
-import { AUTH_FLOW_TIMEOUT } from './constants'
+import { AUTH_FLOW_TIMEOUT, AUTH_SCENARIO_TIMEOUT } from './constants'
 
 export class AuthPage {
   private readonly emailInput: Locator
@@ -8,6 +8,7 @@ export class AuthPage {
   private readonly loginButton: Locator
   private readonly loginPageText: Locator
   private readonly signupConflictErrorText: Locator
+  private readonly invalidCredentialsErrorText: Locator
   private readonly trendsPageText: Locator
   private readonly readStatusFilter: Locator
 
@@ -18,6 +19,9 @@ export class AuthPage {
     this.loginButton = page.getByRole('button', { name: 'ログイン' })
     this.loginPageText = page.getByText('アカウントをお持ちでないですか？')
     this.signupConflictErrorText = page.getByText('このメールアドレスは既に使用されています')
+    this.invalidCredentialsErrorText = page.getByText(
+      'メールアドレスまたはパスワードが正しくありません',
+    )
     this.trendsPageText = page.getByText('絞り込み')
     this.readStatusFilter = page.getByRole('button', { name: '未読のみ' })
   }
@@ -56,6 +60,28 @@ export class AuthPage {
 
   async expectSignupConflictError(): Promise<void> {
     await expect(this.signupConflictErrorText).toBeVisible({ timeout: AUTH_FLOW_TIMEOUT })
+  }
+
+  async expectInvalidCredentialsError(): Promise<void> {
+    await expect(this.invalidCredentialsErrorText).toBeVisible({ timeout: AUTH_FLOW_TIMEOUT })
+  }
+
+  // 新規登録の成否(既存メールなら409)に依らずログイン済み状態へ到達するため、一連の遷移を toPass で安定化する
+  async signupThenLogin(email: string, password: string): Promise<void> {
+    await expect(async () => {
+      await this.gotoSignup()
+
+      const signupResult = await this.submitSignup(email, password)
+      if (signupResult === 'stayed') {
+        await this.expectSignupConflictError()
+        await this.gotoLogin()
+      }
+
+      await this.waitForLoginPage()
+
+      await this.submitLogin(email, password)
+      await this.waitForTrendsPage()
+    }).toPass({ timeout: AUTH_SCENARIO_TIMEOUT })
   }
 
   async waitForTrendsPage(): Promise<void> {

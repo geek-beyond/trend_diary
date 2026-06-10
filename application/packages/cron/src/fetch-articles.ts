@@ -21,12 +21,30 @@ const MAX_LENGTH = {
   description: 1024,
 }
 
+// INFO: 外部RSSのハング時に無限待機しないよう1試行あたりのタイムアウトを設ける
+const FETCH_TIMEOUT_MS = 30_000
+// INFO: 一時的なネットワークエラーを吸収するためのリトライ回数（初回 + リトライ）
+const MAX_FETCH_ATTEMPTS = 3
+const RETRY_BASE_DELAY_MS = 1_000
+const RETRY_MAX_DELAY_MS = 30_000
+
 function truncateByCodePoint(text: string, maxLength: number): string {
   return [...text].slice(0, maxLength).join('')
 }
 
-async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
-  const responseResult = await wrapAsyncCall(() => fetch(url))
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// 指数バックオフの待機時間(2^attempt × base)を算出し、上限でクランプする。
+function backoffDelayMs(attempt: number): number {
+  return Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS)
+}
+
+async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], Error>> {
+  const responseResult = await wrapAsyncCall(() =>
+    fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }),
+  )
   if (responseResult.isErr()) return err(responseResult.error)
 
   const response = responseResult.value
@@ -40,6 +58,23 @@ async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
     const feed = await parser.parseString(xml)
     return feed.items
   })
+}
+
+async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
+  let lastError: Error = new Error(`Failed to fetch rss feed: ${url}`)
+
+  for (let attempt = 0; attempt < MAX_FETCH_ATTEMPTS; attempt += 1) {
+    const result = await fetchRssFeedOnce<T>(url)
+    if (result.isOk()) return result
+
+    lastError = result.error
+    // INFO: 最終試行後は待機せず失敗を返す
+    if (attempt < MAX_FETCH_ATTEMPTS - 1) {
+      await delay(backoffDelayMs(attempt))
+    }
+  }
+
+  return err(lastError)
 }
 
 async function storeArticles(

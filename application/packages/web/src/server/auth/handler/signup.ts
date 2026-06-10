@@ -14,7 +14,6 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
   const rdb = getRdbClient(c.env.DB)
   const useCase = createAuthUseCase(client, rdb)
 
-  // 補償（users削除）失敗でusersレコードが孤立した場合にDiscordへ通知する
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL)
   const result = await useCase.signup(valid.email, valid.password, notifier)
   if (result.isErr()) {

@@ -32,13 +32,11 @@ export class AuthUseCase {
     password: string,
     notifier: Notifier,
   ): Promise<Result<SignupResult, ClientError | ServerError>> {
-    // 認証でユーザー作成
     const authResult = await this.repository.signup(email, password)
     if (authResult.isErr()) return err(authResult.error)
 
     const { user, session } = authResult.value
 
-    // active_userを作成（補償失敗でusersレコードが孤立した場合はnotifierで通知する）
     const activeUserResult = await this.userCommand.createActiveWithAuthenticationId(
       user.email,
       user.id,

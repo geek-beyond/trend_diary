@@ -29,5 +29,12 @@ describe('maskQueryParams', () => {
     it('空文字列もマスクすること', () => {
       expect(maskQueryParams([''])).toEqual(['***'])
     })
+
+    it('ネストされた配列内の文字列も再帰的にマスクすること', () => {
+      expect(maskQueryParams([['user@example.com', 123], 'normal-string'])).toEqual([
+        ['***', 123],
+        '***',
+      ])
+    })
   })
 })

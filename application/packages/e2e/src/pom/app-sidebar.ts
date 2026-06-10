@@ -5,11 +5,9 @@ import { TIMEOUT } from './constants'
 // モバイル幅では Sheet 側に同等メニューが出るため、デスクトップ viewport を前提とする。
 export class AppSidebar {
   private readonly logoutButton: Locator
-  private readonly diaryLink: Locator
 
   constructor(private readonly page: Page) {
     this.logoutButton = page.getByRole('button', { name: 'ログアウト' })
-    this.diaryLink = page.getByRole('link', { name: 'ダイアリー' })
   }
 
   async expectLogoutVisible(): Promise<void> {
@@ -19,10 +17,5 @@ export class AppSidebar {
   async logout(): Promise<void> {
     await this.expectLogoutVisible()
     await this.logoutButton.click()
-  }
-
-  async gotoDiary(): Promise<void> {
-    await expect(this.diaryLink).toBeVisible({ timeout: TIMEOUT })
-    await this.diaryLink.click()
   }
 }

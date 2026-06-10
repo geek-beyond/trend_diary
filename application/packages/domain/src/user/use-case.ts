@@ -1,4 +1,4 @@
-import { ClientError, ExternalServiceError, ServerError } from '@trend-diary/common/errors'
+import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
 import type { AuthRepository, Command, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
@@ -44,21 +44,6 @@ export class AuthUseCase {
     )
 
     if (activeUserResult.isErr()) {
-      // active_user作成に失敗したら、認証側に残った孤児ユーザーを補償削除する
-      const deleteResult = await this.repository.deleteUser(user.id)
-
-      // 補償削除まで失敗すると認証側に不整合が残るため、元エラーと削除エラーを束ねて返す
-      if (deleteResult.isErr()) {
-        return err(
-          new ExternalServiceError(
-            'Failed to delete Supabase Auth user during compensation',
-            activeUserResult.error,
-            deleteResult.error,
-            { authenticationId: user.id },
-          ),
-        )
-      }
-
       return err(activeUserResult.error)
     }
 

@@ -70,13 +70,17 @@ describe('認証エンドポイントのレートリミット', () => {
   })
 
   describe('異常系', () => {
-    it('レートリミッターが例外をスローした場合はフェイルオープンする', async () => {
-      const errorRes = await requestAuth('/api/auth/login', buildErrorEnv())
-      const skipRes = await requestAuth('/api/auth/login', TEST_ENV)
+    // 認証エンドポイントではブルートフォースを許す方が危険なため、障害時はフェイルセーフで止める
+    const testCases: Array<{ name: string; path: string }> = [
+      { name: 'login', path: '/api/auth/login' },
+      { name: 'signup', path: '/api/auth/signup' },
+    ]
 
-      // 例外を握りつぶして後続処理に進むため、制限スキップ時と同じ結果になる
-      expect(errorRes.status).toBe(skipRes.status)
-      expect(errorRes.status).not.toBe(429)
+    testCases.forEach(({ name, path }) => {
+      it(`${name} はレートリミッター障害時にフェイルセーフで503を返す`, async () => {
+        const res = await requestAuth(path, buildErrorEnv())
+        expect(res.status).toBe(503)
+      })
     })
   })
 })

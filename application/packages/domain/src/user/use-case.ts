@@ -1,4 +1,4 @@
-import { ClientError, ExternalServiceError, ServerError } from '@trend-diary/common/errors'
+import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
 import type { AuthRepository, Command, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
@@ -44,24 +44,11 @@ export class AuthUseCase {
     )
 
     if (activeUserResult.isErr()) {
-      // active_user作成に失敗したら、認証側に残った孤児ユーザーを補償削除する
-      // NOTE: deleteUserはSupabaseの管理者権限(service_role)を要するため、本来
-      // リクエスト経路で同期的に呼ぶには重い。孤児の蓄積を防ぐ暫定対応として
-      // 同期補償を残すが、長期的には非同期クリーンアップ(cron等)への再設計が必要。
-      const deleteResult = await this.repository.deleteUser(user.id)
-
-      // 補償削除まで失敗すると認証側に不整合が残るため、元エラーと削除エラーを束ねて返す
-      if (deleteResult.isErr()) {
-        return err(
-          new ExternalServiceError(
-            'Failed to delete Supabase Auth user during compensation',
-            activeUserResult.error,
-            deleteResult.error,
-            { authenticationId: user.id },
-          ),
-        )
-      }
-
+      // NOTE: ここで認証ユーザーは作成済みだがactive_user作成に失敗しており、
+      // 認証側に孤児ユーザーが残る。同期補償(repository.deleteUser)はSupabaseの
+      // 管理者権限(service_role)を要し、サインアップ経路はanonクライアントで動く
+      // ため呼べない。対応候補は、service_roleを持つ別cronでactive_user未紐付けの
+      // 認証ユーザーを定期クリーンアップするなど。別イシューで再設計する。
       return err(activeUserResult.error)
     }
 

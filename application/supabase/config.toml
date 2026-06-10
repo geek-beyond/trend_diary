@@ -143,6 +143,8 @@ token_verifications = 30
 
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
+# NOTE: 本プロジェクトのCAPTCHA(Cloudflare Turnstile)はWorker側でsiteverifyを呼んで検証するため、
+# Supabase Auth側のcaptcha連携は使用しない。
 # [auth.captcha]
 # enabled = true
 # provider = "hcaptcha"

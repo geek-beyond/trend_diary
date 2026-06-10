@@ -125,10 +125,12 @@ jobs:
             SUPABASE_URL
             SUPABASE_ANON_KEY
             DISCORD_WEBHOOK_URL
+            TURNSTILE_SECRET_KEY
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
 
       - name: デプロイの出力を表示
         env:

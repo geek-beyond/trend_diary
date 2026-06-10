@@ -63,6 +63,20 @@ export const Submitting: Story = {
   },
 }
 
+// Turnstileのサイトキー指定時もメール/パスワード入力が描画されることを検証する。
+// ウィジェット本体は外部スクリプトに依存するため、ここでは既存フィールドの描画のみ確認する。
+export const WithTurnstile: Story = {
+  args: {
+    ...defaultArgs,
+    turnstileSiteKey: '1x00000000000000000000AA',
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByLabelText('メールアドレス')).toBeInTheDocument()
+    await expect(canvas.getByLabelText('パスワード')).toBeInTheDocument()
+    await expect(canvas.getByRole('button')).not.toBeDisabled()
+  },
+}
+
 // バリデーションエラーの表示を検証する。
 // バリデーション結果（errors）は props で渡される設計のため、ここでは errors を直接与える。
 export const FormValidationError: Story = {

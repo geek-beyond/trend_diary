@@ -16,9 +16,10 @@ interface Props {
   isSubmitting: boolean
   errors?: AuthenticateErrors
   formError?: string
+  turnstileSiteKey?: string
 }
 
-export default function SignupPage({ isSubmitting, errors, formError }: Props) {
+export default function SignupPage({ isSubmitting, errors, formError, turnstileSiteKey }: Props) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
       <LandingHeader />
@@ -35,6 +36,7 @@ export default function SignupPage({ isSubmitting, errors, formError }: Props) {
               isSubmitting={isSubmitting}
               errors={errors}
               formError={formError}
+              turnstileSiteKey={turnstileSiteKey}
             />
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>

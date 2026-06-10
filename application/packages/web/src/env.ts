@@ -19,6 +19,10 @@ export interface Env {
     SUPABASE_URL: string
     SUPABASE_ANON_KEY: string
     SUPABASE_SERVICE_ROLE_KEY?: string
+    // Cloudflare Turnstileのサイトキー（公開値）。未設定の環境ではウィジェットを描画しない
+    TURNSTILE_SITE_KEY?: string
+    // Cloudflare Turnstileのシークレットキー（秘匿）。未設定の環境ではサーバー側のCAPTCHA検証をスキップする
+    TURNSTILE_SECRET_KEY?: string
     // ローカル開発などバインディング未設定の環境ではフェイルオープンするためoptional
     AUTH_RATE_LIMITER?: RateLimiter
   }

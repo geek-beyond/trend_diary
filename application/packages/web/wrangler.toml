@@ -7,6 +7,8 @@ assets = { directory = "./build/client" }
 # 本番のログレベル方針。PII を含む debug クエリログを常時出力しないよう info を明示する
 [vars]
 LOG_LEVEL = "info"
+# Cloudflare TurnstileのサイトキーはHTMLに埋め込まれる公開値のため[vars]で管理する
+TURNSTILE_SITE_KEY = "0x4AAAAAADiD2o4io1Au9fnq"
 
 [observability]
 enabled = true

@@ -20,6 +20,14 @@ export interface Notifier {
   sendMessage(content: string): Promise<void>
 }
 
+/**
+ * CAPTCHAトークンを検証するポート。
+ * CAPTCHA未導入の環境では検証をスキップして許可する実装を許容する。
+ */
+export interface CaptchaVerifier {
+  verify(token?: string): Promise<Result<void, ClientError | ServerError>>
+}
+
 export interface Command {
   createActiveWithAuthenticationId(
     email: string,

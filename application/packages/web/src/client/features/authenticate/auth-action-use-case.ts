@@ -11,6 +11,12 @@ interface SupabaseAuthContext {
   }
 }
 
+interface TurnstileContext {
+  cloudflare?: {
+    env?: { TURNSTILE_SITE_KEY?: string; TURNSTILE_SECRET_KEY?: string }
+  }
+}
+
 const AUTH_CONFIG_ERROR_MESSAGE =
   'Supabase auth is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.'
 
@@ -36,6 +42,30 @@ export function resolveSupabaseAuthConfig(context: SupabaseAuthContext) {
   }
 
   return { supabaseUrl, supabaseAnonKey }
+}
+
+/**
+ * context優先・なければprocess.envの順でTurnstile設定値を解決する。未設定の場合はundefinedを返す。
+ */
+function resolveTurnstileEnv(contextValue: string | undefined, key: string): string | undefined {
+  const fromContext = readEnv(contextValue)
+  if (fromContext) return fromContext
+  if (typeof process === 'undefined') return undefined
+  return readEnv(process.env[key])
+}
+
+/**
+ * Turnstileのサイトキー（公開値）を解決する。未設定の場合はundefinedを返し、ウィジェットを描画しない。
+ */
+export function resolveTurnstileSiteKey(context: TurnstileContext): string | undefined {
+  return resolveTurnstileEnv(context.cloudflare?.env?.TURNSTILE_SITE_KEY, 'TURNSTILE_SITE_KEY')
+}
+
+/**
+ * Turnstileのシークレットキーを解決する。未設定の場合はundefinedを返し、サーバー側の検証をスキップする。
+ */
+export function resolveTurnstileSecret(context: TurnstileContext): string | undefined {
+  return resolveTurnstileEnv(context.cloudflare?.env?.TURNSTILE_SECRET_KEY, 'TURNSTILE_SECRET_KEY')
 }
 
 export function createAuthActionUseCase(request: Request, context: AppLoadContext) {
@@ -65,7 +95,7 @@ export function createAuthActionUseCase(request: Request, context: AppLoadContex
   })
 
   const rdb = getRdbClient(context.cloudflare.env.DB)
-  const useCase = createAuthUseCase(client, rdb)
+  const useCase = createAuthUseCase(client, rdb, resolveTurnstileSecret(context))
   const logger = new Logger(context.cloudflare.env.LOG_LEVEL ?? 'info', {
     module: 'web/client/features/authenticate/auth-action-use-case',
   })

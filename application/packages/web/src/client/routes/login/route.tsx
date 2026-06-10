@@ -1,12 +1,17 @@
 import Logger from '@trend-diary/common/logger'
 import {
   type ActionFunctionArgs,
+  type LoaderFunctionArgs,
   type MetaFunction,
   redirect,
   useActionData,
+  useLoaderData,
   useNavigation,
 } from 'react-router'
-import { createAuthActionUseCase } from '@/client/features/authenticate/auth-action-use-case'
+import {
+  createAuthActionUseCase,
+  resolveTurnstileSiteKey,
+} from '@/client/features/authenticate/auth-action-use-case'
 import {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,
@@ -46,6 +51,10 @@ export const meta: MetaFunction = () => [
   },
 ]
 
+export function loader({ context }: LoaderFunctionArgs) {
+  return { turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null }
+}
+
 export async function action({ request, context }: ActionFunctionArgs) {
   const formData = await request.formData()
   const validation = validateAuthenticateForm(formData)
@@ -53,9 +62,21 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return { errors: validation.errors } satisfies LoginActionData
   }
 
+  const captchaTokenValue = formData.get('cf-turnstile-response')
+  const captchaToken = typeof captchaTokenValue === 'string' ? captchaTokenValue : undefined
+
+  // CAPTCHA有効時にトークン未取得のまま送信させない
+  if (resolveTurnstileSiteKey(context) && !captchaToken) {
+    return { formError: AUTH_ERROR_MESSAGES.captchaRequired } satisfies LoginActionData
+  }
+
   try {
     const { useCase, headers } = createAuthActionUseCase(request, context)
-    const result = await useCase.login(validation.data.email, validation.data.password)
+    const result = await useCase.login(
+      validation.data.email,
+      validation.data.password,
+      captchaToken,
+    )
 
     if (result.isErr()) {
       return { formError: resolveLoginErrorMessage(result.error) } satisfies LoginActionData
@@ -69,6 +90,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function Login() {
+  const { turnstileSiteKey } = useLoaderData<typeof loader>()
   const actionData = useActionData<typeof action>()
   const navigation = useNavigation()
 
@@ -77,6 +99,7 @@ export default function Login() {
       isSubmitting={navigation.state === 'submitting'}
       errors={actionData?.errors}
       formError={actionData?.formError}
+      turnstileSiteKey={turnstileSiteKey ?? undefined}
     />
   )
 }

@@ -45,7 +45,6 @@ export const skippedArticles = sqliteTable(
   },
   (table) => [
     uniqueIndex('uq_skipped_articles_article_user').on(table.articleId, table.activeUserId),
-    index('idx_skipped_articles_article_user').on(table.articleId, table.activeUserId),
   ],
 )
 

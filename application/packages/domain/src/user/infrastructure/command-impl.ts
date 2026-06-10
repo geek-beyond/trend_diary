@@ -1,4 +1,5 @@
 import { ServerError } from '@trend-diary/common/errors'
+import Logger from '@trend-diary/common/logger'
 import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import { RdbClient, wrapDbCall } from '@trend-diary/datastore/rdb'
 import { eq } from 'drizzle-orm'
@@ -7,8 +8,14 @@ import { Command } from '../repository'
 import type { CurrentUser } from '../schema/active-user-schema'
 import { mapToActiveUser } from './mapper'
 
+// 補償失敗は手動対応が必要なため、LOG_LEVELの設定に関わらずerrorログが確実に出力されるよう既定をinfoにする
+const defaultLogger = new Logger('info', { component: 'user-command' })
+
 export default class CommandImpl implements Command {
-  constructor(private readonly db: RdbClient) {}
+  constructor(
+    private readonly db: RdbClient,
+    private readonly logger: Logger = defaultLogger,
+  ) {}
 
   async createActiveWithAuthenticationId(
     email: string,
@@ -29,9 +36,18 @@ export default class CommandImpl implements Command {
     const { userId } = createdUser
 
     // INFO: active_users insert失敗時の補償。作成済みusersを削除しエラーを返す。
-    //       補償自体の失敗は握りつぶし、元のエラーを優先して返す
+    //       補償自体の失敗は元のエラーを優先して返すが、孤児users(active_usersを持たない行)が
+    //       残り自動検知できないため、手動対応に必要なuserIdと補償エラーをerrorログに残す
     const compensateAndFail = async (): Promise<Result<CurrentUser, ServerError>> => {
-      await wrapDbCall(() => this.db.delete(users).where(eq(users.userId, userId)))
+      const compensateResult = await wrapDbCall(() =>
+        this.db.delete(users).where(eq(users.userId, userId)),
+      )
+      if (compensateResult.isErr()) {
+        this.logger.error(
+          { msg: 'signup compensation failed: orphaned user may remain', userId },
+          compensateResult.error,
+        )
+      }
       return err(new ServerError('Failed to create active user'))
     }
 

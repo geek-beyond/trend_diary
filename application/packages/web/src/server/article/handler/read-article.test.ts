@@ -164,4 +164,22 @@ describe('POST /api/articles/:article_id/read', () => {
       expect(response.status).toBe(404)
     })
   })
+
+  describe('クロスユーザー認可', () => {
+    // セッション由来のactiveUserIdで既読履歴を作成する不変条件を担保する。
+    // 将来リクエストパラメータからユーザーIDを受け取る変更が入った際に検知できるようにする。
+    it('ユーザーAの既読化が他ユーザーの既読履歴に影響しないこと', async () => {
+      const userB = await userHelper.create('read-cross-user@example.com', 'Test@password123')
+      createdUserIds.userIds.push(userB.userId)
+      createdUserIds.authIds.push(userB.authenticationId)
+
+      const response = await requestReadArticle(testArticleId.toString(), authCookies)
+      expect(response.status).toBe(201)
+
+      // 操作したユーザーAには既読履歴が作成される
+      expect(await articleHelper.findReadHistory(testActiveUserId, testArticleId)).toBeTruthy()
+      // 他ユーザーBの既読履歴には影響しない
+      expect(await articleHelper.findReadHistory(userB.activeUserId, testArticleId)).toBeNull()
+    })
+  })
 })

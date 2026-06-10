@@ -112,4 +112,22 @@ describe('DELETE /api/articles/:article_id/unread', () => {
       expect(response.status).toBe(404)
     })
   })
+
+  describe('クロスユーザー認可', () => {
+    // 削除対象をセッション由来のactiveUserIdに限定する不変条件を担保する。
+    // 将来リクエストパラメータからユーザーIDを受け取る変更が入った際に検知できるようにする。
+    it('他ユーザーBによる未読化がユーザーAの既読履歴を削除しないこと', async () => {
+      const userB = await userHelper.create('unread-cross-user@example.com', 'Test@password123')
+      createdUserIds.userIds.push(userB.userId)
+      createdUserIds.authIds.push(userB.authenticationId)
+      const userBLogin = await userHelper.login('unread-cross-user@example.com', 'Test@password123')
+
+      // 既読履歴を持たないユーザーBが同一記事をunreadする
+      const response = await requestUnreadArticle(testArticleId.toString(), userBLogin.cookies)
+      expect(response.status).toBe(200)
+
+      // ユーザーAの既読履歴は削除されない
+      expect(await articleHelper.countReadHistories(testActiveUserId, testArticleId)).toBe(1)
+    })
+  })
 })

@@ -5,6 +5,7 @@ import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
 describe('POST /api/articles/:article_id/skip', () => {
+  let testActiveUserId: bigint
   let testArticleId: bigint
   let authCookies: string
   const createdArticleIds: bigint[] = []
@@ -36,6 +37,7 @@ describe('POST /api/articles/:article_id/skip', () => {
     createdUserIds.authIds.push(authenticationId)
 
     const loginData = await userHelper.login('skiptest@example.com', 'Test@password123')
+    testActiveUserId = loginData.activeUserId
     authCookies = loginData.cookies
 
     const article = await articleHelper.createArticle()
@@ -77,5 +79,23 @@ describe('POST /api/articles/:article_id/skip', () => {
   ])('$name で期待ステータスになる', async ({ articleId, cookies, status }) => {
     const response = await requestSkipArticle(articleId, cookies())
     expect(response.status).toBe(status)
+  })
+
+  describe('クロスユーザー認可', () => {
+    // セッション由来のactiveUserIdでスキップ状態を作成する不変条件を担保する。
+    // 将来リクエストパラメータからユーザーIDを受け取る変更が入った際に検知できるようにする。
+    it('ユーザーAのスキップが他ユーザーのスキップ状態に影響しないこと', async () => {
+      const userB = await userHelper.create('skip-cross-user@example.com', 'Test@password123')
+      createdUserIds.userIds.push(userB.userId)
+      createdUserIds.authIds.push(userB.authenticationId)
+
+      const response = await requestSkipArticle(testArticleId.toString(), authCookies)
+      expect(response.status).toBe(201)
+
+      // 操作したユーザーAにはスキップ状態が作成される
+      expect(await articleHelper.countSkippedArticles(testActiveUserId, testArticleId)).toBe(1)
+      // 他ユーザーBのスキップ状態には影響しない
+      expect(await articleHelper.countSkippedArticles(userB.activeUserId, testArticleId)).toBe(0)
+    })
   })
 })

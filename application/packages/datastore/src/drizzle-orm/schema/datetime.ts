@@ -1,4 +1,12 @@
+import { type SQL, sql } from 'drizzle-orm'
 import { customType } from 'drizzle-orm/sqlite-core'
+
+// 混在形式（integerのepochミリ秒 / ISO・CURRENT_TIMESTAMP 文字列）をソート・範囲条件で
+// 同一基準に揃えるための正規化式。生成列に載せてインデックスを効かせるために共有する。
+export function normalizedDateTimeExpr(columnName: string): SQL {
+  const column = sql.raw(columnName)
+  return sql`CASE WHEN typeof(${column}) = 'integer' THEN datetime(${column} / 1000, 'unixepoch') ELSE datetime(${column}) END`
+}
 
 // 既存D1本番データには（Prisma時代に書き込まれた）ISO-8601 文字列、CURRENT_TIMESTAMP 由来の
 // "YYYY-MM-DD HH:MM:SS"(UTC・TZなし)、過去の epochミリ秒(integer) が混在しうる。

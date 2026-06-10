@@ -10,25 +10,24 @@ export interface FetchWithTimeoutOptions {
 
 // AbortSignal.any 未対応環境向けに、複数signalのいずれかの中断を伝播する合成signalを生成する。
 // 中断後はリスナーを解放できるよう、解放用のクリーンアップ関数もあわせて返す。
-const combineSignals = (
-  signal: AbortSignal,
-  timeoutSignal: AbortSignal,
-): { signal: AbortSignal; cleanup: () => void } => {
+const combineSignals = (signals: AbortSignal[]): { signal: AbortSignal; cleanup: () => void } => {
   const controller = new AbortController()
-  const onSignalAbort = () => controller.abort(signal.reason)
-  const onTimeoutAbort = () => controller.abort(timeoutSignal.reason)
 
-  if (signal.aborted) {
-    controller.abort(signal.reason)
-  } else {
-    signal.addEventListener('abort', onSignalAbort)
-    timeoutSignal.addEventListener('abort', onTimeoutAbort)
+  const alreadyAborted = signals.find((signal) => signal.aborted)
+  if (alreadyAborted) {
+    controller.abort(alreadyAborted.reason)
+    // 既に中断済みでリスナーを登録しないため、解放処理は不要
+    const noop = () => undefined
+    return { signal: controller.signal, cleanup: noop }
   }
 
-  const cleanup = () => {
-    signal.removeEventListener('abort', onSignalAbort)
-    timeoutSignal.removeEventListener('abort', onTimeoutAbort)
-  }
+  const removers = signals.map((signal) => {
+    const onAbort = () => controller.abort(signal.reason)
+    signal.addEventListener('abort', onAbort)
+    return () => signal.removeEventListener('abort', onAbort)
+  })
+
+  const cleanup = () => removers.forEach((remove) => remove())
   return { signal: controller.signal, cleanup }
 }
 
@@ -56,6 +55,6 @@ export const fetchWithTimeout = (
   }
 
   // iOS 16 等の AbortSignal.any 未対応環境ではリスナーリークを避けつつ手動で合成する
-  const { signal: combinedSignal, cleanup } = combineSignals(signal, timeoutSignal)
+  const { signal: combinedSignal, cleanup } = combineSignals([signal, timeoutSignal])
   return fetch(input, { ...rest, signal: combinedSignal }).finally(cleanup)
 }

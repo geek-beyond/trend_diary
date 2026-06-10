@@ -13,10 +13,18 @@ export interface Query {
   ): Promise<Result<Nullable<CurrentUser>, Error>>
 }
 
+/**
+ * 任意のメッセージを外部へ送信する通知ポート
+ */
+export interface Notifier {
+  sendMessage(content: string): Promise<void>
+}
+
 export interface Command {
   createActiveWithAuthenticationId(
     email: string,
     authenticationId: string,
+    notifier: Notifier,
     displayName?: string | null,
   ): Promise<Result<CurrentUser, ServerError>>
 }

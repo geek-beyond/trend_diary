@@ -2,7 +2,7 @@ import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
-import type { AuthRepository, Command, Query } from './repository'
+import type { AuthRepository, Command, Notifier, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
 import type { AuthenticationSession, AuthenticationUser } from './schema/auth-schema'
 import { AuthUseCase } from './use-case'
@@ -10,6 +10,7 @@ import { AuthUseCase } from './use-case'
 const repositoryMock = mockDeep<AuthRepository>()
 const commandMock = mockDeep<Command>()
 const queryMock = mockDeep<Query>()
+const notifierMock = mockDeep<Notifier>()
 
 const mockAuthUser: AuthenticationUser = {
   id: 'auth-user-id-123',
@@ -55,7 +56,7 @@ describe('AuthUseCase', () => {
         commandMock.createActiveWithAuthenticationId.mockResolvedValue(ok(mockActiveUser))
 
         // Act
-        const result = await useCase.signup('test@example.com', 'Password1!')
+        const result = await useCase.signup('test@example.com', 'Password1!', notifierMock)
 
         // Assert
         expect(result.isOk()).toBe(true)
@@ -67,6 +68,7 @@ describe('AuthUseCase', () => {
         expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
           mockAuthUser.email,
           mockAuthUser.id,
+          notifierMock,
         )
       })
     })
@@ -78,7 +80,7 @@ describe('AuthUseCase', () => {
         repositoryMock.signup.mockResolvedValue(err(authError))
 
         // Act
-        const result = await useCase.signup('test@example.com', 'Password1!')
+        const result = await useCase.signup('test@example.com', 'Password1!', notifierMock)
 
         // Assert
         expect(result.isErr()).toBe(true)

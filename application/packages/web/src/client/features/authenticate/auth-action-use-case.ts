@@ -1,6 +1,7 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAuthUseCase } from '@trend-diary/domain/user'
+import { DiscordWebhookClient } from '@trend-diary/notification'
 import type { AppLoadContext } from 'react-router'
 
 interface SupabaseAuthContext {
@@ -64,9 +65,11 @@ export function createAuthActionUseCase(request: Request, context: AppLoadContex
 
   const rdb = getRdbClient(context.cloudflare.env.DB)
   const useCase = createAuthUseCase(client, rdb)
+  const notifier = new DiscordWebhookClient(context.cloudflare.env.DISCORD_WEBHOOK_URL)
 
   return {
     headers,
     useCase,
+    notifier,
   }
 }

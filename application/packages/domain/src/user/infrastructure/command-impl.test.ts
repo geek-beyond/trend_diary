@@ -1,10 +1,14 @@
 import { ServerError } from '@trend-diary/common/errors'
-import { beforeEach, describe, expect, it } from 'vitest'
+import Logger from '@trend-diary/common/logger'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
+import type { Notifier } from '../repository'
 import CommandImpl from './command-impl'
 
 describe('CommandImpl', () => {
   let useCase: CommandImpl
+  let logger: Logger
+  let notifier: Notifier
 
   // INFO: Drizzleのinsert returningは「カラム順の配列」で行を返す
   // users:        user_id, created_at
@@ -27,7 +31,9 @@ describe('CommandImpl', () => {
   ]
 
   beforeEach(() => {
-    useCase = new CommandImpl(getRdbClient())
+    logger = new Logger('silent')
+    notifier = { sendMessage: vi.fn().mockResolvedValue(undefined) }
+    useCase = new CommandImpl(getRdbClient(), logger)
   })
 
   describe('createActiveWithAuthenticationId', () => {
@@ -49,6 +55,7 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
+        notifier,
         '表示名',
       )
 
@@ -103,6 +110,7 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
+        notifier,
       )
 
       // Assert
@@ -122,6 +130,7 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
+        notifier,
       )
 
       // Assert: ServerErrorを返す
@@ -153,6 +162,7 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
+        notifier,
       )
 
       // Assert: ServerErrorを返す
@@ -182,6 +192,7 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
+        notifier,
       )
 
       // Assert: 補償が失敗しても元のServerErrorを返す
@@ -196,6 +207,62 @@ describe('CommandImpl', () => {
         sql.includes('delete from "users"'),
       )
       expect(deleteCall).toBeDefined()
+    })
+
+    it('補償delete失敗時はusersレコード孤立検知のためuserIdと補償エラーをerrorログに出力する', async () => {
+      // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete失敗
+      const errorSpy = vi.spyOn(logger, 'error')
+      const compensationError = new Error('compensation delete failed')
+      mockRdbExecutor
+        .mockResolvedValueOnce({ rows: [buildUserRow(2)] })
+        .mockRejectedValueOnce(new Error('create active failed'))
+        .mockRejectedValueOnce(compensationError)
+
+      // Act
+      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123', notifier)
+
+      // Assert: 手動対応に必要なuserId(=2)と補償エラーをerrorログに残すこと
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          msg: 'signup compensation failed: orphaned user may remain',
+          userId: 2,
+        }),
+        compensationError,
+      )
+    })
+
+    it('補償delete失敗時は孤立したusersレコードをnotifierへ通知する', async () => {
+      // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete失敗
+      const compensationError = new Error('compensation delete failed')
+      mockRdbExecutor
+        .mockResolvedValueOnce({ rows: [buildUserRow(2)] })
+        .mockRejectedValueOnce(new Error('create active failed'))
+        .mockRejectedValueOnce(compensationError)
+
+      // Act
+      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123', notifier)
+
+      // Assert: userId(=2)と補償エラーを含むメッセージを通知すること
+      expect(notifier.sendMessage).toHaveBeenCalledWith(expect.stringContaining('userId: 2'))
+      expect(notifier.sendMessage).toHaveBeenCalledWith(
+        expect.stringContaining('compensation delete failed'),
+      )
+    })
+
+    it('補償delete成功時はerrorログ出力も通知も行わない', async () => {
+      // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete成功
+      const errorSpy = vi.spyOn(logger, 'error')
+      mockRdbExecutor
+        .mockResolvedValueOnce({ rows: [buildUserRow(2)] })
+        .mockRejectedValueOnce(new Error('create active failed'))
+        .mockResolvedValueOnce({ rows: [] })
+
+      // Act
+      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123', notifier)
+
+      // Assert: 補償が成功した場合はログも通知も出さないこと
+      expect(errorSpy).not.toHaveBeenCalled()
+      expect(notifier.sendMessage).not.toHaveBeenCalled()
     })
   })
 })

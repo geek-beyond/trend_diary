@@ -54,8 +54,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 
   try {
-    const { useCase } = createAuthActionUseCase(request, context)
-    const result = await useCase.signup(validation.data.email, validation.data.password)
+    const { useCase, notifier } = createAuthActionUseCase(request, context)
+    const result = await useCase.signup(validation.data.email, validation.data.password, notifier)
 
     if (result.isErr()) {
       return { formError: resolveSignupErrorMessage(result.error) } satisfies SignupActionData

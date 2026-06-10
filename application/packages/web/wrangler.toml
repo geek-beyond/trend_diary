@@ -4,6 +4,10 @@ compatibility_flags = [ "nodejs_compat" ]
 main = "./src/worker.ts"
 assets = { directory = "./build/client" }
 
+# 本番のログレベル方針。PII を含む debug クエリログを常時出力しないよう info を明示する
+[vars]
+LOG_LEVEL = "info"
+
 [observability]
 enabled = true
 head_sampling_rate = 1

@@ -7,7 +7,10 @@ import { loader } from './app-layout'
 const { getCurrentActiveUser } = vi.hoisted(() => ({ getCurrentActiveUser: vi.fn() }))
 
 vi.mock('@/client/features/authenticate/auth-action-use-case', () => ({
-  createAuthActionUseCase: vi.fn(() => ({ useCase: { getCurrentActiveUser } })),
+  createAuthActionUseCase: vi.fn(() => ({
+    useCase: { getCurrentActiveUser },
+    headers: new Headers(),
+  })),
 }))
 
 function buildLoaderArgs(): LoaderFunctionArgs {
@@ -31,7 +34,21 @@ describe('app-layout loader', () => {
 
     const result = await loader(buildLoaderArgs())
 
-    expect(result).toEqual({ isLoggedIn: true })
+    expect(result.data).toEqual({ isLoggedIn: true })
+  })
+
+  it('セッション更新で付与されたSet-Cookieヘッダーがレスポンスに転送される', async () => {
+    getCurrentActiveUser.mockResolvedValue(ok({ userId: 'user-1', displayName: 'テスト' }))
+    const headers = new Headers()
+    headers.append('Set-Cookie', 'sb-access-token=refreshed; Path=/')
+    vi.mocked(createAuthActionUseCase).mockReturnValueOnce({
+      useCase: { getCurrentActiveUser },
+      headers,
+    } as unknown as ReturnType<typeof createAuthActionUseCase>)
+
+    const result = await loader(buildLoaderArgs())
+
+    expect(result.init?.headers).toBe(headers)
   })
 
   it('認証情報の取得に失敗した場合はisLoggedInがfalseになる', async () => {
@@ -39,7 +56,7 @@ describe('app-layout loader', () => {
 
     const result = await loader(buildLoaderArgs())
 
-    expect(result).toEqual({ isLoggedIn: false })
+    expect(result.data).toEqual({ isLoggedIn: false })
   })
 
   it('UseCase生成時に例外が発生した場合はisLoggedInがfalseにフォールバックする', async () => {
@@ -49,6 +66,6 @@ describe('app-layout loader', () => {
 
     const result = await loader(buildLoaderArgs())
 
-    expect(result).toEqual({ isLoggedIn: false })
+    expect(result.data).toEqual({ isLoggedIn: false })
   })
 })

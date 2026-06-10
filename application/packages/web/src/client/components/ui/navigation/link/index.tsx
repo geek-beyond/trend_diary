@@ -1,5 +1,5 @@
 import type { ComponentPropsWithoutRef, PropsWithChildren } from 'react'
-import { Link } from 'react-router'
+import { href, Link } from 'react-router'
 import { Button } from '@/client/components/shadcn/button'
 import { InternalPath } from '@/client/routes'
 
@@ -15,18 +15,6 @@ function ExternalLink({ to, children, ...props }: PropsWithChildren<ExternalLink
     <a href={to} target='_blank' rel='noopener noreferrer nofollow' {...props}>
       {children}
     </a>
-  )
-}
-
-interface InternalLinkProps extends Omit<ComponentPropsWithoutRef<typeof Link>, 'to'> {
-  to: InternalPath
-}
-
-function InternalLink({ to, children, ...props }: PropsWithChildren<InternalLinkProps>) {
-  return (
-    <Link to={to} {...props}>
-      {children}
-    </Link>
   )
 }
 
@@ -54,9 +42,9 @@ export function AnchorLink({ to, children, ...props }: AnchorLinkProps) {
       {children}
     </ExternalLink>
   ) : (
-    <InternalLink to={to} {...props}>
+    <Link to={href(to)} {...props}>
       {children}
-    </InternalLink>
+    </Link>
   )
 }
 

@@ -10,7 +10,7 @@ export default {
       cron: event.cron,
     })
 
-    const discord = new DiscordWebhookClient(env.DISCORD_WEBHOOK_URL)
+    const discord = new DiscordWebhookClient(env.DISCORD_WEBHOOK_URL, logger)
 
     ctx.waitUntil(
       fetchAllArticles({

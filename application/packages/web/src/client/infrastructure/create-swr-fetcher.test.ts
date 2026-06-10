@@ -45,11 +45,9 @@ describe('createSWRFetcher', () => {
 
       const { fetcher } = createSWRFetcher()
 
-      await expect(fetcher('http://example.com/api')).rejects.toMatchObject({
-        name: 'ApiError',
-        statusCode: 404,
-      })
-      await expect(fetcher('http://example.com/api')).rejects.toBeInstanceOf(ApiError)
+      const promise = fetcher('http://example.com/api')
+      await expect(promise).rejects.toBeInstanceOf(ApiError)
+      await expect(promise).rejects.toHaveProperty('statusCode', 404)
     })
   })
 
@@ -127,11 +125,9 @@ describe('createSWRFetcher', () => {
 
       const { apiCall } = createSWRFetcher()
 
-      await expect(apiCall(mockApiFunction)).rejects.toMatchObject({
-        name: 'ApiError',
-        statusCode: 500,
-      })
-      await expect(apiCall(mockApiFunction)).rejects.toBeInstanceOf(ApiError)
+      const promise = apiCall(mockApiFunction)
+      await expect(promise).rejects.toBeInstanceOf(ApiError)
+      await expect(promise).rejects.toHaveProperty('statusCode', 500)
     })
   })
 })

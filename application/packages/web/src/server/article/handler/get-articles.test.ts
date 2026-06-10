@@ -300,7 +300,7 @@ describe('GET /api/articles 既読情報', () => {
     const res = await requestGetArticles('title=既読記事', authCookies)
 
     expect(res.status).toBe(200)
-    const data = (await res.json()) as { data: ArticleWithReadStatusResponse[] }
+    const data: { data: ArticleWithReadStatusResponse[] } = await res.json()
     expect(data.data).toHaveLength(1)
     expect(data.data[0].isRead).toBe(true)
   })
@@ -309,7 +309,7 @@ describe('GET /api/articles 既読情報', () => {
     const res = await requestGetArticles('title=未読記事', authCookies)
 
     expect(res.status).toBe(200)
-    const data = (await res.json()) as { data: ArticleWithReadStatusResponse[] }
+    const data: { data: ArticleWithReadStatusResponse[] } = await res.json()
     expect(data.data).toHaveLength(1)
     expect(data.data[0].isRead).toBe(false)
   })
@@ -318,7 +318,7 @@ describe('GET /api/articles 既読情報', () => {
     const res = await requestGetArticles('', authCookies)
 
     expect(res.status).toBe(200)
-    const data = (await res.json()) as { data: ArticleWithReadStatusResponse[] }
+    const data: { data: ArticleWithReadStatusResponse[] } = await res.json()
     expect(data.data.map((article) => article.title)).toEqual(['未読記事', '既読記事'])
   })
 
@@ -326,7 +326,7 @@ describe('GET /api/articles 既読情報', () => {
     const res = await requestGetArticles('read_status=0', authCookies)
 
     expect(res.status).toBe(200)
-    const data = (await res.json()) as { data: ArticleWithReadStatusResponse[] }
+    const data: { data: ArticleWithReadStatusResponse[] } = await res.json()
     expect(data.data).toHaveLength(1)
     expect(data.data[0].title).toBe('未読記事')
     expect(data.data[0].isRead).toBe(false)

@@ -66,9 +66,11 @@ export default function useAnalytics(enabled: boolean) {
         skip: response.summary.skip,
       }))
 
-      const sourceMap = Object.fromEntries(
-        ARTICLE_MEDIA.map((media) => [media, { read: 0, skip: 0 }]),
-      ) as Record<ArticleMedia, { read: number; skip: number }>
+      const sourceMap: Record<ArticleMedia, { read: number; skip: number }> = {
+        qiita: { read: 0, skip: 0 },
+        zenn: { read: 0, skip: 0 },
+        hatena: { read: 0, skip: 0 },
+      }
 
       for (const response of normalizedResponses) {
         for (const source of response.sources) {
@@ -88,9 +90,12 @@ export default function useAnalytics(enabled: boolean) {
     },
   )
 
-  const swrKey = enabled && selectedDate ? ['api/articles/diary', selectedDate, page] : null
-  const { data, isLoading } = useSWR<DiaryResponse>(swrKey, () =>
-    fetchDiary(selectedDate as string, page),
+  const swrKey: ['api/articles/diary', string, number] | null =
+    enabled && selectedDate ? ['api/articles/diary', selectedDate, page] : null
+  const { data, isLoading } = useSWR<DiaryResponse>(
+    swrKey,
+    ([, date, currentPage]: ['api/articles/diary', string, number]) =>
+      fetchDiary(date, currentPage),
   )
 
   const reads = data?.reads.data.map((read) => ({ ...read, readAt: new Date(read.readAt) })) ?? []

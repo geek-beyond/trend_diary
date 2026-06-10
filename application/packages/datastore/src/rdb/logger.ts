@@ -11,11 +11,16 @@ const VALID_LOG_LEVELS: ReadonlyArray<LogLevel> = [
   'silent',
 ]
 
+function isLogLevel(value: string | undefined): value is LogLevel {
+  const validLevels: ReadonlyArray<string> = VALID_LOG_LEVELS
+  return value !== undefined && validLevels.includes(value)
+}
+
 // 既定を info にすることで、PII(email等)を含むクエリログ(debug)は LOG_LEVEL=debug/trace
 // を明示したときだけ出力され、本番で常時ログ出力される事故を防ぐ。
 function resolveLogLevel(): LogLevel {
   const candidate = process.env.LOG_LEVEL?.trim()
-  return VALID_LOG_LEVELS.includes(candidate as LogLevel) ? (candidate as LogLevel) : 'info'
+  return isLogLevel(candidate) ? candidate : 'info'
 }
 
 let drizzleLogger: AppLogger | undefined

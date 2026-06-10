@@ -43,7 +43,7 @@ export default class Logger {
       }
 
       if (extra && typeof extra === 'object') {
-        this.logger[level]({ ...this.context, ...(extra as Record<string, unknown>) }, message)
+        this.logger[level]({ ...this.context, ...extra }, message)
         return
       }
 

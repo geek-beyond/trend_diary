@@ -23,9 +23,7 @@ function createAuthValidationError(
   reason: 'no_session' | 'validation_failed' | 'user_not_found',
   message: string,
 ): AuthValidationError {
-  const error = new Error(message) as AuthValidationError
-  error.reason = reason
-  return error
+  return Object.assign(new Error(message), { reason })
 }
 
 /**

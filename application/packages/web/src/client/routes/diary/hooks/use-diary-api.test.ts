@@ -60,6 +60,7 @@ beforeEach(() => {
         },
       },
     },
+    // biome-ignore lint/plugin: Hono client は深くネストした型を持ち、テストでは利用する一部のみをモックするため二重アサーションで橋渡しする
   } as unknown as ReturnType<typeof createSWRFetcher>)
 })
 

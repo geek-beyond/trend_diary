@@ -17,6 +17,15 @@ import type { AuthenticationUser } from '../schema/auth-schema'
  * NOTE: Supabaseのバージョンアップでエラーメッセージが変わる可能性がある
  * 現時点では専用のエラー型が提供されていないため、メッセージ文字列で判定している
  */
+function hasMessage(value: unknown): value is { message: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'message' in value &&
+    typeof value.message === 'string'
+  )
+}
+
 function isUserAlreadyExistsError(error: { message: string }): boolean {
   return error.message.includes('already registered')
 }
@@ -31,8 +40,8 @@ function isInvalidCredentialsError(error: unknown): boolean {
     return true
   }
   // フォールバック: メッセージ文字列でも判定
-  if (error && typeof error === 'object' && 'message' in error) {
-    const message = (error as { message: string }).message.toLowerCase()
+  if (hasMessage(error)) {
+    const message = error.message.toLowerCase()
     return message.includes('invalid login credentials') || message.includes('invalid credentials')
   }
   return false

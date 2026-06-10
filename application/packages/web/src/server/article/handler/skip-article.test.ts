@@ -57,7 +57,7 @@ describe('POST /api/articles/:article_id/skip', () => {
     const response = await requestSkipArticle(testArticleId.toString(), authCookies)
 
     expect(response.status).toBe(201)
-    const json = (await response.json()) as { message: string }
+    const json: { message: string } = await response.json()
     expect(json.message).toBe('記事をスキップしました')
   })
 

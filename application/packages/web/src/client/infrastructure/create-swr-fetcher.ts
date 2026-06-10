@@ -37,6 +37,7 @@ export const createSWRFetcher = () => {
       case 204:
         return null
       default:
+        // biome-ignore lint/plugin: JSON デシリアライズ結果は実行時まで型が定まらず、呼び出し側が指定するジェネリック T へ橋渡しする境界のため許可する
         return (await response.json()) as T
     }
   }

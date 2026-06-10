@@ -4,10 +4,12 @@ import fromRdbToArticle from './mapper'
 
 describe('fromRdbToArticle', () => {
   // テストデータ作成ヘルパー
+  // スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
+  // テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
   const createMockRdbArticle = (
     overrides: Partial<Record<keyof RdbArticle, unknown>> = {},
   ): RdbArticle => {
-    return {
+    const rdbArticle = {
       articleId: 1n,
       media: 'Qiita',
       title: 'TypeScriptの型安全性について',
@@ -16,7 +18,9 @@ describe('fromRdbToArticle', () => {
       url: 'https://example.com/article/1',
       createdAt: new Date('2024-01-15T09:30:00Z'),
       ...overrides,
-    } as unknown as RdbArticle
+    }
+    // biome-ignore lint/plugin: ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
+    return rdbArticle as unknown as RdbArticle
   }
 
   describe('基本動作', () => {

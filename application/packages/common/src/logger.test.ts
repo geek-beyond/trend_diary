@@ -9,6 +9,17 @@ const parseLogObjects = (lines: string[]) =>
     .filter(Boolean)
     .map((line) => JSON.parse(line))
 
+const hasInternalLoggerLevel = (value: unknown): value is { logger: { level: string } } => {
+  if (typeof value !== 'object' || value === null || !('logger' in value)) return false
+  const { logger } = value
+  return (
+    typeof logger === 'object' &&
+    logger !== null &&
+    'level' in logger &&
+    typeof logger.level === 'string'
+  )
+}
+
 describe('Logger', () => {
   it('指定したレベルでpinoを初期化できる', () => {
     const cases = [
@@ -19,9 +30,11 @@ describe('Logger', () => {
 
     for (const { level } of cases) {
       const logger = new Logger(level)
-      const scoped = logger.with({})
-      const internal = scoped as unknown as { logger: { level: string } }
-      expect(internal.logger.level).toBe(level)
+      const scoped: unknown = logger.with({})
+      expect(hasInternalLoggerLevel(scoped)).toBe(true)
+      if (hasInternalLoggerLevel(scoped)) {
+        expect(scoped.logger.level).toBe(level)
+      }
     }
   })
 

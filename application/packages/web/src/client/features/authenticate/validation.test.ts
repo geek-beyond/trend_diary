@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateAuthenticateForm } from './validation'
+import { type AuthenticateErrors, validateAuthenticateForm } from './validation'
 
 describe('validateAuthenticateForm', () => {
   describe('成功ケース', () => {
@@ -116,7 +116,11 @@ describe('validateAuthenticateForm', () => {
   })
 
   describe('FormDataの異常ケース', () => {
-    const formDataAnomalyCases = [
+    const formDataAnomalyCases: Array<{
+      name: string
+      setupFormData: (formData: FormData) => void
+      expectedErrors: Array<keyof AuthenticateErrors>
+    }> = [
       {
         name: 'emailキーが存在しない場合',
         setupFormData: (formData: FormData) => {
@@ -150,7 +154,7 @@ describe('validateAuthenticateForm', () => {
         expect(result.isValid).toBe(false)
         if (!result.isValid) {
           testCase.expectedErrors.forEach((errorField) => {
-            expect(result.errors[errorField as keyof typeof result.errors]).toBeDefined()
+            expect(result.errors[errorField]).toBeDefined()
           })
         }
       })

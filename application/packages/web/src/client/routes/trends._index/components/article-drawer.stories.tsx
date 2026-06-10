@@ -95,9 +95,9 @@ export const LongDescriptionToggle: Story = {
   },
   play: async ({ step }) => {
     const getDescriptionElement = () => {
-      const description = document.body.querySelector(
+      const description = document.body.querySelector<HTMLElement>(
         "[data-slot='drawer-content-description-content']",
-      ) as HTMLElement | null
+      )
       expect(description).not.toBeNull()
       if (!description) {
         throw new Error('description element not found')

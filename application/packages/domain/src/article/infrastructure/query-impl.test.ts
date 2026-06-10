@@ -11,6 +11,7 @@ interface DateRangeSqlBuilders {
     range: { fromDate?: Date; toDateExclusive?: Date },
   ): SQL[]
 }
+// biome-ignore lint/plugin: privateなstaticメソッドをホワイトボックステストするため、型システムを意図的に迂回する必要があるためです
 const dateRangeSqlBuilders = QueryImpl as unknown as DateRangeSqlBuilders
 
 describe('QueryImpl', () => {

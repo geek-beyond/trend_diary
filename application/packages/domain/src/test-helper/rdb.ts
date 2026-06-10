@@ -19,9 +19,11 @@ export const mockRdbExecutor =
 
 // 本番型(DrizzleD1Database)とドライバが異なるため、テスト側でキャストして吸収する
 // （クエリビルダ API は共通のため実行時は問題なく動作する）。
-const mockDb = drizzleProxy((sql, params, method) => mockRdbExecutor(sql, params, method), {
+const mockDbProxy = drizzleProxy((sql, params, method) => mockRdbExecutor(sql, params, method), {
   schema,
-}) as unknown as RdbClient
+})
+// biome-ignore lint/plugin: 本番型(DrizzleD1Database)とsqlite-proxyドライバは型が異なり、テスト用に吸収する手段が他にないためです
+const mockDb = mockDbProxy as unknown as RdbClient
 
 type D1Database = import('@cloudflare/workers-types').D1Database
 

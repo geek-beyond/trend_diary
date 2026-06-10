@@ -46,7 +46,7 @@ describe('GET /api/auth/me', () => {
     const meRes = await requestMe(cookies)
     expect(meRes.status).toBe(200)
 
-    const body = (await meRes.json()) as { user: { displayName: string | null } }
+    const body: { user: { displayName: string | null } } = await meRes.json()
     expect(body).toHaveProperty('user')
     expect(body.user).toHaveProperty('displayName')
   })

@@ -29,6 +29,7 @@ describe('handleError', () => {
     const logger = createLoggerMock()
     const error = new ClientError('invalid query', 422)
 
+    // biome-ignore lint/plugin: Loggerはprivateフィールドを持ち構造的に代入できないため、テスト用モックの注入には二重アサーションが避けられないため
     const result = handleError(error, logger as unknown as LoggerType)
 
     expect(result).toBeInstanceOf(HTTPException)
@@ -43,6 +44,7 @@ describe('handleError', () => {
     const logger = createLoggerMock()
     const error = new ServerError(new Error('db down'), 503)
 
+    // biome-ignore lint/plugin: Loggerはprivateフィールドを持ち構造的に代入できないため、テスト用モックの注入には二重アサーションが避けられないため
     const result = handleError(error, logger as unknown as LoggerType)
 
     expect(result).toBeInstanceOf(HTTPException)
@@ -65,6 +67,7 @@ describe('handleError', () => {
       context,
     )
 
+    // biome-ignore lint/plugin: Loggerはprivateフィールドを持ち構造的に代入できないため、テスト用モックの注入には二重アサーションが避けられないため
     const result = handleError(error, logger as unknown as LoggerType)
 
     expect(result).toBeInstanceOf(HTTPException)
@@ -93,6 +96,7 @@ describe('handleError', () => {
     const logger = createLoggerMock()
     const error = new Error('boom')
 
+    // biome-ignore lint/plugin: Loggerはprivateフィールドを持ち構造的に代入できないため、テスト用モックの注入には二重アサーションが避けられないため
     const result = handleError(error, logger as unknown as LoggerType)
 
     expect(result).toBeInstanceOf(HTTPException)

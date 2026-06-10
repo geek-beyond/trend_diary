@@ -74,6 +74,7 @@ describe('useUnreadDigestion', () => {
           },
         },
       },
+      // biome-ignore lint/plugin: Hono client は深くネストした型を持ち、テストでは利用する一部のみをモックするため二重アサーションで橋渡しする
     } as unknown as ReturnType<typeof createSWRFetcher>)
   })
 
@@ -132,10 +133,11 @@ describe('useUnreadDigestion', () => {
         data: [],
       })
 
+    const initialProps: { selectedMedia: MediaType } = { selectedMedia: null }
     const { result, rerender } = renderHook(
       ({ selectedMedia }: { selectedMedia: MediaType }) => useUnreadDigestion(true, selectedMedia),
       {
-        initialProps: { selectedMedia: null as MediaType },
+        initialProps,
         wrapper,
       },
     )

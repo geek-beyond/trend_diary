@@ -5,7 +5,10 @@
   "files": {
     "includes": ["**", "!src/client/components/shadcn", "!src/client/components/customized"]
   },
-  "plugins": ["./biome-plugins/no-use-direct-dom-a-element.grit"],
+  "plugins": [
+    "./biome-plugins/no-use-direct-dom-a-element.grit",
+    "../../biome-plugins/no-as-assertion.grit"
+  ],
   "css": {
     "parser": {
       "tailwindDirectives": true

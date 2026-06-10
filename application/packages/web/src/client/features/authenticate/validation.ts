@@ -17,8 +17,8 @@ export type AuthenticateFormData = AuthInput
 export function validateAuthenticateForm(
   formData: FormData,
 ): ValidationResult<AuthenticateFormData, AuthenticateErrors> {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const email = formData.get('email')
+  const password = formData.get('password')
 
   const result = authInputSchema.pick({ email: true, password: true }).safeParse({
     email,
@@ -26,9 +26,11 @@ export function validateAuthenticateForm(
   })
 
   if (!result.success) {
-    return newValidationError<AuthenticateErrors>(
-      z.flattenError(result.error).fieldErrors as AuthenticateErrors,
-    )
+    const { fieldErrors } = z.flattenError(result.error)
+    return newValidationError<AuthenticateErrors>({
+      email: fieldErrors.email,
+      password: fieldErrors.password,
+    })
   }
 
   return newValidationSuccess<AuthenticateFormData>({

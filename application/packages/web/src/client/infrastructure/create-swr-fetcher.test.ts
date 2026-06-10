@@ -1,5 +1,5 @@
+import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { describe, expect, it, vi } from 'vitest'
-import { ApiError } from '@/client/lib/error'
 import { createSWRFetcher } from './create-swr-fetcher'
 
 global.fetch = vi.fn()
@@ -46,7 +46,7 @@ describe('createSWRFetcher', () => {
       const { fetcher } = createSWRFetcher()
 
       const promise = fetcher('http://example.com/api')
-      await expect(promise).rejects.toBeInstanceOf(ApiError)
+      await expect(promise).rejects.toBeInstanceOf(ClientError)
       await expect(promise).rejects.toHaveProperty('statusCode', 404)
     })
   })
@@ -126,7 +126,7 @@ describe('createSWRFetcher', () => {
       const { apiCall } = createSWRFetcher()
 
       const promise = apiCall(mockApiFunction)
-      await expect(promise).rejects.toBeInstanceOf(ApiError)
+      await expect(promise).rejects.toBeInstanceOf(ServerError)
       await expect(promise).rejects.toHaveProperty('statusCode', 500)
     })
   })

@@ -1,5 +1,5 @@
+import { ClientError, ServerError } from '@trend-diary/common/errors'
 import getApiClientForClient from '@/client/infrastructure/api'
-import { ApiError } from '@/client/lib/error'
 
 interface ApiCallResponse {
   ok: boolean
@@ -7,6 +7,9 @@ interface ApiCallResponse {
   statusText: string
   json: () => Promise<unknown>
 }
+
+const toHttpError = (status: number, statusText: string) =>
+  status >= 500 ? new ServerError(statusText, status) : new ClientError(statusText, status)
 
 export const createSWRFetcher = () => {
   const client = getApiClientForClient()
@@ -17,7 +20,7 @@ export const createSWRFetcher = () => {
     })
 
     if (!response.ok) {
-      throw new ApiError(response.status, response.statusText)
+      throw toHttpError(response.status, response.statusText)
     }
 
     return response.json()
@@ -27,7 +30,7 @@ export const createSWRFetcher = () => {
     const response = await apiCall()
 
     if (!response.ok) {
-      throw new ApiError(response.status, response.statusText)
+      throw toHttpError(response.status, response.statusText)
     }
 
     switch (response.status) {

@@ -2,11 +2,13 @@ import { ServerError } from '@trend-diary/common/errors'
 import Logger from '@trend-diary/common/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
+import type { OrphanedUserNotifier } from '../repository'
 import CommandImpl from './command-impl'
 
 describe('CommandImpl', () => {
   let useCase: CommandImpl
   let logger: Logger
+  let notifier: OrphanedUserNotifier
 
   // INFO: Drizzleのinsert returningは「カラム順の配列」で行を返す
   // users:        user_id, created_at
@@ -30,7 +32,8 @@ describe('CommandImpl', () => {
 
   beforeEach(() => {
     logger = new Logger('silent')
-    useCase = new CommandImpl(getRdbClient(), logger)
+    notifier = { orphanedUser: vi.fn().mockResolvedValue(undefined) }
+    useCase = new CommandImpl(getRdbClient(), logger, notifier)
   })
 
   describe('createActiveWithAuthenticationId', () => {
@@ -223,7 +226,22 @@ describe('CommandImpl', () => {
       )
     })
 
-    it('補償delete成功時はerrorログを出力しない', async () => {
+    it('補償delete失敗時は孤児userをnotifierへ通知する', async () => {
+      // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete失敗
+      const compensationError = new Error('compensation delete failed')
+      mockRdbExecutor
+        .mockResolvedValueOnce({ rows: [buildUserRow(2)] })
+        .mockRejectedValueOnce(new Error('create active failed'))
+        .mockRejectedValueOnce(compensationError)
+
+      // Act
+      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123')
+
+      // Assert: userId(=2)と補償エラーを通知すること
+      expect(notifier.orphanedUser).toHaveBeenCalledWith(2, compensationError)
+    })
+
+    it('補償delete成功時はerrorログ出力も通知も行わない', async () => {
       // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete成功
       const errorSpy = vi.spyOn(logger, 'error')
       mockRdbExecutor
@@ -234,8 +252,9 @@ describe('CommandImpl', () => {
       // Act
       await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123')
 
-      // Assert: 補償が成功した場合はログを出さないこと
+      // Assert: 補償が成功した場合はログも通知も出さないこと
       expect(errorSpy).not.toHaveBeenCalled()
+      expect(notifier.orphanedUser).not.toHaveBeenCalled()
     })
   })
 })

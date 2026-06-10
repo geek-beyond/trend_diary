@@ -202,4 +202,63 @@ describe('DiscordNotifier', () => {
       expect(stackTraceField.value).toContain('...(truncated)')
     })
   })
+
+  describe('orphanedUser', () => {
+    it('Webhook URLが設定されていない場合は何もしない', async () => {
+      const notifier = new DiscordNotifier('')
+
+      await notifier.orphanedUser(2, new Error('compensation delete failed'))
+
+      expect(mockFetch).not.toHaveBeenCalled()
+    })
+
+    it('userIdと補償エラーをembed形式でDiscord Webhookに送信する', async () => {
+      const webhookUrl = 'https://discord.com/api/webhooks/test'
+      const notifier = new DiscordNotifier(webhookUrl)
+
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
+
+      const error = new Error('compensation delete failed')
+      error.stack = 'Error: compensation delete failed\n    at test.js:1:1'
+
+      await notifier.orphanedUser(2, error)
+
+      const callArgs = mockFetch.mock.calls[0]
+      const body = JSON.parse(callArgs[1].body)
+
+      expect(body).toEqual({
+        content: null,
+        embeds: [
+          {
+            title: '🚨 孤児ユーザー検出（サインアップ補償トランザクション失敗）',
+            color: 15158332,
+            fields: [
+              { name: 'User ID', value: '```\n2\n```', inline: false },
+              {
+                name: 'Compensation Error',
+                value: '```\ncompensation delete failed\n```',
+                inline: false,
+              },
+              {
+                name: 'Stack Trace',
+                value: '```\nError: compensation delete failed\n    at test.js:1:1\n```',
+                inline: false,
+              },
+            ],
+            timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+          },
+        ],
+      })
+    })
+
+    it('Discord Webhook送信が失敗してもエラーを投げない', async () => {
+      const notifier = new DiscordNotifier('https://discord.com/api/webhooks/test')
+
+      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+
+      await expect(
+        notifier.orphanedUser(2, new Error('compensation delete failed')),
+      ).resolves.not.toThrow()
+    })
+  })
 })

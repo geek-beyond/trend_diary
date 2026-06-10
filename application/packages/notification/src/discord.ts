@@ -70,6 +70,12 @@ export class DiscordNotifier {
     await this.client.send(this.createErrorPayload(error, requestInfo))
   }
 
+  // サインアップ補償（users削除）の失敗で孤児user（active_usersを持たない行）が残った場合、
+  // 滅多に起きないが手動対応が必要なため即時に気付けるよう通知する
+  async orphanedUser(userId: number, error: Error): Promise<void> {
+    await this.client.send(this.createOrphanedUserPayload(userId, error))
+  }
+
   private createErrorPayload(error: Error, requestInfo: ErrorRequestInfo): DiscordWebhookPayload {
     const stackTrace = this.truncateField(error.stack || 'No stack trace available')
 
@@ -88,6 +94,38 @@ export class DiscordNotifier {
             {
               name: 'Request Info',
               value: `\`\`\`\nMethod: ${requestInfo.method}\nURL: ${requestInfo.url}\nUser-Agent: ${requestInfo.userAgent}\n\`\`\``,
+              inline: false,
+            },
+            {
+              name: 'Stack Trace',
+              value: `\`\`\`\n${stackTrace}\n\`\`\``,
+              inline: false,
+            },
+          ],
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    }
+  }
+
+  private createOrphanedUserPayload(userId: number, error: Error): DiscordWebhookPayload {
+    const stackTrace = this.truncateField(error.stack || 'No stack trace available')
+
+    return {
+      content: null,
+      embeds: [
+        {
+          title: '🚨 孤児ユーザー検出（サインアップ補償トランザクション失敗）',
+          color: 15158332, // Red color (#E74C3C)
+          fields: [
+            {
+              name: 'User ID',
+              value: `\`\`\`\n${userId}\n\`\`\``,
+              inline: false,
+            },
+            {
+              name: 'Compensation Error',
+              value: `\`\`\`\n${error.message}\n\`\`\``,
               inline: false,
             },
             {

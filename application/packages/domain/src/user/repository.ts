@@ -22,6 +22,13 @@ export interface Command {
 }
 
 /**
+ * サインアップ補償（users削除）失敗で残った孤児userを手動対応のために通知するポート
+ */
+export interface OrphanedUserNotifier {
+  orphanedUser(userId: number, error: Error): Promise<void>
+}
+
+/**
  * 認証のサインアップ結果
  */
 export interface AuthSignupResult {

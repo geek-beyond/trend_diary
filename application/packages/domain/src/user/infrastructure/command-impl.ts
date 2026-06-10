@@ -4,7 +4,7 @@ import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import { RdbClient, wrapDbCall } from '@trend-diary/datastore/rdb'
 import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { Command } from '../repository'
+import { Command, type OrphanedUserNotifier } from '../repository'
 import type { CurrentUser } from '../schema/active-user-schema'
 import { mapToActiveUser } from './mapper'
 
@@ -15,6 +15,7 @@ export default class CommandImpl implements Command {
   constructor(
     private readonly db: RdbClient,
     private readonly logger: Logger = defaultLogger,
+    private readonly notifier?: OrphanedUserNotifier,
   ) {}
 
   async createActiveWithAuthenticationId(
@@ -47,6 +48,8 @@ export default class CommandImpl implements Command {
           { msg: 'signup compensation failed: orphaned user may remain', userId },
           compensateResult.error,
         )
+        // 通知失敗は補償処理の結果に影響させない（DiscordNotifier側で握りつぶす）
+        await this.notifier?.orphanedUser(userId, compensateResult.error)
       }
       return err(new ServerError('Failed to create active user'))
     }

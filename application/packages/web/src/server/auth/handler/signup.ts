@@ -1,6 +1,7 @@
 import { ExternalServiceError, handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAuthUseCase } from '@trend-diary/domain/user'
+import { DiscordNotifier } from '@trend-diary/notification'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import { ZodValidatedContext } from '@/middleware/zod-validator'
@@ -11,7 +12,9 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
 
   const client = createSupabaseAuthClient(c)
   const rdb = getRdbClient(c.env.DB)
-  const useCase = createAuthUseCase(client, rdb)
+  // 補償（users削除）失敗で孤児userが残った場合にDiscordへ通知する
+  const orphanedUserNotifier = new DiscordNotifier(c.env.DISCORD_WEBHOOK_URL)
+  const useCase = createAuthUseCase(client, rdb, orphanedUserNotifier)
 
   const result = await useCase.signup(valid.email, valid.password)
   if (result.isErr()) {

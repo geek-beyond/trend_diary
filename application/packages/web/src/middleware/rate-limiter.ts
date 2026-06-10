@@ -26,8 +26,19 @@ const rateLimiter = createMiddleware<Env>(async (c, next) => {
       throw error
     }
 
-    // Rate Limiting API自体の障害で認証を止めないよう、フェイルオープンする
-    c.get(CONTEXT_KEY.APP_LOG)?.warn('rate limiter unavailable, failing open', error)
+    // 認証エンドポイントでは無制限なブルートフォースを許す方が危険なため、Rate Limiting API障害時は
+    // フェイルオープンせずフェイルセーフ（503）に倒す。障害の継続はこのerrorログとerrorHandlerの5xx通知で検知する
+    c.get(CONTEXT_KEY.APP_LOG)?.error(
+      {
+        msg: 'rate limiter unavailable, failing closed',
+        event: 'rate_limiter_fail_closed',
+        path: c.req.path,
+      },
+      error instanceof Error ? error : new Error(String(error)),
+    )
+
+    // 根本原因をerrorHandler側の通知にも残すためcauseに連鎖させる
+    throw new HTTPException(503, { message: 'service temporarily unavailable', cause: error })
   }
 
   return next()

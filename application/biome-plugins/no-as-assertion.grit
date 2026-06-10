@@ -4,5 +4,5 @@ language js
 // 温床になるため原則禁止する。型を狭めるだけで安全な `as const` は許可する。
 TsAsExpression(ty=$type) where {
   $type <: not r"^const$",
-  register_diagnostic(span=$type, message="`as` 型アサーションは原則禁止です。型ガードや適切な型定義で対応してください（やむを得ない場合は理由付きで biome-ignore してください）。")
+  register_diagnostic(span=$type, message="Do not use `as` type assertions. Use type guards or proper type definitions instead (add a justified `// biome-ignore` only when unavoidable).", severity="error")
 }

@@ -46,9 +46,10 @@ export class AuthUseCase {
     if (activeUserResult.isErr()) {
       // NOTE: ここで認証ユーザーは作成済みだがactive_user作成に失敗しており、
       // 認証側に孤児ユーザーが残る。同期補償(repository.deleteUser)はSupabaseの
-      // 管理者権限(service_role)を要し、サインアップ経路はanonクライアントで動く
-      // ため呼べない。対応候補は、service_roleを持つ別cronでactive_user未紐付けの
-      // 認証ユーザーを定期クリーンアップするなど。別イシューで再設計する。
+      // 管理者権限(service_role)を要するが、サインアップ経路(anonクライアント)に
+      // admin権限を持たせるべきではないため同期補償は行わない。対応候補は、
+      // service_roleを持つ別cronでactive_user未紐付けの認証ユーザーを定期
+      // クリーンアップするなど。別イシューで再設計する。
       return err(activeUserResult.error)
     }
 

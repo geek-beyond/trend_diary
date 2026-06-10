@@ -13,7 +13,7 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
   const rdb = getRdbClient(c.env.DB)
   const useCase = createAuthUseCase(client, rdb)
 
-  const result = await useCase.login(valid.email, valid.password)
+  const result = await useCase.login(valid.email, valid.password, valid.captchaToken)
   if (result.isErr()) throw handleError(result.error, logger)
 
   const { activeUser } = result.value

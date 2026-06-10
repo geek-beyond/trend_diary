@@ -67,6 +67,34 @@ describe('authInputSchema', () => {
     })
   })
 
+  describe('captchaToken', () => {
+    it('captchaTokenを含む入力を検証できる', () => {
+      const result = authInputSchema.safeParse({
+        email: 'test@example.com',
+        password: 'Password1!',
+        captchaToken: 'captcha-token',
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('captchaTokenは任意項目のため省略できる', () => {
+      const result = authInputSchema.safeParse({
+        email: 'test@example.com',
+        password: 'Password1!',
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('captchaTokenが文字列でない場合は検証に失敗する', () => {
+      const result = authInputSchema.safeParse({
+        email: 'test@example.com',
+        password: 'Password1!',
+        captchaToken: 123,
+      })
+      expect(result.success).toBe(false)
+    })
+  })
+
   describe('異常系 - メールアドレス', () => {
     const invalidEmailTestCases = [
       {

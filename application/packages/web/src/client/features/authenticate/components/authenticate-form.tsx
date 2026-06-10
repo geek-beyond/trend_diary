@@ -2,6 +2,7 @@ import { Form } from 'react-router'
 import { Button } from '@/client/components/shadcn/button'
 import { Input } from '@/client/components/shadcn/input'
 import { Label } from '@/client/components/shadcn/label'
+import { TurnstileWidget } from '@/client/features/authenticate/components/turnstile-widget'
 import type { AuthenticateErrors } from '@/client/features/authenticate/validation'
 
 interface Props {
@@ -10,6 +11,8 @@ interface Props {
   isSubmitting: boolean
   errors?: AuthenticateErrors
   formError?: string
+  // 未設定の環境ではCAPTCHAを無効とするため任意項目とする
+  turnstileSiteKey?: string
 }
 
 export const AuthenticateForm = ({
@@ -18,6 +21,7 @@ export const AuthenticateForm = ({
   isSubmitting,
   errors,
   formError,
+  turnstileSiteKey,
 }: Props) => {
   return (
     <Form method='post' className='flex flex-1 flex-col gap-6'>
@@ -44,6 +48,7 @@ export const AuthenticateForm = ({
         />
         {errors?.password && <p className='text-destructive text-sm'>{errors.password.at(0)}</p>}
       </div>
+      {turnstileSiteKey && <TurnstileWidget siteKey={turnstileSiteKey} />}
       {formError && <p className='text-destructive text-sm'>{formError}</p>}
       <Button role='button' type='submit' className='w-full' disabled={isSubmitting}>
         {isSubmitting ? loadingSubmitButtonText : submitButtonText}

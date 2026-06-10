@@ -15,7 +15,7 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
   const useCase = createAuthUseCase(client, rdb)
 
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
-  const result = await useCase.signup(valid.email, valid.password, notifier)
+  const result = await useCase.signup(valid.email, valid.password, notifier, valid.captchaToken)
   if (result.isErr()) {
     // 補償トランザクション失敗時のログ出力
     if (result.error instanceof ExternalServiceError) {

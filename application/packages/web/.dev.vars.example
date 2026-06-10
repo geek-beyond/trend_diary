@@ -8,5 +8,9 @@ DISCORD_WEBHOOK_URL=
 SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_ANON_KEY=
 
+# Cloudflare Turnstileのサイトキー(公開値)。未設定の場合はCAPTCHAを無効とする。
+# ローカル/E2Eで動作確認する場合はCloudflareのテスト用sitekey(`1x00000000000000000000AA`)を使うと常にpassする。
+TURNSTILE_SITE_KEY=
+
 # ログレベル(debug,info,warn,error,silent)。未記載の場合の初期値はinfo
 LOG_LEVEL=

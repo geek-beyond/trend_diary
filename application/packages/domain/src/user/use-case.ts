@@ -31,8 +31,9 @@ export class AuthUseCase {
     email: string,
     password: string,
     notifier: Notifier,
+    captchaToken?: string,
   ): Promise<Result<SignupResult, ClientError | ServerError>> {
-    const authResult = await this.repository.signup(email, password)
+    const authResult = await this.repository.signup(email, password, captchaToken)
     if (authResult.isErr()) return err(authResult.error)
 
     const { user, session } = authResult.value
@@ -62,9 +63,10 @@ export class AuthUseCase {
   async login(
     email: string,
     password: string,
+    captchaToken?: string,
   ): Promise<Result<LoginResult, ClientError | ServerError>> {
     // 認証でログイン
-    const authResult = await this.repository.login(email, password)
+    const authResult = await this.repository.login(email, password, captchaToken)
     if (authResult.isErr()) return err(authResult.error)
 
     const { user, session } = authResult.value

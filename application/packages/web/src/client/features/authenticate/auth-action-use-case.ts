@@ -11,6 +11,12 @@ interface SupabaseAuthContext {
   }
 }
 
+interface TurnstileContext {
+  cloudflare?: {
+    env?: { TURNSTILE_SITE_KEY?: string }
+  }
+}
+
 const AUTH_CONFIG_ERROR_MESSAGE =
   'Supabase auth is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.'
 
@@ -36,6 +42,16 @@ export function resolveSupabaseAuthConfig(context: SupabaseAuthContext) {
   }
 
   return { supabaseUrl, supabaseAnonKey }
+}
+
+/**
+ * Turnstileのサイトキーを解決する。未設定の場合はundefinedを返し、CAPTCHAを無効とする。
+ */
+export function resolveTurnstileSiteKey(context: TurnstileContext): string | undefined {
+  const fromContext = readEnv(context.cloudflare?.env?.TURNSTILE_SITE_KEY)
+  if (fromContext) return fromContext
+  if (typeof process === 'undefined') return undefined
+  return readEnv(process.env.TURNSTILE_SITE_KEY)
 }
 
 export function createAuthActionUseCase(request: Request, context: AppLoadContext) {

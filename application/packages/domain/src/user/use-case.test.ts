@@ -64,11 +64,36 @@ describe('AuthUseCase', () => {
           expect(result.value.session).toEqual(mockSession)
           expect(result.value.activeUser).toEqual(mockActiveUser)
         }
-        expect(repositoryMock.signup).toHaveBeenCalledWith('test@example.com', 'Password1!')
+        expect(repositoryMock.signup).toHaveBeenCalledWith(
+          'test@example.com',
+          'Password1!',
+          undefined,
+        )
         expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
           mockAuthUser.email,
           mockAuthUser.id,
           notifierMock,
+        )
+      })
+
+      it('captchaTokenをrepository.signupへそのまま渡す', async () => {
+        // Arrange
+        repositoryMock.signup.mockResolvedValue(
+          ok({
+            user: mockAuthUser,
+            session: mockSession,
+          }),
+        )
+        commandMock.createActiveWithAuthenticationId.mockResolvedValue(ok(mockActiveUser))
+
+        // Act
+        await useCase.signup('test@example.com', 'Password1!', notifierMock, 'captcha-token')
+
+        // Assert
+        expect(repositoryMock.signup).toHaveBeenCalledWith(
+          'test@example.com',
+          'Password1!',
+          'captcha-token',
         )
       })
     })
@@ -118,8 +143,33 @@ describe('AuthUseCase', () => {
           expect(result.value.session).toEqual(mockSession)
           expect(result.value.activeUser).toEqual(mockActiveUser)
         }
-        expect(repositoryMock.login).toHaveBeenCalledWith('test@example.com', 'Password1!')
+        expect(repositoryMock.login).toHaveBeenCalledWith(
+          'test@example.com',
+          'Password1!',
+          undefined,
+        )
         expect(queryMock.findActiveByAuthenticationId).toHaveBeenCalledWith(mockAuthUser.id)
+      })
+
+      it('captchaTokenをrepository.loginへそのまま渡す', async () => {
+        // Arrange
+        repositoryMock.login.mockResolvedValue(
+          ok({
+            user: mockAuthUser,
+            session: mockSession,
+          }),
+        )
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(mockActiveUser))
+
+        // Act
+        await useCase.login('test@example.com', 'Password1!', 'captcha-token')
+
+        // Assert
+        expect(repositoryMock.login).toHaveBeenCalledWith(
+          'test@example.com',
+          'Password1!',
+          'captcha-token',
+        )
       })
     })
 

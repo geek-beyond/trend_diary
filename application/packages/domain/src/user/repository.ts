@@ -52,6 +52,7 @@ export interface AuthRepository {
   signup(
     email: string,
     password: string,
+    captchaToken?: string,
   ): Promise<Result<AuthSignupResult, ClientError | ServerError>>
 
   /**
@@ -60,6 +61,7 @@ export interface AuthRepository {
   login(
     email: string,
     password: string,
+    captchaToken?: string,
   ): Promise<Result<AuthLoginResult, ClientError | ServerError>>
 
   /**

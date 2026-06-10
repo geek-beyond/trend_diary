@@ -1,12 +1,17 @@
 import Logger from '@trend-diary/common/logger'
 import {
   type ActionFunctionArgs,
+  type LoaderFunctionArgs,
   type MetaFunction,
   redirect,
   useActionData,
+  useLoaderData,
   useNavigation,
 } from 'react-router'
-import { createAuthActionUseCase } from '@/client/features/authenticate/auth-action-use-case'
+import {
+  createAuthActionUseCase,
+  resolveTurnstileSiteKey,
+} from '@/client/features/authenticate/auth-action-use-case'
 import {
   AUTH_ERROR_MESSAGES,
   resolveSignupErrorMessage,
@@ -46,6 +51,10 @@ export const meta: MetaFunction = () => [
   },
 ]
 
+export function loader({ context }: LoaderFunctionArgs) {
+  return { turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null }
+}
+
 export async function action({ request, context }: ActionFunctionArgs) {
   const formData = await request.formData()
   const validation = validateAuthenticateForm(formData)
@@ -53,9 +62,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return { errors: validation.errors } satisfies SignupActionData
   }
 
+  const captchaTokenValue = formData.get('cf-turnstile-response')
+  const captchaToken = typeof captchaTokenValue === 'string' ? captchaTokenValue : undefined
+
+  // CAPTCHA有効時にトークン未取得のまま送信させない
+  if (resolveTurnstileSiteKey(context) && !captchaToken) {
+    return { formError: AUTH_ERROR_MESSAGES.captchaRequired } satisfies SignupActionData
+  }
+
   try {
     const { useCase, notifier } = createAuthActionUseCase(request, context)
-    const result = await useCase.signup(validation.data.email, validation.data.password, notifier)
+    const result = await useCase.signup(
+      validation.data.email,
+      validation.data.password,
+      notifier,
+      captchaToken,
+    )
 
     if (result.isErr()) {
       return { formError: resolveSignupErrorMessage(result.error) } satisfies SignupActionData
@@ -69,6 +91,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function Signup() {
+  const { turnstileSiteKey } = useLoaderData<typeof loader>()
   const actionData = useActionData<typeof action>()
   const navigation = useNavigation()
 
@@ -77,6 +100,7 @@ export default function Signup() {
       isSubmitting={navigation.state === 'submitting'}
       errors={actionData?.errors}
       formError={actionData?.formError}
+      turnstileSiteKey={turnstileSiteKey ?? undefined}
     />
   )
 }

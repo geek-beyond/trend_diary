@@ -100,14 +100,17 @@ describe('DiscordWebhookClient', () => {
       expect(logger.error).not.toHaveBeenCalled()
     })
 
-    it('5xxレスポンスはリトライ対象として扱う', async () => {
+    it.each([
+      { label: '429（レートリミット）', status: 429 },
+      { label: '5xx', status: 500 },
+    ])('一時的な失敗（$label）はリトライして成功する', async ({ status }) => {
       const logger = createMockLogger()
       const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', {
         ...noDelay,
         logger,
       })
       mockFetch
-        .mockResolvedValueOnce({ ok: false, status: 500 })
+        .mockResolvedValueOnce({ ok: false, status })
         .mockResolvedValueOnce({ ok: true, status: 204 })
 
       await client.send({ content: 'test' })
@@ -116,23 +119,11 @@ describe('DiscordWebhookClient', () => {
       expect(logger.error).not.toHaveBeenCalled()
     })
 
-    it('429レスポンス（レートリミット）はリトライ対象として扱う', async () => {
-      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', noDelay)
-      mockFetch
-        .mockResolvedValueOnce({ ok: false, status: 429 })
-        .mockResolvedValueOnce({ ok: true, status: 204 })
-
-      await client.send({ content: 'test' })
-
-      expect(mockFetch).toHaveBeenCalledTimes(2)
-    })
-
     it.each([
-      { label: '401（Webhook失効）', status: 401 },
-      { label: '404（Webhook削除）', status: 404 },
-    ])('恒久的な失敗（$label）はリトライせず1回で打ち切りエラーログを記録する', async ({
-      status,
-    }) => {
+      { label: '401（Webhook失効）は即時打ち切り', status: 401, expectedCalls: 1 },
+      { label: '404（Webhook削除）は即時打ち切り', status: 404, expectedCalls: 1 },
+      { label: '5xxが継続し最大リトライ到達', status: 500, expectedCalls: 3 },
+    ])('失敗が続く場合（$label）はエラーログを記録する', async ({ status, expectedCalls }) => {
       const logger = createMockLogger()
       const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', {
         ...noDelay,
@@ -142,21 +133,7 @@ describe('DiscordWebhookClient', () => {
 
       await client.send({ content: 'test' })
 
-      expect(mockFetch).toHaveBeenCalledTimes(1)
-      expect(logger.error).toHaveBeenCalledTimes(1)
-    })
-
-    it('最大リトライ回数を使い切った場合はエラーログを記録する', async () => {
-      const logger = createMockLogger()
-      const client = new DiscordWebhookClient('https://discord.com/api/webhooks/test', {
-        ...noDelay,
-        logger,
-      })
-      mockFetch.mockResolvedValue({ ok: false, status: 500 })
-
-      await client.send({ content: 'test' })
-
-      expect(mockFetch).toHaveBeenCalledTimes(3)
+      expect(mockFetch).toHaveBeenCalledTimes(expectedCalls)
       expect(logger.error).toHaveBeenCalledTimes(1)
     })
 

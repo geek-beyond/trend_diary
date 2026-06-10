@@ -18,15 +18,10 @@ export interface DiscordWebhookPayload {
   embeds?: DiscordEmbed[]
 }
 
-/** Discord Webhook クライアントの設定。 */
 export interface DiscordWebhookClientOptions {
-  /** 通知失敗を構造化ログに記録するための Logger。 */
   logger?: LoggerType
-  /** 送信を試行する最大回数。 */
   maxRetries?: number
-  /** exponential backoff の基準遅延（ミリ秒）。 */
   baseDelayMs?: number
-  /** 1回の送信のタイムアウト（ミリ秒）。 */
   timeoutMs?: number
 }
 
@@ -67,7 +62,7 @@ export class DiscordWebhookClient {
     let attempts = 0
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       attempts = attempt
-      // 応答が遅い相手で処理がハングするのを防ぐ（Workers の実行時間制限対策）。タイムアウトは catch でリトライ対象として扱われる
+      // 応答が遅い相手で処理がハングするのを防ぐ（Workers の実行時間制限対策）
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs)
       try {
@@ -84,7 +79,7 @@ export class DiscordWebhookClient {
 
         lastError = new Error(`Discord responded with status ${response.status}`)
 
-        // 401/404 等の恒久的な失敗はリトライしても回復しないため即座に打ち切る（429・5xx は一時的とみなす）
+        // 401/404 等の恒久的な失敗はリトライしても回復しないため即座に打ち切る
         const isRetryable = response.status === 429 || response.status >= 500
         if (!isRetryable) break
       } catch (notificationError) {
@@ -101,7 +96,7 @@ export class DiscordWebhookClient {
       }
     }
 
-    // 通知の失敗は呼び出し元の処理に影響させず、構造化ログへの記録のみ行う
+    // 通知の失敗は呼び出し元の処理に影響させない
     this.logger?.error({ msg: 'Failed to send notification to Discord', attempts }, lastError)
   }
 

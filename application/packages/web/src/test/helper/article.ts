@@ -136,6 +136,22 @@ export async function countReadHistories(activeUserId: bigint, articleId: bigint
   return result.value
 }
 
+export async function countSkippedArticles(
+  activeUserId: bigint,
+  articleId: bigint,
+): Promise<number> {
+  const [result] = await rdb
+    .select({ value: count() })
+    .from(skippedArticles)
+    .where(
+      and(
+        eq(skippedArticles.activeUserId, toDbId(activeUserId)),
+        eq(skippedArticles.articleId, toDbId(articleId)),
+      ),
+    )
+  return result.value
+}
+
 export async function cleanUp(articleIds: bigint[]): Promise<void> {
   if (articleIds.length > 0) {
     const dbArticleIds = toDbIds(articleIds)

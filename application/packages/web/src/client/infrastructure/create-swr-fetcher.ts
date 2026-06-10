@@ -1,4 +1,5 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
+import { fetchWithTimeout } from '@trend-diary/common/http'
 import getApiClientForClient from '@/client/infrastructure/api'
 
 interface ApiCallResponse {
@@ -15,7 +16,8 @@ export const createSWRFetcher = () => {
   const client = getApiClientForClient()
 
   const fetcher = async <T>(url: string): Promise<T> => {
-    const response = await fetch(url, {
+    // 応答が遅い相手で画面がハングするのを防ぐ
+    const response = await fetchWithTimeout(url, {
       credentials: 'include',
     })
 

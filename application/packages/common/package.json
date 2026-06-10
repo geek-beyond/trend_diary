@@ -6,6 +6,7 @@
   "exports": {
     "./env": "./src/env/index.ts",
     "./errors": "./src/errors/index.ts",
+    "./http": "./src/http/index.ts",
     "./locale": "./src/locale/index.ts",
     "./pagination": "./src/pagination/index.ts",
     "./result": "./src/result/index.ts",

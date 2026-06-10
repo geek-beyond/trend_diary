@@ -370,10 +370,13 @@ export default class QueryImpl implements Query {
 
     const readByDate = QueryImpl.groupSourcesByDate(readSourceRows)
     const skipByDate = QueryImpl.groupSourcesByDate(skipSourceRows)
-    const dates = QueryImpl.enumerateJstDateRange(fromDateJst, toDateJst)
+    const datesResult = QueryImpl.enumerateJstDateRange(fromDateJst, toDateJst)
+    if (datesResult.isErr()) {
+      return err(new ServerError(datesResult.error))
+    }
 
     return ok(
-      dates.map((date) => {
+      datesResult.value.map((date) => {
         const sources = QueryImpl.mergeDiarySources(
           readByDate.get(date) ?? [],
           skipByDate.get(date) ?? [],
@@ -630,15 +633,29 @@ export default class QueryImpl implements Query {
     }))
   }
 
-  private static enumerateJstDateRange(fromDateJst: string, toDateJst: string) {
+  private static enumerateJstDateRange(
+    fromDateJst: string,
+    toDateJst: string,
+  ): Result<string[], Error> {
+    // 不正なtoDateJstは辞書順比較で常にcurrentより大きく評価され、Date上限到達まで巨大ループになる。
+    // 不正なfromDateJstは空配列を正常値として返してしまう。両端を先に検証して両方を防ぐ
+    for (const dateJst of [fromDateJst, toDateJst]) {
+      if (Number.isNaN(toJstDate(dateJst).getTime())) {
+        return err(new Error(`不正な日付文字列です: ${dateJst}`))
+      }
+    }
+
     const dates: string[] = []
     let current = fromDateJst
     while (current <= toDateJst) {
       dates.push(current)
       const next = addJstDays(current, 1)
-      if (next.isErr()) break
+      // 失敗を握り潰すと欠けた日付リストを正常値として返してしまい、日記データが静かに欠落する
+      if (next.isErr()) {
+        return err(next.error)
+      }
       current = next.value
     }
-    return dates
+    return ok(dates)
   }
 }

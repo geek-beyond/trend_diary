@@ -1,38 +1,31 @@
-import { useEffect, useState } from 'react'
-import { Outlet } from 'react-router'
+import Logger from '@trend-diary/common/logger'
+import type { LoaderFunctionArgs } from 'react-router'
+import { Outlet, useLoaderData } from 'react-router'
+import { createAuthActionUseCase } from '@/client/features/authenticate/auth-action-use-case'
 import { SidebarProvider } from '../components/shadcn/sidebar'
 import AppHeader from '../components/ui/layout/app-header'
 import AppSidebar from '../components/ui/layout/sidebar'
-import getApiClientForClient from '../infrastructure/api'
 
 export interface AppLayoutOutletContext {
   isLoggedIn: boolean
 }
 
+const logger = new Logger('info', { route: 'web/client/routes/app-layout/loader' })
+
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  try {
+    const { useCase } = createAuthActionUseCase(request, context)
+    const result = await useCase.getCurrentActiveUser()
+    return { isLoggedIn: result.isOk() }
+  } catch (error) {
+    // 認証設定不備などで loader が 500 になると配下の全画面が落ちるため、未ログイン扱いにフォールバックする
+    logger.error('Unexpected error in app-layout loader', error)
+    return { isLoggedIn: false }
+  }
+}
+
 export default function AppLayout() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-  useEffect(() => {
-    let isCancelled = false
-    const client = getApiClientForClient()
-
-    const fetchAuthState = async () => {
-      const res = await client.auth.me.$get({}, { init: { credentials: 'include' } })
-      if (!isCancelled) {
-        setIsLoggedIn(res.status === 200)
-      }
-    }
-
-    fetchAuthState().catch(() => {
-      if (!isCancelled) {
-        setIsLoggedIn(false)
-      }
-    })
-
-    return () => {
-      isCancelled = true
-    }
-  }, [])
+  const { isLoggedIn } = useLoaderData<typeof loader>()
 
   const outletContext: AppLayoutOutletContext = {
     isLoggedIn,

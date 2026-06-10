@@ -1,5 +1,3 @@
-import Logger from '@trend-diary/common/logger'
-import { DiscordNotifier } from '@trend-diary/notification'
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 import { Env } from '../env'
@@ -28,41 +26,19 @@ const rateLimiter = createMiddleware<Env>(async (c, next) => {
       throw error
     }
 
-    // request-logger未確立でもフェイルオープンを記録できるようフォールバックを用意する
-    const logger = c.get(CONTEXT_KEY.APP_LOG) ?? new Logger(c.env.LOG_LEVEL || 'info')
-
-    // Rate Limiting API自体の障害で認証を止めないよう、フェイルオープンする。
-    // ただしブルートフォースが無制限に通る危険な状態のため、warnではなくerrorで記録しアラート検知できるようにする
-    logger.error(
+    // 認証エンドポイントでは無制限なブルートフォースを許す方が危険なため、Rate Limiting API障害時は
+    // フェイルオープンせずフェイルセーフ（503）に倒す。障害の継続はこのerrorログとerrorHandlerの5xx通知で検知する
+    c.get(CONTEXT_KEY.APP_LOG)?.error(
       {
-        msg: 'rate limiter unavailable, failing open',
-        event: 'rate_limiter_fail_open',
+        msg: 'rate limiter unavailable, failing closed',
+        event: 'rate_limiter_fail_closed',
         path: c.req.path,
       },
       error instanceof Error ? error : new Error(String(error)),
     )
 
-    // フェイルオープン状態の継続に気づけるよう、ログに加えてDiscordへアラートする
-    const notifier = new DiscordNotifier(c.env.DISCORD_WEBHOOK_URL, logger)
-    const alert = notifier.alert('⚠️ Rate Limiter Failing Open', [
-      {
-        name: 'Detail',
-        value: [
-          `Path: ${c.req.path}`,
-          'State: rate limiting bypassed (fail-open)',
-          `Reason: ${error instanceof Error ? error.message : String(error)}`,
-        ].join('\n'),
-        inline: false,
-      },
-    ])
-
-    // 通知の遅延・タイムアウトでユーザーのリクエストをブロックしないよう、可能ならバックグラウンドで送る。
-    // executionCtxを持たない環境（テスト等）では決定性を保つため待機する（Honoのgetterは未設定時に例外を投げる）
-    try {
-      c.executionCtx.waitUntil(alert)
-    } catch {
-      await alert
-    }
+    // 根本原因をerrorHandler側の通知にも残すためcauseに連鎖させる
+    throw new HTTPException(503, { message: 'service temporarily unavailable', cause: error })
   }
 
   return next()

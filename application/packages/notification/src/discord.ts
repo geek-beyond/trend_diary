@@ -133,21 +133,6 @@ export class DiscordNotifier {
     await this.client.send(this.createErrorPayload(error, requestInfo))
   }
 
-  // 5xxエラーとは別に、運用上の警告（例: レートリミッターのフェイルオープン）を通知するため汎用のアラート口を用意する
-  async alert(title: string, fields: DiscordEmbedField[]): Promise<void> {
-    await this.client.send({
-      content: null,
-      embeds: [
-        {
-          title,
-          color: 16098851, // Amber (#F5A623)
-          fields,
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    })
-  }
-
   private createErrorPayload(error: Error, requestInfo: ErrorRequestInfo): DiscordWebhookPayload {
     const stackTrace = this.truncateField(error.stack || 'No stack trace available')
 

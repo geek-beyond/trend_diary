@@ -96,8 +96,10 @@ function extractValidatedData(c: Context<Env>): ValidatedRequestData {
   if (!c.req.valid) {
     return { param: undefined, json: undefined, query: undefined }
   }
-  // biome-ignore lint/plugin: Hono の valid() はキー名のリテラル型を要求するが、ファクトリーでは検証対象が動的なため never で迂回する必要がある
-  const valid = c.req.valid as (key: 'param' | 'json' | 'query') => unknown
+  // valid は内部で this（c.req）を参照するメソッドのため、変数へ取り出すとレシーバが外れて壊れる。
+  // bind でレシーバを固定する。ジェネリックな Context では引数型が never に潰れるため呼び出しキーの型のみ補う。
+  // biome-ignore lint/plugin: ジェネリックな Context では valid() の引数型が never に潰れ、検証キーの型を補うアサーションが避けられないため
+  const valid = c.req.valid.bind(c.req) as (key: 'param' | 'json' | 'query') => unknown
   return {
     param: valid('param'),
     json: valid('json'),

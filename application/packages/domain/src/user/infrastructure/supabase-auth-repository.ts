@@ -19,8 +19,8 @@ import type { AuthenticationUser } from '../schema/auth-schema'
  */
 function hasMessage(value: unknown): value is { message: string } {
   return (
-    typeof value === 'object' &&
     value !== null &&
+    typeof value === 'object' &&
     'message' in value &&
     typeof value.message === 'string'
   )

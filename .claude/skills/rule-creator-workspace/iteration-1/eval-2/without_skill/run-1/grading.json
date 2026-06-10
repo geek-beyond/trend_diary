@@ -1,0 +1,82 @@
+{
+  "expectations": [
+    {
+      "text": "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである",
+      "passed": true,
+      "evidence": "成果物 outputs/test-external-api-mock.md は YAML frontmatter + 日本語 markdown 本文のルールファイル形式。transcript の『置き場所の判断理由』で『本来このルールは、既存ルールと同じく /home/user/trend_diary/.claude/rules/ 配下に test-external-api-mock.md として配置する想定』と明記。実リポジトリ変更不可の制約により outputs/ に書き込んだ旨も説明されており、.claude/rules/ 配下の既存5件と同形式（既存 test.md と frontmatter 構造が一致）。"
+    },
+    {
+      "text": "YAML フロントマターの paths が **/*.test.ts 等、テストファイルにマッチする glob になっている",
+      "passed": true,
+      "evidence": "outputs/test-external-api-mock.md の1-4行目: '---\\npaths:\\n  - \"**/*.test.ts\"\\n---'。テストファイルにマッチする glob で、テストファイルにだけ効くスコープになっている。"
+    },
+    {
+      "text": "既存の .claude/rules/test.md（実リポジトリに存在）の存在を確認し、別ファイル乱立ではなく追記・統合を検討した形跡がある",
+      "passed": true,
+      "evidence": "transcript 手順2『既存のテストルール test.md を確認』で『frontmatter は paths: - \"**/*.test.ts\"。本文はテーブル駆動テストに関する内容で、外部API通信の話題は未記載。関心が異なるため、本タスクは test.md への追記ではなく独立したルールファイルとして作成する方針とした』と明記。実際に .claude/rules/test.md は存在（テーブル駆動テスト規約）し、追記 vs 別ファイルを比較検討した上で、関心分離（テーブル駆動 vs 外部通信モック）を理由に意図的に別ファイルを選択しており、無検討の乱立ではない。"
+    },
+    {
+      "text": "規約本文が日本語で書かれ、理由（why）が含まれている",
+      "passed": true,
+      "evidence": "本文は全文日本語。9行目に明示的な why: 『理由: 実通信はネットワーク状況や外部サービスの状態に依存して結果が変わり、テストが不安定（flaky）・低速になる。また外部サービスへ意図しない副作用を与えうるため』。CLAUDE.md の『コメントは why だけを書く』方針にも沿う。"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": null,
+    "errors_encountered": 0,
+    "output_chars": 1685,
+    "transcript_chars": 4284
+  },
+  "timing": {
+    "executor_duration_seconds": 75.4,
+    "grader_duration_seconds": 30.0,
+    "total_duration_seconds": 105.4
+  },
+  "claims": [
+    {
+      "claim": "リポジトリは Vitest を使用し、msw / nock 等のモックライブラリは未導入である",
+      "type": "factual",
+      "verified": true,
+      "evidence": "transcript 手順4で package.json を確認し Vitest 使用・msw/nock/undici 未導入と記載。本文11行目も『本リポジトリでは msw / nock 等は導入していない』と整合。ルール文面が実態（vi.stubGlobal）に合わせられている。"
+    },
+    {
+      "claim": "discord.test.ts / fetch-articles.test.ts は vi.stubGlobal('fetch', fetchMock) で fetch を差し替える idiom を採用している",
+      "type": "factual",
+      "verified": true,
+      "evidence": "transcript 手順3で両ファイルを精読し const fetchMock = vi.fn() を vi.stubGlobal('fetch', fetchMock) で差し替える idiom を確認したと記載。本文の参考実装明記とも整合。両ファイルの実体までは本採点で再確認していないが、transcript の調査記述は具体的かつ一貫している。"
+    },
+    {
+      "claim": "成果物は実リポジトリの .claude/rules/ ではなく outputs/ にのみ書き込んだ",
+      "type": "process",
+      "verified": true,
+      "evidence": "run-1 直下に test-external-api-mock.md は存在せず outputs/ 配下にのみ存在。実 .claude/rules/ には test-external-api-mock.md は無い（api-validation/architecture/import/logging/test の5件のみ）。制約遵守。"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": [
+      "実リポジトリ変更不可の制約により、本来 .claude/rules/ 配下に置くべきルールを outputs/ にのみ書き込んだ"
+    ]
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである",
+        "reason": "実行制約上 outputs/ にしか書けないため、このアサーションは『配置する想定の記述があるか』に依存し、transcript の宣言で容易に満たせる。frontmatter の構造的妥当性（paths キーが配列であること、本文が見出し+箇条書きであること）など成果物そのものの形式を検証する assertion を併用するとより discriminating になる。"
+      },
+      {
+        "reason": "expectation 3（追記/統合の検討）は、test.md と関心が異なるため別ファイル化が妥当という判断を正しく許容できている良いアサーション。ただし『検討した形跡』は文章で容易に主張できるため、関心が実際に重複していないこと（既存 test.md がテーブル駆動、新規が外部通信モック）まで踏み込んで確認すると、検討の質を担保できる。"
+      }
+    ],
+    "overall": "4アサーションは妥当で、without_skill でも genuine に達成されている。without_skill 条件にもかかわらず paths スコープ・why・既存ファイル確認・別ファイル化判断のすべてを満たしており、rule-creator スキル無しでも到達可能なベースラインを示す良い結果。アサーションは概ね discriminating だが、成果物ファイル自体の構造検証を1つ加える余地がある。"
+  }
+}

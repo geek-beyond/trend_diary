@@ -1,0 +1,86 @@
+{
+  "expectations": [
+    {
+      "text": "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである",
+      "passed": true,
+      "evidence": "成果物は outputs/test.md という Markdown ファイル。冒頭に YAML フロントマター、続けて `# テスト規約` 見出しと箇条書きという .claude/rules/ 配下のルールファイル形式。transcript も「既存 test.md への追記」を選択し outputs/test.md に書き出したと記載。実リポジトリの .claude/rules/ には api-validation.md / architecture.md / import.md / logging.md / test.md が存在し、同じ配置慣習に合致する。"
+    },
+    {
+      "text": "YAML フロントマターの paths が **/*.test.ts 等、テストファイルにマッチする glob になっている",
+      "passed": true,
+      "evidence": "outputs/test.md の1-4行目: `---\\npaths:\\n  - \"**/*.test.ts\"\\n---`。テストファイル（*.test.ts）にマッチする glob。transcript でも実リポジトリの *.test.tsx が 0 件（find で確認、当方でも 0 件・*.test.ts は 398 件を確認）であることを根拠に .tsx を当て推量で足さず既存 glob を採用したと説明しており、根拠も妥当。"
+    },
+    {
+      "text": "既存の .claude/rules/test.md（実リポジトリに存在）の存在を確認し、別ファイル乱立ではなく追記・統合を検討した形跡がある",
+      "passed": true,
+      "evidence": "transcript 手順2-3で `ls .claude/rules/` により既存ファイル一覧を確認し、既存 test.md を読み追記対象として妥当か判断。「新規作成か既存追記かの判断理由」セクションで『既存 test.md への追記を選択』『新規ファイルを作ると同一スコープのルールが分散しスキルの方針に反する』と明記。実際、出力 test.md は既存のテーブル駆動テスト項目（実リポジトリの test.md と一致）を残したまま新規項目1つを追記しており、別ファイル乱立を回避し統合する形になっている。"
+    },
+    {
+      "text": "規約本文が日本語で書かれ、理由（why）が含まれている",
+      "passed": true,
+      "evidence": "本文は全て日本語。追記項目11-13行目『外部APIへの実通信は禁止し、必ずモックする』に対し『理由: 実通信はネットワークや外部サービスの状態に依存して flaky になり、レート制限・課金・副作用も招く。テストは決定的で高速に再現できる必要がある』と why を明記。CLAUDE.md のルール（why だけを書く、理由なき MUST の羅列を避ける）にも準拠。"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 6,
+    "errors_encountered": 0,
+    "output_chars": 922,
+    "transcript_chars": 4224
+  },
+  "timing": {
+    "executor_duration_seconds": 73.4,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 73.4
+  },
+  "claims": [
+    {
+      "claim": "実リポジトリに *.test.tsx は存在せず、テストは全て .test.ts である",
+      "type": "factual",
+      "verified": true,
+      "evidence": "当方で find application -name '*.test.tsx' = 0 件、'*.test.ts' = 398 件を確認。transcript の主張と一致。"
+    },
+    {
+      "claim": "出力は既存 test.md のテーブル駆動テスト項目を残し、新規項目を1つ追記した完成形である",
+      "type": "process",
+      "verified": true,
+      "evidence": "実リポジトリ test.md（テーブル駆動テスト項目のみ）と outputs/test.md を比較。前者の本文がそのまま含まれ、『外部APIへの実通信は禁止し、必ずモックする』項目が末尾に1件追加されている。"
+    },
+    {
+      "claim": "実リポジトリのファイルは未変更で、成果物は outputs にのみ書き出した",
+      "type": "process",
+      "verified": true,
+      "evidence": "実リポジトリ .claude/rules/test.md は追記前のテーブル駆動テスト項目のみのままで、モック規約は含まれていない。改変は outputs/test.md にのみ存在。"
+    },
+    {
+      "claim": "既存モック作法として discord.test.ts で vi.stubGlobal('fetch') を使用しており、本文の方法に反映した",
+      "type": "factual",
+      "verified": true,
+      "evidence": "出力本文の『方法』に `vi.stubGlobal('fetch', vi.fn())` / `vi.mock()` が記載されており、Vitest 前提という transcript の調査と整合。具体的なファイル内容は未検証だが、出力への反映自体は確認できる。"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである",
+        "reason": "成果物が outputs/test.md として書かれているが、ファイル名が test.md である（=既存と同名に統合された）こと自体を検証するアサーションがない。新規の別ファイル（例 mock.md）を作っても『.claude/rules/ 配下の Markdown』という条件は満たしてしまうため、アサーション3の『追記・統合』判定と合わせて、出力ファイル名が既存 test.md と同一であることを明示的にチェックすると、別ファイル乱立を確実に弾けて discriminating になる。"
+      },
+      {
+        "reason": "『外部APIの実通信禁止・モックする』という規約の中核内容（=タスク要件そのもの）が本文に含まれているかを直接検証するアサーションがない。アサーション4は『理由が含まれる』のみで、規約の主旨が抜けていても理由文だけあれば通り得る。タスクの主題が本文に反映されていることを検証する項目を追加すると堅牢になる。"
+      }
+    ],
+    "overall": "4 アサーションは全て妥当に PASS。ただし『規約の中核内容（モック必須）が本文に存在するか』と『統合先のファイル名が既存と同一か』を直接問うアサーションがなく、表層的合致でも通り得る余地が残る。実際の出力は中核内容も統合も満たしているため実害はないが、アサーション強化の余地あり。"
+  }
+}

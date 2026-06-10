@@ -1,0 +1,83 @@
+{
+  "expectations": [
+    {
+      "text": "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである",
+      "passed": true,
+      "evidence": "成果物は outputs/user-facing-messages.md という Markdown ファイル。見出し `# ユーザー向け文言の言語規約` から始まる箇条書きのルール本文を持つ。transcript 行37『ファイル: outputs/user-facing-messages.md』、行5『プロジェクトのルール（.claude/rules/）に残す』、行33『.claude/rules/ 配下に置く想定という指示にも沿うため、paths なしのルールファイルとした』が、.claude/rules/ 配下を想定したルールファイルであることを示す。実行サンドボックスの都合で outputs/ に書き込まれているが、ファイル名・構造・文体ともに既存ルールファイル（architecture.md 等）と同形式。"
+    },
+    {
+      "text": "常時適用の意図に沿って、不要な paths フロントマターを付けていない（全セッションで読み込まれる形にしている）。paths: [\"**/*\"] のような全マッチ glob も不適切とみなす",
+      "passed": true,
+      "evidence": "user-facing-messages.md は1行目から `# ユーザー向け文言の言語規約` で始まり、`---` で囲むフロントマター自体が存在しない。paths キーも `paths: [\"**/*\"]` のような全マッチ glob も一切付与されていない。transcript 行28『付けない（フロントマター自体を省略）。』、行30-31 で『paths: がない → 全セッションで常時読み込まれる』『パスで絞ると取りこぼす』と公式仕様に基づき常時読み込みを選択した旨を明記。要件（frontmatter 省略による常時読み込み）に合致。"
+    },
+    {
+      "text": "規約本文が日本語で書かれ、理由（why）が含まれている",
+      "passed": true,
+      "evidence": "本文は全て日本語。行4 に明示的な why：『理由: 本プロジェクトの利用者は日本語話者を想定しており、表示言語を日本語に統一することで一貫したユーザー体験を提供できる』。さらに行5 の補足で適用範囲（対象外＝ログ・識別子・コメント）も日本語で説明され、誤適用防止の意図も読み取れる。"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 5,
+    "errors_encountered": 0,
+    "output_chars": 687,
+    "transcript_chars": 3841,
+    "note": "metrics.json は outputs_dir に存在しないため、tool_calls の詳細は不明。transcript からは Read/ls/Grep/Write 相当の操作（5手順）が読み取れる。"
+  },
+  "timing": {
+    "executor_duration_seconds": 59.1,
+    "total_duration_seconds": 59.1,
+    "total_tokens": 20046,
+    "duration_ms": 59076
+  },
+  "claims": [
+    {
+      "claim": "同テーマ（i18n / 文言 / メッセージ）の既存ルールは存在しない",
+      "type": "process",
+      "verified": true,
+      "evidence": "transcript 行11 で Grep パターン『日本語|文言|メッセージ|i18n|locale|UI』を実行しヒットなしと記録。重複ルールを作らないための事前確認として妥当。"
+    },
+    {
+      "claim": "既存ルール（architecture.md / api-validation.md / import.md / logging.md / test.md）はいずれも paths 付きでパス限定である",
+      "type": "factual",
+      "verified": true,
+      "evidence": "transcript 行19-23 で各既存ルールに『paths 付き』と注記。実リポジトリ確認はしていないが、横断的な本ルールを paths なしとする判断の根拠として一貫しており、スキルのスコープ判断手順に沿う。"
+    },
+    {
+      "claim": "実リポジトリの .claude/rules/ および CLAUDE.md は変更しておらず、成果物は outputs/ にのみ書き込んだ",
+      "type": "process",
+      "verified": true,
+      "evidence": "outputs/ には user-facing-messages.md のみ存在（ls 結果）。transcript 行46-48 で読み取りのみ・commit/push なし・outputs/ への書き込みのみと明記。サンドボックス制約を遵守。"
+    },
+    {
+      "claim": "規約本文は why 中心・適度な敬語で CLAUDE.md とスキルの作法に準拠している",
+      "type": "quality",
+      "verified": true,
+      "evidence": "本文に why（理由）を明記し、what の冗長な説明を避けている。CLAUDE.md の『コメントは why だけを書く』『日本語かつ適度な敬語』方針に整合。"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである",
+        "reason": "成果物が実際には outputs/ に書かれるサンドボックス構成のため、このアサーションは『.claude/rules/ という配置場所』ではなく『ファイル名・形式が rules 配下の流儀に合致しているか』を実質的に検証している。配置パスそのものを問う意図なら、transcript 中で .claude/rules/ への配置意図が明示されているかをチェックする観点を追加すると discriminating になる。"
+      },
+      {
+        "reason": "expectation 2 は『frontmatter を付けない』ことを問うが、frontmatter 完全省略でも paths:[\"**/*\"] でも、悪く言えば『何も書かないだけ』で通る。よりロバストにするなら、ルール本文が実際に常時適用に適した横断的内容（特定拡張子・ディレクトリに依存しない記述）になっているか、という内容面の検証を1つ加えると、誤って paths 付きにすべきだったケースを弾けない問題を補える。"
+      }
+    ],
+    "overall": "3アサーションは要件（配置・常時適用スコープ・日本語+why）を的確にカバーしており、成果物は全て満たしている。アサーション自体は概ね妥当だが、配置パスとスコープ判断は『形式の有無』に依存しやすいため、内容面（横断的記述であること）を補強すると更に discriminating になる。"
+  }
+}

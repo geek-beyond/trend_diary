@@ -1,0 +1,78 @@
+{
+  "expectations": [
+    {
+      "text": "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである",
+      "passed": true,
+      "evidence": "outputs/user-facing-text-language.md は YAML frontmatter + Markdown 見出し/箇条書きという既存ルールと同形式の .md ファイル。transcript の『置き場所の判断理由』に『この仕組みに沿って .claude/rules/ 形式の独立ファイルとして作成するのが最も忠実』『(a)実リポジトリ改変は本タスクの制約で禁止…独立ルールファイルを outputs に出力する形にした』とあり、.claude/rules/ 配下を想定して outputs にミラー出力したことが明示されている。"
+    },
+    {
+      "text": "常時適用の意図に沿って、不要な paths フロントマターを付けていない（パススコープせず全セッションで読み込まれる形にしている）",
+      "passed": false,
+      "evidence": "出力ファイル冒頭に frontmatter 『paths:\\n  - \"**/*\"』が付与されている。transcript でも『frontmatter: paths: [\"**/*\"]（全ファイル対象 = 常時適用）』と明記。公式仕様では paths を全マッチ glob で付けると『マッチ時のみ読み込み』であり、paths 省略による常時読み込みとは異なるため、本要件に対しては不適切。paths を省略すべきところを `**/*` で付けている点で FAIL。"
+    },
+    {
+      "text": "規約本文が日本語で書かれ、理由（why）が含まれている",
+      "passed": true,
+      "evidence": "本文は全て日本語（『# ユーザー向け文言の言語規約』以下）。8-10行目に『理由: 本プロジェクトのエンドユーザーは日本語話者を前提としており、UI上の言語を統一して一貫した利用体験を提供するため』と why が明示されている。"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 1,
+    "total": 3,
+    "pass_rate": 0.67
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": null,
+    "errors_encountered": 0,
+    "output_chars": 1371,
+    "transcript_chars": 3651
+  },
+  "timing": {
+    "executor_duration_seconds": 63.2,
+    "total_duration_seconds": 63.2,
+    "total_tokens": 19008
+  },
+  "claims": [
+    {
+      "claim": "既存ルールはすべて paths（glob 配列）frontmatter を持ち、対象を限定している",
+      "type": "factual",
+      "verified": true,
+      "evidence": "transcript 手順2で api-validation.md=**/web/src/server/**/*.ts、test.md=**/*.test.ts 等と具体例が示されており、既存ルールが paths スコープ前提の仕組みであることと整合する。ただし grader 側では実ファイルを未確認（実リポジトリ参照は本評価範囲外）。"
+    },
+    {
+      "claim": "paths: [\"**/*\"] にすることで『種別を問わず常時適用』される",
+      "type": "quality",
+      "verified": false,
+      "evidence": "全マッチ glob は『マッチ時のみ読み込み』であり、frontmatter を省略した場合の常時読み込みとは挙動が異なる。executor は『全ファイル対象=常時適用』と等価とみなしているが、要件の意図（常時読み込み）には合致しない。"
+    },
+    {
+      "claim": "本文に why（理由）を記載した",
+      "type": "factual",
+      "verified": true,
+      "evidence": "10行目『理由: …一貫した利用体験を提供するため』を確認。"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": [
+      "実リポジトリ改変禁止の制約のため、.claude/rules/ ではなく指定 outputs ディレクトリにルールファイルを出力した"
+    ]
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである",
+        "reason": "実出力は outputs/ 配下に置かれており、ファイル名やパスだけでは『.claude/rules/ 配下を想定』かどうかを判定できない。frontmatter 構造や既存ルールとの同形式性まで確認しないと、無関係な .md でも通ってしまう余地がある。判定根拠を『既存 .claude/rules/ と同一フォーマット（frontmatter+見出し）であること』へ明示的に寄せると discriminating になる。"
+      },
+      {
+        "assertion": "常時適用の意図に沿って、不要な paths フロントマターを付けていない",
+        "reason": "このアサーションは非常に良く効いている。executor は `paths: [\"**/*\"]` を『常時適用と等価』と誤認しており、まさにこの罠を捕捉できている。良いアサーション。"
+      }
+    ],
+    "overall": "3つのアサーションは概ね discriminating。特に expectation 2 は『全マッチ glob ≠ 常時読み込み』という細部の誤りを正しく捕捉できており有効。expectation 1 のみ、パス所在ではなくフォーマット同一性で判定する旨を明文化するとさらに堅牢。"
+  }
+}

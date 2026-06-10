@@ -1,0 +1,11 @@
+{
+  "eval_id": 2,
+  "eval_name": "test-file-mock-rule-merge",
+  "prompt": "テストファイル（*.test.ts）では外部APIへの実通信を禁止してモックする、という規約を追加したいです。テストファイルにだけ効くようにしてください。",
+  "assertions": [
+    "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである",
+    "YAML フロントマターの paths が **/*.test.ts 等、テストファイルにマッチする glob になっている",
+    "既存の .claude/rules/test.md の存在を確認し、別ファイル乱立ではなく追記・統合を検討した形跡がある",
+    "規約本文が日本語で書かれ、理由（why）が含まれている"
+  ]
+}

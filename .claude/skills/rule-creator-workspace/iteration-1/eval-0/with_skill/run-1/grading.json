@@ -1,0 +1,86 @@
+{
+  "expectations": [
+    {
+      "text": "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである（CLAUDE.md 本体に直書きしていない）",
+      "passed": true,
+      "evidence": "出力は単独の Markdown ファイル outputs/api-validation.md（実リポジトリの .claude/rules/api-validation.md と同名・同テーマの改良版）。transcript 39行目「実リポジトリ（.claude/rules/ や CLAUDE.md）は読み取りのみで変更していない」、28-29行目で既存 .claude/rules/api-validation.md の改良方針を明記。CLAUDE.md 本体への直書きではない。"
+    },
+    {
+      "text": "YAML フロントマターでパススコープが指定されており、キー名が正しく `paths` である（globs/appliesTo 等の誤ったキーではない）",
+      "passed": true,
+      "evidence": "api-validation.md 1-4行目: '---\\npaths:\\n  - \"**/web/src/server/**/*.ts\"\\n---'。キー名は正しく `paths` でYAML配列。globs/appliesTo 等の誤ったキーは使われていない。"
+    },
+    {
+      "text": "paths の glob が server 配下（application/packages/web/src/server 等）のファイルにマッチする妥当な指定になっている",
+      "passed": true,
+      "evidence": "paths は `**/web/src/server/**/*.ts`。実リポジトリ検証で application/packages/web/src/server/article/route.ts および handler/*.ts が実在し、当該 glob にマッチする。client 層や他パッケージには載らず、要望「サーバーのハンドラ系ファイルだけに効かせたい」を満たす妥当な指定。"
+    },
+    {
+      "text": "規約本文が日本語で書かれ、なぜそうするかの理由（why）が含まれている",
+      "passed": true,
+      "evidence": "本文は全て日本語。9行目「理由: 不正・想定外の入力をドメイン層やDBへ到達させないため。境界（API層）で弾くことで…」、14行目「理由: API層独自にスキーマを再定義すると…二重管理になり乖離する」、19行目「理由: 認証を先に通したうえで…」と複数箇所で why を明示。CLAUDE.md の「コメントは why だけを書く」方針にも合致。"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 5,
+    "errors_encountered": 0,
+    "output_chars": 1365,
+    "transcript_chars": 4311
+  },
+  "timing": {
+    "executor_duration_seconds": 76.1,
+    "grader_duration_seconds": 30.0,
+    "total_duration_seconds": 76.1
+  },
+  "claims": [
+    {
+      "claim": "既存の .claude/rules/api-validation.md と同名ルールが既に存在し、paths は **/web/src/server/**/*.ts だった",
+      "type": "factual",
+      "verified": true,
+      "evidence": "実リポジトリ ls で .claude/rules/api-validation.md が存在することを確認。"
+    },
+    {
+      "claim": "glob **/web/src/server/**/*.ts が handler・route 双方の実ファイルにマッチする",
+      "type": "factual",
+      "verified": true,
+      "evidence": "application/packages/web/src/server/article/route.ts と handler/ ディレクトリの存在を確認。glob はこれらにマッチする。"
+    },
+    {
+      "claim": "バリデーション失敗時は自動的に422ステータスで返却される",
+      "type": "factual",
+      "verified": false,
+      "evidence": "transcript では route.ts / handler の zodValidator 利用は確認されているが、422 返却が「自動」である点の根拠（zodValidator 実装）は本グレーディングでは未検証。規約記述としては妥当だが裏取りは行っていない。"
+    },
+    {
+      "claim": "実リポジトリは読み取りのみで変更しておらず、成果物は outputs ディレクトリにのみ書き込んだ",
+      "type": "process",
+      "verified": true,
+      "evidence": "outputs/ には api-validation.md のみが存在し、transcript 39-40行目の主張と整合。"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "paths の glob が server 配下のファイルにマッチする妥当な指定になっている",
+        "reason": "client 層など対象外パスに「マッチしないこと」を検証する否定的アサーションを足すと、過剰に広い glob（例: **/*.ts）を誤って合格させずに済み、より discriminating になる"
+      },
+      {
+        "reason": "今回 executor は新規作成ではなく既存 api-validation.md の改良を選択した。タスク文は「ルールとして追加」だったため、新規ファイル名であるべきか既存への追記が正解かをチェックするアサーションが無く、判断の妥当性が評価対象から漏れている"
+      }
+    ],
+    "overall": "4つのアサーションはいずれも実際のタスク達成を捉えており妥当。否定パス検証と『新規 vs 追記』の判断を問うアサーションを足すとさらに堅牢になる。"
+  }
+}

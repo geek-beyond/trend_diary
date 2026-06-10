@@ -1,3 +1,4 @@
+import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { describe, expect, it, vi } from 'vitest'
 import { createSWRFetcher } from './create-swr-fetcher'
 
@@ -44,7 +45,9 @@ describe('createSWRFetcher', () => {
 
       const { fetcher } = createSWRFetcher()
 
-      await expect(fetcher('http://example.com/api')).rejects.toThrow('HTTP 404: Not Found')
+      const promise = fetcher('http://example.com/api')
+      await expect(promise).rejects.toBeInstanceOf(ClientError)
+      await expect(promise).rejects.toHaveProperty('statusCode', 404)
     })
   })
 
@@ -122,7 +125,9 @@ describe('createSWRFetcher', () => {
 
       const { apiCall } = createSWRFetcher()
 
-      await expect(apiCall(mockApiFunction)).rejects.toThrow('HTTP 500: Internal Server Error')
+      const promise = apiCall(mockApiFunction)
+      await expect(promise).rejects.toBeInstanceOf(ServerError)
+      await expect(promise).rejects.toHaveProperty('statusCode', 500)
     })
   })
 })

@@ -32,6 +32,7 @@ export const TurnstileWidget = ({ siteKey }: Props) => {
   // クライアントナビゲーション後も確実に描画するため、明示レンダリングAPIで都度renderする
   useEffect(() => {
     let widgetId: string | undefined
+    let scriptElement: HTMLScriptElement | null = null
 
     const renderWidget = () => {
       const container = containerRef.current
@@ -49,12 +50,14 @@ export const TurnstileWidget = ({ siteKey }: Props) => {
         `script[src="${TURNSTILE_SCRIPT_SRC}"]`,
       )
       if (existing) {
+        scriptElement = existing
         existing.addEventListener('load', renderWidget)
       } else {
         const script = document.createElement('script')
         script.src = TURNSTILE_SCRIPT_SRC
         script.async = true
         script.defer = true
+        scriptElement = script
         script.addEventListener('load', renderWidget)
         document.head.appendChild(script)
       }
@@ -62,6 +65,8 @@ export const TurnstileWidget = ({ siteKey }: Props) => {
 
     return () => {
       if (widgetId && window.turnstile) window.turnstile.remove(widgetId)
+      // ロード前に再実行/アンマウントされた場合に重複renderを防ぐため、未発火のリスナーを解除する
+      if (scriptElement) scriptElement.removeEventListener('load', renderWidget)
     }
   }, [siteKey])
 

@@ -202,6 +202,26 @@ describe('記事スキーマ', () => {
       }).toThrow()
     })
 
+    it('境界値の長さのURLを受け入れること', () => {
+      const baseUrl = 'https://example.com/'
+      expect(() => {
+        articleSchema.parse({
+          ...validArticle,
+          url: baseUrl + 'a'.repeat(2048 - baseUrl.length),
+        })
+      }).not.toThrow()
+    })
+
+    it('最大長を超えるURLを拒否すること', () => {
+      const baseUrl = 'https://example.com/'
+      expect(() => {
+        articleSchema.parse({
+          ...validArticle,
+          url: baseUrl + 'a'.repeat(2049 - baseUrl.length),
+        })
+      }).toThrow()
+    })
+
     it('String型でないurlを拒否すること', () => {
       expect(() => {
         articleSchema.parse({

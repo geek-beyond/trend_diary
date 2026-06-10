@@ -29,6 +29,13 @@
       "when": 1777103145693,
       "tag": "0004_add_skipped_articles",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1781082015667,
+      "tag": "0005_silent_wolfsbane",
+      "breakpoints": true
     }
   ]
 }

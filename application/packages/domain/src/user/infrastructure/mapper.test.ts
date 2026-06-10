@@ -14,7 +14,7 @@ describe('mapToActiveUser', () => {
       userId: 67890n,
       email: 'john.doe@example.com',
       displayName: '田中太郎',
-      authenticationId: null,
+      authenticationId: '550e8400-e29b-41d4-a716-446655440000',
       createdAt: new Date('2023-11-20T10:15:30Z'),
       updatedAt: now,
       ...overrides,
@@ -231,15 +231,15 @@ describe('mapToActiveUser', () => {
     })
 
     describe('null値の変換処理テスト', () => {
-      it('authenticationIdがnullの場合undefinedに正確に変換されること', () => {
+      it('authenticationIdがそのまま保持されること', () => {
+        const authenticationId = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
         const rdbActiveUser = createMockRdbActiveUser({
-          authenticationId: null,
+          authenticationId,
         })
 
         const result = mapToActiveUser(rdbActiveUser)
 
-        expect(result.authenticationId).toBeUndefined()
-        expect(result.authenticationId).not.toBeNull()
+        expect(result.authenticationId).toBe(authenticationId)
       })
 
       it('displayNameがnullの場合nullのまま保持されること', () => {

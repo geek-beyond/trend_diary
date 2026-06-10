@@ -14,7 +14,7 @@ export const activeUsers = sqliteTable(
     activeUserId: integer('active_user_id').primaryKey({ autoIncrement: true }),
     email: text('email').notNull(),
     displayName: text('display_name'),
-    authenticationId: text('authentication_id'),
+    authenticationId: text('authentication_id').notNull(),
     createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: dateTime('updated_at').notNull(),
     userId: integer('user_id')

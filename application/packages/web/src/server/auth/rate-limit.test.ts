@@ -91,11 +91,26 @@ describe('認証エンドポイントのレートリミット', () => {
 
     const mockFetch = vi.fn()
 
-    function requestMini(env: Env['Bindings']) {
+    // 通知をブロックせずバックグラウンドで送ることを検証するため、waitUntilに渡された処理を回収する
+    function buildExecutionCtx() {
+      const pending: Promise<unknown>[] = []
+      const waitUntil = vi.fn((promise: Promise<unknown>) => {
+        pending.push(promise)
+      })
+      const ctx = {
+        waitUntil,
+        passThroughOnException: () => undefined,
+        // biome-ignore lint/plugin: ExecutionContextはexports/props等の実装依存メンバーを持ち構造的に代入できないため、テスト用モックには二重アサーションが避けられないため
+      } as unknown as ExecutionContext
+      return { ctx, waitUntil, settle: () => Promise.all(pending) }
+    }
+
+    function requestMini(env: Env['Bindings'], ctx: ExecutionContext) {
       return miniApp.request(
         '/api/auth/login',
         { method: 'POST', headers: { 'CF-Connecting-IP': '203.0.113.1' } },
         env,
+        ctx,
       )
     }
 
@@ -116,9 +131,14 @@ describe('認証エンドポイントのレートリミット', () => {
       mockFetch.mockReset()
     })
 
-    it('フェイルオープン時はDiscordへアラートを送信する', async () => {
-      await requestMini(buildErrorEnvWithWebhook())
+    it('フェイルオープン時はwaitUntilでDiscordアラートをバックグラウンド送信する', async () => {
+      const { ctx, waitUntil, settle } = buildExecutionCtx()
+      await requestMini(buildErrorEnvWithWebhook(), ctx)
 
+      // レスポンスを遅延させないよう、通知はリクエスト処理をブロックせずに送る
+      expect(waitUntil).toHaveBeenCalledTimes(1)
+
+      await settle()
       expect(mockFetch).toHaveBeenCalledTimes(1)
       const body = JSON.parse(mockFetch.mock.calls[0][1].body)
       expect(body.embeds[0].title).toBe('⚠️ Rate Limiter Failing Open')
@@ -126,8 +146,10 @@ describe('認証エンドポイントのレートリミット', () => {
     })
 
     it('制限内ならアラートを送信しない', async () => {
-      await requestMini(buildEnv(true))
+      const { ctx, waitUntil } = buildExecutionCtx()
+      await requestMini(buildEnv(true), ctx)
 
+      expect(waitUntil).not.toHaveBeenCalled()
       expect(mockFetch).not.toHaveBeenCalled()
     })
   })

@@ -42,9 +42,9 @@ const rateLimiter = createMiddleware<Env>(async (c, next) => {
       error instanceof Error ? error : new Error(String(error)),
     )
 
-    // フェイルオープン状態の継続に気づけるよう、ログに加えてDiscordへ即時アラートする
+    // フェイルオープン状態の継続に気づけるよう、ログに加えてDiscordへアラートする
     const notifier = new DiscordNotifier(c.env.DISCORD_WEBHOOK_URL, logger)
-    await notifier.alert('⚠️ Rate Limiter Failing Open', [
+    const alert = notifier.alert('⚠️ Rate Limiter Failing Open', [
       {
         name: 'Detail',
         value: [
@@ -55,6 +55,14 @@ const rateLimiter = createMiddleware<Env>(async (c, next) => {
         inline: false,
       },
     ])
+
+    // 通知の遅延・タイムアウトでユーザーのリクエストをブロックしないよう、可能ならバックグラウンドで送る。
+    // executionCtxを持たない環境（テスト等）では決定性を保つため待機する（Honoのgetterは未設定時に例外を投げる）
+    try {
+      c.executionCtx.waitUntil(alert)
+    } catch {
+      await alert
+    }
   }
 
   return next()

@@ -21,6 +21,11 @@ export const resolveLoginErrorMessage = (error: unknown): string => {
     return INVALID_LOGIN_CREDENTIALS_ERROR_MESSAGE
   }
 
+  // CAPTCHA検証失敗はサーバーが403で返す
+  if (statusCode === 403) {
+    return CAPTCHA_REQUIRED_ERROR_MESSAGE
+  }
+
   if (statusCode === 500) {
     return AUTH_SERVER_ERROR_MESSAGE
   }
@@ -32,6 +37,11 @@ export const resolveSignupErrorMessage = (error: unknown): string => {
   const statusCode = getStatusCode(error)
   if (statusCode === 409) {
     return SIGNUP_ALREADY_EXISTS_ERROR_MESSAGE
+  }
+
+  // CAPTCHA検証失敗はサーバーが403で返す
+  if (statusCode === 403) {
+    return CAPTCHA_REQUIRED_ERROR_MESSAGE
   }
 
   if (statusCode === 500) {

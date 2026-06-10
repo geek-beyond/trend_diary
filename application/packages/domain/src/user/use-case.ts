@@ -1,6 +1,6 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
-import type { AuthRepository, Command, Notifier, Query } from './repository'
+import type { AuthRepository, CaptchaVerifier, Command, Notifier, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
 import type { AuthenticationSession } from './schema/auth-schema'
 
@@ -25,6 +25,7 @@ export class AuthUseCase {
     private readonly repository: AuthRepository,
     private readonly userCommand: Command,
     private readonly userQuery: Query,
+    private readonly captchaVerifier: CaptchaVerifier,
   ) {}
 
   async signup(
@@ -33,7 +34,10 @@ export class AuthUseCase {
     notifier: Notifier,
     captchaToken?: string,
   ): Promise<Result<SignupResult, ClientError | ServerError>> {
-    const authResult = await this.repository.signup(email, password, captchaToken)
+    const captchaResult = await this.captchaVerifier.verify(captchaToken)
+    if (captchaResult.isErr()) return err(captchaResult.error)
+
+    const authResult = await this.repository.signup(email, password)
     if (authResult.isErr()) return err(authResult.error)
 
     const { user, session } = authResult.value
@@ -65,8 +69,11 @@ export class AuthUseCase {
     password: string,
     captchaToken?: string,
   ): Promise<Result<LoginResult, ClientError | ServerError>> {
+    const captchaResult = await this.captchaVerifier.verify(captchaToken)
+    if (captchaResult.isErr()) return err(captchaResult.error)
+
     // 認証でログイン
-    const authResult = await this.repository.login(email, password, captchaToken)
+    const authResult = await this.repository.login(email, password)
     if (authResult.isErr()) return err(authResult.error)
 
     const { user, session } = authResult.value

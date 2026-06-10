@@ -11,7 +11,7 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
 
   const client = createSupabaseAuthClient(c)
   const rdb = getRdbClient(c.env.DB)
-  const useCase = createAuthUseCase(client, rdb)
+  const useCase = createAuthUseCase(client, rdb, c.env.TURNSTILE_SECRET_KEY)
 
   const result = await useCase.login(valid.email, valid.password, valid.captchaToken)
   if (result.isErr()) throw handleError(result.error, logger)

@@ -143,14 +143,12 @@ token_verifications = 30
 
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
-# サインアップ/ログインへのbot対策としてCloudflare Turnstileを利用する。
-# secretはenv()経由で注入し、設定ファイルに平文を残さない。
-# 有効化する場合は SUPABASE_AUTH_CAPTCHA_SECRET を環境変数に設定した上で以下のコメントを外す。
-# ローカル/E2EではCloudflareのテスト用secret(`1x0000000000000000000000000000000AA`)を使うと常にpassする。
+# NOTE: 本プロジェクトのCAPTCHA(Cloudflare Turnstile)はWorker側でsiteverifyを呼んで検証するため、
+# Supabase Auth側のcaptcha連携は使用しない。
 # [auth.captcha]
 # enabled = true
-# provider = "turnstile"
-# secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
+# provider = "hcaptcha"
+# secret = ""
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.

@@ -126,20 +126,6 @@ describe('SupabaseAuthRepository', () => {
           expect(result.value.session?.expiresIn).toBe(3600)
         }
       })
-
-      it('captchaTokenをoptions.captchaTokenとしてSupabaseへ渡すこと', async () => {
-        const supabaseUser = buildSupabaseUser()
-        resolveAuthMock(client.auth.signUp, {
-          data: { user: supabaseUser, session: null },
-          error: null,
-        })
-
-        await repository.signup('test@example.com', 'Password1!', 'captcha-token')
-
-        expect(client.auth.signUp).toHaveBeenCalledWith(
-          expect.objectContaining({ options: { captchaToken: 'captcha-token' } }),
-        )
-      })
     })
 
     describe('異常系', () => {
@@ -234,21 +220,6 @@ describe('SupabaseAuthRepository', () => {
           expect(result.value.user.email).toBe('test@example.com')
           expect(result.value.session.accessToken).toBe('access-token')
         }
-      })
-
-      it('captchaTokenをoptions.captchaTokenとしてSupabaseへ渡すこと', async () => {
-        const supabaseUser = buildSupabaseUser()
-        const supabaseSession = buildSupabaseSession({ user: supabaseUser })
-        resolveAuthMock(client.auth.signInWithPassword, {
-          data: { user: supabaseUser, session: supabaseSession },
-          error: null,
-        })
-
-        await repository.login('test@example.com', 'Password1!', 'captcha-token')
-
-        expect(client.auth.signInWithPassword).toHaveBeenCalledWith(
-          expect.objectContaining({ options: { captchaToken: 'captcha-token' } }),
-        )
       })
     })
 

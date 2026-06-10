@@ -86,13 +86,11 @@ export class SupabaseAuthRepository implements AuthRepository {
   async signup(
     email: string,
     password: string,
-    captchaToken?: string,
   ): Promise<Result<AuthSignupResult, ClientError | ServerError>> {
     const result = await wrapAsyncCall(() =>
       this.client.auth.signUp({
         email,
         password,
-        options: { captchaToken },
       }),
     )
     if (result.isErr()) {
@@ -134,13 +132,11 @@ export class SupabaseAuthRepository implements AuthRepository {
   async login(
     email: string,
     password: string,
-    captchaToken?: string,
   ): Promise<Result<AuthLoginResult, ClientError | ServerError>> {
     const result = await wrapAsyncCall(() =>
       this.client.auth.signInWithPassword({
         email,
         password,
-        options: { captchaToken },
       }),
     )
     if (result.isErr()) {

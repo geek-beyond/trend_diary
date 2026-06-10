@@ -2,7 +2,7 @@ import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
-import type { AuthRepository, Command, Notifier, Query } from './repository'
+import type { AuthRepository, CaptchaVerifier, Command, Notifier, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
 import type { AuthenticationSession, AuthenticationUser } from './schema/auth-schema'
 import { AuthUseCase } from './use-case'
@@ -11,6 +11,7 @@ const repositoryMock = mockDeep<AuthRepository>()
 const commandMock = mockDeep<Command>()
 const queryMock = mockDeep<Query>()
 const notifierMock = mockDeep<Notifier>()
+const captchaVerifierMock = mockDeep<CaptchaVerifier>()
 
 const mockAuthUser: AuthenticationUser = {
   id: 'auth-user-id-123',
@@ -37,10 +38,12 @@ const mockActiveUser: CurrentUser = {
 }
 
 describe('AuthUseCase', () => {
-  const useCase = new AuthUseCase(repositoryMock, commandMock, queryMock)
+  const useCase = new AuthUseCase(repositoryMock, commandMock, queryMock, captchaVerifierMock)
 
   beforeEach(() => {
     vi.clearAllMocks()
+    // 既定ではCAPTCHA検証を通過させる
+    captchaVerifierMock.verify.mockResolvedValue(ok(undefined))
   })
 
   describe('signup', () => {
@@ -64,11 +67,7 @@ describe('AuthUseCase', () => {
           expect(result.value.session).toEqual(mockSession)
           expect(result.value.activeUser).toEqual(mockActiveUser)
         }
-        expect(repositoryMock.signup).toHaveBeenCalledWith(
-          'test@example.com',
-          'Password1!',
-          undefined,
-        )
+        expect(repositoryMock.signup).toHaveBeenCalledWith('test@example.com', 'Password1!')
         expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
           mockAuthUser.email,
           mockAuthUser.id,
@@ -76,7 +75,7 @@ describe('AuthUseCase', () => {
         )
       })
 
-      it('captchaTokenをrepository.signupへそのまま渡す', async () => {
+      it('captchaTokenをcaptchaVerifierで検証する', async () => {
         // Arrange
         repositoryMock.signup.mockResolvedValue(
           ok({
@@ -90,15 +89,27 @@ describe('AuthUseCase', () => {
         await useCase.signup('test@example.com', 'Password1!', notifierMock, 'captcha-token')
 
         // Assert
-        expect(repositoryMock.signup).toHaveBeenCalledWith(
-          'test@example.com',
-          'Password1!',
-          'captcha-token',
-        )
+        expect(captchaVerifierMock.verify).toHaveBeenCalledWith('captcha-token')
       })
     })
 
     describe('異常系', () => {
+      it('CAPTCHA検証失敗時、エラーを返しsignupを呼ばない', async () => {
+        // Arrange
+        const captchaError = new ClientError('captcha verification failed', 403)
+        captchaVerifierMock.verify.mockResolvedValue(err(captchaError))
+
+        // Act
+        const result = await useCase.signup('test@example.com', 'Password1!', notifierMock, 'bad')
+
+        // Assert
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(captchaError)
+        }
+        expect(repositoryMock.signup).not.toHaveBeenCalled()
+      })
+
       it('repository.signup失敗時、エラーを返す', async () => {
         // Arrange
         const authError = new ClientError('Invalid credentials', 400)
@@ -143,15 +154,11 @@ describe('AuthUseCase', () => {
           expect(result.value.session).toEqual(mockSession)
           expect(result.value.activeUser).toEqual(mockActiveUser)
         }
-        expect(repositoryMock.login).toHaveBeenCalledWith(
-          'test@example.com',
-          'Password1!',
-          undefined,
-        )
+        expect(repositoryMock.login).toHaveBeenCalledWith('test@example.com', 'Password1!')
         expect(queryMock.findActiveByAuthenticationId).toHaveBeenCalledWith(mockAuthUser.id)
       })
 
-      it('captchaTokenをrepository.loginへそのまま渡す', async () => {
+      it('captchaTokenをcaptchaVerifierで検証する', async () => {
         // Arrange
         repositoryMock.login.mockResolvedValue(
           ok({
@@ -165,15 +172,27 @@ describe('AuthUseCase', () => {
         await useCase.login('test@example.com', 'Password1!', 'captcha-token')
 
         // Assert
-        expect(repositoryMock.login).toHaveBeenCalledWith(
-          'test@example.com',
-          'Password1!',
-          'captcha-token',
-        )
+        expect(captchaVerifierMock.verify).toHaveBeenCalledWith('captcha-token')
       })
     })
 
     describe('異常系', () => {
+      it('CAPTCHA検証失敗時、エラーを返しloginを呼ばない', async () => {
+        // Arrange
+        const captchaError = new ClientError('captcha verification failed', 403)
+        captchaVerifierMock.verify.mockResolvedValue(err(captchaError))
+
+        // Act
+        const result = await useCase.login('test@example.com', 'Password1!', 'bad')
+
+        // Assert
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(captchaError)
+        }
+        expect(repositoryMock.login).not.toHaveBeenCalled()
+      })
+
       it('repository.login失敗時、エラーを返す', async () => {
         // Arrange
         const authError = new ClientError('Invalid credentials', 401)

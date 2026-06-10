@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { resolveSupabaseAuthConfig, resolveTurnstileSiteKey } from './auth-action-use-case'
+import {
+  resolveSupabaseAuthConfig,
+  resolveTurnstileSecret,
+  resolveTurnstileSiteKey,
+} from './auth-action-use-case'
 
 describe('resolveSupabaseAuthConfig', () => {
   it('context.cloudflare.envにあるSupabase設定を優先する', () => {
@@ -69,5 +73,28 @@ describe('resolveTurnstileSiteKey', () => {
     expect(
       resolveTurnstileSiteKey({ cloudflare: { env: { TURNSTILE_SITE_KEY: '  ' } } }),
     ).toBeUndefined()
+  })
+})
+
+describe('resolveTurnstileSecret', () => {
+  it('context.cloudflare.envにあるシークレットキーを優先する', () => {
+    const secret = resolveTurnstileSecret({
+      cloudflare: { env: { TURNSTILE_SECRET_KEY: 'context-secret' } },
+    })
+    expect(secret).toBe('context-secret')
+  })
+
+  it('contextに設定がなければprocess.envを使う', () => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', 'process-secret')
+    try {
+      expect(resolveTurnstileSecret({})).toBe('process-secret')
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('未設定の場合はundefinedを返す', () => {
+    vi.unstubAllEnvs()
+    expect(resolveTurnstileSecret({ cloudflare: { env: {} } })).toBeUndefined()
   })
 })

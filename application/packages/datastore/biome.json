@@ -1,9 +1,8 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
   "root": false,
-  "extends": ["../../biome.json"],
+  "extends": "//",
   "files": {
     "includes": ["**", "!migrations/meta"]
-  },
-  "plugins": ["../../biome-plugins/no-as-assertion.grit"]
+  }
 }

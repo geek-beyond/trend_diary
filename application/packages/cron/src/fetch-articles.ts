@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from '@trend-diary/common/http'
 import type Logger from '@trend-diary/common/logger'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
@@ -43,7 +44,7 @@ function backoffDelayMs(attempt: number): number {
 
 async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], Error>> {
   const responseResult = await wrapAsyncCall(() =>
-    fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }),
+    fetchWithTimeout(url, { timeoutMs: FETCH_TIMEOUT_MS }),
   )
   if (responseResult.isErr()) return err(responseResult.error)
 

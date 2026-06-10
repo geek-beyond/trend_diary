@@ -394,8 +394,13 @@ export default class QueryImpl implements Query {
   }
 
   private static getNormalizedDateTimeSql(columnName: NormalizedDateTimeColumn) {
-    // 正規化はDB側の生成列が担う。式ではなく素のカラム参照に揃え、range/sortでインデックスを効かせる
-    return sql.raw(`${columnName}_normalized`)
+    const column = sql.raw(columnName)
+    return sql`
+      CASE
+        WHEN typeof(${column}) = 'integer' THEN datetime(${column} / 1000, 'unixepoch')
+        ELSE datetime(${column})
+      END
+    `
   }
 
   private static getJstDateSql(columnName: NormalizedDateTimeColumn) {

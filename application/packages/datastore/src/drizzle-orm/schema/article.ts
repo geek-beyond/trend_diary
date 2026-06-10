@@ -1,6 +1,6 @@
 import { relations, sql } from 'drizzle-orm'
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import { dateTime, normalizedDateTimeExpr } from './datetime'
+import { dateTime } from './datetime'
 import { activeUsers } from './user'
 
 export const articles = sqliteTable(
@@ -13,16 +13,8 @@ export const articles = sqliteTable(
     description: text('description').notNull(),
     url: text('url').notNull(),
     createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-    // 混在形式の created_at を正規化した値を保持し、範囲条件にインデックスを効かせる
-    createdAtNormalized: text('created_at_normalized').generatedAlwaysAs(
-      normalizedDateTimeExpr('created_at'),
-      { mode: 'virtual' },
-    ),
   },
-  (table) => [
-    uniqueIndex('articles_url_key').on(table.url),
-    index('idx_articles_created_at_normalized').on(table.createdAtNormalized),
-  ],
+  (table) => [uniqueIndex('articles_url_key').on(table.url)],
 )
 
 export const readHistories = sqliteTable(
@@ -36,16 +28,8 @@ export const readHistories = sqliteTable(
     activeUserId: integer('active_user_id')
       .notNull()
       .references(() => activeUsers.activeUserId, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    readAtNormalized: text('read_at_normalized').generatedAlwaysAs(
-      normalizedDateTimeExpr('read_at'),
-      { mode: 'virtual' },
-    ),
   },
-  (table) => [
-    index('idx_read_histories_article_user').on(table.articleId, table.activeUserId),
-    // 日記クエリの active_user_id 絞り込み＋read_at範囲・ソートを1本のインデックスで賄う
-    index('idx_read_histories_user_read_at').on(table.activeUserId, table.readAtNormalized),
-  ],
+  (table) => [index('idx_read_histories_article_user').on(table.articleId, table.activeUserId)],
 )
 
 export const skippedArticles = sqliteTable(
@@ -58,15 +42,10 @@ export const skippedArticles = sqliteTable(
     activeUserId: integer('active_user_id')
       .notNull()
       .references(() => activeUsers.activeUserId, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    createdAtNormalized: text('created_at_normalized').generatedAlwaysAs(
-      normalizedDateTimeExpr('created_at'),
-      { mode: 'virtual' },
-    ),
   },
   (table) => [
     uniqueIndex('uq_skipped_articles_article_user').on(table.articleId, table.activeUserId),
     index('idx_skipped_articles_article_user').on(table.articleId, table.activeUserId),
-    index('idx_skipped_articles_user_created_at').on(table.activeUserId, table.createdAtNormalized),
   ],
 )
 

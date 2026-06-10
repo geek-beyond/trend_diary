@@ -1,6 +1,0 @@
-ALTER TABLE `articles` ADD `created_at_normalized` text GENERATED ALWAYS AS (CASE WHEN typeof(created_at) = 'integer' THEN datetime(created_at / 1000, 'unixepoch') ELSE datetime(created_at) END) VIRTUAL;--> statement-breakpoint
-CREATE INDEX `idx_articles_created_at_normalized` ON `articles` (`created_at_normalized`);--> statement-breakpoint
-ALTER TABLE `read_histories` ADD `read_at_normalized` text GENERATED ALWAYS AS (CASE WHEN typeof(read_at) = 'integer' THEN datetime(read_at / 1000, 'unixepoch') ELSE datetime(read_at) END) VIRTUAL;--> statement-breakpoint
-CREATE INDEX `idx_read_histories_user_read_at` ON `read_histories` (`active_user_id`,`read_at_normalized`);--> statement-breakpoint
-ALTER TABLE `skipped_articles` ADD `created_at_normalized` text GENERATED ALWAYS AS (CASE WHEN typeof(created_at) = 'integer' THEN datetime(created_at / 1000, 'unixepoch') ELSE datetime(created_at) END) VIRTUAL;--> statement-breakpoint
-CREATE INDEX `idx_skipped_articles_user_created_at` ON `skipped_articles` (`active_user_id`,`created_at_normalized`);

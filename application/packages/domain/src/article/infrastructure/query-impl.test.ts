@@ -127,22 +127,6 @@ describe('QueryImpl', () => {
       expect(articleSql).not.toContain('unixepoch')
     })
 
-    it('from/to指定時は生成列created_at_normalizedで範囲条件を組む', async () => {
-      mockRdbExecutor
-        .mockResolvedValueOnce({ rows: [{ total: 0 }] })
-        .mockResolvedValueOnce({ rows: [] })
-
-      await queryImpl.searchArticles({
-        page: 1,
-        limit: 20,
-        from: '2026-03-05',
-        to: '2026-03-05',
-      })
-
-      const articleSql = String(mockRdbExecutor.mock.calls[1]?.[0] ?? '')
-      expect(articleSql).toContain('created_at_normalized')
-    })
-
     it('件数取得失敗時はエラーを返す', async () => {
       mockRdbExecutor.mockRejectedValue(new Error('count failed'))
 

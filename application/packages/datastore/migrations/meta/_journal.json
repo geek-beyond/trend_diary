@@ -29,13 +29,6 @@
       "when": 1777103145693,
       "tag": "0004_add_skipped_articles",
       "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1781083196348,
-      "tag": "0005_add_normalized_datetime_indexes",
-      "breakpoints": true
     }
   ]
 }

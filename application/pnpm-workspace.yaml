@@ -7,11 +7,13 @@ catalog:
   '@cloudflare/vitest-pool-workers': ^0.16.12
   '@cloudflare/workers-types': ^4.20260507.1
   '@faker-js/faker': ^10.4.0
+  '@playwright/test': ^1.60.0
   '@types/node': ^25.9.1
   drizzle-orm: 0.45.2
   hono: ^4.12.23
   neverthrow: ^8.2.0
   pino: ^10.3.1
+  playwright: ^1.60.0
   vitest: ^4.1.8
   vitest-mock-extended: ^4.0.0
   wrangler: ^4.95.0

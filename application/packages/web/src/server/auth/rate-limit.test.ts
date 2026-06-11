@@ -34,7 +34,7 @@ describe('認証エンドポイントのレートリミット', () => {
           email: 'rate-limit-test@example.com',
           password: 'Test@password123',
         }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Sec-Fetch-Site': 'same-origin' },
       },
       env,
     )

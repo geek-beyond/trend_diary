@@ -37,10 +37,7 @@ describe('postAuthApi', () => {
   })
 
   it('元リクエストのoriginで絶対URL化したURLへ、bodyをJSONとしてPOSTする', async () => {
-    const request = new Request('https://trend-diary.example/login', {
-      method: 'POST',
-      headers: { Origin: 'https://trend-diary.example' },
-    })
+    const request = new Request('https://trend-diary.example/login', { method: 'POST' })
     const env = buildEnv()
 
     await postAuthApi(request, buildContext(env), '/api/auth/login', {
@@ -60,12 +57,14 @@ describe('postAuthApi', () => {
     expect(passedEnv).toBe(env)
   })
 
-  it('Cookie・CF-Connecting-IP等の元リクエストヘッダーを転送し、Content-TypeをJSONに差し替える', async () => {
+  // API側のsameOriginGuard・レート制限は転送されたヘッダーで判定するため、欠落すると検証が機能しない
+  it('Cookie・Origin・Sec-Fetch-Site・CF-Connecting-IPを転送し、Content-TypeをJSONに差し替える', async () => {
     const request = new Request('https://trend-diary.example/login', {
       method: 'POST',
       headers: {
         Cookie: 'sb-access-token=token',
         Origin: 'https://trend-diary.example',
+        'Sec-Fetch-Site': 'same-origin',
         'CF-Connecting-IP': '203.0.113.1',
         'Content-Type': 'multipart/form-data',
         'Content-Length': '128',
@@ -79,50 +78,11 @@ describe('postAuthApi', () => {
     const [, init] = appRequest.mock.calls[0]
     const headers = new Headers(init.headers)
     expect(headers.get('Cookie')).toBe('sb-access-token=token')
+    expect(headers.get('Origin')).toBe('https://trend-diary.example')
+    expect(headers.get('Sec-Fetch-Site')).toBe('same-origin')
     expect(headers.get('CF-Connecting-IP')).toBe('203.0.113.1')
     expect(headers.get('Content-Type')).toBe('application/json')
     expect(headers.get('Content-Length')).toBeNull()
-  })
-
-  // フォーム→JSON変換でhono/csrfの検査対象から外れるため、ログインCSRFはpostAuthApi自身が遮断する
-  describe('クロスサイトリクエストの遮断', () => {
-    it('Originが他サイトのPOSTは403を返しAPIを呼ばない', async () => {
-      const request = new Request('https://trend-diary.example/login', {
-        method: 'POST',
-        headers: { Origin: 'https://evil.example' },
-      })
-
-      const response = await postAuthApi(request, buildContext(buildEnv()), '/api/auth/login', {
-        email: 'victim@example.com',
-      })
-
-      expect(response.status).toBe(403)
-      expect(appRequest).not.toHaveBeenCalled()
-    })
-
-    it('OriginもSec-Fetch-Siteも無いPOSTは403を返しAPIを呼ばない', async () => {
-      const request = new Request('https://trend-diary.example/login', { method: 'POST' })
-
-      const response = await postAuthApi(request, buildContext(buildEnv()), '/api/auth/login', {
-        email: 'victim@example.com',
-      })
-
-      expect(response.status).toBe(403)
-      expect(appRequest).not.toHaveBeenCalled()
-    })
-
-    it('Sec-Fetch-Siteがsame-originならOriginが無くても通す', async () => {
-      const request = new Request('https://trend-diary.example/login', {
-        method: 'POST',
-        headers: { 'Sec-Fetch-Site': 'same-origin' },
-      })
-
-      await postAuthApi(request, buildContext(buildEnv()), '/api/auth/login', {
-        email: 'test@example.com',
-      })
-
-      expect(appRequest).toHaveBeenCalled()
-    })
   })
 })
 
@@ -132,7 +92,7 @@ describe('getAuthSession', () => {
     appRequest.mockResolvedValue(new Response(null, { status: 200 }))
   })
 
-  it('Cookieを転送して/api/auth/meをGETする。副作用がないため同一オリジン検証は行わない', async () => {
+  it('Cookieを転送して/api/auth/meをGETする', async () => {
     const request = new Request('https://trend-diary.example/trends', {
       headers: { Cookie: 'sb-access-token=token' },
     })

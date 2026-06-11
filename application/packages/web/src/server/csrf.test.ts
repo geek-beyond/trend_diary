@@ -5,8 +5,11 @@ import app from '../server'
 const SAME_ORIGIN = 'http://localhost'
 const CROSS_ORIGIN = 'https://evil.example.com'
 
-describe('CSRF対策ミドルウェア', () => {
-  // バリデーションで422になる入力。CSRFを通過した場合に422、拒否された場合に403で区別する
+// 認証エンドポイントは csrf（フォーム系Content-Type）と sameOriginGuard（Content-Type不問）の
+// 2層で同一オリジンを強制する。actionがフォームをJSONへ変換してin-process呼び出しするため、
+// JSONリクエストも検査対象に含める必要がある
+describe('認証エンドポイントのCSRF対策（csrf + sameOriginGuard）', () => {
+  // バリデーションで422になる入力。ガードを通過した場合に422、拒否された場合に403で区別する
   const body = JSON.stringify({ email: 'not-an-email', password: 'short' })
 
   const groups: Array<{
@@ -17,8 +20,13 @@ describe('CSRF対策ミドルウェア', () => {
       group: '正常系',
       cases: [
         {
-          name: 'JSONリクエスト（通常のAPIクライアント）は検査対象外で通過する',
-          headers: { 'Content-Type': 'application/json' },
+          name: '同一オリジンのJSONリクエスト（Sec-Fetch-Site）は通過する',
+          headers: { 'Content-Type': 'application/json', 'Sec-Fetch-Site': 'same-origin' },
+          status: 422,
+        },
+        {
+          name: '同一オリジンのJSONリクエスト（Origin）は通過する',
+          headers: { 'Content-Type': 'application/json', Origin: SAME_ORIGIN },
           status: 422,
         },
       ],
@@ -27,7 +35,7 @@ describe('CSRF対策ミドルウェア', () => {
       group: '準正常系',
       cases: [
         {
-          name: '同一オリジンのフォーム送信もCSRFを通過する',
+          name: '同一オリジンのフォーム送信もガードを通過する',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: SAME_ORIGIN },
           status: 422,
         },
@@ -44,6 +52,16 @@ describe('CSRF対策ミドルウェア', () => {
         {
           name: 'Content-Typeが無い（text/plain扱い）クロスオリジンも403で拒否する',
           headers: { Origin: CROSS_ORIGIN },
+          status: 403,
+        },
+        {
+          name: 'クロスオリジンのJSONリクエストはsameOriginGuardが403で拒否する',
+          headers: { 'Content-Type': 'application/json', Origin: CROSS_ORIGIN },
+          status: 403,
+        },
+        {
+          name: 'オリジン情報が無いJSONリクエストもsameOriginGuardが403で拒否する',
+          headers: { 'Content-Type': 'application/json' },
           status: 403,
         },
       ],

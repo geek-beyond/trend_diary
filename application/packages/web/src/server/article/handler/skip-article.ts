@@ -2,7 +2,7 @@ import { createArticleUseCase } from '@trend-diary/domain/article'
 import {
   type AuthenticatedRequestContext,
   createAuthenticatedApiHandler,
-} from '@/server/handler/factory'
+} from '@/server/handler-factory'
 import type { ArticleIdParam } from './read-article'
 
 export default createAuthenticatedApiHandler({

@@ -4,7 +4,7 @@ packages:
 # パッケージ間で共有する依存のバージョンを集中管理する。
 # 各パッケージでは "<dep>": "catalog:" と宣言してここのバージョンを参照する。
 catalog:
-  '@cloudflare/vitest-pool-workers': ^0.16.12
+  '@cloudflare/vitest-pool-workers': ^0.16.13
   '@cloudflare/workers-types': ^4.20260507.1
   '@faker-js/faker': ^10.4.0
   '@playwright/test': ^1.60.0

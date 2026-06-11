@@ -319,13 +319,10 @@ describe('ArticleUseCase', () => {
   })
 
   describe('createReadHistory', () => {
-    it('正常にReadHistoryを作成できること', async () => {
+    it('command へ委譲し、作成したReadHistoryを返すこと', async () => {
       const userId = 100n
       const articleId = 200n
       const readAt = new Date('2024-01-01T10:00:00Z')
-
-      // 記事存在確認のモック
-      queryMock.findArticleById.mockResolvedValue(ok(mockArticle))
 
       const mockReadHistory: ReadHistory = {
         readHistoryId: 1n,
@@ -345,81 +342,69 @@ describe('ArticleUseCase', () => {
         expect(result.value.readAt).toBe(readAt)
       }
 
-      expect(queryMock.findArticleById).toHaveBeenCalledWith(articleId)
-      expect(commandMock.createReadHistory).toHaveBeenCalledWith(
-        userId,
-        mockArticle.articleId,
-        readAt,
-      )
+      // 記事存在チェックは command 側に集約され、query.findArticleById は呼ばれない
+      expect(queryMock.findArticleById).not.toHaveBeenCalled()
+      expect(commandMock.createReadHistory).toHaveBeenCalledWith(userId, articleId, readAt)
     })
 
-    it('データベースエラー時にServerErrorを返すこと', async () => {
-      const userId = 100n
-      const articleId = 200n
-      const readAt = new Date('2024-01-01T10:00:00Z')
+    it.each([
+      {
+        name: '存在しない記事(NotFoundError)',
+        error: new NotFoundError('Article with ID 999 not found'),
+        expectedError: NotFoundError,
+      },
+      {
+        name: 'データベースエラー(ServerError)',
+        error: new ServerError('Database error'),
+        expectedError: ServerError,
+      },
+    ])('command が $name を返す場合はそのまま伝播すること', async ({ error, expectedError }) => {
+      commandMock.createReadHistory.mockResolvedValue(err(error))
 
-      // 記事存在確認のモック
-      queryMock.findArticleById.mockResolvedValue(ok(mockArticle))
-
-      const dbError = new ServerError('Database error')
-      commandMock.createReadHistory.mockResolvedValue(err(dbError))
-
-      const result = await useCase.createReadHistory(userId, articleId, readAt)
+      const result = await useCase.createReadHistory(100n, 999n, new Date('2024-01-01T10:00:00Z'))
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBe(dbError)
+        expect(result.error).toBe(error)
+        expect(result.error).toBeInstanceOf(expectedError)
       }
-    })
-
-    it('存在しない記事でNotFoundErrorを返すこと', async () => {
-      const userId = 100n
-      const articleId = 999n
-      const readAt = new Date('2024-01-01T10:00:00Z')
-
-      // 記事が存在しない場合のモック
-      queryMock.findArticleById.mockResolvedValue(ok(null))
-
-      const result = await useCase.createReadHistory(userId, articleId, readAt)
-
-      expect(result.isErr()).toBe(true)
-      if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(NotFoundError)
-        expect(result.error.message).toBe('Article with ID 999 not found')
-      }
-
-      expect(queryMock.findArticleById).toHaveBeenCalledWith(articleId)
-      expect(commandMock.createReadHistory).not.toHaveBeenCalled()
     })
   })
 
   describe('deleteAllReadHistory', () => {
-    it('正常にReadHistoryを全削除できること', async () => {
+    it('command へ委譲し、正常に全削除できること', async () => {
       const userId = 100n
       const articleId = 200n
 
-      queryMock.findArticleById.mockResolvedValue(ok(mockArticle))
       commandMock.deleteAllReadHistory.mockResolvedValue(ok(undefined))
 
       const result = await useCase.deleteAllReadHistory(userId, articleId)
 
       expect(result.isOk()).toBe(true)
-      expect(commandMock.deleteAllReadHistory).toHaveBeenCalledWith(userId, mockArticle.articleId)
+      expect(queryMock.findArticleById).not.toHaveBeenCalled()
+      expect(commandMock.deleteAllReadHistory).toHaveBeenCalledWith(userId, articleId)
     })
 
-    it('データベースエラー時にServerErrorを返すこと', async () => {
-      const userId = 100n
-      const articleId = 200n
+    it.each([
+      {
+        name: '存在しない記事(NotFoundError)',
+        error: new NotFoundError('Article with ID 200 not found'),
+        expectedError: NotFoundError,
+      },
+      {
+        name: 'データベースエラー(ServerError)',
+        error: new ServerError('Database error'),
+        expectedError: ServerError,
+      },
+    ])('command が $name を返す場合はそのまま伝播すること', async ({ error, expectedError }) => {
+      commandMock.deleteAllReadHistory.mockResolvedValue(err(error))
 
-      queryMock.findArticleById.mockResolvedValue(ok(mockArticle))
-      const dbError = new ServerError('Database error')
-      commandMock.deleteAllReadHistory.mockResolvedValue(err(dbError))
-
-      const result = await useCase.deleteAllReadHistory(userId, articleId)
+      const result = await useCase.deleteAllReadHistory(100n, 200n)
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBe(dbError)
+        expect(result.error).toBe(error)
+        expect(result.error).toBeInstanceOf(expectedError)
       }
     })
   })
@@ -460,7 +445,7 @@ describe('ArticleUseCase', () => {
   })
 
   describe('createSkippedArticle', () => {
-    it('記事が存在する場合にskip登録できる', async () => {
+    it('command へ委譲し、skip登録結果を返すこと', async () => {
       const activeUserId = 100n
       const articleId = 200n
       const mockSkippedArticle: SkippedArticle = {
@@ -470,36 +455,34 @@ describe('ArticleUseCase', () => {
         createdAt: new Date(),
       }
 
-      queryMock.findArticleById.mockResolvedValue(ok(mockArticle))
       commandMock.createSkippedArticle.mockResolvedValue(ok(mockSkippedArticle))
 
       const result = await useCase.createSkippedArticle(activeUserId, articleId)
 
       expect(result.isOk()).toBe(true)
-      expect(commandMock.createSkippedArticle).toHaveBeenCalledWith(
-        activeUserId,
-        mockArticle.articleId,
-      )
+      expect(queryMock.findArticleById).not.toHaveBeenCalled()
+      expect(commandMock.createSkippedArticle).toHaveBeenCalledWith(activeUserId, articleId)
     })
 
     it.each([
       {
-        name: '記事が存在しない',
-        arrange: () => queryMock.findArticleById.mockResolvedValue(ok(null)),
+        name: '存在しない記事(NotFoundError)',
+        error: new NotFoundError('Article with ID 200 not found'),
         expectedError: NotFoundError,
       },
       {
-        name: '記事検索で失敗',
-        arrange: () => queryMock.findArticleById.mockResolvedValue(err(new ServerError('db'))),
+        name: 'データベースエラー(ServerError)',
+        error: new ServerError('db'),
         expectedError: ServerError,
       },
-    ])('$name 場合は失敗を返す', async ({ arrange, expectedError }) => {
-      arrange()
+    ])('command が $name を返す場合はそのまま伝播すること', async ({ error, expectedError }) => {
+      commandMock.createSkippedArticle.mockResolvedValue(err(error))
 
       const result = await useCase.createSkippedArticle(100n, 200n)
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
+        expect(result.error).toBe(error)
         expect(result.error).toBeInstanceOf(expectedError)
       }
     })

@@ -94,15 +94,14 @@ export default class QueryImpl implements Query {
 
     const readStatusSql = QueryImpl.buildIsReadSelectSql(dbActiveUserId)
 
-    const queryResultTuple = await Promise.all([
-      wrapDbCall(() =>
+    // COUNT用と取得用の2クエリを db.batch で1往復にまとめる
+    const batchResult = await wrapDbCall(() =>
+      this.db.batch([
         this.db.all<RawCountRow>(sql`
           SELECT COUNT(*) as total
           FROM articles
           ${whereSql}
         `),
-      ),
-      wrapDbCall(() =>
         this.db.all<RawArticleRow>(sql`
           SELECT
             article_id as articleId,
@@ -119,14 +118,13 @@ export default class QueryImpl implements Query {
           LIMIT ${limit}
           OFFSET ${(page - 1) * limit}
         `),
-      ),
-    ])
-    const resolvedQueryResults = QueryImpl.unwrapResultTuple(queryResultTuple)
-    if (resolvedQueryResults.isErr()) {
-      return err(resolvedQueryResults.error)
+      ]),
+    )
+    if (batchResult.isErr()) {
+      return err(new ServerError(batchResult.error))
     }
 
-    const [totalRows, articleRows] = resolvedQueryResults.value
+    const [totalRows, articleRows] = batchResult.value
     const total = Number(totalRows[0]?.total ?? 0)
     const mappedArticles = articleRows.map(QueryImpl.mapRawArticleToDomain)
 
@@ -221,8 +219,9 @@ export default class QueryImpl implements Query {
       toDateExclusive,
     )
 
-    const queryResultTuple = await Promise.all([
-      wrapDbCall(() =>
+    // サマリー用と一覧用の2クエリを db.batch で1往復にまとめる
+    const batchResult = await wrapDbCall(() =>
+      this.db.batch([
         this.db.all<RawDiaryTypedSourceRow>(sql`
             SELECT
               source_type as sourceType,
@@ -255,8 +254,6 @@ export default class QueryImpl implements Query {
             ) diary_sources
             ORDER BY count DESC, media ASC
           `),
-      ),
-      wrapDbCall(() =>
         this.db.all<RawDiaryReadRow>(sql`
             SELECT
               rh.read_history_id as readHistoryId,
@@ -274,14 +271,13 @@ export default class QueryImpl implements Query {
             LIMIT ${limit}
             OFFSET ${(page - 1) * limit}
           `),
-      ),
-    ])
-    const resolvedQueryResults = QueryImpl.unwrapResultTuple(queryResultTuple)
-    if (resolvedQueryResults.isErr()) {
-      return err(resolvedQueryResults.error)
+      ]),
+    )
+    if (batchResult.isErr()) {
+      return err(new ServerError(batchResult.error))
     }
 
-    const [sourceRows, readsRows] = resolvedQueryResults.value
+    const [sourceRows, readsRows] = batchResult.value
     const { readRows: readSourcesRows, skipRows: skipSourcesRows } =
       QueryImpl.splitDiarySourceRows(sourceRows)
     const readCount = QueryImpl.sumDiarySourceCounts(readSourcesRows)
@@ -463,22 +459,6 @@ export default class QueryImpl implements Query {
           AND sa.active_user_id = ${activeUserId}
       )
     `
-  }
-
-  private static unwrapResultTuple<T extends readonly unknown[]>(
-    results: { [K in keyof T]: Result<T[K], Error> },
-  ): Result<T, ServerError> {
-    const unwrapped: unknown[] = []
-
-    for (const result of results) {
-      if (result.isErr()) {
-        return err(new ServerError(result.error))
-      }
-      unwrapped.push(result.value)
-    }
-
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- 各要素のResultをアンラップした配列がタプルTに一致することはTypeScriptでは表現できないためです
-    return ok(unwrapped as unknown as T)
   }
 
   private static buildLikeConditionSql(column: string, value: string) {

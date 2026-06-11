@@ -20,9 +20,14 @@ export const mockRdbExecutor =
 
 // 本番型(DrizzleD1Database)とドライバが異なるため、テスト側でキャストして吸収する
 // （クエリビルダ API は共通のため実行時は問題なく動作する）。
-const mockDbProxy = drizzleProxy((sql, params, method) => mockRdbExecutor(sql, params, method), {
-  schema,
-})
+// db.batch も同じ mockRdbExecutor を順に呼ぶことで、単発クエリと同じ
+// mockResolvedValueOnce のチェーン・呼び出し回数アサーションをそのまま使えるようにする。
+const mockDbProxy = drizzleProxy(
+  (sql, params, method) => mockRdbExecutor(sql, params, method),
+  (queries) =>
+    Promise.all(queries.map((query) => mockRdbExecutor(query.sql, query.params, query.method))),
+  { schema },
+)
 // oxlint-disable-next-line typescript/consistent-type-assertions -- 本番型(DrizzleD1Database)とsqlite-proxyドライバは型が異なり、テスト用に吸収する手段が他にないためです
 const mockDb = mockDbProxy as unknown as RdbClient
 

@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/client/components/shadcn/table'
-import type { Source, Summary } from '@/client/features/diary/model/types'
+import type { Source, Summary } from '@/client/features/diary/types'
 
 interface Props {
   sources: Source[]

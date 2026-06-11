@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect } from 'storybook/test'
-import type { Source } from '@/client/features/diary/model/types'
+import type { Source } from '@/client/features/diary/types'
 import DiarySummarySection from './summary-section'
 
 const sources: Source[] = [

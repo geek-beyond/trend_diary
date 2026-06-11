@@ -146,7 +146,6 @@ export async function login(email: string, password: string): Promise<LoginResul
       body: JSON.stringify({ email, password }),
       headers: {
         'Content-Type': 'application/json',
-        'Sec-Fetch-Site': 'same-origin',
       },
     },
     TEST_ENV,

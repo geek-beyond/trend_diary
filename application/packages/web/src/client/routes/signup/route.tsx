@@ -1,31 +1,7 @@
-import Logger from '@trend-diary/common/logger'
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-  type MetaFunction,
-  redirect,
-  useActionData,
-  useLoaderData,
-  useNavigation,
-} from 'react-router'
-import { postAuthApi } from '@/client/features/authenticate/auth-api'
-import {
-  AUTH_ERROR_MESSAGES,
-  resolveSignupErrorMessage,
-} from '@/client/features/authenticate/error-message'
+import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
 import { resolveTurnstileSiteKey } from '@/client/features/authenticate/turnstile'
-import {
-  type AuthenticateErrors,
-  validateAuthenticateForm,
-} from '@/client/features/authenticate/validation'
+import useSignup from './hooks/use-signup'
 import SignupPage from './page'
-
-interface SignupActionData {
-  errors?: AuthenticateErrors
-  formError?: string
-}
-
-const logger = new Logger('info', { route: 'web/client/routes/signup/action' })
 
 export const meta: MetaFunction = () => [
   { title: 'アカウント作成 | TrendDiary' },
@@ -53,51 +29,16 @@ export function loader({ context }: LoaderFunctionArgs) {
   return { turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null }
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
-  const formData = await request.formData()
-  const validation = validateAuthenticateForm(formData)
-  if (!validation.isValid) {
-    return { errors: validation.errors } satisfies SignupActionData
-  }
-
-  const captchaTokenValue = formData.get('cf-turnstile-response')
-  const captchaToken = typeof captchaTokenValue === 'string' ? captchaTokenValue : undefined
-
-  // CAPTCHA有効時にトークン未取得のまま送信させない
-  if (resolveTurnstileSiteKey(context) && !captchaToken) {
-    return { formError: AUTH_ERROR_MESSAGES.captchaRequired } satisfies SignupActionData
-  }
-
-  try {
-    const response = await postAuthApi(request, context, '/api/auth/signup', {
-      email: validation.data.email,
-      password: validation.data.password,
-      captchaToken,
-    })
-
-    if (!response.ok) {
-      return {
-        formError: resolveSignupErrorMessage(response.status),
-      } satisfies SignupActionData
-    }
-
-    return redirect('/login')
-  } catch (error) {
-    logger.error('Unexpected error in signup action', error)
-    return { formError: AUTH_ERROR_MESSAGES.unexpected } satisfies SignupActionData
-  }
-}
-
 export default function Signup() {
   const { turnstileSiteKey } = useLoaderData<typeof loader>()
-  const actionData = useActionData<typeof action>()
-  const navigation = useNavigation()
+  const { isSubmitting, errors, formError, submit } = useSignup(turnstileSiteKey ?? undefined)
 
   return (
     <SignupPage
-      isSubmitting={navigation.state === 'submitting'}
-      errors={actionData?.errors}
-      formError={actionData?.formError}
+      onSubmit={submit}
+      isSubmitting={isSubmitting}
+      errors={errors}
+      formError={formError}
       turnstileSiteKey={turnstileSiteKey ?? undefined}
     />
   )

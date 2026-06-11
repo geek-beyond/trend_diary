@@ -32,7 +32,6 @@ describe('POST /api/auth/signup', () => {
         body,
         headers: {
           'Content-Type': 'application/json',
-          'Sec-Fetch-Site': 'same-origin',
         },
       },
       TEST_ENV,

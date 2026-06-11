@@ -29,7 +29,6 @@ describe('POST /api/auth/login', () => {
         body,
         headers: {
           'Content-Type': 'application/json',
-          'Sec-Fetch-Site': 'same-origin',
         },
       },
       TEST_ENV,

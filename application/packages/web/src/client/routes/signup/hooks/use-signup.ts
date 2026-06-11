@@ -46,17 +46,19 @@ export default function useSignup(turnstileSiteKey?: string) {
         },
       })
     })
-    setIsSubmitting(false)
 
     if (result.isErr()) {
       setFormError(AUTH_ERROR_MESSAGES.unexpected)
+      setIsSubmitting(false)
       return
     }
     if (!result.value.ok) {
       setFormError(resolveSignupErrorMessage(result.value.status))
+      setIsSubmitting(false)
       return
     }
 
+    // 成功時は遷移でアンマウントされるため、ボタンを無効のままにして二重送信を防ぐ
     navigate('/login')
   }
 

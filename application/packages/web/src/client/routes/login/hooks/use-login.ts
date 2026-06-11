@@ -49,19 +49,21 @@ export default function useLogin(turnstileSiteKey?: string) {
         },
       })
     })
-    setIsSubmitting(false)
 
     if (result.isErr()) {
       setFormError(AUTH_ERROR_MESSAGES.unexpected)
+      setIsSubmitting(false)
       return
     }
     if (!result.value.ok) {
       setFormError(resolveLoginErrorMessage(result.value.status))
+      setIsSubmitting(false)
       return
     }
 
     // ログイン前の未ログイン状態がセッションキャッシュに残ったまま遷移しないよう再検証する
     await mutate(SESSION_SWR_KEY)
+    // 成功時は遷移でアンマウントされるため、ボタンを無効のままにして二重送信を防ぐ
     navigate('/trends')
   }
 

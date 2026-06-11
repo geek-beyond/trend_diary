@@ -83,14 +83,14 @@ export default function InboxPage({
 
         {!isLoading && article && (
           <div className='mt-2 flex flex-col rounded-xl border border-gray-200 bg-white p-5'>
-            <h2 className='flex items-center gap-2 text-lg font-semibold text-gray-900 leading-relaxed'>
+            <h2 className='flex h-[2lh] items-center gap-2 text-lg font-semibold text-gray-900 leading-relaxed'>
               <MediaIcon media={toMediaType(article.media)} size='md' />
-              <span>{article.title}</span>
+              <span className='line-clamp-2'>{article.title}</span>
             </h2>
-            <div className='mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-600'>
-              <span>著者: {article.author}</span>
+            <div className='mt-2 flex h-[1lh] items-center gap-3 overflow-hidden text-sm text-gray-600'>
+              <span className='truncate'>著者: {article.author}</span>
             </div>
-            <p className='mt-3 h-24 overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words pr-1 text-sm leading-relaxed text-gray-700 md:min-h-32 md:max-h-56'>
+            <p className='mt-3 h-24 overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words pr-1 text-sm leading-relaxed text-gray-700 md:h-56'>
               {article.description}
             </p>
             <div className='sticky bottom-0 -mx-5 mt-3 flex flex-wrap gap-2 border-t border-gray-200 bg-white/95 px-5 pt-3 pb-1 md:static md:mx-0 md:mt-4 md:border-0 md:bg-transparent md:p-0'>

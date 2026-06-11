@@ -16,9 +16,34 @@
     {
       "files": ["src/client/**/*.{ts,tsx}"],
       "rules": {
+        "no-restricted-properties": [
+          "error",
+          {
+            "object": "React",
+            "property": "useCallback",
+            "message": "Manual memoization is unnecessary because React Compiler applies it automatically. Remove React.useCallback and let the compiler optimize."
+          },
+          {
+            "object": "React",
+            "property": "useMemo",
+            "message": "Manual memoization is unnecessary because React Compiler applies it automatically. Remove React.useMemo and let the compiler optimize."
+          },
+          {
+            "object": "React",
+            "property": "memo",
+            "message": "Manual memoization is unnecessary because React Compiler applies it automatically. Remove React.memo and let the compiler optimize."
+          }
+        ],
         "no-restricted-imports": [
           "error",
           {
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["useCallback", "useMemo", "memo"],
+                "message": "Manual memoization is unnecessary because React Compiler applies it automatically. Remove useCallback/useMemo/memo and let the compiler optimize."
+              }
+            ],
             "patterns": [
               {
                 "group": [

@@ -29,7 +29,7 @@ export default defineConfig(() => {
             globals: true,
             environment: 'node',
             setupFiles: ['src/test/setup/d1.ts'],
-            include: ['src/server/**/*.test.ts'],
+            include: ['src/server/**/*.test.ts', 'src/middleware/**/*.test.ts'],
           },
         },
         {
@@ -86,7 +86,12 @@ export default defineConfig(() => {
           'src/server.ts',
           'src/worker.ts',
           'src/infrastructure/**',
-          'src/middleware/**',
+          // 専用テストを持つ rate-limiter.ts のみ計測対象とし、未テストの他ミドルウェアは除外する
+          'src/middleware/context.ts',
+          'src/middleware/zod-validator.ts',
+          'src/middleware/request-logger.ts',
+          'src/middleware/error-handler.ts',
+          'src/middleware/authenticator/**',
           'src/test/**',
           'src/client/components/shadcn/**',
           'src/client/routes.ts',

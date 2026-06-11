@@ -41,22 +41,11 @@ const apiCall = async <T>(apiCall: () => Promise<ApiCallResponse>): Promise<T | 
   }
 }
 
-// レンダーごとの再生成を避けるため、モジュールスコープで単一インスタンスを遅延生成して保持する
-let swrFetcher:
-  | {
-      fetcher: typeof fetcher
-      apiCall: typeof apiCall
-      client: ReturnType<typeof getApiClientForClient>
-    }
-  | undefined
-
-export const createSWRFetcher = () => {
-  swrFetcher ??= {
-    fetcher,
-    apiCall,
-    client: getApiClientForClient(),
-  }
-  return swrFetcher
-}
+// fetcher / apiCall はモジュールスコープで定義済み、client も getApiClientForClient 側でシングルトン化されているため、軽量なオブジェクトリテラルを返すだけでよい
+export const createSWRFetcher = () => ({
+  fetcher,
+  apiCall,
+  client: getApiClientForClient(),
+})
 
 export default createSWRFetcher

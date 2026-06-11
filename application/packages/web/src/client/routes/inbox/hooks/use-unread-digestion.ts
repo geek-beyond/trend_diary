@@ -1,5 +1,5 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
@@ -130,22 +130,22 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
 
   const currentArticle = queue[0] ?? null
 
-  const consumeCurrent = useCallback(() => {
+  const consumeCurrent = () => {
     completionTriggeredByActionRef.current = true
     setRemaining((prev) => Math.max(0, prev - 1))
     setQueue((prev) => prev.slice(1))
-  }, [])
+  }
 
   // 取得状態はSWRのisValidatingで持つので、失敗・同一応答でもローディングに固定化しない
-  const fetchNextBatchIfNeeded = useCallback(() => {
+  const fetchNextBatchIfNeeded = () => {
     if (queue.length === 1 && remaining > 1) {
       void mutate().catch(() => {
         // 失敗時は次のrevalidate（フォーカス復帰等）で回復する
       })
     }
-  }, [queue.length, remaining, mutate])
+  }
 
-  const handleSkip = useCallback(async () => {
+  const handleSkip = async () => {
     if (!currentArticle) return
     setIsActionLoading(true)
 
@@ -168,9 +168,9 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     } finally {
       setIsActionLoading(false)
     }
-  }, [client.articles, currentArticle, consumeCurrent, fetchNextBatchIfNeeded])
+  }
 
-  const handleRead = useCallback(async () => {
+  const handleRead = async () => {
     if (!currentArticle) return
     setIsActionLoading(true)
 
@@ -184,15 +184,15 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     } finally {
       setIsActionLoading(false)
     }
-  }, [currentArticle, markAsRead, consumeCurrent, fetchNextBatchIfNeeded])
+  }
 
-  const handleLater = useCallback(() => {
+  const handleLater = () => {
     setQueue((prev) => {
       if (prev.length <= 1) return prev
       const [head, ...rest] = prev
       return [...rest, head]
     })
-  }, [])
+  }
 
   return {
     // 次バッチ取得中はキューが空。記事表示中のフォーカス再検証ではローディングを出さない

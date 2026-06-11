@@ -44,13 +44,12 @@ runs:
       run: |
         set -euo pipefail
         mkdir -p ~/.cache
-        images="$(docker images --filter 'reference=public.ecr.aws/supabase/*' --format '{{.Repository}}:{{.Tag}}')"
-        if [[ -z "$images" ]]; then
+        mapfile -t images < <(docker images --filter 'reference=public.ecr.aws/supabase/*' --format '{{.Repository}}:{{.Tag}}')
+        if [[ ${#images[@]} -eq 0 ]]; then
           echo "::warning::キャッシュ対象のSupabaseイメージが見つかりませんでした"
           exit 0
         fi
-        # shellcheck disable=SC2086
-        docker save $images -o ~/.cache/supabase-docker-images.tar
+        docker save -o ~/.cache/supabase-docker-images.tar "${images[@]}"
 
     - name: Supabaseのキーを環境変数に設定
       id: get-keys

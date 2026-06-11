@@ -13,9 +13,7 @@
   "ignorePatterns": [
     "**/dist/**",
     "**/build/**",
-    "**/.react-router/**",
-    "**/coverage/**",
-    "**/migrations/meta/**"
+    "**/coverage/**"
   ],
   "rules": {
     "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }],

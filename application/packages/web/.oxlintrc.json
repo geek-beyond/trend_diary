@@ -27,12 +27,12 @@
                   "@trend-diary/notification",
                   "@trend-diary/notification/*"
                 ],
-                "message": "client から server 専用パッケージ(datastore/notification)は import できません。Hono API 経由で参照してください。"
+                "message": "Client code must not import server-only packages (datastore/notification). Access them via the Hono API instead."
               },
               {
                 "group": ["@trend-diary/domain", "@trend-diary/domain/*"],
                 "importNamePattern": "^create\\w*UseCase$",
-                "message": "client からドメインのユースケースファクトリ(create*UseCase)は import できません。ミドルウェア(レート制限・CSRF等)を効かせるため Hono API 経由で呼んでください。"
+                "message": "Client code must not import domain use-case factories (create*UseCase). Call them via the Hono API so middleware (rate limiting, CSRF, etc.) is applied."
               }
             ]
           }

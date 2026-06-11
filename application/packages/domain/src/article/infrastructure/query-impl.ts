@@ -89,10 +89,8 @@ interface DateRange {
   toDateExclusive?: Date
 }
 
-// 未読は1日1000件超になり得るため一覧は分割取得する。read/skip済みはWHERE条件で
-// 除外されるので、消化が進むほど次の取得が自然と「続き」になりオフセットは不要。
-// 1件ずつ消化するUIでは読了の合間に次バッチを取れば足りるため、転送量と再取得頻度の
-// 釣り合いからこの値とする
+// 一覧を分割取得しペイロードを有界化する上限。read/skip済みはWHEREで除外されるため、
+// 再取得は自然と続きになりオフセットは不要
 const UNREAD_DIGESTION_LIMIT = 100
 
 type NormalizedDateTimeColumn = 'created_at' | 'rh.read_at' | 'sa.created_at'

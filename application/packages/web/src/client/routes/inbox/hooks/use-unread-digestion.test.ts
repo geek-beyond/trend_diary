@@ -236,6 +236,32 @@ describe('useUnreadDigestion', () => {
     expect(result.current.isJustCompleted).toBe(false)
   })
 
+  it('次バッチ取得が同一応答(SWRが更新しない)でもローディングに固定化しない', async () => {
+    // 再取得結果がdeep-equalだとSWRはdataを更新せず[data]効果が再実行されない。
+    // ローディングをSWRのisValidatingで持つことで、それでも固定化しないことを保証する
+    mockUnreadDigestionGet.mockResolvedValue({
+      data: [baseArticle],
+      total: 2,
+    })
+    mockSkipPost.mockResolvedValue({
+      status: 201,
+    })
+
+    const { result } = renderHook(() => useUnreadDigestion(true, null), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.currentArticle?.articleId).toBe('article-1')
+    })
+
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+  })
+
   it('既読APIが失敗したらキューを消化しない', async () => {
     mockMarkAsRead.mockResolvedValue(false)
     mockUnreadDigestionGet.mockResolvedValue({

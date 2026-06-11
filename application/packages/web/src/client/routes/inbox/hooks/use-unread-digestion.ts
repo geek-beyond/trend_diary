@@ -47,77 +47,58 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
   // バッチ件数ではなく未読総数。残件表示と完了判定の基準にする
   const [remaining, setRemaining] = useState(0)
   const [isActionLoading, setIsActionLoading] = useState(false)
-  // キュー枯渇後に次バッチを取得している間。空表示と完了演出を抑止する
-  const [isFetchingNextBatch, setIsFetchingNextBatch] = useState(false)
   const [isJustCompleted, setIsJustCompleted] = useState(false)
-  const previousRemainingRef = useRef<number | null>(null)
   const completionTriggeredByActionRef = useRef(false)
-  const nextBatchRequestedRef = useRef(false)
 
   const swrKey = enabled ? ['api/articles/unread-digestion', selectedMedia] : null
-  const { data, isLoading, mutate } = useSWR<UnreadDigestionResponse>(swrKey, async () => {
-    const query = selectedMedia ? { media: selectedMedia } : {}
-    const result = await apiCall<UnreadDigestionResponse>(() =>
-      client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
-    )
+  const { data, isLoading, isValidating, mutate } = useSWR<UnreadDigestionResponse>(
+    swrKey,
+    async () => {
+      const query = selectedMedia ? { media: selectedMedia } : {}
+      const result = await apiCall<UnreadDigestionResponse>(() =>
+        client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
+      )
 
-    if (!result) {
-      throw new Error('未読消化データの取得に失敗しました')
-    }
+      if (!result) {
+        throw new Error('未読消化データの取得に失敗しました')
+      }
 
-    return {
-      data: result.data.map((article) => ({
-        ...article,
-        createdAt: new Date(article.createdAt),
-      })),
-      total: result.total,
-    }
-  })
+      return {
+        data: result.data.map((article) => ({
+          ...article,
+          createdAt: new Date(article.createdAt),
+        })),
+        total: result.total,
+      }
+    },
+  )
 
   useEffect(() => {
     if (!data) return
 
     completionTriggeredByActionRef.current = false
-    nextBatchRequestedRef.current = false
-    setIsFetchingNextBatch(false)
     // 取得のたびにサーバ総数へ同期し、消化中の楽観的減算のズレを補正する
     setRemaining(data.total)
     setQueue(data.data)
   }, [data])
 
   useEffect(() => {
-    const count = remaining
-    const previousCount = previousRemainingRef.current
-    const reachedZeroByAction =
-      previousCount !== null &&
-      previousCount > 0 &&
-      count === 0 &&
-      completionTriggeredByActionRef.current
-    const shouldPlayCompletion = reachedZeroByAction || (count === 0 && hasCompletionPending())
+    // 完了演出はサーバ未読総数が操作によって0に達した時だけ出す。
+    // 「操作で消化した」事実は completionTriggeredByActionRef が持ち、
+    // それが立つのは表示中の記事を消化した時＝直前まで remaining>0 だった時に限る
+    const reachedZeroByAction = remaining === 0 && completionTriggeredByActionRef.current
+    const shouldPlayCompletion = reachedZeroByAction || (remaining === 0 && hasCompletionPending())
 
     if (shouldPlayCompletion && document.visibilityState === 'visible') {
       setIsJustCompleted(true)
       setCompletionPending(false)
     } else if (reachedZeroByAction) {
-      // 別タブで読了中はタブが非表示。復帰時に演出を再生するため保留にする
+      // 操作直後にタブが非表示（別タブで読了等）なら、復帰時に演出を再生するため保留にする
       setCompletionPending(true)
     }
 
-    previousRemainingRef.current = count
     completionTriggeredByActionRef.current = false
   }, [remaining])
-
-  useEffect(() => {
-    // ローカルのバッチを消化しきっても未読が残っていれば続きを取得する。
-    // キューが0になるのはread/skipのみ（「後で」は回転のみ）
-    if (queue.length !== 0) return
-    if (remaining <= 0) return
-    if (nextBatchRequestedRef.current) return
-
-    nextBatchRequestedRef.current = true
-    setIsFetchingNextBatch(true)
-    void mutate()
-  }, [queue.length, remaining, mutate])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -155,6 +136,17 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     setQueue((prev) => prev.slice(1))
   }, [])
 
+  // 表示中が現バッチ最後の1件で、かつサーバ未読がまだ残るなら次バッチを取得する。
+  // read/skip済みはWHEREで除外されるため再取得は自然と続きになる。
+  // 取得状態はSWRのisValidatingで持つので、失敗・同一応答でもローディングに固定化しない
+  const fetchNextBatchIfNeeded = useCallback(() => {
+    if (queue.length === 1 && remaining > 1) {
+      void mutate().catch(() => {
+        // 失敗時は次のrevalidate（フォーカス復帰等）で回復する
+      })
+    }
+  }, [queue.length, remaining, mutate])
+
   const handleSkip = useCallback(async () => {
     if (!currentArticle) return
     setIsActionLoading(true)
@@ -172,12 +164,13 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
       }
 
       consumeCurrent()
+      fetchNextBatchIfNeeded()
     } catch (_error) {
       toast.error(SkipErrorMessage)
     } finally {
       setIsActionLoading(false)
     }
-  }, [client.articles, currentArticle, consumeCurrent])
+  }, [client.articles, currentArticle, consumeCurrent, fetchNextBatchIfNeeded])
 
   const handleRead = useCallback(async () => {
     if (!currentArticle) return
@@ -189,10 +182,11 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
       if (!isReadSuccess) return
 
       consumeCurrent()
+      fetchNextBatchIfNeeded()
     } finally {
       setIsActionLoading(false)
     }
-  }, [currentArticle, markAsRead, consumeCurrent])
+  }, [currentArticle, markAsRead, consumeCurrent, fetchNextBatchIfNeeded])
 
   const handleLater = useCallback(() => {
     setQueue((prev) => {
@@ -203,7 +197,8 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
   }, [])
 
   return {
-    isLoading: isLoading || isActionLoading || isFetchingNextBatch,
+    // 次バッチ取得中はキューが空。記事表示中のフォーカス再検証ではローディングを出さない
+    isLoading: isLoading || isActionLoading || (isValidating && queue.length === 0),
     isJustCompleted,
     currentArticle,
     remainingCount: remaining,

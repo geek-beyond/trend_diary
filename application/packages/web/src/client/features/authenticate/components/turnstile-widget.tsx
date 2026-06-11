@@ -61,5 +61,5 @@ export const TurnstileWidget = ({ siteKey }: Props) => {
     }
   }, [siteKey])
 
-  return <div ref={containerRef} data-testid='turnstile-widget' />
+  return <div ref={containerRef} />
 }

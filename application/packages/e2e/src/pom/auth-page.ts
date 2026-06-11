@@ -10,8 +10,6 @@ export class AuthPage {
   private readonly signupConflictErrorText: Locator
   private readonly trendsPageText: Locator
   private readonly readStatusFilter: Locator
-  private readonly turnstileWidget: Locator
-  private readonly captchaTokenInput: Locator
 
   constructor(private readonly page: Page) {
     this.emailInput = page.getByLabel('メールアドレス')
@@ -22,8 +20,6 @@ export class AuthPage {
     this.signupConflictErrorText = page.getByText('このメールアドレスは既に使用されています')
     this.trendsPageText = page.getByText('絞り込み')
     this.readStatusFilter = page.getByRole('button', { name: '未読のみ' })
-    this.turnstileWidget = page.getByTestId('turnstile-widget')
-    this.captchaTokenInput = page.locator('input[name="cf-turnstile-response"]')
   }
 
   async gotoSignup(): Promise<void> {
@@ -36,7 +32,6 @@ export class AuthPage {
 
   async submitSignup(email: string, password: string): Promise<'redirected-to-login' | 'stayed'> {
     await this.fillCredentials(email, password)
-    await this.waitForCaptchaToken()
     await this.signupButton.click()
 
     return Promise.race([
@@ -56,17 +51,7 @@ export class AuthPage {
 
   async submitLogin(email: string, password: string): Promise<void> {
     await this.fillCredentials(email, password)
-    await this.waitForCaptchaToken()
     await this.loginButton.click()
-  }
-
-  // トークン取得前に送信するとサーバーがcaptchaRequiredで弾きフォームに留まるため、
-  // Turnstileウィジェットがhidden inputへトークンを挿入し終えるまで待つ
-  private async waitForCaptchaToken(): Promise<void> {
-    // Turnstile未設定の環境ではウィジェットが描画されず待機対象が存在しないためスキップする
-    if ((await this.turnstileWidget.count()) === 0) return
-
-    await expect(this.captchaTokenInput).toHaveValue(/.+/, { timeout: AUTH_FLOW_TIMEOUT })
   }
 
   async expectSignupConflictError(): Promise<void> {

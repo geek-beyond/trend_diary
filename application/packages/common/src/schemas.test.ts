@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-
 import { createdAt, updatedAt } from './schemas'
 
 interface TestCase {

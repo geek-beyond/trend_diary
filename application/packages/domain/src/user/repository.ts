@@ -1,7 +1,6 @@
 import type { ClientError, ServerError } from '@trend-diary/common/errors'
 import type { Nullable } from '@trend-diary/common/types/utility'
 import { type Result } from 'neverthrow'
-
 import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,

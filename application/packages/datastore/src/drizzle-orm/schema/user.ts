@@ -5,7 +5,9 @@ import { dateTime } from './datetime'
 
 export const users = sqliteTable('users', {
   userId: integer('user_id').primaryKey({ autoIncrement: true }),
-  createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: dateTime('created_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
 })
 
 export const activeUsers = sqliteTable(
@@ -15,7 +17,9 @@ export const activeUsers = sqliteTable(
     email: text('email').notNull(),
     displayName: text('display_name'),
     authenticationId: text('authentication_id').notNull(),
-    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
     updatedAt: dateTime('updated_at').notNull(),
     userId: integer('user_id')
       .notNull()
@@ -34,9 +38,13 @@ export const bannedUsers = sqliteTable(
     userId: integer('user_id')
       .notNull()
       .references(() => users.userId, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    bannedAt: dateTime('banned_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    bannedAt: dateTime('banned_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
     reason: text('reason'),
-    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [uniqueIndex('banned_users_user_id_key').on(table.userId)],
 )
@@ -48,7 +56,9 @@ export const leavedUsers = sqliteTable(
       .notNull()
       .references(() => users.userId, { onDelete: 'cascade', onUpdate: 'cascade' }),
     reason: text('reason'),
-    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [uniqueIndex('leaved_users_user_id_key').on(table.userId)],
 )

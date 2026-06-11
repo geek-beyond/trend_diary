@@ -88,20 +88,18 @@ export default class CommandImpl implements Command {
           .from(articles)
           .where(eq(articles.articleId, dbArticleId))
           .limit(1),
-        this.db
-          .delete(readHistories)
-          .where(
-            and(
-              eq(readHistories.activeUserId, dbActiveUserId),
-              eq(readHistories.articleId, dbArticleId),
-              exists(
-                this.db
-                  .select({ one: sql`1` })
-                  .from(articles)
-                  .where(eq(articles.articleId, dbArticleId)),
-              ),
+        this.db.delete(readHistories).where(
+          and(
+            eq(readHistories.activeUserId, dbActiveUserId),
+            eq(readHistories.articleId, dbArticleId),
+            exists(
+              this.db
+                .select({ one: sql`1` })
+                .from(articles)
+                .where(eq(articles.articleId, dbArticleId)),
             ),
           ),
+        ),
       ]),
     )
     if (result.isErr()) {

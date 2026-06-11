@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-
 import {
   DEFAULT_LIMIT,
   DEFAULT_MOBILE_LIMIT,

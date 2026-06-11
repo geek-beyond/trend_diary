@@ -1,7 +1,7 @@
 {
   "editor.tabSize": 2,
   "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "always"
+    "source.fixAll.oxc": "always"
   },
   // 参考: https://zenn.dev/prog_hallelujah/articles/b57ddf2c6763ce
   "github.copilot.chat.commitMessageGeneration.instructions": [
@@ -20,19 +20,15 @@
   ],
   "[typescript]": {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[typescriptreact]": {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[json]": {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[yaml]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "cSpell.words": ["qiita", "sonner", "Supabase", "Timestamptz", "zenn"],
   "[markdown]": {
@@ -43,7 +39,7 @@
       "other": "on"
     },
     "editor.snippetSuggestions": "top",
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "deno.enable": true,
   "deno.enablePaths": ["supabase"],
@@ -62,7 +58,5 @@
     "fs",
     "http",
     "net"
-  ],
-  // なんか知らんけど、VSCodeが認識しないことがあるため
-  "biome.lsp.bin": "./node_modules/.bin/biome"
+  ]
 }

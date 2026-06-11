@@ -50,22 +50,26 @@ export default function useAuthSubmit({
       return
     }
 
+    // onSuccessの画面遷移完了までボタンを無効に保ち、遷移待ちの隙間での二重送信を防ぐ
     setIsSubmitting(true)
-    const result = await wrapAsyncCall(() =>
-      post({ email: validation.data.email, password: validation.data.password, captchaToken }),
-    )
-    setIsSubmitting(false)
+    try {
+      const result = await wrapAsyncCall(() =>
+        post({ email: validation.data.email, password: validation.data.password, captchaToken }),
+      )
 
-    if (result.isErr()) {
-      setFormError(AUTH_ERROR_MESSAGES.unexpected)
-      return
-    }
-    if (!result.value.ok) {
-      setFormError(resolveErrorMessage(result.value.status))
-      return
-    }
+      if (result.isErr()) {
+        setFormError(AUTH_ERROR_MESSAGES.unexpected)
+        return
+      }
+      if (!result.value.ok) {
+        setFormError(resolveErrorMessage(result.value.status))
+        return
+      }
 
-    await onSuccess()
+      await onSuccess()
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return { isSubmitting, errors, formError, submit }

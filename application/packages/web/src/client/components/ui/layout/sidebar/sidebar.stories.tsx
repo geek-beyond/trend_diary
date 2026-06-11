@@ -45,13 +45,8 @@ export const Default: Story = {
   },
   beforeEach: setDefaultMock,
   play: async ({ canvas }) => {
-    // サイドバーのヘッダー要素が存在することを確認
     await expect(canvas.getByText('TrendDiary')).toBeInTheDocument()
-
-    // メニュー項目が表示されることを確認
     await expect(canvas.getByText('トレンド記事')).toBeInTheDocument()
-
-    // ログアウトボタンが表示されることを確認
     await expect(canvas.getByText('ログアウト')).toBeInTheDocument()
   },
 }
@@ -62,11 +57,9 @@ export const InteractiveLogout: Story = {
   },
   beforeEach: setDefaultMock,
   play: async ({ canvas }) => {
-    // ログアウトボタンをクリック
     const logoutButton = canvas.getByText('ログアウト')
     await expect(logoutButton).toBeInTheDocument()
 
-    // ボタンがクリック可能であることを確認
     await userEvent.click(logoutButton)
   },
 }
@@ -76,17 +69,14 @@ export const LoadingState: Story = {
     isLoggedIn: true,
   },
   beforeEach: () => {
-    // ローディング状態のモックを設定
     vi.mocked(useLogout).mockReturnValue({
       handleLogout: vi.fn(),
       isLoading: true,
     })
   },
   play: async ({ canvas }) => {
-    // ローディング状態のテキストが表示されることを確認
     await expect(canvas.getByText('ログアウト中...')).toBeInTheDocument()
 
-    // ボタンが無効化されていることを確認
     const logoutButton = canvas.getByText('ログアウト中...')
     await expect(logoutButton).toBeDisabled()
   },

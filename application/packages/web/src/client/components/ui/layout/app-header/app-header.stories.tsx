@@ -24,7 +24,6 @@ export const LoggedOut: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByRole('banner', { hidden: true })).toBeInTheDocument()
 
-    // サイトロゴ兼TOPリンクとメニュー開閉ボタンが操作対象として提示される
     await expect(canvas.getByRole('link', { name: 'TrendDiary', hidden: true })).toBeInTheDocument()
     await expect(
       canvas.getByRole('button', { name: 'メニューを開く', hidden: true }),

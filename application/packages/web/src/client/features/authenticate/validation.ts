@@ -4,7 +4,7 @@ import {
   newValidationError,
   newValidationSuccess,
   type ValidationResult,
-} from '@/client/lib/validation'
+} from './validation-result'
 
 // oxlint-disable-next-line typescript/consistent-type-definitions -- Record<string, unknown> 制約を満たすため type エイリアスを使う
 export type AuthenticateErrors = {

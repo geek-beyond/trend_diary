@@ -95,7 +95,7 @@ export default defineConfig(() => {
           'src/test/**',
           'src/client/components/shadcn/**',
           'src/client/routes.ts',
-          'src/server/handler/factory.ts',
+          'src/server/handler-factory.ts',
           'src/client/components/ui/legal',
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',

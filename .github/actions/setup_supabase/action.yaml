@@ -16,13 +16,19 @@ runs:
       with:
         version: ${{ inputs.cli-version }}
 
+    - name: Dockerイメージレジストリの解決
+      id: registry
+      shell: bash
+      # キャッシュキーと保存フィルタで同一レジストリを使うための単一の真実源。SUPABASE_INTERNAL_IMAGE_REGISTRYはworkflowでenv宣言されずenvコンテキストでは解決できないため、実際のOS環境変数を読むbashで解決する
+      run: echo "value=${SUPABASE_INTERNAL_IMAGE_REGISTRY:-public.ecr.aws}" >> "$GITHUB_OUTPUT"
+
     - name: Dockerイメージキャッシュの復元
       id: image-cache
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: ~/.cache/supabase-docker-images.tar
-        # CLIバージョンが同じならtagも同一でリポジトリ全体（mainのキャッシュ）を共有できるため、ブランチ非依存の静的キーにする
-        key: supabase-docker-images-${{ runner.os }}-${{ inputs.cli-version }}
+        # CLIバージョンが同じならtagも同一でリポジトリ全体（mainのキャッシュ）を共有できるため、ブランチ非依存の静的キーにする。レジストリが異なるとtarのイメージtagも変わり復元しても使えないためキーに含めて分離する
+        key: supabase-docker-images-${{ runner.os }}-${{ inputs.cli-version }}-${{ steps.registry.outputs.value }}
 
     - name: キャッシュ済みDockerイメージの読み込み
       # ヒット時はここで読み込んでおくとsupabase startがレジストリからpullせず起動が速くなる
@@ -45,8 +51,7 @@ runs:
         set -euo pipefail
         mkdir -p ~/.cache
         # SUPABASE_INTERNAL_IMAGE_REGISTRYでレジストリを上書きしている場合（このリポジトリはghcr.io）はそのprefixでpullされるため、フィルタも同じレジストリに揃えないと保存対象が空になりキャッシュが一切保存されない
-        registry="${SUPABASE_INTERNAL_IMAGE_REGISTRY:-public.ecr.aws}"
-        mapfile -t images < <(docker images --filter "reference=${registry}/supabase/*" --format '{{.Repository}}:{{.Tag}}')
+        mapfile -t images < <(docker images --filter "reference=${{ steps.registry.outputs.value }}/supabase/*" --format '{{.Repository}}:{{.Tag}}')
         if [[ ${#images[@]} -eq 0 ]]; then
           echo "::warning::キャッシュ対象のSupabaseイメージが見つかりませんでした"
           exit 0

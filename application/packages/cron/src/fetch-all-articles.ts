@@ -2,7 +2,7 @@ import type Logger from '@trend-diary/common/logger'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import type { DiscordWebhookClient } from '@trend-diary/notification'
-import type { Result } from 'neverthrow'
+import { err, type Result } from 'neverthrow'
 import type { CronEnv } from './env'
 import { runScheduledFetch } from './fetch-articles'
 
@@ -45,9 +45,8 @@ export async function fetchAllArticles({
       const mediaStartedAt = Date.now()
       logger.info({ msg: 'cron media fetch started', media })
       // runScheduledFetch はResultを返し原則rejectしないが、想定外の例外も失敗として扱う
-      const result = (await wrapAsyncCall(() => runScheduledFetch(media, env, logger))).andThen(
-        (inner) => inner,
-      )
+      const fetched = await wrapAsyncCall(() => runScheduledFetch(media, env, logger))
+      const result = fetched.isErr() ? err(fetched.error) : fetched.value
       return { media, result, durationMs: Date.now() - mediaStartedAt }
     }),
   )

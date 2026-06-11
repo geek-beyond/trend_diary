@@ -8,7 +8,7 @@ import {
   useLoaderData,
   useNavigation,
 } from 'react-router'
-import { callAuthApi } from '@/client/features/authenticate/auth-api'
+import { postAuthApi } from '@/client/features/authenticate/auth-api'
 import {
   AUTH_ERROR_MESSAGES,
   resolveSignupErrorMessage,
@@ -69,14 +69,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 
   try {
-    const response = await callAuthApi(request, context, {
-      path: '/api/auth/signup',
-      method: 'POST',
-      body: {
-        email: validation.data.email,
-        password: validation.data.password,
-        captchaToken,
-      },
+    const response = await postAuthApi(request, context, '/api/auth/signup', {
+      email: validation.data.email,
+      password: validation.data.password,
+      captchaToken,
     })
 
     if (!response.ok) {

@@ -1,12 +1,12 @@
 import type { LoaderFunctionArgs } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { callAuthApi } from '@/client/features/authenticate/auth-api'
+import { getAuthSession } from '@/client/features/authenticate/auth-api'
 import { loader } from './app-layout'
 
 vi.mock('@/client/features/authenticate/auth-api', async (importOriginal) => {
   // buildSetCookieHeaders は純粋関数のため実体を使い、API呼び出しのみ差し替える
   const actual = await importOriginal<typeof import('@/client/features/authenticate/auth-api')>()
-  return { ...actual, callAuthApi: vi.fn() }
+  return { ...actual, getAuthSession: vi.fn() }
 })
 
 // importOriginal経由でserver側のモジュールグラフが評価されるとclientのカバレッジ分母に入ってしまうため遮断する
@@ -33,23 +33,20 @@ function buildResponse(status: number, setCookies: string[] = []): Response {
 
 describe('app-layout loader', () => {
   beforeEach(() => {
-    vi.mocked(callAuthApi).mockReset()
+    vi.mocked(getAuthSession).mockReset()
   })
 
   it('GET /api/auth/me をAPI経由で呼び出してセッションを確認する', async () => {
-    vi.mocked(callAuthApi).mockResolvedValue(buildResponse(200))
+    vi.mocked(getAuthSession).mockResolvedValue(buildResponse(200))
     const args = buildLoaderArgs()
 
     await loader(args)
 
-    expect(callAuthApi).toHaveBeenCalledWith(args.request, args.context, {
-      path: '/api/auth/me',
-      method: 'GET',
-    })
+    expect(getAuthSession).toHaveBeenCalledWith(args.request, args.context)
   })
 
   it('APIが200を返した場合はisLoggedInがtrueになる', async () => {
-    vi.mocked(callAuthApi).mockResolvedValue(buildResponse(200))
+    vi.mocked(getAuthSession).mockResolvedValue(buildResponse(200))
 
     const result = await loader(buildLoaderArgs())
 
@@ -61,7 +58,7 @@ describe('app-layout loader', () => {
     { status: 401 },
     { status: 404 },
   ])('APIが$statusを返した場合はisLoggedInがfalseになる', async ({ status }) => {
-    vi.mocked(callAuthApi).mockResolvedValue(buildResponse(status))
+    vi.mocked(getAuthSession).mockResolvedValue(buildResponse(status))
 
     const result = await loader(buildLoaderArgs())
 
@@ -69,7 +66,7 @@ describe('app-layout loader', () => {
   })
 
   it('セッション更新で付与されたSet-Cookieヘッダーがレスポンスに転送される', async () => {
-    vi.mocked(callAuthApi).mockResolvedValue(
+    vi.mocked(getAuthSession).mockResolvedValue(
       buildResponse(200, ['sb-access-token=refreshed; Path=/']),
     )
 
@@ -83,7 +80,7 @@ describe('app-layout loader', () => {
   })
 
   it('API呼び出しで例外が発生した場合はisLoggedInがfalseにフォールバックする', async () => {
-    vi.mocked(callAuthApi).mockRejectedValue(new Error('Supabase auth is not configured.'))
+    vi.mocked(getAuthSession).mockRejectedValue(new Error('Supabase auth is not configured.'))
 
     const result = await loader(buildLoaderArgs())
 

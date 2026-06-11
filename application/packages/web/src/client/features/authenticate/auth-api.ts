@@ -1,11 +1,7 @@
 import type { AppLoadContext } from 'react-router'
 import app from '@/server'
 
-interface AuthApiInput {
-  path: '/api/auth/login' | '/api/auth/signup' | '/api/auth/me'
-  method: 'GET' | 'POST'
-  body?: Record<string, unknown>
-}
+type AuthPostPath = '/api/auth/login' | '/api/auth/signup'
 
 /**
  * フォーム由来のリクエストをJSONへ変換すると hono/csrf の検査対象（フォーム系Content-Type）から
@@ -20,35 +16,52 @@ function isCrossSiteFormPost(request: Request): boolean {
   return request.headers.get('Origin') !== new URL(request.url).origin
 }
 
+// 相対パスのままだとin-process呼び出しのリクエストURLが元リクエストのoriginを失うため絶対URL化する
+function toApiUrl(path: string, request: Request): URL {
+  return new URL(path, request.url)
+}
+
+// Cookie / CF-Connecting-IP 等を引き継がないと、API側の認証・レート制限が正しく動作しない
+function buildForwardHeaders(request: Request): Headers {
+  const headers = new Headers(request.headers)
+  // 元リクエスト（フォーム）のボディ長が残っているとJSONボディと食い違うため取り除く
+  headers.delete('Content-Length')
+  return headers
+}
+
 /**
- * rateLimiter・zodValidatorといったAPI側のミドルウェアを本番経路（action/loader）にも
+ * rateLimiter・zodValidatorといったAPI側のミドルウェアを本番経路（action）にも
  * 適用するため、ユースケースを直接呼ばずHono appを経由させる。
  */
-export async function callAuthApi(
+export async function postAuthApi(
   request: Request,
   context: AppLoadContext,
-  { path, method, body }: AuthApiInput,
+  path: AuthPostPath,
+  body: Record<string, unknown>,
 ): Promise<Response> {
-  if (method !== 'GET' && isCrossSiteFormPost(request)) {
+  if (isCrossSiteFormPost(request)) {
     return new Response('Forbidden', { status: 403 })
   }
 
-  // 相対パスのままだとin-process呼び出しのリクエストURLが元リクエストのoriginを失うため絶対URL化する
-  const url = new URL(path, request.url)
-
-  // Cookie / CF-Connecting-IP 等を引き継がないと、API側の認証・レート制限が正しく動作しない
-  const headers = new Headers(request.headers)
+  const headers = buildForwardHeaders(request)
   headers.set('Content-Type', 'application/json')
-  // 元リクエスト（フォーム）のボディ長が残っているとJSONボディと食い違うため取り除く
-  headers.delete('Content-Length')
 
   return app.request(
-    url,
+    toApiUrl(path, request),
     {
-      method,
+      method: 'POST',
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: JSON.stringify(body),
     },
+    context.cloudflare.env,
+  )
+}
+
+// GETは副作用がなくCSRFの対象外のため、同一オリジン検証は行わない
+export async function getAuthSession(request: Request, context: AppLoadContext): Promise<Response> {
+  return app.request(
+    toApiUrl('/api/auth/me', request),
+    { headers: buildForwardHeaders(request) },
     context.cloudflare.env,
   )
 }

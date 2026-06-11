@@ -1,13 +1,13 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { callAuthApi } from '@/client/features/authenticate/auth-api'
+import { postAuthApi } from '@/client/features/authenticate/auth-api'
 import { resolveTurnstileSiteKey } from '@/client/features/authenticate/turnstile'
 import { action, loader, meta } from './route'
 
 vi.mock('@/client/features/authenticate/auth-api', async (importOriginal) => {
   // buildSetCookieHeaders は純粋関数のため実体を使い、API呼び出しのみ差し替える
   const actual = await importOriginal<typeof import('@/client/features/authenticate/auth-api')>()
-  return { ...actual, callAuthApi: vi.fn() }
+  return { ...actual, postAuthApi: vi.fn() }
 })
 
 // importOriginal経由でserver側のモジュールグラフが評価されるとclientのカバレッジ分母に入ってしまうため遮断する
@@ -72,7 +72,7 @@ const validForm = { email: 'test@example.com', password: 'Password1!' }
 
 describe('login action', () => {
   beforeEach(() => {
-    vi.mocked(callAuthApi).mockReset()
+    vi.mocked(postAuthApi).mockReset()
     vi.mocked(resolveTurnstileSiteKey).mockReset()
     vi.mocked(resolveTurnstileSiteKey).mockReturnValue(undefined)
   })
@@ -84,7 +84,7 @@ describe('login action', () => {
       throw new Error('action must return field errors')
     }
     expect(result.errors).toBeDefined()
-    expect(callAuthApi).not.toHaveBeenCalled()
+    expect(postAuthApi).not.toHaveBeenCalled()
   })
 
   it('CAPTCHA有効時にトークンなしで送信した場合はformErrorを返しAPIを呼ばない', async () => {
@@ -96,27 +96,26 @@ describe('login action', () => {
       throw new Error('action must return a form error')
     }
     expect(result.formError).toBe('セキュリティ認証を完了してください。')
-    expect(callAuthApi).not.toHaveBeenCalled()
+    expect(postAuthApi).not.toHaveBeenCalled()
   })
 
   it('フォームの値をJSONボディとしてPOST /api/auth/loginへ送る', async () => {
     vi.mocked(resolveTurnstileSiteKey).mockReturnValue('site-key')
-    vi.mocked(callAuthApi).mockResolvedValue(buildResponse(200))
+    vi.mocked(postAuthApi).mockResolvedValue(buildResponse(200))
     const args = buildActionArgs(
       buildFormData({ ...validForm, 'cf-turnstile-response': 'captcha-token' }),
     )
 
     await action(args)
 
-    expect(callAuthApi).toHaveBeenCalledWith(args.request, args.context, {
-      path: '/api/auth/login',
-      method: 'POST',
-      body: { ...validForm, captchaToken: 'captcha-token' },
+    expect(postAuthApi).toHaveBeenCalledWith(args.request, args.context, '/api/auth/login', {
+      ...validForm,
+      captchaToken: 'captcha-token',
     })
   })
 
   it('ログイン成功時はAPIのSet-Cookieを転送して/trendsへリダイレクトする', async () => {
-    vi.mocked(callAuthApi).mockResolvedValue(
+    vi.mocked(postAuthApi).mockResolvedValue(
       buildResponse(200, ['sb-access-token=access; Path=/', 'sb-refresh-token=refresh; Path=/']),
     )
 
@@ -142,7 +141,7 @@ describe('login action', () => {
     },
     { status: 500, expected: 'サーバーエラーが発生しました。時間をおいて再度お試しください。' },
   ])('APIが$statusを返した場合はformError「$expected」を返す', async ({ status, expected }) => {
-    vi.mocked(callAuthApi).mockResolvedValue(buildResponse(status))
+    vi.mocked(postAuthApi).mockResolvedValue(buildResponse(status))
 
     const result = await action(buildActionArgs(buildFormData(validForm)))
 
@@ -153,7 +152,7 @@ describe('login action', () => {
   })
 
   it('API呼び出しで例外が発生した場合は汎用エラーメッセージを返す', async () => {
-    vi.mocked(callAuthApi).mockRejectedValue(new Error('network error'))
+    vi.mocked(postAuthApi).mockRejectedValue(new Error('network error'))
 
     const result = await action(buildActionArgs(buildFormData(validForm)))
 

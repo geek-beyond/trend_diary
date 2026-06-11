@@ -1,7 +1,7 @@
 import type { AppLoadContext } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Env } from '@/env'
-import { buildSetCookieHeaders, callAuthApi } from './auth-api'
+import { buildSetCookieHeaders, getAuthSession, postAuthApi } from './auth-api'
 
 const { appRequest } = vi.hoisted(() => ({ appRequest: vi.fn() }))
 
@@ -30,29 +30,37 @@ function buildContext(env: Env['Bindings']): AppLoadContext {
   return { cloudflare: { env } }
 }
 
-describe('callAuthApi', () => {
+describe('postAuthApi', () => {
   beforeEach(() => {
     appRequest.mockReset()
     appRequest.mockResolvedValue(new Response(null, { status: 200 }))
   })
 
-  it('元リクエストのoriginで絶対URL化したURLでHono appを呼び出す', async () => {
+  it('元リクエストのoriginで絶対URL化したURLへ、bodyをJSONとしてPOSTする', async () => {
     const request = new Request('https://trend-diary.example/login', {
       method: 'POST',
       headers: { Origin: 'https://trend-diary.example' },
     })
+    const env = buildEnv()
 
-    await callAuthApi(request, buildContext(buildEnv()), {
-      path: '/api/auth/login',
-      method: 'POST',
-      body: { email: 'test@example.com' },
+    await postAuthApi(request, buildContext(env), '/api/auth/login', {
+      email: 'test@example.com',
+      password: 'Password1!',
+      captchaToken: 'captcha',
     })
 
-    const [url] = appRequest.mock.calls[0]
+    const [url, init, passedEnv] = appRequest.mock.calls[0]
     expect(String(url)).toBe('https://trend-diary.example/api/auth/login')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body)).toEqual({
+      email: 'test@example.com',
+      password: 'Password1!',
+      captchaToken: 'captcha',
+    })
+    expect(passedEnv).toBe(env)
   })
 
-  it('Cookie・Origin等の元リクエストヘッダーを転送し、Content-TypeをJSONに差し替える', async () => {
+  it('Cookie・CF-Connecting-IP等の元リクエストヘッダーを転送し、Content-TypeをJSONに差し替える', async () => {
     const request = new Request('https://trend-diary.example/login', {
       method: 'POST',
       headers: {
@@ -64,55 +72,19 @@ describe('callAuthApi', () => {
       },
     })
 
-    await callAuthApi(request, buildContext(buildEnv()), {
-      path: '/api/auth/login',
-      method: 'POST',
-      body: { email: 'test@example.com' },
+    await postAuthApi(request, buildContext(buildEnv()), '/api/auth/login', {
+      email: 'test@example.com',
     })
 
     const [, init] = appRequest.mock.calls[0]
     const headers = new Headers(init.headers)
     expect(headers.get('Cookie')).toBe('sb-access-token=token')
-    expect(headers.get('Origin')).toBe('https://trend-diary.example')
     expect(headers.get('CF-Connecting-IP')).toBe('203.0.113.1')
     expect(headers.get('Content-Type')).toBe('application/json')
     expect(headers.get('Content-Length')).toBeNull()
   })
 
-  it('bodyをJSON文字列として送信し、envをHono appの第3引数に渡す', async () => {
-    const request = new Request('https://trend-diary.example/login', {
-      method: 'POST',
-      headers: { 'Sec-Fetch-Site': 'same-origin' },
-    })
-    const env = buildEnv()
-
-    await callAuthApi(request, buildContext(env), {
-      path: '/api/auth/login',
-      method: 'POST',
-      body: { email: 'test@example.com', password: 'Password1!', captchaToken: 'captcha' },
-    })
-
-    const [, init, passedEnv] = appRequest.mock.calls[0]
-    expect(init.method).toBe('POST')
-    expect(JSON.parse(init.body)).toEqual({
-      email: 'test@example.com',
-      password: 'Password1!',
-      captchaToken: 'captcha',
-    })
-    expect(passedEnv).toBe(env)
-  })
-
-  it('bodyを指定しない場合はボディなしのリクエストを送る', async () => {
-    const request = new Request('https://trend-diary.example/trends')
-
-    await callAuthApi(request, buildContext(buildEnv()), { path: '/api/auth/me', method: 'GET' })
-
-    const [, init] = appRequest.mock.calls[0]
-    expect(init.method).toBe('GET')
-    expect(init.body).toBeUndefined()
-  })
-
-  // フォーム→JSON変換でhono/csrfの検査対象から外れるため、ログインCSRFはcallAuthApi自身が遮断する
+  // フォーム→JSON変換でhono/csrfの検査対象から外れるため、ログインCSRFはpostAuthApi自身が遮断する
   describe('クロスサイトリクエストの遮断', () => {
     it('Originが他サイトのPOSTは403を返しAPIを呼ばない', async () => {
       const request = new Request('https://trend-diary.example/login', {
@@ -120,10 +92,8 @@ describe('callAuthApi', () => {
         headers: { Origin: 'https://evil.example' },
       })
 
-      const response = await callAuthApi(request, buildContext(buildEnv()), {
-        path: '/api/auth/login',
-        method: 'POST',
-        body: { email: 'victim@example.com' },
+      const response = await postAuthApi(request, buildContext(buildEnv()), '/api/auth/login', {
+        email: 'victim@example.com',
       })
 
       expect(response.status).toBe(403)
@@ -133,10 +103,8 @@ describe('callAuthApi', () => {
     it('OriginもSec-Fetch-Siteも無いPOSTは403を返しAPIを呼ばない', async () => {
       const request = new Request('https://trend-diary.example/login', { method: 'POST' })
 
-      const response = await callAuthApi(request, buildContext(buildEnv()), {
-        path: '/api/auth/login',
-        method: 'POST',
-        body: { email: 'victim@example.com' },
+      const response = await postAuthApi(request, buildContext(buildEnv()), '/api/auth/login', {
+        email: 'victim@example.com',
       })
 
       expect(response.status).toBe(403)
@@ -149,22 +117,35 @@ describe('callAuthApi', () => {
         headers: { 'Sec-Fetch-Site': 'same-origin' },
       })
 
-      await callAuthApi(request, buildContext(buildEnv()), {
-        path: '/api/auth/login',
-        method: 'POST',
-        body: { email: 'test@example.com' },
+      await postAuthApi(request, buildContext(buildEnv()), '/api/auth/login', {
+        email: 'test@example.com',
       })
 
       expect(appRequest).toHaveBeenCalled()
     })
+  })
+})
 
-    it('GETはOriginが無くても通す（loaderのセッション確認）', async () => {
-      const request = new Request('https://trend-diary.example/trends')
+describe('getAuthSession', () => {
+  beforeEach(() => {
+    appRequest.mockReset()
+    appRequest.mockResolvedValue(new Response(null, { status: 200 }))
+  })
 
-      await callAuthApi(request, buildContext(buildEnv()), { path: '/api/auth/me', method: 'GET' })
-
-      expect(appRequest).toHaveBeenCalled()
+  it('Cookieを転送して/api/auth/meをGETする。副作用がないため同一オリジン検証は行わない', async () => {
+    const request = new Request('https://trend-diary.example/trends', {
+      headers: { Cookie: 'sb-access-token=token' },
     })
+    const env = buildEnv()
+
+    await getAuthSession(request, buildContext(env))
+
+    const [url, init, passedEnv] = appRequest.mock.calls[0]
+    expect(String(url)).toBe('https://trend-diary.example/api/auth/me')
+    const headers = new Headers(init.headers)
+    expect(headers.get('Cookie')).toBe('sb-access-token=token')
+    expect(init.body).toBeUndefined()
+    expect(passedEnv).toBe(env)
   })
 })
 

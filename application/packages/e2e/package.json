@@ -10,7 +10,7 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.76.1",
+    "@supabase/supabase-js": "catalog:",
     "@trend-diary/common": "workspace:*",
     "@trend-diary/datastore": "workspace:*",
     "@trend-diary/domain": "workspace:*",

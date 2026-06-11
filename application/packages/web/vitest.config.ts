@@ -57,7 +57,9 @@ export default defineConfig(() => {
               'vaul',
               'neverthrow',
               'zod',
+              'swr',
               'swr/mutation',
+              'pino',
               'hono/client',
               'storybook/test',
               'storybook/preview-api',
@@ -100,6 +102,11 @@ export default defineConfig(() => {
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',
           'src/client/features/diary/components/login-required.tsx',
+          // Public API バレル経由で storybook バンドルに巻き込まれる非UI資産。
+          // これらは client ユニットテスト側で担保するため storybook カバレッジ母数から除外する
+          'src/client/infrastructure/**',
+          'src/client/features/authenticate/*.ts',
+          'src/client/features/authenticate/hooks/**',
         ],
         // ベタガキしないと、Github Actionsに閾値が反映されない
         thresholds: {

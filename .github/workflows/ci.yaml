@@ -227,8 +227,8 @@ jobs:
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
           SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
-          # wrangler.tomlの本番sitekeyはlocalhost/ヘッドレスで解けずトークンが得られないため、常にpassするテスト用sitekeyで上書きする
-          TURNSTILE_SITE_KEY=1x00000000000000000000AA
+          # 本番sitekeyはheadlessで解けずトークン取得待ちがflakyになる。サーバーはsecret未設定で検証skipのため、空指定でwrangler.tomlの[vars]を上書きしウィジェットごと無効化して整合させる
+          TURNSTILE_SITE_KEY=
           EOF
 
       - name: E2Eテストの実行
@@ -277,8 +277,8 @@ jobs:
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
           SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
           SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
-          # wrangler.tomlの本番sitekeyはlocalhost/ヘッドレスで解けずトークンが得られないため、常にpassするテスト用sitekeyで上書きする
-          TURNSTILE_SITE_KEY=1x00000000000000000000AA
+          # 本番sitekeyはheadlessで解けずトークン取得待ちがflakyになる。サーバーはsecret未設定で検証skipのため、空指定でwrangler.tomlの[vars]を上書きしウィジェットごと無効化して整合させる
+          TURNSTILE_SITE_KEY=
           EOF
 
       - name: E2Eテストの差分実行

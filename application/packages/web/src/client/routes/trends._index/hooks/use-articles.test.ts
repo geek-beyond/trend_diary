@@ -42,7 +42,6 @@ const generateFakeArticle = (params?: Partial<Article>): Article => ({
 
 const mockApiClient = {
   articles: {
-    // biome-ignore lint/style/useNamingConvention: $get is a Hono client method name
     $get: vi.fn(),
   },
 }

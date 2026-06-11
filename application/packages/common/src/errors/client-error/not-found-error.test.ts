@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-
 import ClientError from './client-error'
 import NotFoundError from './not-found-error'
 

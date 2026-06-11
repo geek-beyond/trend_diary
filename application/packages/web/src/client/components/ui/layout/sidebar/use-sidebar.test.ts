@@ -7,7 +7,6 @@ vi.mock('@/client/infrastructure/create-swr-fetcher', () => {
   const mockClient = {
     account: {
       logout: {
-        // biome-ignore lint/style/useNamingConvention: API client property
         $delete: vi.fn(),
       },
     },

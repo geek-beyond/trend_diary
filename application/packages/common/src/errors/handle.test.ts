@@ -1,8 +1,6 @@
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it, vi } from 'vitest'
-
 import type { LoggerType } from '../logger'
-
 import ClientError from './client-error/client-error'
 import ExternalServiceError from './external-service-error'
 import handleError from './handle'

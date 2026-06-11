@@ -1,12 +1,10 @@
-export { AuthenticateForm } from './components/authenticate-form'
-export { default as LogoutButton } from './components/logout-button'
 export {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,
   resolveSignupErrorMessage,
 } from './error-message'
-export { default as useSession, SESSION_SWR_KEY } from './hooks/use-session'
 export { resolveTurnstileSiteKey } from './turnstile'
+export { default as useSession, SESSION_SWR_KEY } from './hooks/use-session'
 export {
   type AuthenticateErrors,
   type AuthenticateFormData,

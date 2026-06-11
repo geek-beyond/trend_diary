@@ -1,4 +1,5 @@
-import { AuthenticateForm, type AuthenticateErrors } from '@/client/features/authenticate'
+import type { AuthenticateErrors } from '@/client/features/authenticate'
+import { AuthenticateForm } from '@/client/features/authenticate/ui'
 import {
   Card,
   CardContent,

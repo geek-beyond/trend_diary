@@ -1,5 +1,5 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
@@ -122,7 +122,7 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
 
   const currentArticle = queue[0] ?? null
 
-  const handleSkip = useCallback(async () => {
+  const handleSkip = async () => {
     if (!currentArticle) return
     setIsActionLoading(true)
 
@@ -145,9 +145,9 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     } finally {
       setIsActionLoading(false)
     }
-  }, [client.articles, currentArticle])
+  }
 
-  const handleRead = useCallback(async () => {
+  const handleRead = async () => {
     if (!currentArticle) return
     setIsActionLoading(true)
 
@@ -166,15 +166,15 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     } finally {
       setIsActionLoading(false)
     }
-  }, [currentArticle, markAsRead, queue.length])
+  }
 
-  const handleLater = useCallback(() => {
+  const handleLater = () => {
     setQueue((prev) => {
       if (prev.length <= 1) return prev
       const [head, ...rest] = prev
       return [...rest, head]
     })
-  }, [])
+  }
 
   return {
     isLoading: isLoading || isActionLoading,

@@ -19,6 +19,13 @@
         "no-restricted-imports": [
           "error",
           {
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["useCallback", "useMemo", "memo"],
+                "message": "Manual memoization is unnecessary because React Compiler applies it automatically. Remove useCallback/useMemo/memo and let the compiler optimize."
+              }
+            ],
             "patterns": [
               {
                 "group": [

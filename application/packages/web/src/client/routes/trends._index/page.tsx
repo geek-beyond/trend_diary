@@ -1,6 +1,6 @@
 import { toJaDateString } from '@trend-diary/common/locale'
 import { ChevronDown, Funnel } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
@@ -66,12 +66,9 @@ export default function TrendsPage({
   const isPrevDisabled = page <= 1
   const isNextDisabled = page >= totalPages
 
-  const handleCardClick = useCallback(
-    (article: Article) => {
-      openDrawer(article)
-    },
-    [openDrawer],
-  )
+  const handleCardClick = (article: Article) => {
+    openDrawer(article)
+  }
 
   const handlePrevPageClick = () => {
     if (!isPrevDisabled) {

@@ -2,7 +2,6 @@ import { addJstDays } from '@trend-diary/common/locale/date'
 import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagination/schema'
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
-import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/daily-summary'
@@ -36,7 +35,7 @@ export default function useAnalytics(enabled: boolean) {
 
   const todayJst = getTodayJst()
   const hasDateResolveError = todayJst === null
-  const availableDates = useMemo(() => (todayJst ? buildAvailableDates(todayJst) : []), [todayJst])
+  const availableDates = todayJst ? buildAvailableDates(todayJst) : []
   const dateParam = searchParams.get('date')
   const pageParam = searchParams.get('page')
 

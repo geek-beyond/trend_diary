@@ -1,5 +1,5 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import getApiClientForClient from '../../../infrastructure/api'
 
@@ -9,7 +9,7 @@ const MarkAsUnreadErrorMessage = '未読に失敗しました'
 export default function useReadArticle() {
   const [isLoading, setIsLoading] = useState(false)
 
-  const markAsRead = useCallback(async (articleId: string): Promise<boolean> => {
+  const markAsRead = async (articleId: string): Promise<boolean> => {
     setIsLoading(true)
 
     const result = await wrapAsyncCall(async () => {
@@ -35,9 +35,9 @@ export default function useReadArticle() {
     }
 
     return true
-  }, [])
+  }
 
-  const markAsUnread = useCallback(async (articleId: string): Promise<boolean> => {
+  const markAsUnread = async (articleId: string): Promise<boolean> => {
     setIsLoading(true)
 
     const result = await wrapAsyncCall(async () => {
@@ -62,7 +62,7 @@ export default function useReadArticle() {
     }
 
     return true
-  }, [])
+  }
 
   return {
     markAsRead,

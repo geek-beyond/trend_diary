@@ -3,7 +3,7 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAuthUseCase } from '@trend-diary/domain/user'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
-import { ZodValidatedContext } from '@/middleware/zod-validator'
+import type { ZodValidatedContext } from '@/middleware/zod-validator'
 
 export default async function login(c: ZodValidatedContext<AuthInput>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)

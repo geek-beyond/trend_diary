@@ -1,4 +1,4 @@
-import { NavigateFunction } from 'react-router'
+import type { NavigateFunction } from 'react-router'
 import { toast } from 'sonner'
 import useSWRMutation from 'swr/mutation'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'

@@ -1,8 +1,7 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import type { D1Database } from '@cloudflare/workers-types'
 import { getPlatformProxy } from 'wrangler'
-
-type D1Database = import('@cloudflare/workers-types').D1Database
 
 interface TestD1 {
   db: D1Database

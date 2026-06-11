@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "react", "jsx-a11y"],
+  "env": {
+    "es2024": true,
+    "node": true,
+    "browser": true
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/build/**",
+    "**/.react-router/**",
+    "**/coverage/**",
+    "**/migrations/meta/**",
+    "packages/web/src/client/components/shadcn/**",
+    "packages/web/src/client/components/customized/**"
+  ],
+  "rules": {
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }],
+    "typescript/consistent-type-imports": "error",
+    "typescript/consistent-type-definitions": ["error", "interface"],
+    "typescript/no-explicit-any": "error",
+    "no-console": "warn",
+    "no-var": "error",
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "no-unused-vars": [
+      "error",
+      { "args": "none", "caughtErrors": "none", "varsIgnorePattern": "^_" }
+    ],
+    "react/react-in-jsx-scope": "off",
+    "jsx-a11y/prefer-tag-over-role": "off"
+  },
+  "overrides": [
+    {
+      "files": ["packages/web/**/*.{ts,tsx}"],
+      "rules": {
+        "react/forbid-elements": ["error", { "forbid": ["a"] }]
+      }
+    }
+  ]
+}

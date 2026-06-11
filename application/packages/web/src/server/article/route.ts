@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { Env } from '@/env'
+import type { Env } from '@/env'
 import { authenticator, optionalAuthenticator } from '@/middleware/authenticator'
 import zodValidator from '@/middleware/zod-validator'
 import getArticles, { apiArticleQuerySchema } from './handler/get-articles'

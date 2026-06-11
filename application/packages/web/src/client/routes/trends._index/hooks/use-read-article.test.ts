@@ -19,8 +19,7 @@ const mockApiClient = {
   },
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: getApiClientForClientの型が面倒なのでanyを使用
-// biome-ignore lint/plugin: Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするためアサーションで橋渡しする
+// oxlint-disable-next-line typescript/no-explicit-any, typescript/consistent-type-assertions -- Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするため any と型アサーションを許可する
 const mockGetApiClientForClient = getApiClientForClient as MockedFunction<any>
 
 describe('useReadArticle', () => {

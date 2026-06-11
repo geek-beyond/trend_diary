@@ -1,3 +1,4 @@
+import type { D1Database } from '@cloudflare/workers-types'
 import * as schema from '@trend-diary/datastore/drizzle-orm/schema'
 import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { drizzle as drizzleProxy } from 'drizzle-orm/sqlite-proxy'
@@ -22,10 +23,8 @@ export const mockRdbExecutor =
 const mockDbProxy = drizzleProxy((sql, params, method) => mockRdbExecutor(sql, params, method), {
   schema,
 })
-// biome-ignore lint/plugin: 本番型(DrizzleD1Database)とsqlite-proxyドライバは型が異なり、テスト用に吸収する手段が他にないためです
+// oxlint-disable-next-line typescript/consistent-type-assertions -- 本番型(DrizzleD1Database)とsqlite-proxyドライバは型が異なり、テスト用に吸収する手段が他にないためです
 const mockDb = mockDbProxy as unknown as RdbClient
-
-type D1Database = import('@cloudflare/workers-types').D1Database
 
 const getRdbClient = vi.fn((_db?: D1Database): RdbClient => mockDb)
 

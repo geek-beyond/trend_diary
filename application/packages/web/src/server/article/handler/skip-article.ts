@@ -3,7 +3,7 @@ import {
   type AuthenticatedRequestContext,
   createAuthenticatedApiHandler,
 } from '@/server/handler/factory'
-import { ArticleIdParam } from './read-article'
+import type { ArticleIdParam } from './read-article'
 
 export default createAuthenticatedApiHandler({
   createUseCase: createArticleUseCase,

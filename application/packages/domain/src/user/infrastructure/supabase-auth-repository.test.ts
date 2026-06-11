@@ -19,7 +19,7 @@ const resolveAuthMock = <T>(
   mockFn: { mockResolvedValue: (value: T) => unknown },
   value: DeepPartial<T>,
 ): void => {
-  // biome-ignore lint/plugin: Supabase SDKの判別共用体な戻り値型を、部分的なモック payload で満たす手段が他にないためです
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- Supabase SDKの判別共用体な戻り値型を、部分的なモック payload で満たす手段が他にないためです
   mockFn.mockResolvedValue(value as T)
 }
 

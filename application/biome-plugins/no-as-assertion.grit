@@ -1,8 +1,0 @@
-language js
-
-// `as` 型アサーションは型システムを欺き、実体と乖離した型を握りつぶしてランタイムエラーの
-// 温床になるため原則禁止する。型を狭めるだけで安全な `as const` は許可する。
-TsAsExpression(ty=$type) where {
-  $type <: not r"^const$",
-  register_diagnostic(span=$type, message="Do not use `as` type assertions. Use type guards or proper type definitions instead (add a justified `// biome-ignore` only when unavoidable).", severity="error")
-}

@@ -1,6 +1,6 @@
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
-import { Env } from '../env'
+import type { Env } from '../env'
 import CONTEXT_KEY from './context'
 
 // IP単位でブルートフォース・大量試行を抑止するため、認証系エンドポイントに適用する

@@ -6,13 +6,13 @@ const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
 const createMockLogger = () =>
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- Loggerはprivateフィールドを持ち構造的に代入できないため、テスト用モックの注入には二重アサーションが避けられないため
   ({
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
     with: vi.fn(),
-    // biome-ignore lint/plugin: Loggerはprivateフィールドを持ち構造的に代入できないため、テスト用モックの注入には二重アサーションが避けられないため
   }) as unknown as LoggerType
 
 // リトライ待機を待たずにテストするため

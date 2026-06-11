@@ -1,17 +1,19 @@
 import { ServerError } from '@trend-diary/common/errors'
 import { addJstDays, toJstDate } from '@trend-diary/common/locale/date'
-import { DEFAULT_LIMIT, DEFAULT_PAGE, OffsetPaginationResult } from '@trend-diary/common/pagination'
-import { Nullable } from '@trend-diary/common/types/utility'
+import type { OffsetPaginationResult } from '@trend-diary/common/pagination'
+import { DEFAULT_LIMIT, DEFAULT_PAGE } from '@trend-diary/common/pagination'
+import type { Nullable } from '@trend-diary/common/types/utility'
 import { articles, normalizeDateTime } from '@trend-diary/datastore/drizzle-orm/schema'
-import { RdbClient, wrapDbCall } from '@trend-diary/datastore/rdb'
+import type { RdbClient } from '@trend-diary/datastore/rdb'
+import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { eq, type SQL, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import { ARTICLE_MEDIA, type ArticleMedia } from '../media'
-import { Query } from '../repository'
+import type { Query } from '../repository'
 import type { Article, ArticleWithOptionalReadStatus } from '../schema/article-schema'
 import type { DailyDiary, DailyDiaryRangeItem, DiaryReadItem } from '../schema/diary-schema'
-import { QueryParams } from '../schema/query-schema'
+import type { QueryParams } from '../schema/query-schema'
 import fromRdbToArticle from './mapper'
 
 interface RawArticleRow {
@@ -475,7 +477,7 @@ export default class QueryImpl implements Query {
       unwrapped.push(result.value)
     }
 
-    // biome-ignore lint/plugin: 各要素のResultをアンラップした配列がタプルTに一致することはTypeScriptでは表現できないためです
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- 各要素のResultをアンラップした配列がタプルTに一致することはTypeScriptでは表現できないためです
     return ok(unwrapped as unknown as T)
   }
 
@@ -568,7 +570,7 @@ export default class QueryImpl implements Query {
     return {
       readHistoryId: fromDbId(row.readHistoryId),
       articleId: fromDbId(row.articleId),
-      // biome-ignore lint/plugin: DBのmediaカラムは登録時にArticleMediaへ制約済みのため安全に絞り込めます
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- DBのmediaカラムは登録時にArticleMediaへ制約済みのため安全に絞り込めます
       media: row.media as ArticleMedia,
       title: row.title,
       url: row.url,

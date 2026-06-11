@@ -1,4 +1,4 @@
-import { Nullable } from '@trend-diary/common/types/utility'
+import type { Nullable } from '@trend-diary/common/types/utility'
 import { useState } from 'react'
 import type { Article } from './use-articles'
 

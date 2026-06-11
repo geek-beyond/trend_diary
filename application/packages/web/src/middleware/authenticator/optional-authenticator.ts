@@ -1,5 +1,5 @@
 import { createMiddleware } from 'hono/factory'
-import { Env } from '../../env'
+import type { Env } from '../../env'
 import CONTEXT_KEY from '../context'
 import { validateSession } from './validate'
 

@@ -1,8 +1,9 @@
 import { zValidator } from '@hono/zod-validator'
 import type { Context, ValidationTargets } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { ZodSchema, z } from 'zod'
-import { Env } from '../env'
+import type { ZodSchema } from 'zod'
+import { z } from 'zod'
+import type { Env } from '../env'
 
 // 参考: https://github.com/honojs/middleware/blob/main/packages/zod-validator/README.md
 const zodValidator = <Target extends keyof ValidationTargets, T extends ZodSchema>(

@@ -8,7 +8,7 @@ import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import app from '../../../server'
 
-import { ArticleListResponse, ArticleWithReadStatusResponse } from './get-articles'
+import type { ArticleListResponse, ArticleWithReadStatusResponse } from './get-articles'
 
 interface GetArticlesTestCase {
   name: string

@@ -10,7 +10,7 @@ interface WorkerFixtures {
 
 export const test = base.extend<Record<never, never>, WorkerFixtures>({
   rdb: [
-    // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture の第1引数（他fixture未使用）
+    // oxlint-disable-next-line no-empty-pattern -- Playwright fixture の第1引数（他fixture未使用）
     async ({}, use) => {
       const { db, dispose } = await openTestD1()
       await use(drizzle(db, { schema }))

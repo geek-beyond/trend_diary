@@ -6,7 +6,7 @@ import {
   type ValidationResult,
 } from '@/client/lib/validation'
 
-// biome-ignore lint/style/useConsistentTypeDefinitions: Record<string, unknown> 制約を満たすため type エイリアスを使う
+// oxlint-disable-next-line typescript/consistent-type-definitions -- Record<string, unknown> 制約を満たすため type エイリアスを使う
 export type AuthenticateErrors = {
   email?: string[]
   password?: string[]

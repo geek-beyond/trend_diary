@@ -12,7 +12,7 @@ import {
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 import NavMenu from '@/client/components/ui/navigation/nav-menu'
 import UserSection from '@/client/components/ui/navigation/user-section'
-import { InternalPath } from '@/client/routes'
+import type { InternalPath } from '@/client/routes'
 import useSidebar from './use-sidebar'
 
 export interface MenuItem {

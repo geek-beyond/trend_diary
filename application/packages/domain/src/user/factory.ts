@@ -1,5 +1,5 @@
-import { SupabaseClient } from '@supabase/supabase-js'
-import { RdbClient } from '@trend-diary/datastore/rdb'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { RdbClient } from '@trend-diary/datastore/rdb'
 import CommandImpl from './infrastructure/command-impl'
 import QueryImpl from './infrastructure/query-impl'
 import { SupabaseAuthRepository } from './infrastructure/supabase-auth-repository'

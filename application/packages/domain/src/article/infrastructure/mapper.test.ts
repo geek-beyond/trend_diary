@@ -19,7 +19,7 @@ describe('fromRdbToArticle', () => {
       createdAt: new Date('2024-01-15T09:30:00Z'),
       ...overrides,
     }
-    // biome-ignore lint/plugin: ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
     return rdbArticle as unknown as RdbArticle
   }
 

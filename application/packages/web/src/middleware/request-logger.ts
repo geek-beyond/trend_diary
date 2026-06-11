@@ -1,7 +1,7 @@
 import Logger from '@trend-diary/common/logger'
 import { createMiddleware } from 'hono/factory'
 import { v4 as uuidv4 } from 'uuid'
-import { Env } from '../env'
+import type { Env } from '../env'
 import CONTEXT_KEY from './context'
 
 const DEFAULT_LOG_LEVEL = 'info'

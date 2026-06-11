@@ -1,7 +1,7 @@
 import { formatSummaryDateTick, toJaDateString, toJstDate } from '@trend-diary/common/locale/date'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
+import type { ChartConfig } from '@/client/components/shadcn/chart'
 import {
-  ChartConfig,
   ChartContainer,
   ChartLegend,
   ChartLegendContent,

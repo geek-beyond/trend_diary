@@ -4,13 +4,11 @@ import { useNavigate } from 'react-router'
 import { useSWRConfig } from 'swr'
 import {
   AUTH_ERROR_MESSAGES,
-  resolveLoginErrorMessage,
-} from '@/client/features/authenticate/error-message'
-import { SESSION_SWR_KEY } from '@/client/features/authenticate/use-session'
-import {
   type AuthenticateErrors,
+  resolveLoginErrorMessage,
+  SESSION_SWR_KEY,
   validateAuthenticateForm,
-} from '@/client/features/authenticate/validation'
+} from '@/client/features/authenticate'
 import getApiClientForClient from '@/client/infrastructure/api'
 
 export default function useLogin(turnstileSiteKey?: string) {

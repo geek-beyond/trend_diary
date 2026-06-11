@@ -1,7 +1,7 @@
 import { toJaTimeString } from '@trend-diary/common/locale/date'
 import type { ReactNode } from 'react'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
-import type { ReadItem } from '@/client/features/diary/types'
+import type { ReadItem } from '@/client/features/diary/model/types'
 import { toSafeExternalPath } from '@/client/lib/url'
 import MediaIcon from '@/client/routes/trends._index/components/media-icon'
 

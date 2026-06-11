@@ -28,8 +28,9 @@ const MAX_FETCH_ATTEMPTS = 3
 const RETRY_BASE_DELAY_MS = 1_000
 const RETRY_MAX_DELAY_MS = 30_000
 
-// D1のバインドパラメータ上限は1文あたり100個。チャンクサイズは1行のカラム数から動的に算出する
+// D1のバインドパラメータ上限は1文あたり100個。安全マージンとして上限の80%までを使う
 const MAX_BIND_PARAMETERS = 100
+const BIND_PARAMETER_USAGE_RATIO = 0.8
 
 function* chunk<T>(items: readonly T[], size: number): Generator<T[]> {
   for (let i = 0; i < items.length; i += size) {
@@ -114,7 +115,9 @@ async function storeArticles(
   const [firstArticle] = uniqueNormalized
   if (firstArticle === undefined) return ok(0)
   // スキーマ変更に追従できるよう、チャンクサイズは1行のカラム数から動的に算出する
-  const chunkSize = Math.floor(MAX_BIND_PARAMETERS / Object.keys(firstArticle).length)
+  const chunkSize = Math.floor(
+    (MAX_BIND_PARAMETERS * BIND_PARAMETER_USAGE_RATIO) / Object.keys(firstArticle).length,
+  )
 
   // ON CONFLICT DO NOTHING で既存URLをスキップし、returning した行数を挿入件数とする
   let insertedCount = 0

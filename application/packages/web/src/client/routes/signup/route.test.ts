@@ -169,9 +169,9 @@ describe('signup loader', () => {
 
 describe('signup meta', () => {
   it('アカウント作成ページのタイトルとdescriptionを返す', () => {
-    const tags = meta(buildMetaArgs()) ?? []
+    const tags = meta(buildMetaArgs())
 
     expect(tags).toContainEqual({ title: 'アカウント作成 | TrendDiary' })
-    expect(tags.some((tag) => 'name' in tag && tag.name === 'description')).toBe(true)
+    expect(tags).toContainEqual(expect.objectContaining({ name: 'description' }))
   })
 })

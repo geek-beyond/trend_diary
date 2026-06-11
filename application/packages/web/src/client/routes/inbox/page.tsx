@@ -83,8 +83,10 @@ export default function InboxPage({
 
         {!isLoading && article && (
           <div className='mt-2 flex flex-col rounded-xl border border-gray-200 bg-white p-5'>
-            <h2 className='flex h-[2lh] items-center gap-2 text-lg font-semibold text-gray-900 leading-relaxed'>
-              <MediaIcon media={toMediaType(article.media)} size='md' />
+            <h2 className='flex h-[2lh] items-start gap-2 text-lg font-semibold text-gray-900 leading-relaxed'>
+              <span className='mt-0.5 shrink-0'>
+                <MediaIcon media={toMediaType(article.media)} size='md' />
+              </span>
               <span className='line-clamp-2'>{article.title}</span>
             </h2>
             <div className='mt-2 flex h-[1lh] items-center gap-3 overflow-hidden text-sm text-gray-600'>

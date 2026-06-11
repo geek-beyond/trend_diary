@@ -1,11 +1,34 @@
 name: Setup Supabase Composite Action
 description: 'SupabaseをセットアップするComposite Action'
 
+inputs:
+  cli-version:
+    description: 'pinするSupabase CLIのバージョン（Dockerイメージのtagもこれで決まるためキャッシュキーにもなるよう単一の真実源として扱う）'
+    required: false
+    default: '2.105.0'
+
 runs:
   using: 'composite'
   steps:
     - name: Supabase CLIのセットアップ
+      # versionをpinしないとlatestが浮動で入りDockerイメージのtagも変わってキャッシュが安定しないため明示的に固定する
       uses: supabase/setup-cli@b60b5899c73b63a2d2d651b1e90db8d4c9392f51 # v1
+      with:
+        version: ${{ inputs.cli-version }}
+
+    - name: Dockerイメージキャッシュの復元
+      id: image-cache
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: ~/.cache/supabase-docker-images.tar
+        # CLIバージョンが同じならtagも同一でリポジトリ全体（mainのキャッシュ）を共有できるため、ブランチ非依存の静的キーにする
+        key: supabase-docker-images-${{ runner.os }}-${{ inputs.cli-version }}
+
+    - name: キャッシュ済みDockerイメージの読み込み
+      # ヒット時はここで読み込んでおくとsupabase startがECRからpullせず起動が速くなる
+      if: steps.image-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: docker load -i ~/.cache/supabase-docker-images.tar
 
     - name: Supabaseの起動
       shell: bash
@@ -13,6 +36,20 @@ runs:
       # INFO: 認証のみ起動
       # link: https://supabase.com/docs/reference/cli/supabase-start
       run: supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+    - name: Dockerイメージキャッシュの保存
+      # ミス時のみtarを書き出す。actions/cacheのpostステップがこのtarをアップロードする
+      if: steps.image-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p ~/.cache
+        mapfile -t images < <(docker images --filter 'reference=public.ecr.aws/supabase/*' --format '{{.Repository}}:{{.Tag}}')
+        if [[ ${#images[@]} -eq 0 ]]; then
+          echo "::warning::キャッシュ対象のSupabaseイメージが見つかりませんでした"
+          exit 0
+        fi
+        docker save -o ~/.cache/supabase-docker-images.tar "${images[@]}"
 
     - name: Supabaseのキーを環境変数に設定
       id: get-keys

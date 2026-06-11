@@ -21,7 +21,7 @@
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@faker-js/faker": "catalog:",
-    "@playwright/test": "^1.60.0",
-    "playwright": "^1.60.0"
+    "@playwright/test": "catalog:",
+    "playwright": "catalog:"
   }
 }

@@ -1,0 +1,43 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../.oxlintrc.json"],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/build/**",
+    "**/.react-router/**",
+    "**/coverage/**",
+    "src/client/components/shadcn/**",
+    "src/client/components/customized/**"
+  ],
+  "rules": {
+    "react/forbid-elements": ["error", { "forbid": ["a"] }]
+  },
+  "overrides": [
+    {
+      "files": ["src/client/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@trend-diary/datastore",
+                  "@trend-diary/datastore/*",
+                  "@trend-diary/notification",
+                  "@trend-diary/notification/*"
+                ],
+                "message": "client から server 専用パッケージ(datastore/notification)は import できません。Hono API 経由で参照してください。"
+              },
+              {
+                "group": ["@trend-diary/domain", "@trend-diary/domain/*"],
+                "importNamePattern": "^create\\w*UseCase$",
+                "message": "client からドメインのユースケースファクトリ(create*UseCase)は import できません。ミドルウェア(レート制限・CSRF等)を効かせるため Hono API 経由で呼んでください。"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

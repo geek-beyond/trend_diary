@@ -13,4 +13,4 @@ paths:
 - client配下（`packages/web/src/client/`）からドメインのユースケースファクトリ（`create*UseCase`）を直接生成しない
   - 理由: Hono API層のミドルウェア（レート制限・CSRF等）をバイパスしてしまうため
   - 代替案: Hono API経由で呼び出す。ドメインパッケージからのimportは型・定数・スキーマのみ許可
-  - 備考: `application/.oxlintrc.json`の`no-restricted-imports`（oxlint）で機械的に検出される
+  - 備考: `application/packages/web/.oxlintrc.json`の`no-restricted-imports`（oxlint）で機械的に検出される

@@ -15,9 +15,7 @@
     "**/build/**",
     "**/.react-router/**",
     "**/coverage/**",
-    "**/migrations/meta/**",
-    "packages/web/src/client/components/shadcn/**",
-    "packages/web/src/client/components/customized/**"
+    "**/migrations/meta/**"
   ],
   "rules": {
     "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }],
@@ -33,39 +31,5 @@
     ],
     "react/react-in-jsx-scope": "off",
     "jsx-a11y/prefer-tag-over-role": "off"
-  },
-  "overrides": [
-    {
-      "files": ["packages/web/**/*.{ts,tsx}"],
-      "rules": {
-        "react/forbid-elements": ["error", { "forbid": ["a"] }]
-      }
-    },
-    {
-      "files": ["packages/web/src/client/**/*.{ts,tsx}"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": [
-                  "@trend-diary/datastore",
-                  "@trend-diary/datastore/*",
-                  "@trend-diary/notification",
-                  "@trend-diary/notification/*"
-                ],
-                "message": "client から server 専用パッケージ(datastore/notification)は import できません。Hono API 経由で参照してください。"
-              },
-              {
-                "group": ["@trend-diary/domain", "@trend-diary/domain/*"],
-                "importNamePattern": "^create\\w*UseCase$",
-                "message": "client からドメインのユースケースファクトリ(create*UseCase)は import できません。ミドルウェア(レート制限・CSRF等)を効かせるため Hono API 経由で呼んでください。"
-              }
-            ]
-          }
-        ]
-      }
-    }
-  ]
+  }
 }

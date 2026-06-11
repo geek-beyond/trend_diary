@@ -90,7 +90,7 @@ export default function InboxPage({
               <span className='line-clamp-2'>{article.title}</span>
             </h2>
             <div className='mt-2 flex h-[1lh] items-center gap-3 overflow-hidden text-sm text-gray-600'>
-              <span className='truncate'>著者: {article.author}</span>
+              <span className='min-w-0 truncate'>著者: {article.author}</span>
             </div>
             <p className='mt-3 h-24 overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words pr-1 text-sm leading-relaxed text-gray-700 md:h-56'>
               {article.description}

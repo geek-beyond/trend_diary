@@ -66,6 +66,20 @@ interface RawDiaryReadRow {
   readAt: string | number | bigint
 }
 
+// サマリー集計行(source)とread一覧行(read)をUNION ALLで1度に取得するための共用行。
+// 各行は rowKind に応じて片方のカラム群だけが非NULLになる
+interface RawDiaryCombinedRow {
+  rowKind: 'source' | 'read'
+  sourceType: 'read' | 'skip' | null
+  media: string
+  count: number | bigint | null
+  readHistoryId: number | bigint | null
+  articleId: number | bigint | null
+  title: string | null
+  url: string | null
+  readAt: string | number | bigint | null
+}
+
 interface DateRange {
   fromDate?: Date
   toDateExclusive?: Date
@@ -94,38 +108,34 @@ export default class QueryImpl implements Query {
 
     const readStatusSql = QueryImpl.buildIsReadSelectSql(dbActiveUserId)
 
-    // COUNT用と取得用の2クエリを db.batch で1往復にまとめる
-    const batchResult = await wrapDbCall(() =>
-      this.db.batch([
-        this.db.all<RawCountRow>(sql`
-          SELECT COUNT(*) as total
-          FROM articles
-          ${whereSql}
-        `),
-        this.db.all<RawArticleRow>(sql`
-          SELECT
-            article_id as articleId,
-            media,
-            title,
-            author,
-            description,
-            url,
-            created_at as createdAt,
-            ${readStatusSql} as isRead
-          FROM articles
-          ${whereSql}
-          ORDER BY article_id DESC
-          LIMIT ${limit}
-          OFFSET ${(page - 1) * limit}
-        `),
-      ]),
+    // COUNTと取得を COUNT(*) OVER() で1クエリ(1往復)に集約する。
+    // D1のdb.batchは生SQL(SQLiteRaw)を扱えないため、ウィンドウ関数で総件数を同時に取得する
+    const result = await wrapDbCall(() =>
+      this.db.all<RawArticleRow & RawCountRow>(sql`
+        SELECT
+          article_id as articleId,
+          media,
+          title,
+          author,
+          description,
+          url,
+          created_at as createdAt,
+          ${readStatusSql} as isRead,
+          COUNT(*) OVER() as total
+        FROM articles
+        ${whereSql}
+        ORDER BY article_id DESC
+        LIMIT ${limit}
+        OFFSET ${(page - 1) * limit}
+      `),
     )
-    if (batchResult.isErr()) {
-      return err(new ServerError(batchResult.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const [totalRows, articleRows] = batchResult.value
-    const total = Number(totalRows[0]?.total ?? 0)
+    const articleRows = result.value
+    // 0件時は行が返らないため total は 0 になる
+    const total = Number(articleRows[0]?.total ?? 0)
     const mappedArticles = articleRows.map(QueryImpl.mapRawArticleToDomain)
 
     const totalPages = Math.ceil(total / limit)
@@ -219,71 +229,93 @@ export default class QueryImpl implements Query {
       toDateExclusive,
     )
 
-    // サマリー用と一覧用の2クエリを db.batch で1往復にまとめる
-    const batchResult = await wrapDbCall(() =>
-      this.db.batch([
-        this.db.all<RawDiaryTypedSourceRow>(sql`
-            SELECT
-              source_type as sourceType,
-              media,
-              count
-            FROM (
-              SELECT
-                'read' as source_type,
-                a.media as media,
-                COUNT(*) as count
-              FROM read_histories rh
-              INNER JOIN articles a ON a.article_id = rh.article_id
-              WHERE
-                rh.active_user_id = ${dbActiveUserId}
-                AND ${readAtRangeSql}
-              GROUP BY a.media
+    // サマリー集計とread一覧を rowKind で判別する1クエリ(1往復)に集約する。
+    // D1のdb.batchは生SQL(SQLiteRaw)を扱えないため、UNION ALLで両者を1度に取得する
+    const result = await wrapDbCall(() =>
+      this.db.all<RawDiaryCombinedRow>(sql`
+        SELECT
+          'source' as rowKind,
+          source_type as sourceType,
+          media,
+          count,
+          NULL as readHistoryId,
+          NULL as articleId,
+          NULL as title,
+          NULL as url,
+          NULL as readAt
+        FROM (
+          SELECT
+            'read' as source_type,
+            a.media as media,
+            COUNT(*) as count
+          FROM read_histories rh
+          INNER JOIN articles a ON a.article_id = rh.article_id
+          WHERE
+            rh.active_user_id = ${dbActiveUserId}
+            AND ${readAtRangeSql}
+          GROUP BY a.media
 
-              UNION ALL
+          UNION ALL
 
-              SELECT
-                'skip' as source_type,
-                a.media as media,
-                COUNT(*) as count
-              FROM skipped_articles sa
-              INNER JOIN articles a ON a.article_id = sa.article_id
-              WHERE
-                sa.active_user_id = ${dbActiveUserId}
-                AND ${skipAtRangeSql}
-              GROUP BY a.media
-            ) diary_sources
-            ORDER BY count DESC, media ASC
-          `),
-        this.db.all<RawDiaryReadRow>(sql`
-            SELECT
-              rh.read_history_id as readHistoryId,
-              rh.article_id as articleId,
-              a.media as media,
-              a.title as title,
-              a.url as url,
-              rh.read_at as readAt
-            FROM read_histories rh
-            INNER JOIN articles a ON a.article_id = rh.article_id
-            WHERE
-              rh.active_user_id = ${dbActiveUserId}
-              AND ${readAtRangeSql}
-            ORDER BY ${QueryImpl.getNormalizedDateTimeSql('rh.read_at')} DESC, rh.read_history_id DESC
-            LIMIT ${limit}
-            OFFSET ${(page - 1) * limit}
-          `),
-      ]),
+          SELECT
+            'skip' as source_type,
+            a.media as media,
+            COUNT(*) as count
+          FROM skipped_articles sa
+          INNER JOIN articles a ON a.article_id = sa.article_id
+          WHERE
+            sa.active_user_id = ${dbActiveUserId}
+            AND ${skipAtRangeSql}
+          GROUP BY a.media
+        ) diary_sources
+
+        UNION ALL
+
+        SELECT
+          'read' as rowKind,
+          NULL as sourceType,
+          media,
+          NULL as count,
+          readHistoryId,
+          articleId,
+          title,
+          url,
+          readAt
+        FROM (
+          SELECT
+            rh.read_history_id as readHistoryId,
+            rh.article_id as articleId,
+            a.media as media,
+            a.title as title,
+            a.url as url,
+            rh.read_at as readAt
+          FROM read_histories rh
+          INNER JOIN articles a ON a.article_id = rh.article_id
+          WHERE
+            rh.active_user_id = ${dbActiveUserId}
+            AND ${readAtRangeSql}
+          ORDER BY ${QueryImpl.getNormalizedDateTimeSql('rh.read_at')} DESC, rh.read_history_id DESC
+          LIMIT ${limit}
+          OFFSET ${(page - 1) * limit}
+        ) reads_page
+      `),
     )
-    if (batchResult.isErr()) {
-      return err(new ServerError(batchResult.error))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const [sourceRows, readsRows] = batchResult.value
+    const { sourceRows, readsRows } = QueryImpl.splitDiaryCombinedRows(result.value)
     const { readRows: readSourcesRows, skipRows: skipSourcesRows } =
       QueryImpl.splitDiarySourceRows(sourceRows)
     const readCount = QueryImpl.sumDiarySourceCounts(readSourcesRows)
     const skipCount = QueryImpl.sumDiarySourceCounts(skipSourcesRows)
     const readsTotal = readCount
     const totalPages = Math.ceil(readsTotal / limit)
+
+    // UNION ALLは出力順を保証しないため、read一覧はJS側で並べ直す
+    const reads = readsRows
+      .map(QueryImpl.mapRawDiaryReadItem)
+      .sort(QueryImpl.compareDiaryReadItemDesc)
 
     return ok({
       date: targetDateJst,
@@ -293,7 +325,7 @@ export default class QueryImpl implements Query {
       },
       sources: QueryImpl.mergeDiarySources(readSourcesRows, skipSourcesRows),
       reads: {
-        data: readsRows.map(QueryImpl.mapRawDiaryReadItem),
+        data: reads,
         page,
         limit,
         total: readsTotal,
@@ -566,6 +598,37 @@ export default class QueryImpl implements Query {
       grouped.set(row.date, current)
     }
     return grouped
+  }
+
+  private static splitDiaryCombinedRows(rows: RawDiaryCombinedRow[]) {
+    const sourceRows: RawDiaryTypedSourceRow[] = []
+    const readsRows: RawDiaryReadRow[] = []
+
+    for (const row of rows) {
+      if (row.rowKind === 'source') {
+        if (row.sourceType !== null) {
+          sourceRows.push({ sourceType: row.sourceType, media: row.media, count: row.count ?? 0 })
+        }
+      } else if (row.readHistoryId !== null && row.articleId !== null && row.readAt !== null) {
+        readsRows.push({
+          readHistoryId: row.readHistoryId,
+          articleId: row.articleId,
+          media: row.media,
+          title: row.title ?? '',
+          url: row.url ?? '',
+          readAt: row.readAt,
+        })
+      }
+    }
+
+    return { sourceRows, readsRows }
+  }
+
+  private static compareDiaryReadItemDesc(a: DiaryReadItem, b: DiaryReadItem): number {
+    const timeDiff = b.readAt.getTime() - a.readAt.getTime()
+    if (timeDiff !== 0) return timeDiff
+    if (a.readHistoryId === b.readHistoryId) return 0
+    return a.readHistoryId > b.readHistoryId ? -1 : 1
   }
 
   private static splitDiarySourceRows(rows: RawDiaryTypedSourceRow[]) {

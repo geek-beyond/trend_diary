@@ -1,9 +1,13 @@
 import { NotFoundError, ServerError } from '@trend-diary/common/errors'
-import { normalizeDateTime } from '@trend-diary/datastore/drizzle-orm/schema'
+import {
+  articles,
+  normalizeDateTime,
+  readHistories,
+} from '@trend-diary/datastore/drizzle-orm/schema'
 import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
-import { sql } from 'drizzle-orm'
+import { and, eq, exists, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import type { Command } from '../repository'
 import type { ReadHistory } from '../schema/read-history-schema'
@@ -23,10 +27,6 @@ interface RawSkippedArticleRow {
   activeUserId: number | bigint
   articleId: number | bigint
   createdAt: string | number | bigint
-}
-
-interface RawArticleExistsRow {
-  exists: number | bigint
 }
 
 export default class CommandImpl implements Command {
@@ -79,21 +79,29 @@ export default class CommandImpl implements Command {
     const dbArticleId = toDbId(articleId)
 
     // 記事存在チェックと削除を db.batch で1往復にまとめる。
+    // D1のdb.batchは生SQL(SQLiteRaw)を扱えないためクエリビルダ文を渡す。
     // 記事が存在する時だけ削除する(EXISTSガード)ことで、記事削除後も履歴を保持する設計を保つ
     const result = await wrapDbCall(() =>
       this.db.batch([
-        this.db.all<RawArticleExistsRow>(sql`
-          SELECT 1 as "exists"
-          FROM articles
-          WHERE article_id = ${dbArticleId}
-          LIMIT 1
-        `),
-        this.db.run(sql`
-          DELETE FROM read_histories
-          WHERE active_user_id = ${dbActiveUserId}
-            AND article_id = ${dbArticleId}
-            AND EXISTS (SELECT 1 FROM articles WHERE article_id = ${dbArticleId})
-        `),
+        this.db
+          .select({ articleId: articles.articleId })
+          .from(articles)
+          .where(eq(articles.articleId, dbArticleId))
+          .limit(1),
+        this.db
+          .delete(readHistories)
+          .where(
+            and(
+              eq(readHistories.activeUserId, dbActiveUserId),
+              eq(readHistories.articleId, dbArticleId),
+              exists(
+                this.db
+                  .select({ one: sql`1` })
+                  .from(articles)
+                  .where(eq(articles.articleId, dbArticleId)),
+              ),
+            ),
+          ),
       ]),
     )
     if (result.isErr()) {

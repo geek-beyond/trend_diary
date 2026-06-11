@@ -160,22 +160,20 @@ describe('CommandImpl', () => {
   describe('deleteAllReadHistory', () => {
     describe('正常系', () => {
       it('記事が存在する場合は存在チェックと削除を1往復(batch)で実行する', async () => {
-        // 1クエリ目: 記事存在チェック(1行), 2クエリ目: DELETE
-        mockRdbExecutor
-          .mockResolvedValueOnce({ rows: [{ exists: 1 }] })
-          .mockResolvedValueOnce({ rows: [] })
+        // INFO: クエリビルダの戻り行はカラム順の配列。1クエリ目: 記事存在チェック(1行), 2クエリ目: DELETE
+        mockRdbExecutor.mockResolvedValueOnce({ rows: [[200]] }).mockResolvedValueOnce({ rows: [] })
 
         const result = await commandImpl.deleteAllReadHistory(2n, 200n)
 
         expect(mockRdbExecutor).toHaveBeenCalledTimes(2)
         const [existsSql, existsParams, existsMethod] = mockRdbExecutor.mock.calls[0]
-        expect(existsSql).toContain('FROM articles')
-        expect(existsParams).toEqual([200])
+        expect(existsSql).toContain('from "articles"')
+        expect(existsParams).toEqual([200, 1])
         expect(existsMethod).toBe('all')
 
         const [deleteSql, deleteParams, deleteMethod] = mockRdbExecutor.mock.calls[1]
-        expect(deleteSql).toContain('DELETE FROM read_histories')
-        expect(deleteSql).toContain('EXISTS')
+        expect(deleteSql).toContain('delete from "read_histories"')
+        expect(deleteSql).toContain('exists')
         expect(deleteParams).toEqual([2, 200, 200])
         expect(deleteMethod).toBe('run')
 

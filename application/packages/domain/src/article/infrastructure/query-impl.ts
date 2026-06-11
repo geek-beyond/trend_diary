@@ -71,6 +71,11 @@ interface DateRange {
   toDateExclusive?: Date
 }
 
+// 当日未読は通常数百件に収まるため平時はこの上限に達しないが、
+// 異常日に未読が青天井に膨らんでもペイロードを有界に保つための防御的キャップ。
+// 上限到達分はread/skip後の再取得で次バッチが入るため、利用者から見た欠落は生じない
+const UNREAD_DIGESTION_LIMIT = 500
+
 type NormalizedDateTimeColumn = 'created_at' | 'rh.read_at' | 'sa.created_at'
 
 // 正規化済みの値はインデックス付きVIRTUAL生成列(*_norm)に保持済みのため、
@@ -201,6 +206,7 @@ export default class QueryImpl implements Query {
           )
           ${mediaCondition}
         ORDER BY article_id DESC
+        LIMIT ${UNREAD_DIGESTION_LIMIT}
       `),
     )
     if (result.isErr()) {

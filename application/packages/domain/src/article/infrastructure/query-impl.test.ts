@@ -288,6 +288,15 @@ describe('QueryImpl', () => {
       }
     })
 
+    it('ペイロードを有界に保つため上限件数(500)でLIMITする', async () => {
+      await queryImpl.getUnreadDigestionArticles(10n, '2026-03-07')
+
+      const rawSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
+      const params = mockRdbExecutor.mock.calls[0]?.[1] ?? []
+      expect(rawSql).toContain('LIMIT ?')
+      expect(params).toContain(500)
+    })
+
     it('DB取得失敗時はエラーを返す', async () => {
       mockRdbExecutor.mockRejectedValue(new Error('unread digestion failed'))
 

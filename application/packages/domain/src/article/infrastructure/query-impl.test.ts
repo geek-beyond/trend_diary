@@ -142,6 +142,18 @@ describe('QueryImpl', () => {
       }
     })
 
+    it('from/to指定時はインデックス付き生成列(created_at_norm)で範囲比較する', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
+
+      await queryImpl.searchArticles({ page: 1, limit: 20, from: '2026-03-05', to: '2026-03-05' })
+
+      // フルスキャンを招くCASE正規化ではなく、サーガブルな生成列比較になっていること。
+      // COUNT(*) OVER() で1クエリ化したため呼び出しは1回
+      const rawSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
+      expect(rawSql).toContain('created_at_norm')
+      expect(rawSql).not.toContain('unixepoch')
+    })
+
     it('取得失敗時はエラーを返す', async () => {
       mockRdbExecutor.mockRejectedValue(new Error('search failed'))
 
@@ -347,6 +359,18 @@ describe('QueryImpl', () => {
         expect(result.value.reads.data[0].url).toBe('https://example.com/go-error-handling')
         expect(result.value.reads.data[1].readHistoryId).toBe(9n)
       }
+    })
+
+    it('インデックス付き生成列(read_at_norm)で範囲比較・並び替えする', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
+
+      await queryImpl.getDailyDiary(10n, '2026-03-07', 1, 10)
+
+      // サマリー集計とread一覧を1クエリにまとめたため呼び出しは1回
+      const readsSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
+      expect(readsSql).toContain('read_at_norm')
+      expect(readsSql).toContain('ORDER BY rh.read_at_norm DESC')
+      expect(readsSql).not.toContain('unixepoch')
     })
 
     it('DB取得失敗時はエラーを返す', async () => {

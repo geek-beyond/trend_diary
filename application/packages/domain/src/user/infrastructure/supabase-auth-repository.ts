@@ -1,6 +1,5 @@
 import {
   AuthInvalidCredentialsError,
-  AuthSessionMissingError,
   type Session,
   type SupabaseClient,
   type User,
@@ -10,7 +9,7 @@ import UnauthorizedError from '@trend-diary/common/errors/client-error/unauthori
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { err, ok, type Result } from 'neverthrow'
 import type { AuthLoginResult, AuthRepository, AuthSignupResult } from '../repository'
-import type { AuthenticationUser } from '../schema/auth-schema'
+import type { AuthenticationUser, VerifiedSession } from '../schema/auth-schema'
 
 /**
  * Supabaseのユーザー登録エラーが「既に存在する」ことを示すかチェック
@@ -184,37 +183,33 @@ export class SupabaseAuthRepository implements AuthRepository {
     return ok(undefined)
   }
 
-  async getCurrentUser(): Promise<Result<AuthenticationUser, ServerError>> {
-    const result = await wrapAsyncCall(() => this.client.auth.getUser())
+  async verifySession(): Promise<Result<VerifiedSession, ClientError | ServerError>> {
+    // getClaimsは非対称署名鍵ならJWKSをローカルキャッシュして署名検証を行い、Supabaseへの往復を省く
+    const result = await wrapAsyncCall(() => this.client.auth.getClaims())
     if (result.isErr()) {
-      if (result.error instanceof AuthSessionMissingError) {
-        return err(
-          new UnauthorizedError('session not found', {
-            sessionExists: false,
-          }),
-        )
-      }
       return err(new ServerError(result.error))
     }
 
-    const {
-      data: { user },
-    } = result.value
+    const { data, error } = result.value
 
-    if (!user) {
+    // 検証失敗(改ざん・期限切れ等)は、認証ゲートでは未認証として扱う
+    if (error) {
       return err(
-        new UnauthorizedError('session not found', {
+        new UnauthorizedError('session verification failed', {
           sessionExists: true,
         }),
       )
     }
 
-    const authUserResult = this.toAuthenticationUser(user)
-    if (authUserResult.isErr()) {
-      return authUserResult
+    if (!data) {
+      return err(
+        new UnauthorizedError('session not found', {
+          sessionExists: false,
+        }),
+      )
     }
 
-    return ok(authUserResult.value)
+    return ok({ authenticationId: data.claims.sub })
   }
 
   async refreshSession(): Promise<Result<AuthLoginResult, ServerError>> {

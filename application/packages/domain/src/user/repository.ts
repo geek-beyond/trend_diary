@@ -3,7 +3,7 @@ import { Nullable } from '@trend-diary/common/types/utility'
 import { type Result } from 'neverthrow'
 
 import type { CurrentUser } from './schema/active-user-schema'
-import { AuthenticationSession, AuthenticationUser } from './schema/auth-schema'
+import { AuthenticationSession, AuthenticationUser, VerifiedSession } from './schema/auth-schema'
 
 export interface Query {
   findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, Error>>
@@ -76,9 +76,9 @@ export interface AuthRepository {
   logout(): Promise<Result<void, ServerError>>
 
   /**
-   * 現在のユーザーを取得する
+   * アクセストークン(JWT)をローカル検証し、検証済みセッションを取得する
    */
-  getCurrentUser(): Promise<Result<AuthenticationUser, ServerError>>
+  verifySession(): Promise<Result<VerifiedSession, ClientError | ServerError>>
 
   /**
    * セッションを更新する

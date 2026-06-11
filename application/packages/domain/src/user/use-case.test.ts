@@ -4,7 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
 import type { AuthRepository, CaptchaVerifier, Command, Notifier, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
-import type { AuthenticationSession, AuthenticationUser } from './schema/auth-schema'
+import type {
+  AuthenticationSession,
+  AuthenticationUser,
+  VerifiedSession,
+} from './schema/auth-schema'
 import { AuthUseCase } from './use-case'
 
 const repositoryMock = mockDeep<AuthRepository>()
@@ -18,6 +22,10 @@ const mockAuthUser: AuthenticationUser = {
   email: 'test@example.com',
   emailConfirmedAt: new Date(),
   createdAt: new Date(),
+}
+
+const mockVerifiedSession: VerifiedSession = {
+  authenticationId: 'auth-user-id-123',
 }
 
 const mockSession: AuthenticationSession = {
@@ -287,9 +295,9 @@ describe('AuthUseCase', () => {
 
   describe('getCurrentActiveUser', () => {
     describe('正常系', () => {
-      it('認証ユーザーからactiveUserを取得して返す', async () => {
+      it('検証済みセッションからactiveUserを取得して返す', async () => {
         // Arrange
-        repositoryMock.getCurrentUser.mockResolvedValue(ok(mockAuthUser))
+        repositoryMock.verifySession.mockResolvedValue(ok(mockVerifiedSession))
         queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(mockActiveUser))
 
         // Act
@@ -300,16 +308,18 @@ describe('AuthUseCase', () => {
         if (result.isOk()) {
           expect(result.value).toEqual(mockActiveUser)
         }
-        expect(repositoryMock.getCurrentUser).toHaveBeenCalled()
-        expect(queryMock.findActiveByAuthenticationId).toHaveBeenCalledWith(mockAuthUser.id)
+        expect(repositoryMock.verifySession).toHaveBeenCalled()
+        expect(queryMock.findActiveByAuthenticationId).toHaveBeenCalledWith(
+          mockVerifiedSession.authenticationId,
+        )
       })
     })
 
     describe('異常系', () => {
-      it('repository.getCurrentUser失敗時、エラーを返す', async () => {
+      it('repository.verifySession失敗時、エラーを返す', async () => {
         // Arrange
         const authError = new ClientError('Not authenticated', 401)
-        repositoryMock.getCurrentUser.mockResolvedValue(err(authError))
+        repositoryMock.verifySession.mockResolvedValue(err(authError))
 
         // Act
         const result = await useCase.getCurrentActiveUser()
@@ -324,7 +334,7 @@ describe('AuthUseCase', () => {
 
       describe('認証成功後', () => {
         beforeEach(() => {
-          repositoryMock.getCurrentUser.mockResolvedValue(ok(mockAuthUser))
+          repositoryMock.verifySession.mockResolvedValue(ok(mockVerifiedSession))
         })
 
         it('ActiveUserが見つからない場合、ClientError(404)を返す', async () => {

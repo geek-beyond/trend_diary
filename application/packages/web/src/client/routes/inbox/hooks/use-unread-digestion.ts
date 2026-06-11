@@ -136,8 +136,6 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     setQueue((prev) => prev.slice(1))
   }, [])
 
-  // 現バッチを消化しきったら次を取りに行く。[data]効果がキューを毎回「残り未読の先頭N件」で
-  // 置換する（追記しない）ため、取得タイミングに依らず重複・取りこぼしは起きない。
   // 取得状態はSWRのisValidatingで持つので、失敗・同一応答でもローディングに固定化しない
   const fetchNextBatchIfNeeded = useCallback(() => {
     if (queue.length === 1 && remaining > 1) {

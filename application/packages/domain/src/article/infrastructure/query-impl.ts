@@ -89,11 +89,6 @@ interface DateRange {
   toDateExclusive?: Date
 }
 
-// 一覧を分割取得しペイロードを有界化する上限。
-// このAPIは状態を持たず、毎回「残り未読の先頭N件」を返すだけ。read/skipで結果セットが
-// 縮むため取り直せば自然と続きになる（オフセット不要）。クライアントが各フェッチを
-// 「先頭N件の置換」として扱う限り、取得タイミングに依らず重複・取りこぼしは起きない。
-// 追記型/オフセット型ページングを足すとこの前提が崩れ、カーソル(article_id<最後のid)が要る
 const UNREAD_DIGESTION_LIMIT = 100
 
 type NormalizedDateTimeColumn = 'created_at' | 'rh.read_at' | 'sa.created_at'
@@ -184,6 +179,10 @@ export default class QueryImpl implements Query {
     return ok(fromRdbToArticle(article))
   }
 
+  // 当日の未読(read/skip除外)を先頭N件＋未読総数で返す。一覧はLIMITで分割しペイロードを抑える。
+  // 状態を持たず毎回「残り未読の先頭N件」を返すため、消化が進めば取り直すだけで続きになる
+  // （オフセット不要）。クライアントが各フェッチを「先頭N件の置換」として扱う限り、取得タイミング
+  // に依らず重複・取りこぼしは起きない。追記型/オフセット型にするならカーソル(article_id<最後のid)が要る
   async getUnreadDigestionArticles(
     activeUserId: bigint,
     targetDateJst: string,

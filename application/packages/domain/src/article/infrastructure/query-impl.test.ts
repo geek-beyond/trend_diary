@@ -302,7 +302,7 @@ describe('QueryImpl', () => {
       }
     })
 
-    it('未読総数(COUNT(*) OVER())を併せて返し、ペイロードを有界化する上限件数(100)でLIMITする', async () => {
+    it('未読総数(COUNT(*) OVER())を併せて返し、ペイロードを抑える上限件数(100)でLIMITする', async () => {
       // LIMITで返るのは100件でも、totalはLIMIT前の全件数(250)を各行が持つ
       mockRdbExecutor.mockResolvedValue({
         rows: [

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { newValidationError, newValidationSuccess } from './validation'
+import { newValidationError, newValidationSuccess } from './validation-result'
 
 describe('newValidationSuccess', () => {
   const primitiveTestCases = [

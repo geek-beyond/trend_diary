@@ -29,7 +29,7 @@ export default defineConfig(() => {
             globals: true,
             environment: 'node',
             setupFiles: ['src/test/setup/d1.ts'],
-            include: ['src/server/**/*.test.ts'],
+            include: ['src/server/**/*.test.ts', 'src/middleware/**/*.test.ts'],
           },
         },
         {

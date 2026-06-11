@@ -22,8 +22,6 @@ export const articles = sqliteTable(
     description: text('description').notNull(),
     url: text('url').notNull(),
     createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-    // ISO-8601 / CURRENT_TIMESTAMP由来の空白区切り / epochミリ秒が混在するcreated_atを
-    // datetime()で正規化し、インデックスで日時絞り込みをサーガブルにするための生成列
     createdAtNorm: text('created_at_norm').generatedAlwaysAs(normalizedDateTimeSql('created_at'), {
       mode: 'virtual',
     }),

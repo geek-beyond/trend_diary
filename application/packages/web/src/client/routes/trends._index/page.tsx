@@ -1,7 +1,6 @@
 import { toJaDateString } from '@trend-diary/common/locale'
 import { ChevronDown, Funnel } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useCallback, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
@@ -18,6 +17,10 @@ import DatePresetFilter from './components/date-preset-filter'
 import MediaFilter, { type MediaType } from './components/media-filter'
 import ReadStatusFilter, { type ReadStatusType } from './components/read-status-filter'
 import type { Article, DatePresetType } from './hooks/use-articles'
+
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 interface Props {
   date: Date
@@ -56,12 +59,33 @@ export default function TrendsPage({
   onToggleRead,
   isLoggedIn,
 }: Props) {
-  const [searchParams] = useSearchParams()
   const isMobile = useIsMobile()
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [draftMedia, setDraftMedia] = useState<MediaType>(selectedMedia)
   const [draftReadStatus, setDraftReadStatus] = useState<ReadStatusType>(selectedReadStatus)
   const [draftDatePreset, setDraftDatePreset] = useState<DatePresetType>(selectedDatePreset)
+
+  // 適用済みフィルタが外部要因（戻る/進む等）で変わったらドラフトを追従させる。
+  // props→state の同期 Effect ではなくレンダー中調整で行い、描画後のちらつきを避ける
+  const [appliedFilters, setAppliedFilters] = useState({
+    media: selectedMedia,
+    readStatus: selectedReadStatus,
+    datePreset: selectedDatePreset,
+  })
+  if (
+    appliedFilters.media !== selectedMedia ||
+    appliedFilters.readStatus !== selectedReadStatus ||
+    appliedFilters.datePreset !== selectedDatePreset
+  ) {
+    setAppliedFilters({
+      media: selectedMedia,
+      readStatus: selectedReadStatus,
+      datePreset: selectedDatePreset,
+    })
+    setDraftMedia(selectedMedia)
+    setDraftReadStatus(selectedReadStatus)
+    setDraftDatePreset(selectedDatePreset)
+  }
 
   const isPrevDisabled = page <= 1
   const isNextDisabled = page >= totalPages
@@ -76,12 +100,14 @@ export default function TrendsPage({
   const handlePrevPageClick = () => {
     if (!isPrevDisabled) {
       toPreviousPage(page)
+      scrollToTop()
     }
   }
 
   const handleNextPageClick = () => {
     if (!isNextDisabled) {
       toNextPage(page)
+      scrollToTop()
     }
   }
 
@@ -89,17 +115,6 @@ export default function TrendsPage({
     const baseClass = 'border-solid border border-b-slate-400 cursor-pointer'
     return twMerge(baseClass, isDisabled ? 'opacity-50 cursor-not-allowed' : '')
   }
-
-  // URLパラメータ変更時にページトップへスクロール
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [searchParams])
-
-  useEffect(() => {
-    setDraftMedia(selectedMedia)
-    setDraftReadStatus(selectedReadStatus)
-    setDraftDatePreset(selectedDatePreset)
-  }, [selectedMedia, selectedReadStatus, selectedDatePreset])
 
   const appliedFilterCount =
     (selectedMedia ? 1 : 0) +
@@ -130,7 +145,7 @@ export default function TrendsPage({
     if (isMobile) {
       setIsFilterOpen(false)
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollToTop()
   }
 
   const handleApplyFilter = () => {
@@ -138,22 +153,25 @@ export default function TrendsPage({
     if (isMobile) {
       setIsFilterOpen(false)
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollToTop()
   }
 
   const handleDesktopMediaChange = (media: MediaType) => {
     setDraftMedia(media)
     onApplyFilters({ media, readStatus: draftReadStatus, datePreset: draftDatePreset })
+    scrollToTop()
   }
 
   const handleDesktopReadStatusChange = (readStatus: ReadStatusType) => {
     setDraftReadStatus(readStatus)
     onApplyFilters({ media: draftMedia, readStatus, datePreset: draftDatePreset })
+    scrollToTop()
   }
 
   const handleDesktopDatePresetChange = (datePreset: DatePresetType) => {
     setDraftDatePreset(datePreset)
     onApplyFilters({ media: draftMedia, readStatus: draftReadStatus, datePreset })
+    scrollToTop()
   }
 
   return (

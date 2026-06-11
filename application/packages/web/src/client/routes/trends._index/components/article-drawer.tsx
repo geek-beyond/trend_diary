@@ -1,7 +1,7 @@
 import { toJaDateString } from '@trend-diary/common/locale'
 import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { Calendar, Check, ExternalLink, User, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Drawer,
@@ -34,13 +34,8 @@ export default function ArticleDrawer({
   isLoggedIn = false,
 }: Props) {
   const isMobile = useIsMobile()
+  // 記事ごとの開閉状態リセットは親の key={article.articleId} による再マウントで行う
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsDescriptionExpanded(false)
-    }
-  }, [article.articleId, isOpen])
 
   const handleOpenChange = (open: boolean) => {
     if (!open) onClose()

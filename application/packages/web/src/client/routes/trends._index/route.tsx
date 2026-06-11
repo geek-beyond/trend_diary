@@ -68,6 +68,7 @@ export default function Trends() {
       />
       {selectedArticle && (
         <ArticleDrawer
+          key={selectedArticle.articleId}
           article={selectedArticle}
           isOpen={isDrawerOpen}
           onClose={closeDrawer}

@@ -59,6 +59,7 @@ export default defineConfig(() => {
               'zod',
               'swr',
               'swr/mutation',
+              'pino',
               'hono/client',
               'storybook/test',
               'storybook/preview-api',

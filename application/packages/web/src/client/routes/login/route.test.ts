@@ -33,16 +33,21 @@ describe('login loader', () => {
     vi.mocked(resolveTurnstileSiteKey).mockReset()
   })
 
-  it('Turnstileサイトキーが設定されている場合はそれを返す', () => {
-    vi.mocked(resolveTurnstileSiteKey).mockReturnValue('site-key')
+  it.each([
+    {
+      name: '設定されている場合はそれを返す',
+      siteKey: 'site-key',
+      expected: { turnstileSiteKey: 'site-key' },
+    },
+    {
+      name: '未設定の場合はnullを返しウィジェットを描画させない',
+      siteKey: undefined,
+      expected: { turnstileSiteKey: null },
+    },
+  ])('Turnstileサイトキーが$name', ({ siteKey, expected }) => {
+    vi.mocked(resolveTurnstileSiteKey).mockReturnValue(siteKey)
 
-    expect(loader(buildLoaderArgs())).toEqual({ turnstileSiteKey: 'site-key' })
-  })
-
-  it('Turnstileサイトキーが未設定の場合はnullを返しウィジェットを描画させない', () => {
-    vi.mocked(resolveTurnstileSiteKey).mockReturnValue(undefined)
-
-    expect(loader(buildLoaderArgs())).toEqual({ turnstileSiteKey: null })
+    expect(loader(buildLoaderArgs())).toEqual(expected)
   })
 })
 

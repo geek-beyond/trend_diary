@@ -331,7 +331,7 @@ describe('fetchHatenaArticles', () => {
       expect(await countArticles()).toBe(expected)
     })
 
-    it('チャンク上限(19件)を超える記事もすべて保存する', async () => {
+    it('チャンク上限を超える記事もすべて保存する', async () => {
       const items: FeedItem[] = Array.from({ length: 40 }, (_, i) => ({
         title: `記事${i}`,
         author: `投稿者${i}`,

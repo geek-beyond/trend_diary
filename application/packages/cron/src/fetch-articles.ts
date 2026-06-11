@@ -28,8 +28,8 @@ const MAX_FETCH_ATTEMPTS = 3
 const RETRY_BASE_DELAY_MS = 1_000
 const RETRY_MAX_DELAY_MS = 30_000
 
-// D1のバインドパラメータ上限は1文あたり100個のため、5カラム×19行=95で上限内に収める
-const INSERT_CHUNK_SIZE = 19
+// D1のバインドパラメータ上限は1文あたり100個。チャンクサイズは1行のカラム数から動的に算出する
+const MAX_BIND_PARAMETERS = 100
 
 function* chunk<T>(items: readonly T[], size: number): Generator<T[]> {
   for (let i = 0; i < items.length; i += size) {
@@ -111,9 +111,14 @@ async function storeArticles(
     uniqueNormalized.push(article)
   }
 
+  const [firstArticle] = uniqueNormalized
+  if (firstArticle === undefined) return ok(0)
+  // スキーマ変更に追従できるよう、チャンクサイズは1行のカラム数から動的に算出する
+  const chunkSize = Math.floor(MAX_BIND_PARAMETERS / Object.keys(firstArticle).length)
+
   // ON CONFLICT DO NOTHING で既存URLをスキップし、returning した行数を挿入件数とする
   let insertedCount = 0
-  for (const articlesChunk of chunk(uniqueNormalized, INSERT_CHUNK_SIZE)) {
+  for (const articlesChunk of chunk(uniqueNormalized, chunkSize)) {
     const insertResult = await wrapDbCall(() =>
       db
         .insert(articles)

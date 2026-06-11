@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import type { MockedFunction } from 'vitest'
+import { buildFormData } from '@/client/test/helper/form-data'
 import getApiClientForClient from '@/infrastructure/api'
 import useLogin from './use-login'
 
@@ -23,14 +24,6 @@ const mockApiClient = {
 // biome-ignore lint/plugin: Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするためアサーションで橋渡しする
 const mockGetApiClientForClient = getApiClientForClient as MockedFunction<any>
 
-function buildFormData(entries: Record<string, string>): FormData {
-  const formData = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    formData.append(name, value)
-  }
-  return formData
-}
-
 const validForm = { email: 'test@example.com', password: 'Password1!' }
 
 describe('useLogin', () => {
@@ -40,82 +33,91 @@ describe('useLogin', () => {
     mockApiClient.auth.login.$post.mockResolvedValue({ ok: true, status: 200 })
   })
 
-  it('フォームの値が不正な場合はフィールドエラーを設定しAPIを呼ばない', async () => {
-    const { result } = renderHook(() => useLogin())
+  describe('正常系', () => {
+    it('フォームの値をJSONボディとしてPOST /api/auth/loginへ送る', async () => {
+      const { result } = renderHook(() => useLogin('site-key'))
 
-    await act(async () => {
-      await result.current.submit(buildFormData({ email: 'invalid', password: '' }))
+      await act(async () => {
+        await result.current.submit(
+          buildFormData({ ...validForm, 'cf-turnstile-response': 'captcha-token' }),
+        )
+      })
+
+      expect(mockApiClient.auth.login.$post).toHaveBeenCalledWith({
+        json: { ...validForm, captchaToken: 'captcha-token' },
+      })
     })
 
-    expect(result.current.errors).toBeDefined()
-    expect(mockApiClient.auth.login.$post).not.toHaveBeenCalled()
-  })
+    it('ログイン成功時は/trendsへ遷移する', async () => {
+      const { result } = renderHook(() => useLogin())
 
-  it('CAPTCHA有効時にトークンなしで送信した場合はformErrorを設定しAPIを呼ばない', async () => {
-    const { result } = renderHook(() => useLogin('site-key'))
+      await act(async () => {
+        await result.current.submit(buildFormData(validForm))
+      })
 
-    await act(async () => {
-      await result.current.submit(buildFormData(validForm))
-    })
-
-    expect(result.current.formError).toBe('セキュリティ認証を完了してください。')
-    expect(mockApiClient.auth.login.$post).not.toHaveBeenCalled()
-  })
-
-  it('フォームの値をJSONボディとしてPOST /api/auth/loginへ送る', async () => {
-    const { result } = renderHook(() => useLogin('site-key'))
-
-    await act(async () => {
-      await result.current.submit(
-        buildFormData({ ...validForm, 'cf-turnstile-response': 'captcha-token' }),
-      )
-    })
-
-    expect(mockApiClient.auth.login.$post).toHaveBeenCalledWith({
-      json: { ...validForm, captchaToken: 'captcha-token' },
+      expect(navigateMock).toHaveBeenCalledWith('/trends')
+      expect(result.current.formError).toBeUndefined()
     })
   })
 
-  it('ログイン成功時は/trendsへ遷移する', async () => {
-    const { result } = renderHook(() => useLogin())
+  describe('準正常系', () => {
+    it('フォームの値が不正な場合はフィールドエラーを設定しAPIを呼ばない', async () => {
+      const { result } = renderHook(() => useLogin())
 
-    await act(async () => {
-      await result.current.submit(buildFormData(validForm))
+      await act(async () => {
+        await result.current.submit(buildFormData({ email: 'invalid', password: '' }))
+      })
+
+      expect(result.current.errors).toBeDefined()
+      expect(mockApiClient.auth.login.$post).not.toHaveBeenCalled()
     })
 
-    expect(navigateMock).toHaveBeenCalledWith('/trends')
-    expect(result.current.formError).toBeUndefined()
+    it('CAPTCHA有効時にトークンなしで送信した場合はformErrorを設定しAPIを呼ばない', async () => {
+      const { result } = renderHook(() => useLogin('site-key'))
+
+      await act(async () => {
+        await result.current.submit(buildFormData(validForm))
+      })
+
+      expect(result.current.formError).toBe('セキュリティ認証を完了してください。')
+      expect(mockApiClient.auth.login.$post).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      { status: 401, expected: 'メールアドレスまたはパスワードが正しくありません' },
+      { status: 403, expected: 'セキュリティ認証を完了してください。' },
+      {
+        status: 429,
+        expected: '試行回数が上限に達しました。しばらく時間をおいて再度お試しください。',
+      },
+      { status: 500, expected: 'サーバーエラーが発生しました。時間をおいて再度お試しください。' },
+    ])('APIが$statusを返した場合はformError「$expected」を設定する', async ({
+      status,
+      expected,
+    }) => {
+      mockApiClient.auth.login.$post.mockResolvedValue({ ok: false, status })
+      const { result } = renderHook(() => useLogin())
+
+      await act(async () => {
+        await result.current.submit(buildFormData(validForm))
+      })
+
+      expect(result.current.formError).toBe(expected)
+      expect(navigateMock).not.toHaveBeenCalled()
+    })
   })
 
-  it.each([
-    { status: 401, expected: 'メールアドレスまたはパスワードが正しくありません' },
-    { status: 403, expected: 'セキュリティ認証を完了してください。' },
-    {
-      status: 429,
-      expected: '試行回数が上限に達しました。しばらく時間をおいて再度お試しください。',
-    },
-    { status: 500, expected: 'サーバーエラーが発生しました。時間をおいて再度お試しください。' },
-  ])('APIが$statusを返した場合はformError「$expected」を設定する', async ({ status, expected }) => {
-    mockApiClient.auth.login.$post.mockResolvedValue({ ok: false, status })
-    const { result } = renderHook(() => useLogin())
+  describe('異常系', () => {
+    it('API呼び出しで例外が発生した場合は汎用エラーメッセージを設定する', async () => {
+      mockApiClient.auth.login.$post.mockRejectedValue(new Error('network error'))
+      const { result } = renderHook(() => useLogin())
 
-    await act(async () => {
-      await result.current.submit(buildFormData(validForm))
+      await act(async () => {
+        await result.current.submit(buildFormData(validForm))
+      })
+
+      expect(result.current.formError).toBe('予期せぬエラーが発生しました。')
+      expect(navigateMock).not.toHaveBeenCalled()
     })
-
-    expect(result.current.formError).toBe(expected)
-    expect(navigateMock).not.toHaveBeenCalled()
-  })
-
-  it('API呼び出しで例外が発生した場合は汎用エラーメッセージを設定する', async () => {
-    mockApiClient.auth.login.$post.mockRejectedValue(new Error('network error'))
-    const { result } = renderHook(() => useLogin())
-
-    await act(async () => {
-      await result.current.submit(buildFormData(validForm))
-    })
-
-    expect(result.current.formError).toBe('予期せぬエラーが発生しました。')
-    expect(navigateMock).not.toHaveBeenCalled()
   })
 })

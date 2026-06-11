@@ -201,7 +201,6 @@ export class SupabaseAuthRepository implements AuthRepository {
       )
     }
 
-    // トークン未提示でセッションが存在しない
     if (!data) {
       return err(
         new UnauthorizedError('session not found', {

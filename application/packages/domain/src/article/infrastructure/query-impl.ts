@@ -89,8 +89,10 @@ interface DateRange {
   toDateExclusive?: Date
 }
 
-// 一覧を分割取得しペイロードを有界化する上限。read/skip済みはWHEREで除外されるため、
-// 再取得は自然と続きになりオフセットは不要
+// 一覧を分割取得しペイロードを有界化する上限。read/skipで結果セットが縮むため、
+// 先頭N件を取り直せば自然と続きになりオフセットは不要。
+// 【不変条件】クライアントはバッチを全消化してから再取得すること。未消化を残して
+// 継ぎ足すと重複・取りこぼしになるため、その時はカーソル(article_id<最後のid)が要る
 const UNREAD_DIGESTION_LIMIT = 100
 
 type NormalizedDateTimeColumn = 'created_at' | 'rh.read_at' | 'sa.created_at'

@@ -136,7 +136,9 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     setQueue((prev) => prev.slice(1))
   }, [])
 
-  // read/skip済みはWHEREで除外されるため再取得は自然と続きになる。
+  // バッチを全消化(read/skip)した時だけ次を取りに行く（最後の1件を消化＝queue.length===1）。
+  // これがサーバのオフセットレスページングの不変条件で、未消化を残して継ぎ足すと重複・
+  // 取りこぼしになる。read/skip済みはWHEREで除外されるため再取得は自然と続きになる。
   // 取得状態はSWRのisValidatingで持つので、失敗・同一応答でもローディングに固定化しない
   const fetchNextBatchIfNeeded = useCallback(() => {
     if (queue.length === 1 && remaining > 1) {

@@ -132,7 +132,6 @@ describe('cron worker scheduled', () => {
       }
       let activeFetches = 0
       let peakConcurrency = 0
-      // 各フェッチの応答を遅延させ、完了前に他メディアが開始しているか（同時実行数のピーク）で並列性を検証する
       fetchMock.mockImplementation(async (input: unknown) => {
         const target = String(input)
         if (target.startsWith(TEST_ENV.DISCORD_WEBHOOK_URL)) return { ok: true, status: 204 }

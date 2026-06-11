@@ -54,7 +54,6 @@ export async function fetchAllArticles({
     }),
   )
 
-  // Discord通知とログ集計は全件完了後にまとめて行い、並列フェッチと副作用を分離する
   for (const { media, result, durationMs } of outcomes) {
     if (result.isErr()) {
       failedCount += 1

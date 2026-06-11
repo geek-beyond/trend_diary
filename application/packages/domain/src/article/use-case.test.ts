@@ -435,12 +435,18 @@ describe('ArticleUseCase', () => {
         media: 'qiita' as const,
       },
     ])('$name で当日JST日付を使って取得できる', async ({ media }) => {
-      queryMock.getUnreadDigestionArticles.mockResolvedValue(ok([mockArticle]))
+      queryMock.getUnreadDigestionArticles.mockResolvedValue(
+        ok({ articles: [mockArticle], total: 1 }),
+      )
       const now = new Date('2026-03-07T00:00:00.000Z')
 
       const result = await useCase.getUnreadDigestionArticles(100n, media, now)
 
       expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value.total).toBe(1)
+        expect(result.value.articles).toHaveLength(1)
+      }
       expect(queryMock.getUnreadDigestionArticles).toHaveBeenCalledWith(100n, '2026-03-07', media)
     })
   })

@@ -263,7 +263,8 @@ describe('QueryImpl', () => {
         media: 'zenn' as const,
       },
     ])('$name をArticleへ変換できる', async ({ createdAt, expectedIso, media }) => {
-      mockRdbExecutor.mockResolvedValue({
+      // 1回目はCOUNT(未読総数)、2回目はLIMIT付きの一覧取得
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [{ total: 1 }] }).mockResolvedValueOnce({
         rows: [
           {
             articleId: 1,
@@ -281,20 +282,33 @@ describe('QueryImpl', () => {
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
-        expect(result.value).toHaveLength(1)
-        expect(result.value[0].articleId).toBe(1n)
-        expect(result.value[0].title).toBe('未読消化対象')
-        expect(result.value[0].createdAt.toISOString()).toBe(expectedIso)
+        expect(result.value.total).toBe(1)
+        expect(result.value.articles).toHaveLength(1)
+        expect(result.value.articles[0].articleId).toBe(1n)
+        expect(result.value.articles[0].title).toBe('未読消化対象')
+        expect(result.value.articles[0].createdAt.toISOString()).toBe(expectedIso)
       }
     })
 
-    it('ペイロードを有界に保つため上限件数(500)でLIMITする', async () => {
-      await queryImpl.getUnreadDigestionArticles(10n, '2026-03-07')
+    it('一覧は未読総数を併せて返し、ペイロードを有界化する上限件数(100)でLIMITする', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [{ total: 250 }] }).mockResolvedValueOnce({
+        rows: [],
+      })
 
-      const rawSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
-      const params = mockRdbExecutor.mock.calls[0]?.[1] ?? []
-      expect(rawSql).toContain('LIMIT ?')
-      expect(params).toContain(500)
+      const result = await queryImpl.getUnreadDigestionArticles(10n, '2026-03-07')
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        // 総数はLIMITに依らずWHERE全件、一覧はLIMITで分割される
+        expect(result.value.total).toBe(250)
+      }
+      const countSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
+      const listSql = String(mockRdbExecutor.mock.calls[1]?.[0] ?? '')
+      const listParams = mockRdbExecutor.mock.calls[1]?.[1] ?? []
+      expect(countSql).toContain('COUNT(*)')
+      expect(countSql).not.toContain('LIMIT')
+      expect(listSql).toContain('LIMIT ?')
+      expect(listParams).toContain(100)
     })
 
     it('DB取得失敗時はエラーを返す', async () => {

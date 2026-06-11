@@ -12,6 +12,7 @@ export type Article = Omit<ArticleOutput, 'articleId'> & {
 
 interface UnreadDigestionResponse {
   data: Article[]
+  total: number
 }
 
 const SkipErrorMessage = 'スキップに失敗しました'
@@ -43,13 +44,18 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
   const { client, apiCall } = createSWRFetcher()
   const { markAsRead } = useReadArticle()
   const [queue, setQueue] = useState<Article[]>([])
+  // バッチ件数ではなく未読総数。残件表示と完了判定の基準にする
+  const [remaining, setRemaining] = useState(0)
   const [isActionLoading, setIsActionLoading] = useState(false)
+  // キュー枯渇後に次バッチを取得している間。空表示と完了演出を抑止する
+  const [isFetchingNextBatch, setIsFetchingNextBatch] = useState(false)
   const [isJustCompleted, setIsJustCompleted] = useState(false)
-  const previousRemainingCountRef = useRef<number | null>(null)
+  const previousRemainingRef = useRef<number | null>(null)
   const completionTriggeredByActionRef = useRef(false)
+  const nextBatchRequestedRef = useRef(false)
 
   const swrKey = enabled ? ['api/articles/unread-digestion', selectedMedia] : null
-  const { data, isLoading } = useSWR<UnreadDigestionResponse>(swrKey, async () => {
+  const { data, isLoading, mutate } = useSWR<UnreadDigestionResponse>(swrKey, async () => {
     const query = selectedMedia ? { media: selectedMedia } : {}
     const result = await apiCall<UnreadDigestionResponse>(() =>
       client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
@@ -64,33 +70,54 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
         ...article,
         createdAt: new Date(article.createdAt),
       })),
+      total: result.total,
     }
   })
 
   useEffect(() => {
+    if (!data) return
+
     completionTriggeredByActionRef.current = false
-    setQueue(data?.data ?? [])
+    nextBatchRequestedRef.current = false
+    setIsFetchingNextBatch(false)
+    // 取得のたびにサーバ総数へ同期し、消化中の楽観的減算のズレを補正する
+    setRemaining(data.total)
+    setQueue(data.data)
   }, [data])
 
   useEffect(() => {
-    const remainingCount = queue.length
-    const previousRemainingCount = previousRemainingCountRef.current
+    const count = remaining
+    const previousCount = previousRemainingRef.current
     const reachedZeroByAction =
-      previousRemainingCount !== null &&
-      previousRemainingCount > 0 &&
-      remainingCount === 0 &&
+      previousCount !== null &&
+      previousCount > 0 &&
+      count === 0 &&
       completionTriggeredByActionRef.current
-    const shouldPlayCompletion =
-      reachedZeroByAction || (remainingCount === 0 && hasCompletionPending())
+    const shouldPlayCompletion = reachedZeroByAction || (count === 0 && hasCompletionPending())
 
     if (shouldPlayCompletion && document.visibilityState === 'visible') {
       setIsJustCompleted(true)
       setCompletionPending(false)
+    } else if (reachedZeroByAction) {
+      // 別タブで読了中はタブが非表示。復帰時に演出を再生するため保留にする
+      setCompletionPending(true)
     }
 
-    previousRemainingCountRef.current = remainingCount
+    previousRemainingRef.current = count
     completionTriggeredByActionRef.current = false
-  }, [queue.length])
+  }, [remaining])
+
+  useEffect(() => {
+    // ローカルのバッチを消化しきっても未読が残っていれば続きを取得する。
+    // キューが0になるのはread/skipのみ（「後で」は回転のみ）
+    if (queue.length !== 0) return
+    if (remaining <= 0) return
+    if (nextBatchRequestedRef.current) return
+
+    nextBatchRequestedRef.current = true
+    setIsFetchingNextBatch(true)
+    void mutate()
+  }, [queue.length, remaining, mutate])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -122,6 +149,12 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
 
   const currentArticle = queue[0] ?? null
 
+  const consumeCurrent = useCallback(() => {
+    completionTriggeredByActionRef.current = true
+    setRemaining((prev) => Math.max(0, prev - 1))
+    setQueue((prev) => prev.slice(1))
+  }, [])
+
   const handleSkip = useCallback(async () => {
     if (!currentArticle) return
     setIsActionLoading(true)
@@ -138,35 +171,28 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
         throw new Error('Failed to skip article')
       }
 
-      completionTriggeredByActionRef.current = true
-      setQueue((prev) => prev.slice(1))
+      consumeCurrent()
     } catch (_error) {
       toast.error(SkipErrorMessage)
     } finally {
       setIsActionLoading(false)
     }
-  }, [client.articles, currentArticle])
+  }, [client.articles, currentArticle, consumeCurrent])
 
   const handleRead = useCallback(async () => {
     if (!currentArticle) return
     setIsActionLoading(true)
 
     try {
-      const isLastArticle = queue.length === 1
       window.open(currentArticle.url, '_blank', 'noopener,noreferrer')
       const isReadSuccess = await markAsRead(currentArticle.articleId)
       if (!isReadSuccess) return
 
-      if (isLastArticle) {
-        setCompletionPending(true)
-      }
-
-      completionTriggeredByActionRef.current = true
-      setQueue((prev) => prev.slice(1))
+      consumeCurrent()
     } finally {
       setIsActionLoading(false)
     }
-  }, [currentArticle, markAsRead, queue.length])
+  }, [currentArticle, markAsRead, consumeCurrent])
 
   const handleLater = useCallback(() => {
     setQueue((prev) => {
@@ -177,10 +203,10 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
   }, [])
 
   return {
-    isLoading: isLoading || isActionLoading,
+    isLoading: isLoading || isActionLoading || isFetchingNextBatch,
     isJustCompleted,
     currentArticle,
-    remainingCount: queue.length,
+    remainingCount: remaining,
     handleSkip,
     handleRead,
     handleLater,

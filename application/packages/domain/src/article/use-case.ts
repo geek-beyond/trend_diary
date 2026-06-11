@@ -7,7 +7,11 @@ import { isNull } from '@trend-diary/common/types/utility'
 import { err, ok, type Result } from 'neverthrow'
 import type { ArticleMedia } from './media'
 import type { Command, Query } from './repository'
-import type { Article, ArticleWithOptionalReadStatus } from './schema/article-schema'
+import type {
+  Article,
+  ArticleWithOptionalReadStatus,
+  UnreadDigestionResult,
+} from './schema/article-schema'
 import type { DailyDiary, DailyDiaryRangeItem } from './schema/diary-schema'
 import type { QueryParams } from './schema/query-schema'
 import type { ReadHistory } from './schema/read-history-schema'
@@ -56,7 +60,7 @@ export class UseCase {
     activeUserId: bigint,
     media?: ArticleMedia,
     now: Date = new Date(),
-  ): Promise<Result<Article[], Error>> {
+  ): Promise<Result<UnreadDigestionResult, Error>> {
     const targetDateJstResult = toJstDateString(now)
     if (targetDateJstResult.isErr()) {
       return err(new ServerError(targetDateJstResult.error))

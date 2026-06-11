@@ -9,6 +9,7 @@ interface UnreadDigestionResponse {
     articleId: string
     title: string
   }>
+  total: number
 }
 
 describe('GET /api/articles/unread-digestion', () => {
@@ -118,5 +119,6 @@ describe('GET /api/articles/unread-digestion', () => {
     const json: UnreadDigestionResponse = await response.json()
     expect(json.data.map((item) => item.title)).toEqual(expect.arrayContaining(expectedTitles!))
     expect(json.data).toHaveLength(expectedTitles!.length)
+    expect(json.total).toBe(expectedTitles!.length)
   })
 })

@@ -11,7 +11,11 @@ import { eq, type SQL, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import { ARTICLE_MEDIA, type ArticleMedia } from '../media'
 import type { Query } from '../repository'
-import type { Article, ArticleWithOptionalReadStatus } from '../schema/article-schema'
+import type {
+  Article,
+  ArticleWithOptionalReadStatus,
+  UnreadDigestionResult,
+} from '../schema/article-schema'
 import type { DailyDiary, DailyDiaryRangeItem, DiaryReadItem } from '../schema/diary-schema'
 import type { QueryParams } from '../schema/query-schema'
 import fromRdbToArticle from './mapper'
@@ -71,10 +75,11 @@ interface DateRange {
   toDateExclusive?: Date
 }
 
-// 当日未読は通常数百件に収まるため平時はこの上限に達しないが、
-// 異常日に未読が青天井に膨らんでもペイロードを有界に保つための防御的キャップ。
-// 上限到達分はread/skip後の再取得で次バッチが入るため、利用者から見た欠落は生じない
-const UNREAD_DIGESTION_LIMIT = 500
+// 未読は1日1000件超になり得るため一覧は分割取得する。read/skip済みはWHERE条件で
+// 除外されるので、消化が進むほど次の取得が自然と「続き」になりオフセットは不要。
+// 1件ずつ消化するUIでは読了の合間に次バッチを取れば足りるため、転送量と再取得頻度の
+// 釣り合いからこの値とする
+const UNREAD_DIGESTION_LIMIT = 100
 
 type NormalizedDateTimeColumn = 'created_at' | 'rh.read_at' | 'sa.created_at'
 
@@ -173,7 +178,7 @@ export default class QueryImpl implements Query {
     activeUserId: bigint,
     targetDateJst: string,
     media?: ArticleMedia,
-  ): Promise<Result<Article[], ServerError>> {
+  ): Promise<Result<UnreadDigestionResult, ServerError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(targetDateJst, targetDateJst)
     const createdAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -184,36 +189,54 @@ export default class QueryImpl implements Query {
 
     const mediaCondition = media ? sql`AND articles.media = ${media}` : sql.empty()
 
-    const result = await wrapDbCall(() =>
-      this.db.all<RawArticleRow>(sql`
-        SELECT
-          article_id as articleId,
-          media,
-          title,
-          author,
-          description,
-          url,
-          created_at as createdAt
-        FROM articles
-        WHERE
-          ${createdAtRangeSql}
-          AND NOT (${QueryImpl.buildReadHistoryExistsSql(dbActiveUserId)})
-          AND NOT EXISTS (
-            SELECT 1
-            FROM skipped_articles sa
-            WHERE sa.article_id = articles.article_id
-              AND sa.active_user_id = ${dbActiveUserId}
-          )
-          ${mediaCondition}
-        ORDER BY article_id DESC
-        LIMIT ${UNREAD_DIGESTION_LIMIT}
-      `),
-    )
-    if (result.isErr()) {
-      return err(new ServerError(result.error))
+    // 残件表示・全消化判定に使う総数と、ペイロードを有界化する分割取得を同一条件で並走させる
+    const whereSql = sql`
+      WHERE
+        ${createdAtRangeSql}
+        AND NOT (${QueryImpl.buildReadHistoryExistsSql(dbActiveUserId)})
+        AND NOT EXISTS (
+          SELECT 1
+          FROM skipped_articles sa
+          WHERE sa.article_id = articles.article_id
+            AND sa.active_user_id = ${dbActiveUserId}
+        )
+        ${mediaCondition}
+    `
+
+    const queryResultTuple = await Promise.all([
+      wrapDbCall(() =>
+        this.db.all<RawCountRow>(sql`
+          SELECT COUNT(*) as total
+          FROM articles
+          ${whereSql}
+        `),
+      ),
+      wrapDbCall(() =>
+        this.db.all<RawArticleRow>(sql`
+          SELECT
+            article_id as articleId,
+            media,
+            title,
+            author,
+            description,
+            url,
+            created_at as createdAt
+          FROM articles
+          ${whereSql}
+          ORDER BY article_id DESC
+          LIMIT ${UNREAD_DIGESTION_LIMIT}
+        `),
+      ),
+    ])
+    const resolvedQueryResults = QueryImpl.unwrapResultTuple(queryResultTuple)
+    if (resolvedQueryResults.isErr()) {
+      return err(resolvedQueryResults.error)
     }
 
-    return ok(result.value.map(QueryImpl.mapRawArticle))
+    const [totalRows, articleRows] = resolvedQueryResults.value
+    const total = Number(totalRows[0]?.total ?? 0)
+
+    return ok({ articles: articleRows.map(QueryImpl.mapRawArticle), total })
   }
 
   async getDailyDiary(

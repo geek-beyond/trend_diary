@@ -13,13 +13,20 @@ import LandingHeader from '../../components/ui/layout/landing-header'
 import { AnchorLink } from '../../components/ui/navigation/link'
 
 interface Props {
+  onSubmit: (formData: FormData) => void
   isSubmitting: boolean
   errors?: AuthenticateErrors
   formError?: string
   turnstileSiteKey?: string
 }
 
-export default function SignupPage({ isSubmitting, errors, formError, turnstileSiteKey }: Props) {
+export default function SignupPage({
+  onSubmit,
+  isSubmitting,
+  errors,
+  formError,
+  turnstileSiteKey,
+}: Props) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
       <LandingHeader />
@@ -31,6 +38,7 @@ export default function SignupPage({ isSubmitting, errors, formError, turnstileS
           </CardHeader>
           <CardContent>
             <AuthenticateForm
+              onSubmit={onSubmit}
               submitButtonText='アカウント作成'
               loadingSubmitButtonText='アカウント作成中...'
               isSubmitting={isSubmitting}

@@ -1,0 +1,20 @@
+language js
+
+// client配下（React Router）からドメインのユースケースファクトリを直接生成すると、
+// Hono API層のミドルウェア（レート制限・CSRF等）をバイパスするため禁止する。
+// ドメインパッケージからは型・定数・スキーマの import のみ許可する。
+// Biome 2.4時点では overrides の plugins が実行されないため、
+// 適用範囲の限定は $filename によるパス条件で行う。
+or {
+  JsShorthandNamedImportSpecifier(local_name=$name),
+  JsNamedImportSpecifier(name=$name)
+} as $specifier where {
+  $name <: r"^create\w*UseCase$",
+  $specifier <: within JsImport() as $import where {
+    $import <: contains JsModuleSource() as $source where {
+      $source <: r"^['\"]@trend-diary/domain(?:/.*)?['\"]$"
+    }
+  } ,
+  $filename <: r".*packages[/\\]web[/\\]src[/\\]client[/\\].*",
+  register_diagnostic(span=$specifier, message="Do not import domain use case factories (create*UseCase) in client code. Call the Hono API instead so that middleware (rate limiting, CSRF, etc.) is applied.", severity="error")
+}

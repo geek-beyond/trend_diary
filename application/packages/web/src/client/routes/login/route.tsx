@@ -1,33 +1,7 @@
-import Logger from '@trend-diary/common/logger'
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-  type MetaFunction,
-  redirect,
-  useActionData,
-  useLoaderData,
-  useNavigation,
-} from 'react-router'
-import {
-  createAuthActionUseCase,
-  resolveTurnstileSiteKey,
-} from '@/client/features/authenticate/auth-action-use-case'
-import {
-  AUTH_ERROR_MESSAGES,
-  resolveLoginErrorMessage,
-} from '@/client/features/authenticate/error-message'
-import {
-  type AuthenticateErrors,
-  validateAuthenticateForm,
-} from '@/client/features/authenticate/validation'
+import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
+import { resolveTurnstileSiteKey } from '@/client/features/authenticate/turnstile'
+import useLogin from './hooks/use-login'
 import LoginPage from './page'
-
-interface LoginActionData {
-  errors?: AuthenticateErrors
-  formError?: string
-}
-
-const logger = new Logger('info', { route: 'web/client/routes/login/action' })
 
 export const meta: MetaFunction = () => [
   { title: 'ログイン | TrendDiary' },
@@ -55,50 +29,16 @@ export function loader({ context }: LoaderFunctionArgs) {
   return { turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null }
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
-  const formData = await request.formData()
-  const validation = validateAuthenticateForm(formData)
-  if (!validation.isValid) {
-    return { errors: validation.errors } satisfies LoginActionData
-  }
-
-  const captchaTokenValue = formData.get('cf-turnstile-response')
-  const captchaToken = typeof captchaTokenValue === 'string' ? captchaTokenValue : undefined
-
-  // CAPTCHA有効時にトークン未取得のまま送信させない
-  if (resolveTurnstileSiteKey(context) && !captchaToken) {
-    return { formError: AUTH_ERROR_MESSAGES.captchaRequired } satisfies LoginActionData
-  }
-
-  try {
-    const { useCase, headers } = createAuthActionUseCase(request, context)
-    const result = await useCase.login(
-      validation.data.email,
-      validation.data.password,
-      captchaToken,
-    )
-
-    if (result.isErr()) {
-      return { formError: resolveLoginErrorMessage(result.error) } satisfies LoginActionData
-    }
-
-    return redirect('/trends', { headers })
-  } catch (error) {
-    logger.error('Unexpected error in login action', error)
-    return { formError: AUTH_ERROR_MESSAGES.unexpected } satisfies LoginActionData
-  }
-}
-
 export default function Login() {
   const { turnstileSiteKey } = useLoaderData<typeof loader>()
-  const actionData = useActionData<typeof action>()
-  const navigation = useNavigation()
+  const { isSubmitting, errors, formError, submit } = useLogin(turnstileSiteKey ?? undefined)
 
   return (
     <LoginPage
-      isSubmitting={navigation.state === 'submitting'}
-      errors={actionData?.errors}
-      formError={actionData?.formError}
+      onSubmit={submit}
+      isSubmitting={isSubmitting}
+      errors={errors}
+      formError={formError}
       turnstileSiteKey={turnstileSiteKey ?? undefined}
     />
   )

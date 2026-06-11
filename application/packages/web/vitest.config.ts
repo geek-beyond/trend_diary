@@ -8,6 +8,11 @@ import { defineConfig } from 'vitest/config'
 const rootDir = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(() => {
+  // storybook プロジェクトは .tsx コンポーネントの描画のみを検証し、.ts（hook・ロジック）は
+  // client ユニットテストで担保する。Public API バレル経由で巻き込まれる .ts が storybook の
+  // カバレッジ母数を汚すため、storybook 実行時のみ .ts を計測対象外とする。
+  // Vitest はプロジェクト単位の coverage 設定を持てないため、実行プロジェクトを argv で判定する。
+  const isStorybookCoverage = process.argv.includes('storybook')
   return {
     test: {
       projects: [
@@ -102,11 +107,7 @@ export default defineConfig(() => {
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',
           'src/client/features/diary/components/login-required.tsx',
-          // Public API バレル経由で storybook バンドルに巻き込まれる非UI資産。
-          // これらは client ユニットテスト側で担保するため storybook カバレッジ母数から除外する
-          'src/client/infrastructure/**',
-          'src/client/features/authenticate/*.ts',
-          'src/client/features/authenticate/hooks/**',
+          ...(isStorybookCoverage ? ['**/*.ts'] : []),
         ],
         // ベタガキしないと、Github Actionsに閾値が反映されない
         thresholds: {

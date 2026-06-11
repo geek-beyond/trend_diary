@@ -1,7 +1,8 @@
 import type Logger from '@trend-diary/common/logger'
+import { wrapAsyncCall } from '@trend-diary/common/result'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import type { DiscordWebhookClient } from '@trend-diary/notification'
-import { err, type Result } from 'neverthrow'
+import type { Result } from 'neverthrow'
 import type { CronEnv } from './env'
 import { runScheduledFetch } from './fetch-articles'
 
@@ -39,18 +40,15 @@ export async function fetchAllArticles({
   })
 
   // フィード取得はI/O待ちが支配的なため、メディア単位で並列実行して壁時計時間を短縮する
-  // runScheduledFetch はResultを返し原則rejectしないが、想定外の例外も失敗として扱い所要時間を正確に記録する
   const outcomes = await Promise.all(
     ARTICLE_MEDIA.map(async (media): Promise<MediaFetchOutcome> => {
       const mediaStartedAt = Date.now()
       logger.info({ msg: 'cron media fetch started', media })
-      try {
-        const result = await runScheduledFetch(media, env, logger)
-        return { media, result, durationMs: Date.now() - mediaStartedAt }
-      } catch (e) {
-        const error = e instanceof Error ? e : new Error(String(e))
-        return { media, result: err(error), durationMs: Date.now() - mediaStartedAt }
-      }
+      // runScheduledFetch はResultを返し原則rejectしないが、想定外の例外も失敗として扱う
+      const result = (await wrapAsyncCall(() => runScheduledFetch(media, env, logger))).andThen(
+        (inner) => inner,
+      )
+      return { media, result, durationMs: Date.now() - mediaStartedAt }
     }),
   )
 

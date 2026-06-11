@@ -177,7 +177,7 @@ export default function useArticles(isLoggedIn = false) {
           toast.error('エラーが発生しました。時間をおいて再度お試しください。')
         } else {
           toast.error('不明なエラーが発生しました')
-          // biome-ignore lint/suspicious/noConsole: 未知のエラーのため
+          // oxlint-disable-next-line no-console -- 未知のエラーのため
           console.error(error)
         }
       },

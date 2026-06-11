@@ -98,7 +98,7 @@ function extractValidatedData(c: Context<Env>): ValidatedRequestData {
   }
   // valid は内部で this（c.req）を参照するメソッドのため、変数へ取り出すとレシーバが外れて壊れる。
   // bind でレシーバを固定する。ジェネリックな Context では引数型が never に潰れるため呼び出しキーの型のみ補う。
-  // biome-ignore lint/plugin: ジェネリックな Context では valid() の引数型が never に潰れ、検証キーの型を補うアサーションが避けられないため
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- ジェネリックな Context では valid() の引数型が never に潰れ、検証キーの型を補うアサーションが避けられないため
   const valid = c.req.valid.bind(c.req) as (key: 'param' | 'json' | 'query') => unknown
   return {
     param: valid('param'),
@@ -122,7 +122,7 @@ function buildRequestContext<TContext extends RequestContext | AuthenticatedRequ
     user,
     logger,
   }
-  // biome-ignore lint/plugin: ミドルウェア検証済みの値をジェネリックな TContext へ橋渡しする唯一の地点で、静的型では表現できないため許可する
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- ミドルウェア検証済みの値をジェネリックな TContext へ橋渡しする唯一の地点で、静的型では表現できないため許可する
   return context as TContext
 }
 
@@ -212,7 +212,7 @@ function executeHandlerLogic<
     }
 
     const responseData = config.transform ? config.transform(result.value) : result.value
-    // biome-ignore lint/plugin: 204 を分岐済みで残るのはボディを持つステータスのみだが、StatusCode から ContentfulStatusCode への絞り込みを型で表現できないため許可する
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- 204 を分岐済みで残るのはボディを持つステータスのみだが、StatusCode から ContentfulStatusCode への絞り込みを型で表現できないため許可する
     return c.json(responseData, statusCode as ContentfulStatusCode)
   })()
 }

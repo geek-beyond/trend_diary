@@ -91,8 +91,7 @@ const resolveJstDateWithOffset = (baseDateString: string, days: number): string 
   return result.value
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: getApiClientForClientの型が面倒なのでanyを使用
-// biome-ignore lint/plugin: Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするためアサーションで橋渡しする
+// oxlint-disable-next-line typescript/no-explicit-any, typescript/consistent-type-assertions -- Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするため any と型アサーションを許可する
 const mockGetApiClientForClient = getApiClientForClient as MockedFunction<any>
 type UseTrendsHook = ReturnType<typeof useArticles>
 
@@ -163,7 +162,7 @@ describe('useArticles', () => {
 
     it('loading中はisLoadingがtrueになる', async () => {
       let resolvePromise: () => void
-      // biome-ignore lint/suspicious/noExplicitAny:　getApiClientForClientの型が面倒なのでanyを使用
+      // oxlint-disable-next-line typescript/no-explicit-any --　getApiClientForClientの型が面倒なのでanyを使用
       const mockPromise = new Promise<any>((resolve) => {
         resolvePromise = () =>
           resolve({

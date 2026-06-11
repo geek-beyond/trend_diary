@@ -1,9 +1,9 @@
 import React from 'react'
+import type { MetaFunction } from 'react-router'
 import {
   isRouteErrorResponse,
   Links,
   Meta,
-  MetaFunction,
   Outlet,
   Scripts,
   ScrollRestoration,

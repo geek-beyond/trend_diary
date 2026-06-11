@@ -1,7 +1,7 @@
 import type { ComponentPropsWithoutRef, PropsWithChildren } from 'react'
 import { href, Link } from 'react-router'
 import { Button } from '@/client/components/shadcn/button'
-import { InternalPath } from '@/client/routes'
+import type { InternalPath } from '@/client/routes'
 
 export type ExternalPath = `https://${string}` | `http://${string}`
 
@@ -11,7 +11,7 @@ interface ExternalLinkProps extends Omit<ComponentPropsWithoutRef<'a'>, 'href'> 
 
 function ExternalLink({ to, children, ...props }: PropsWithChildren<ExternalLinkProps>) {
   return (
-    // biome-ignore lint: plugin
+    // oxlint-disable-next-line react/forbid-elements -- 外部リンク用ラッパーの内部では生の <a> が唯一の実装手段のため許可する
     <a href={to} target='_blank' rel='noopener noreferrer nofollow' {...props}>
       {children}
     </a>

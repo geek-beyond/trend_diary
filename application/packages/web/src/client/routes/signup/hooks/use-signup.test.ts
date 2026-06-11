@@ -7,6 +7,7 @@ import useSignup from './use-signup'
 const navigateMock = vi.fn()
 
 vi.mock('react-router', async (importOriginal) => {
+  // oxlint-disable-next-line typescript/consistent-type-imports -- vitestのimportOriginalにモジュール型を渡す定型のため inline import 型を許可する
   const actual = await importOriginal<typeof import('react-router')>()
   return { ...actual, useNavigate: () => navigateMock }
 })
@@ -20,8 +21,7 @@ const mockApiClient = {
   },
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: getApiClientForClientの型が面倒なのでanyを使用
-// biome-ignore lint/plugin: Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするためアサーションで橋渡しする
+// oxlint-disable-next-line typescript/no-explicit-any, typescript/consistent-type-assertions -- Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするためアサーションで橋渡しする
 const mockGetApiClientForClient = getApiClientForClient as MockedFunction<any>
 
 const validForm = { email: 'test@example.com', password: 'Password1!' }

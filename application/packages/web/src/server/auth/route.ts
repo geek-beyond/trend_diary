@@ -1,6 +1,6 @@
 import { authInputSchema } from '@trend-diary/domain/user'
 import { Hono } from 'hono'
-import { Env } from '@/env'
+import type { Env } from '@/env'
 import { authenticator } from '@/middleware/authenticator'
 import rateLimiter from '@/middleware/rate-limiter'
 import zodValidator from '@/middleware/zod-validator'

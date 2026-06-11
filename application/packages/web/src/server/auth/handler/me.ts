@@ -1,5 +1,5 @@
 import type { Context } from 'hono'
-import { Env } from '@/env'
+import type { Env } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
 
 // authenticatorで検証済みのセッションをここで再検証すると、トークン期限切れ時にリフレッシュが

@@ -1,8 +1,9 @@
-import Logger, { LoggerType } from '@trend-diary/common/logger'
+import type { LoggerType } from '@trend-diary/common/logger'
+import Logger from '@trend-diary/common/logger'
 import { DiscordNotifier } from '@trend-diary/notification'
-import { Context } from 'hono'
+import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { Env } from '../env'
+import type { Env } from '../env'
 import CONTEXT_KEY from './context'
 
 export interface RequestInfo {
@@ -41,7 +42,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
           err,
         )
       } else {
-        // biome-ignore lint/suspicious/noConsole: request logger未設定時の最終フォールバック
+        // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
         console.error('http exception', err)
       }
     } else if (logger && typeof logger.warn === 'function') {
@@ -52,7 +53,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
         method: c.req.method,
       })
     } else {
-      // biome-ignore lint/suspicious/noConsole: request logger未設定時の最終フォールバック
+      // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
       console.warn('http exception', err)
     }
 
@@ -72,7 +73,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
   if (logger && typeof logger.error === 'function') {
     logger.error('Unhandled error', err)
   } else {
-    // biome-ignore lint/suspicious/noConsole: request logger未設定時の最終フォールバック
+    // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
     console.error('Unhandled error', err)
   }
   await discordNotifier.error(err, requestInfo)

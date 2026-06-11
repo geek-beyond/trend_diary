@@ -4,7 +4,7 @@ import { type AuthInput, createAuthUseCase } from '@trend-diary/domain/user'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
-import { ZodValidatedContext } from '@/middleware/zod-validator'
+import type { ZodValidatedContext } from '@/middleware/zod-validator'
 
 export default async function signup(c: ZodValidatedContext<AuthInput>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)

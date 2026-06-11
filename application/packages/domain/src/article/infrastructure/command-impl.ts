@@ -1,10 +1,11 @@
 import { ServerError } from '@trend-diary/common/errors'
 import { readHistories, skippedArticles } from '@trend-diary/datastore/drizzle-orm/schema'
-import { RdbClient, wrapDbCall } from '@trend-diary/datastore/rdb'
+import type { RdbClient } from '@trend-diary/datastore/rdb'
+import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { and, eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { Command } from '../repository'
+import type { Command } from '../repository'
 import type { ReadHistory } from '../schema/read-history-schema'
 import type { SkippedArticle } from '../schema/skipped-article-schema'
 

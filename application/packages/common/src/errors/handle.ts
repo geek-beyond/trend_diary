@@ -1,6 +1,6 @@
 import { HTTPException } from 'hono/http-exception'
-import { ContentfulStatusCode } from 'hono/utils/http-status'
-import { LoggerType } from '../logger'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
+import type { LoggerType } from '../logger'
 import ClientError from './client-error/client-error'
 import ExternalServiceError from './external-service-error'
 import ServerError from './server-error'
@@ -8,7 +8,7 @@ import ServerError from './server-error'
 export default function handleError(error: unknown, logger: LoggerType): HTTPException {
   if (error instanceof ClientError) {
     logger.warn('client error', error)
-    // biome-ignore lint/plugin: statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
     return new HTTPException(error.statusCode as ContentfulStatusCode, {
       message: error.message,
     })
@@ -30,7 +30,7 @@ export default function handleError(error: unknown, logger: LoggerType): HTTPExc
       },
       error,
     )
-    // biome-ignore lint/plugin: statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
     return new HTTPException(error.statusCode as ContentfulStatusCode, {
       message: error.message,
     })
@@ -38,7 +38,7 @@ export default function handleError(error: unknown, logger: LoggerType): HTTPExc
 
   if (error instanceof ServerError) {
     logger.error('internal server error', error)
-    // biome-ignore lint/plugin: statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
     return new HTTPException(error.statusCode as ContentfulStatusCode, {
       message: error.message,
     })

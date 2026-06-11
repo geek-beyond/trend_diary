@@ -1,4 +1,4 @@
-import { Env } from '@/env'
+import type { Env } from '@/env'
 import { platformEnv } from '@/test/setup/platform-proxy'
 
 const TEST_ENV = {

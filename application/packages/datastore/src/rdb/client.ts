@@ -1,8 +1,7 @@
+import type { D1Database } from '@cloudflare/workers-types'
 import { type DrizzleD1Database, drizzle as drizzleD1 } from 'drizzle-orm/d1'
 import * as schema from '../drizzle-orm/schema'
 import { queryLogger } from './logger'
-
-type D1Database = import('@cloudflare/workers-types').D1Database
 
 export type RdbClient = DrizzleD1Database<typeof schema>
 

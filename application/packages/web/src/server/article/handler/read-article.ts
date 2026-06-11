@@ -3,7 +3,7 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import { ZodValidatedParamJsonContext } from '@/middleware/zod-validator'
+import type { ZodValidatedParamJsonContext } from '@/middleware/zod-validator'
 
 // API用スキーマ
 export const createReadHistoryApiSchema = z.object({

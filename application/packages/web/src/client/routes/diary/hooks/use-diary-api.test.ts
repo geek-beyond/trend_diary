@@ -49,6 +49,7 @@ const apiCall = vi.fn()
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- Hono client は深くネストした型を持ち、テストでは利用する一部のみをモックするため二重アサーションで橋渡しする
   mockedCreateSWRFetcher.mockReturnValue({
     fetcher: vi.fn(),
     apiCall,
@@ -60,7 +61,6 @@ beforeEach(() => {
         },
       },
     },
-    // biome-ignore lint/plugin: Hono client は深くネストした型を持ち、テストでは利用する一部のみをモックするため二重アサーションで橋渡しする
   } as unknown as ReturnType<typeof createSWRFetcher>)
 })
 

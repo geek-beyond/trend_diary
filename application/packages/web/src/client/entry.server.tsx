@@ -30,7 +30,7 @@ export default async function handleRequest(
       signal: request.signal,
       onError(error: unknown) {
         // Log streaming rendering errors from inside the shell
-        // biome-ignore lint/suspicious/noConsole: Remixのエラーを一応出す
+        // oxlint-disable-next-line no-console -- Remixのエラーを一応出す
         console.error(error)
         statusCode = 500
       },

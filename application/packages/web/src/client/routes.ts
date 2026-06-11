@@ -1,12 +1,6 @@
-import {
-  index,
-  layout,
-  prefix,
-  type RouteConfig,
-  RouteConfigEntry,
-  route,
-} from '@react-router/dev/routes'
-import { href } from 'react-router'
+import type { RouteConfigEntry } from '@react-router/dev/routes'
+import { index, layout, prefix, type RouteConfig, route } from '@react-router/dev/routes'
+import type { href } from 'react-router'
 
 const PATH_INDEX = '/'
 

@@ -10,8 +10,7 @@ function readEnv(value?: string) {
 }
 
 /**
- * Turnstileのサイトキー（公開値）をcontext優先・なければprocess.envの順で解決する。
- * 未設定の場合はundefinedを返し、ウィジェットを描画しない。
+ * サイトキー未設定の環境ではCAPTCHAをエラーにせずウィジェット非表示で運用するため、undefinedを返す。
  */
 export function resolveTurnstileSiteKey(context: TurnstileContext): string | undefined {
   const fromContext = readEnv(context.cloudflare?.env?.TURNSTILE_SITE_KEY)

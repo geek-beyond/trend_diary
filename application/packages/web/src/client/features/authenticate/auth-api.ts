@@ -8,8 +8,8 @@ interface AuthApiInput {
 }
 
 /**
- * 認証APIをin-processで呼び出す。rateLimiter・csrf・zodValidatorといったAPI側のミドルウェアを
- * 本番経路（action/loader）にも適用するため、ユースケースを直接呼ばずHono appを経由させる。
+ * rateLimiter・csrf・zodValidatorといったAPI側のミドルウェアを本番経路（action/loader）にも
+ * 適用するため、ユースケースを直接呼ばずHono appを経由させる。
  */
 export async function callAuthApi(
   request: Request,
@@ -36,9 +36,6 @@ export async function callAuthApi(
   )
 }
 
-/**
- * セッション発行・リフレッシュの Set-Cookie（複数あり得る）を呼び出し元レスポンスへ転送するためのヘッダーを組み立てる
- */
 export function buildSetCookieHeaders(response: Response): Headers {
   const headers = new Headers()
   for (const setCookie of response.headers.getSetCookie()) {

@@ -1,7 +1,7 @@
 import { toJaDateString } from '@trend-diary/common/locale'
 import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { Calendar, Check, ExternalLink, User, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Drawer,
@@ -35,12 +35,6 @@ export default function ArticleDrawer({
 }: Props) {
   const isMobile = useIsMobile()
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsDescriptionExpanded(false)
-    }
-  }, [article.articleId, isOpen])
 
   const handleOpenChange = (open: boolean) => {
     if (!open) onClose()

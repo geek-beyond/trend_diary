@@ -1,7 +1,7 @@
 import Logger from '@trend-diary/common/logger'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import type { CronEnv } from './env'
-import { fetchAllArticles } from './fetch-all-articles'
+import { fetchAllArticles } from './feed/fetch-all-articles'
 
 export default {
   async scheduled(event: ScheduledController, env: CronEnv, ctx: ExecutionContext) {

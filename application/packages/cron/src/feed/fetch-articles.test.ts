@@ -3,15 +3,15 @@ import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchHatenaArticles, fetchQiitaArticles, fetchZennArticles } from './fetch-articles'
 import {
   buildHatenaRdf,
   buildQiitaAtom,
   buildZennRss,
   type FeedItem,
   rssResponse,
-} from './test-helper/feed'
-import { testRdb as db } from './test-helper/rdb'
+} from '../test-helper/feed'
+import { testRdb as db } from '../test-helper/rdb'
+import { fetchHatenaArticles, fetchQiitaArticles, fetchZennArticles } from './fetch-articles'
 
 const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)

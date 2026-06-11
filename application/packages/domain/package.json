@@ -15,7 +15,7 @@
   "dependencies": {
     "@trend-diary/common": "workspace:*",
     "@trend-diary/datastore": "workspace:*",
-    "@supabase/supabase-js": "^2.76.1",
+    "@supabase/supabase-js": "catalog:",
     "drizzle-orm": "catalog:",
     "neverthrow": "catalog:",
     "zod": "catalog:"

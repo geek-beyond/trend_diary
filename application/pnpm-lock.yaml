@@ -15,6 +15,9 @@ catalogs:
     '@faker-js/faker':
       specifier: ^10.4.0
       version: 10.4.0
+    '@supabase/supabase-js':
+      specifier: ^2.76.1
+      version: 2.106.1
     '@types/node':
       specifier: ^25.9.1
       version: 25.9.1
@@ -162,7 +165,7 @@ importers:
   packages/domain:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.76.1
+        specifier: 'catalog:'
         version: 2.106.1
       '@trend-diary/common':
         specifier: workspace:*
@@ -199,7 +202,7 @@ importers:
   packages/e2e:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.76.1
+        specifier: 'catalog:'
         version: 2.106.1
       '@trend-diary/common':
         specifier: workspace:*
@@ -282,7 +285,7 @@ importers:
         specifier: ^0.10.3
         version: 0.10.3(@supabase/supabase-js@2.106.1)
       '@supabase/supabase-js':
-        specifier: ^2.76.1
+        specifier: 'catalog:'
         version: 2.106.1
       '@trend-diary/common':
         specifier: workspace:*

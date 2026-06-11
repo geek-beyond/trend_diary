@@ -73,6 +73,14 @@ interface DateRange {
 
 type NormalizedDateTimeColumn = 'created_at' | 'rh.read_at' | 'sa.created_at'
 
+// 正規化済みの値はインデックス付きVIRTUAL生成列(*_norm)に保持済みのため、
+// 比較・並び替え・集計は生成列を直接参照してサーガブルにする
+const NORMALIZED_DATETIME_COLUMN: Record<NormalizedDateTimeColumn, string> = {
+  created_at: 'created_at_norm',
+  'rh.read_at': 'rh.read_at_norm',
+  'sa.created_at': 'sa.created_at_norm',
+}
+
 export default class QueryImpl implements Query {
   constructor(private readonly db: RdbClient) {}
 
@@ -396,13 +404,7 @@ export default class QueryImpl implements Query {
   }
 
   private static getNormalizedDateTimeSql(columnName: NormalizedDateTimeColumn) {
-    const column = sql.raw(columnName)
-    return sql`
-      CASE
-        WHEN typeof(${column}) = 'integer' THEN datetime(${column} / 1000, 'unixepoch')
-        ELSE datetime(${column})
-      END
-    `
+    return sql.raw(NORMALIZED_DATETIME_COLUMN[columnName])
   }
 
   private static getJstDateSql(columnName: NormalizedDateTimeColumn) {

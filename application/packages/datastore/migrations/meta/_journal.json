@@ -36,6 +36,13 @@
       "when": 1781082015667,
       "tag": "0005_silent_wolfsbane",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1781172119772,
+      "tag": "0006_flowery_luke_cage",
+      "breakpoints": true
     }
   ]
 }

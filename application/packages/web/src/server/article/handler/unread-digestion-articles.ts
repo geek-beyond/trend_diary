@@ -13,6 +13,7 @@ type ArticleResponse = Omit<ArticleOutput, 'articleId'> & {
 
 interface UnreadDigestionArticlesResponse {
   data: ArticleResponse[]
+  total: number
 }
 
 const mediaEnum = z.enum(ARTICLE_MEDIA)
@@ -37,9 +38,15 @@ export default async function unreadDigestionArticles(
     throw handleError(result.error, logger)
   }
 
-  const response: UnreadDigestionArticlesResponse = { data: result.value.map(toArticleResponse) }
+  const response: UnreadDigestionArticlesResponse = {
+    data: result.value.articles.map(toArticleResponse),
+    total: result.value.total,
+  }
 
-  logger.info('unread digestion articles retrieved successfully', { count: response.data.length })
+  logger.info('unread digestion articles retrieved successfully', {
+    count: response.data.length,
+    total: response.total,
+  })
   return c.json(response, 200)
 }
 

@@ -25,7 +25,7 @@ runs:
         key: supabase-docker-images-${{ runner.os }}-${{ inputs.cli-version }}
 
     - name: キャッシュ済みDockerイメージの読み込み
-      # ヒット時はここで読み込んでおくとsupabase startがECRからpullせず起動が速くなる
+      # ヒット時はここで読み込んでおくとsupabase startがレジストリからpullせず起動が速くなる
       if: steps.image-cache.outputs.cache-hit == 'true'
       shell: bash
       run: docker load -i ~/.cache/supabase-docker-images.tar
@@ -44,7 +44,9 @@ runs:
       run: |
         set -euo pipefail
         mkdir -p ~/.cache
-        mapfile -t images < <(docker images --filter 'reference=public.ecr.aws/supabase/*' --format '{{.Repository}}:{{.Tag}}')
+        # SUPABASE_INTERNAL_IMAGE_REGISTRYでレジストリを上書きしている場合（このリポジトリはghcr.io）はそのprefixでpullされるため、フィルタも同じレジストリに揃えないと保存対象が空になりキャッシュが一切保存されない
+        registry="${SUPABASE_INTERNAL_IMAGE_REGISTRY:-public.ecr.aws}"
+        mapfile -t images < <(docker images --filter "reference=${registry}/supabase/*" --format '{{.Repository}}:{{.Tag}}')
         if [[ ${#images[@]} -eq 0 ]]; then
           echo "::warning::キャッシュ対象のSupabaseイメージが見つかりませんでした"
           exit 0

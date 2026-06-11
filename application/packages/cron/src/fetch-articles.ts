@@ -4,7 +4,6 @@ import { wrapAsyncCall } from '@trend-diary/common/result'
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
-import { inArray } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import Parser from 'rss-parser'
 import type { FetchEnv } from './env'
@@ -28,6 +27,15 @@ const FETCH_TIMEOUT_MS = 30_000
 const MAX_FETCH_ATTEMPTS = 3
 const RETRY_BASE_DELAY_MS = 1_000
 const RETRY_MAX_DELAY_MS = 30_000
+
+// D1のバインドパラメータ上限は1文あたり100個のため、5カラム×19行=95で上限内に収める
+const INSERT_CHUNK_SIZE = 19
+
+function* chunk<T>(items: readonly T[], size: number): Generator<T[]> {
+  for (let i = 0; i < items.length; i += size) {
+    yield items.slice(i, i + size)
+  }
+}
 
 function truncateByCodePoint(text: string, maxLength: number): string {
   return [...text].slice(0, maxLength).join('')
@@ -94,22 +102,7 @@ async function storeArticles(
     url: item.url,
   }))
 
-  const existingResult = await wrapDbCall(() =>
-    db
-      .select({ url: articles.url })
-      .from(articles)
-      .where(
-        inArray(
-          articles.url,
-          normalized.map((item) => item.url),
-        ),
-      ),
-  )
-  if (existingResult.isErr()) {
-    return err(existingResult.error)
-  }
-
-  const existingUrlSet = new Set(existingResult.value.map((item) => item.url))
+  // 同一フィード内のURL重複を除去する（複数行INSERT内の自己重複を避けるため）
   const feedUrlSet = new Set<string>()
   const uniqueNormalized: typeof normalized = []
   for (const article of normalized) {
@@ -117,40 +110,24 @@ async function storeArticles(
     feedUrlSet.add(article.url)
     uniqueNormalized.push(article)
   }
-  const toInsert = uniqueNormalized.filter((item) => !existingUrlSet.has(item.url))
 
-  if (toInsert.length === 0) return ok(0)
-
+  // ON CONFLICT DO NOTHING で既存URLをスキップし、returning した行数を挿入件数とする
   let insertedCount = 0
-  for (const article of toInsert) {
-    // INFO: D1互換のため記事は1件ずつ保存する
-    const insertResult = await wrapDbCall(() => db.insert(articles).values(article))
+  for (const articlesChunk of chunk(uniqueNormalized, INSERT_CHUNK_SIZE)) {
+    const insertResult = await wrapDbCall(() =>
+      db
+        .insert(articles)
+        .values(articlesChunk)
+        .onConflictDoNothing({ target: articles.url })
+        .returning({ url: articles.url }),
+    )
     if (insertResult.isErr()) {
-      if (isUniqueConstraintError(insertResult.error)) continue
       return err(insertResult.error)
     }
-    insertedCount += 1
+    insertedCount += insertResult.value.length
   }
 
   return ok(insertedCount)
-}
-
-// Drizzle はドライバエラーを DrizzleQueryError でラップし元エラーを cause に格納するため、
-// cause チェーンを辿って 'UNIQUE constraint failed'(D1/SQLite共通)を探す。
-function isUniqueConstraintError(error: unknown): boolean {
-  let current: unknown = error
-  for (let depth = 0; depth < 5 && current != null; depth += 1) {
-    if (typeof current !== 'object') break
-    if (
-      'message' in current &&
-      typeof current.message === 'string' &&
-      current.message.includes('UNIQUE constraint failed')
-    ) {
-      return true
-    }
-    current = 'cause' in current ? current.cause : undefined
-  }
-  return false
 }
 
 // 1件の不正itemでメディア全体の取込を止めないよう、不正itemは警告ログを残してスキップする。

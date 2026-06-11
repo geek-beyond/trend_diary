@@ -9,7 +9,6 @@ import {
   ScrollRestoration,
   useRouteError,
 } from 'react-router'
-
 import './styles.css'
 import { Toaster } from './components/shadcn/sonner'
 

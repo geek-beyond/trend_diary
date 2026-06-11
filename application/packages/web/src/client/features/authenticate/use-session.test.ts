@@ -8,7 +8,6 @@ import useSession from './use-session'
 const mockApiClient = {
   auth: {
     me: {
-      // biome-ignore lint/style/useNamingConvention: $get is a Hono client method name
       $get: vi.fn(),
     },
   },

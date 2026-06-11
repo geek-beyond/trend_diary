@@ -7,7 +7,6 @@ import { testRdb as db } from '@/test/helper/rdb'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import app from '../../../server'
-
 import type { ArticleListResponse, ArticleWithReadStatusResponse } from './get-articles'
 
 interface GetArticlesTestCase {

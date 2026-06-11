@@ -15,7 +15,6 @@ vi.mock('react-router', async (importOriginal) => {
 const mockApiClient = {
   auth: {
     signup: {
-      // biome-ignore lint/style/useNamingConvention: $post is a Hono client method name
       $post: vi.fn(),
     },
   },
@@ -91,20 +90,20 @@ describe('useSignup', () => {
         expected: '試行回数が上限に達しました。しばらく時間をおいて再度お試しください。',
       },
       { status: 500, expected: 'サーバーエラーが発生しました。時間をおいて再度お試しください。' },
-    ])('APIが$statusを返した場合はformError「$expected」を設定する', async ({
-      status,
-      expected,
-    }) => {
-      mockApiClient.auth.signup.$post.mockResolvedValue({ ok: false, status })
-      const { result } = renderHook(() => useSignup())
+    ])(
+      'APIが$statusを返した場合はformError「$expected」を設定する',
+      async ({ status, expected }) => {
+        mockApiClient.auth.signup.$post.mockResolvedValue({ ok: false, status })
+        const { result } = renderHook(() => useSignup())
 
-      await act(async () => {
-        await result.current.submit(buildFormData(validForm))
-      })
+        await act(async () => {
+          await result.current.submit(buildFormData(validForm))
+        })
 
-      expect(result.current.formError).toBe(expected)
-      expect(navigateMock).not.toHaveBeenCalled()
-    })
+        expect(result.current.formError).toBe(expected)
+        expect(navigateMock).not.toHaveBeenCalled()
+      },
+    )
   })
 
   describe('異常系', () => {

@@ -21,7 +21,9 @@ export const articles = sqliteTable(
     author: text('author').notNull(),
     description: text('description').notNull(),
     url: text('url').notNull(),
-    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
     createdAtNorm: text('created_at_norm').generatedAlwaysAs(normalizedDateTimeSql('created_at'), {
       mode: 'virtual',
     }),
@@ -37,7 +39,9 @@ export const readHistories = sqliteTable(
   {
     readHistoryId: integer('read_history_id').primaryKey({ autoIncrement: true }),
     readAt: dateTime('read_at').notNull(),
-    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
     // INFO: 記事IDは外部制約なし（記事削除後も履歴を保持するための意図的設計）
     articleId: integer('article_id').notNull(),
     activeUserId: integer('active_user_id')
@@ -58,7 +62,9 @@ export const skippedArticles = sqliteTable(
   'skipped_articles',
   {
     skippedArticleId: integer('skipped_article_id').primaryKey({ autoIncrement: true }),
-    createdAt: dateTime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: dateTime('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
     // INFO: 記事IDは外部制約なし（記事削除後もskip履歴を保持するための意図的設計）
     articleId: integer('article_id').notNull(),
     activeUserId: integer('active_user_id')

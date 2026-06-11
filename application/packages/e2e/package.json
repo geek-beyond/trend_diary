@@ -10,10 +10,10 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.76.1",
     "@trend-diary/common": "workspace:*",
     "@trend-diary/datastore": "workspace:*",
     "@trend-diary/domain": "workspace:*",
-    "@supabase/supabase-js": "^2.76.1",
     "drizzle-orm": "catalog:",
     "wrangler": "catalog:"
   },

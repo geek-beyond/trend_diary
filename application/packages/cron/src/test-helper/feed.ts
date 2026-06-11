@@ -1,4 +1,4 @@
-import { FEED_URL } from '../feed-config'
+import { FEED_URL } from '../feed/config'
 
 export { FEED_URL }
 

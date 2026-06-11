@@ -3,7 +3,7 @@ import { wrapAsyncCall } from '@trend-diary/common/result'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import type { DiscordWebhookClient } from '@trend-diary/notification'
 import { err, type Result } from 'neverthrow'
-import type { CronEnv } from './env'
+import type { CronEnv } from '../env'
 import { runScheduledFetch } from './fetch-articles'
 
 export interface FetchAllArticlesParams {

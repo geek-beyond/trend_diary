@@ -1,6 +1,6 @@
 ---
 paths:
-  - "**/web/src/client/**/*.tsx"
+  - "**/web/src/client/**/*.{ts,tsx}"
 ---
 
 # React規約
@@ -22,4 +22,6 @@ React 19.2 + React Compiler 有効（`packages/web` の Vite で `babel-plugin-r
 
 外部システムとの同期は Effect が本来の用途のため、無理に置き換えない。
 
-- 外部スクリプトの読込・描画、`matchMedia` 等の購読、`visibilitychange` の購読、`setTimeout` タイマー、キーボードショートカットの購読など
+- 外部スクリプトの読込・描画、`setTimeout` タイマー、キーボードショートカットの購読など
+- 外部ストアの値を購読するだけのもの（`matchMedia` や `visibilitychange` 等）は、可能なら `useSyncExternalStore` を優先する
+  - 理由: SSR との整合が取れ、初回レンダー後のちらつきを避けられる。Effect での購読は描画後に値が確定するため一瞬ずれる余地がある

@@ -79,6 +79,7 @@ describe('useUnreadDigestion', () => {
   it('初回ロードが0件でも完了演出フラグは立たない', async () => {
     mockUnreadDigestionGet.mockResolvedValue({
       data: [],
+      total: 0,
     })
 
     const { result } = renderHook(() => useUnreadDigestion(true, null), { wrapper })
@@ -94,6 +95,7 @@ describe('useUnreadDigestion', () => {
   it('最後の1件をスキップして0件になると完了演出フラグが1回立つ', async () => {
     mockUnreadDigestionGet.mockResolvedValue({
       data: [baseArticle],
+      total: 1,
     })
     mockSkipPost.mockResolvedValue({
       status: 201,
@@ -126,9 +128,11 @@ describe('useUnreadDigestion', () => {
     mockUnreadDigestionGet
       .mockResolvedValueOnce({
         data: [baseArticle],
+        total: 1,
       })
       .mockResolvedValueOnce({
         data: [],
+        total: 0,
       })
 
     const initialProps: { selectedMedia: MediaType } = { selectedMedia: null }
@@ -161,6 +165,7 @@ describe('useUnreadDigestion', () => {
 
     mockUnreadDigestionGet.mockResolvedValue({
       data: [baseArticle],
+      total: 1,
     })
 
     const { result } = renderHook(() => useUnreadDigestion(true, null), { wrapper })
@@ -192,10 +197,74 @@ describe('useUnreadDigestion', () => {
     })
   })
 
+  it('バッチを消化しきっても未読が残っていれば次バッチを取得し、完了演出は出さない', async () => {
+    const nextArticle: Article = {
+      ...baseArticle,
+      articleId: 'article-2',
+      title: 'テスト記事2',
+    }
+    mockUnreadDigestionGet
+      .mockResolvedValueOnce({
+        data: [baseArticle],
+        total: 2,
+      })
+      .mockResolvedValueOnce({
+        data: [nextArticle],
+        total: 1,
+      })
+    mockSkipPost.mockResolvedValue({
+      status: 201,
+    })
+
+    const { result } = renderHook(() => useUnreadDigestion(true, null), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.currentArticle?.articleId).toBe('article-1')
+    })
+    expect(result.current.remainingCount).toBe(2)
+
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+
+    await waitFor(() => {
+      expect(result.current.currentArticle?.articleId).toBe('article-2')
+    })
+    expect(result.current.remainingCount).toBe(1)
+    expect(result.current.isJustCompleted).toBe(false)
+  })
+
+  it('次バッチ取得が同一応答(SWRが更新しない)でもローディングに固定化しない', async () => {
+    // 再取得結果がdeep-equalだとSWRはdataを更新せず[data]効果が再実行されない。
+    // ローディングをSWRのisValidatingで持つことで、それでも固定化しないことを保証する
+    mockUnreadDigestionGet.mockResolvedValue({
+      data: [baseArticle],
+      total: 2,
+    })
+    mockSkipPost.mockResolvedValue({
+      status: 201,
+    })
+
+    const { result } = renderHook(() => useUnreadDigestion(true, null), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.currentArticle?.articleId).toBe('article-1')
+    })
+
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+  })
+
   it('既読APIが失敗したらキューを消化しない', async () => {
     mockMarkAsRead.mockResolvedValue(false)
     mockUnreadDigestionGet.mockResolvedValue({
       data: [baseArticle],
+      total: 1,
     })
 
     const { result } = renderHook(() => useUnreadDigestion(true, null), { wrapper })

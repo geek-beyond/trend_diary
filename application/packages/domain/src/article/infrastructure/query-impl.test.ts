@@ -285,6 +285,7 @@ describe('QueryImpl', () => {
             description: '未読消化の説明',
             url: 'https://example.com/unread',
             createdAt,
+            total: 1,
           },
         ],
       })
@@ -293,11 +294,43 @@ describe('QueryImpl', () => {
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
-        expect(result.value).toHaveLength(1)
-        expect(result.value[0].articleId).toBe(1n)
-        expect(result.value[0].title).toBe('未読消化対象')
-        expect(result.value[0].createdAt.toISOString()).toBe(expectedIso)
+        expect(result.value.total).toBe(1)
+        expect(result.value.articles).toHaveLength(1)
+        expect(result.value.articles[0].articleId).toBe(1n)
+        expect(result.value.articles[0].title).toBe('未読消化対象')
+        expect(result.value.articles[0].createdAt.toISOString()).toBe(expectedIso)
       }
+    })
+
+    it('未読総数(COUNT(*) OVER())を併せて返し、ペイロードを抑える上限件数(100)でLIMITする', async () => {
+      // LIMITで返るのは100件でも、totalはLIMIT前の全件数(250)を各行が持つ
+      mockRdbExecutor.mockResolvedValue({
+        rows: [
+          {
+            articleId: 1,
+            media: 'qiita',
+            title: 't',
+            author: 'a',
+            description: 'd',
+            url: 'https://example.com/unread',
+            createdAt: '2026-03-07T00:00:00.000Z',
+            total: 250,
+          },
+        ],
+      })
+
+      const result = await queryImpl.getUnreadDigestionArticles(10n, '2026-03-07')
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value.total).toBe(250)
+      }
+      expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
+      const sqlText = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
+      const params = mockRdbExecutor.mock.calls[0]?.[1] ?? []
+      expect(sqlText).toContain('COUNT(*) OVER()')
+      expect(sqlText).toContain('LIMIT ?')
+      expect(params).toContain(100)
     })
 
     it('DB取得失敗時はエラーを返す', async () => {

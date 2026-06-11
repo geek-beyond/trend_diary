@@ -3,7 +3,11 @@ import type { OffsetPaginationResult } from '@trend-diary/common/pagination'
 import type { Nullable } from '@trend-diary/common/types/utility'
 import { type Result } from 'neverthrow'
 import type { ArticleMedia } from './media'
-import type { Article, ArticleWithOptionalReadStatus } from './schema/article-schema'
+import type {
+  Article,
+  ArticleWithOptionalReadStatus,
+  UnreadDigestionResult,
+} from './schema/article-schema'
 import type { DailyDiary, DailyDiaryRangeItem } from './schema/diary-schema'
 import type { QueryParams } from './schema/query-schema'
 import type { ReadHistory } from './schema/read-history-schema'
@@ -24,7 +28,7 @@ export interface Query {
     activeUserId: bigint,
     targetDateJst: string,
     media?: ArticleMedia,
-  ): Promise<Result<Article[], ServerError>>
+  ): Promise<Result<UnreadDigestionResult, ServerError>>
 
   getDailyDiary(
     activeUserId: bigint,

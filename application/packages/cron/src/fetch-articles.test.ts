@@ -331,6 +331,22 @@ describe('fetchHatenaArticles', () => {
       expect(await countArticles()).toBe(expected)
     })
 
+    it('チャンク上限を超える記事もすべて保存する', async () => {
+      const items: FeedItem[] = Array.from({ length: 40 }, (_, i) => ({
+        title: `記事${i}`,
+        author: `投稿者${i}`,
+        content: `本文${i}`,
+        url: `https://example.com/chunk/${i}`,
+      }))
+      stubHatena(items)
+
+      const result = await fetchHatenaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) expect(result.value).toBe(40)
+      expect(await countArticles()).toBe(40)
+    })
+
     it('creator が欠損した記事は author をはてなブックマークで補完する', async () => {
       stubHatena([{ title: 'はてな記事', content: 'はてな本文', url: 'https://example.com/h1' }])
 

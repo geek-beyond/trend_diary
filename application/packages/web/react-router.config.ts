@@ -2,13 +2,9 @@ import type { Config } from '@react-router/dev/config'
 export default {
   appDirectory: 'src/client',
   future: {
-    // eslint-disable-next-line @typescript-eslint/naming-convention -- React Router v8 future フラグ名は固定
     v8_splitRouteModules: true,
-    // eslint-disable-next-line @typescript-eslint/naming-convention -- React Router v8 future フラグ名は固定
     v8_viteEnvironmentApi: true,
-    // eslint-disable-next-line @typescript-eslint/naming-convention -- React Router v8 future フラグ名は固定
     v8_passThroughRequests: true,
-    // eslint-disable-next-line @typescript-eslint/naming-convention -- React Router v8 future フラグ名は固定
     v8_trailingSlashAwareDataRequests: true,
     // true にすると context が RouterContextProvider インスタンス必須になるが、
     // hono-react-router-adapter@0.6.5 は plain object を渡すため全ルートが 500 になる。

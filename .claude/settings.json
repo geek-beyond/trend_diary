@@ -27,7 +27,6 @@
       "Bash(npx tsc:*)",
       "Bash(npx oxfmt:*)",
       "Bash(npx oxlint:*)",
-      "Bash(npx eslint:*)",
       "mcp__ide__getDiagnostics",
       "Bash(npm run tsc:*)",
       "Bash(npm run:*)",

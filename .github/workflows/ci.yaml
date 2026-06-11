@@ -313,3 +313,28 @@ jobs:
             echo "::error::失敗またはタイムアウトしたジョブがあります"
             exit 1
           fi
+
+  notify-failure:
+    # mainへのpushでCIが失敗した時のみ通知する(PRのCI失敗はGitHub上で気づけるため対象外)
+    needs: gate
+    if: ${{ failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    environment: develop
+    steps:
+      - name: CI失敗をDiscordへ通知
+        working-directory: ${{ github.workspace }}
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${DISCORD_WEBHOOK_URL}" ]]; then
+            echo "DISCORD_WEBHOOK_URLが未設定のため通知をスキップします"
+            exit 0
+          fi
+
+          curl -fsS -H "Content-Type: application/json" \
+            -d "{\"content\": \":rotating_light: mainブランチのCIが失敗しました (${COMMIT_SHA:0:7})\n${RUN_URL}\"}" \
+            "${DISCORD_WEBHOOK_URL}"

@@ -1,8 +1,8 @@
 import type { Env } from '@/env'
+import app from '@/server'
 import TEST_ENV from '@/test/env'
-import app from '../../server'
 
-describe('認証エンドポイントのレートリミット', () => {
+describe('レートリミットミドルウェア', () => {
   // limit()の結果を制御してレートリミットの挙動を検証する
   function buildEnv(success: boolean): Env['Bindings'] {
     return {

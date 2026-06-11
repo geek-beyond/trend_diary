@@ -39,23 +39,23 @@ export async function fetchAllArticles({
   })
 
   // フィード取得はI/O待ちが支配的なため、メディア単位で並列実行して壁時計時間を短縮する
-  const settled = await Promise.allSettled(
+  // runScheduledFetch はResultを返し原則rejectしないが、想定外の例外も失敗として扱い所要時間を正確に記録する
+  const outcomes = await Promise.all(
     ARTICLE_MEDIA.map(async (media): Promise<MediaFetchOutcome> => {
       const mediaStartedAt = Date.now()
       logger.info({ msg: 'cron media fetch started', media })
-      const result = await runScheduledFetch(media, env, logger)
-      return { media, result, durationMs: Date.now() - mediaStartedAt }
+      try {
+        const result = await runScheduledFetch(media, env, logger)
+        return { media, result, durationMs: Date.now() - mediaStartedAt }
+      } catch (e) {
+        const error = e instanceof Error ? e : new Error(String(e))
+        return { media, result: err(error), durationMs: Date.now() - mediaStartedAt }
+      }
     }),
   )
 
   // Discord通知とログ集計は全件完了後にまとめて行い、並列フェッチと副作用を分離する
-  for (const [index, outcome] of settled.entries()) {
-    const { media, result, durationMs } = resolveOutcome(
-      ARTICLE_MEDIA[index],
-      jobStartedAt,
-      outcome,
-    )
-
+  for (const { media, result, durationMs } of outcomes) {
     if (result.isErr()) {
       failedCount += 1
       const error = result.error
@@ -83,16 +83,4 @@ export async function fetchAllArticles({
   if (failedCount > 0) {
     throw new Error(`cron job failed: ${failedCount}/${ARTICLE_MEDIA.length} media failed`)
   }
-}
-
-// runScheduledFetch はResultを返し原則rejectしないが、想定外の例外も失敗として扱えるよう正規化する
-function resolveOutcome(
-  media: ArticleMedia,
-  jobStartedAt: number,
-  outcome: PromiseSettledResult<MediaFetchOutcome>,
-): MediaFetchOutcome {
-  if (outcome.status === 'fulfilled') return outcome.value
-
-  const error = outcome.reason instanceof Error ? outcome.reason : new Error(String(outcome.reason))
-  return { media, result: err(error), durationMs: Date.now() - jobStartedAt }
 }

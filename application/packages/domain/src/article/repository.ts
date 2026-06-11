@@ -1,4 +1,4 @@
-import type { ServerError } from '@trend-diary/common/errors'
+import type { NotFoundError, ServerError } from '@trend-diary/common/errors'
 import type { OffsetPaginationResult } from '@trend-diary/common/pagination'
 import type { Nullable } from '@trend-diary/common/types/utility'
 import { type Result } from 'neverthrow'
@@ -47,16 +47,28 @@ export interface Query {
 }
 
 export interface Command {
+  /**
+   * 既読履歴を作成する。記事が存在しない場合は NotFoundError を返す
+   */
   createReadHistory(
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, ServerError>>
+  ): Promise<Result<ReadHistory, ServerError | NotFoundError>>
 
+  /**
+   * 記事をスキップ登録する。記事が存在しない場合は NotFoundError を返す
+   */
   createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, ServerError>>
+  ): Promise<Result<SkippedArticle, ServerError | NotFoundError>>
 
-  deleteAllReadHistory(activeUserId: bigint, articleId: bigint): Promise<Result<void, ServerError>>
+  /**
+   * 記事の既読履歴を全削除する。記事が存在しない場合は NotFoundError を返す
+   */
+  deleteAllReadHistory(
+    activeUserId: bigint,
+    articleId: bigint,
+  ): Promise<Result<void, ServerError | NotFoundError>>
 }

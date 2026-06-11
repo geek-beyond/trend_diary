@@ -33,8 +33,8 @@ describe('QueryImpl', () => {
   describe('searchArticles', () => {
     it('ページネーション付きで記事を検索できる', async () => {
       // INFO: 生SQL(db.all)は実ドライバ(libsql)でカラム別名キーのオブジェクトを返すため、
-      // モックも別名キーのオブジェクトで戻り行を注入する
-      mockRdbExecutor.mockResolvedValueOnce({ rows: [{ total: 2 }] }).mockResolvedValueOnce({
+      // モックも別名キーのオブジェクトで戻り行を注入する。総件数は COUNT(*) OVER() で各行に付与される
+      mockRdbExecutor.mockResolvedValueOnce({
         rows: [
           {
             articleId: 1,
@@ -45,6 +45,7 @@ describe('QueryImpl', () => {
             url: 'https://example.com/article/1',
             createdAt: '2024-01-15T09:30:00.000Z',
             isRead: null,
+            total: 2,
           },
           {
             articleId: 2,
@@ -55,6 +56,7 @@ describe('QueryImpl', () => {
             url: 'https://example.com/article/2',
             createdAt: '2024-01-14T10:00:00.000Z',
             isRead: null,
+            total: 2,
           },
         ],
       })
@@ -62,6 +64,7 @@ describe('QueryImpl', () => {
       const result = await queryImpl.searchArticles({ page: 1, limit: 20 })
 
       expect(result.isOk()).toBe(true)
+      expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
       if (result.isOk()) {
         expect(result.value.total).toBe(2)
         expect(result.value.data).toHaveLength(2)
@@ -70,7 +73,7 @@ describe('QueryImpl', () => {
     })
 
     it('activeUserId指定時は既読状態を返す', async () => {
-      mockRdbExecutor.mockResolvedValueOnce({ rows: [{ total: 2 }] }).mockResolvedValueOnce({
+      mockRdbExecutor.mockResolvedValueOnce({
         rows: [
           {
             articleId: 1,
@@ -81,6 +84,7 @@ describe('QueryImpl', () => {
             url: 'https://example.com/article/1',
             createdAt: '2024-01-15T09:30:00.000Z',
             isRead: 1,
+            total: 2,
           },
           {
             articleId: 2,
@@ -91,6 +95,7 @@ describe('QueryImpl', () => {
             url: 'https://example.com/article/2',
             createdAt: '2024-01-14T10:00:00.000Z',
             isRead: 0,
+            total: 2,
           },
         ],
       })
@@ -105,58 +110,63 @@ describe('QueryImpl', () => {
     })
 
     it('activeUserId指定時はスキップ済み記事を除外する条件を付与する', async () => {
-      mockRdbExecutor
-        .mockResolvedValueOnce({ rows: [{ total: 0 }] })
-        .mockResolvedValueOnce({ rows: [] })
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
 
       const result = await queryImpl.searchArticles({ page: 1, limit: 20 }, 10n)
 
       expect(result.isOk()).toBe(true)
-      expect(mockRdbExecutor).toHaveBeenCalledTimes(2)
+      expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
       const rawSql = mockRdbExecutor.mock.calls[0]?.[0] ?? ''
       expect(rawSql).toContain('skipped_articles')
     })
 
     it('日時式ではなくarticle_idの降順でソートする', async () => {
-      mockRdbExecutor
-        .mockResolvedValueOnce({ rows: [{ total: 0 }] })
-        .mockResolvedValueOnce({ rows: [] })
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
 
       await queryImpl.searchArticles({ page: 1, limit: 20 })
 
-      const articleSql = String(mockRdbExecutor.mock.calls[1]?.[0] ?? '')
+      const articleSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
       expect(articleSql).toContain('ORDER BY article_id DESC')
       expect(articleSql).not.toContain('unixepoch')
     })
 
-    it('from/to指定時はインデックス付き生成列(created_at_norm)で範囲比較する', async () => {
-      mockRdbExecutor
-        .mockResolvedValueOnce({ rows: [{ total: 0 }] })
-        .mockResolvedValueOnce({ rows: [] })
+    it('0件時はtotalが0になる', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
 
-      await queryImpl.searchArticles({ page: 1, limit: 20, from: '2026-03-05', to: '2026-03-05' })
+      const result = await queryImpl.searchArticles({ page: 1, limit: 20 })
 
-      // フルスキャンを招くCASE正規化ではなく、サーガブルな生成列比較になっていること
-      for (const call of mockRdbExecutor.mock.calls) {
-        const rawSql = String(call[0] ?? '')
-        expect(rawSql).toContain('created_at_norm')
-        expect(rawSql).not.toContain('unixepoch')
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value.total).toBe(0)
+        expect(result.value.data).toHaveLength(0)
       }
     })
 
-    it('件数取得失敗時はエラーを返す', async () => {
-      mockRdbExecutor.mockRejectedValue(new Error('count failed'))
+    it('from/to指定時はインデックス付き生成列(created_at_norm)で範囲比較する', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
+
+      await queryImpl.searchArticles({ page: 1, limit: 20, from: '2026-03-05', to: '2026-03-05' })
+
+      // フルスキャンを招くCASE正規化ではなく、サーガブルな生成列比較になっていること。
+      // COUNT(*) OVER() で1クエリ化したため呼び出しは1回
+      const rawSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
+      expect(rawSql).toContain('created_at_norm')
+      expect(rawSql).not.toContain('unixepoch')
+    })
+
+    it('取得失敗時はエラーを返す', async () => {
+      mockRdbExecutor.mockRejectedValue(new Error('search failed'))
 
       const result = await queryImpl.searchArticles({ page: 1, limit: 20 })
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error.message).toBe('count failed')
+        expect(result.error.message).toBe('search failed')
       }
     })
 
     it('from/to指定時は取得後に日付で絞り込みできる', async () => {
-      mockRdbExecutor.mockResolvedValueOnce({ rows: [{ total: 2 }] }).mockResolvedValueOnce({
+      mockRdbExecutor.mockResolvedValueOnce({
         rows: [
           {
             articleId: 1,
@@ -166,6 +176,7 @@ describe('QueryImpl', () => {
             description: '当日の記事1',
             url: 'https://example.com/article/1',
             createdAt: '2026-03-04T15:00:00.000Z',
+            total: 2,
           },
           {
             articleId: 2,
@@ -175,6 +186,7 @@ describe('QueryImpl', () => {
             description: '当日の記事2',
             url: 'https://example.com/article/2',
             createdAt: '2026-03-05T14:59:59.999Z',
+            total: 2,
           },
         ],
       })
@@ -187,7 +199,7 @@ describe('QueryImpl', () => {
       })
 
       expect(result.isOk()).toBe(true)
-      expect(mockRdbExecutor).toHaveBeenCalledTimes(2)
+      expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
 
       if (result.isOk()) {
         expect(result.value.total).toBe(2)
@@ -325,40 +337,38 @@ describe('QueryImpl', () => {
 
   describe('getDailyDiary', () => {
     it('日次サマリーとsources、read一覧を取得できる', async () => {
-      mockRdbExecutor
-        .mockResolvedValueOnce({
-          rows: [
-            { sourceType: 'read', media: 'qiita', count: 2 },
-            { sourceType: 'read', media: 'zenn', count: 1 },
-            { sourceType: 'skip', media: 'qiita', count: 1 },
-            { sourceType: 'skip', media: 'hatena', count: 1 },
-          ],
-        }) // diary sources
-        .mockResolvedValueOnce({
-          rows: [
-            {
-              readHistoryId: 10,
-              articleId: 1,
-              media: 'qiita',
-              title: 'Go error handling',
-              url: 'https://example.com/go-error-handling',
-              readAt: '2026-03-07T03:00:00.000Z',
-            },
-            {
-              readHistoryId: 9,
-              articleId: 1,
-              media: 'qiita',
-              title: 'Go error handling',
-              url: 'https://example.com/go-error-handling',
-              readAt: '2026-03-07T02:00:00.000Z',
-            },
-          ],
-        }) // reads page
+      // INFO: サマリー集計(rowKind=source)とread一覧(rowKind=read)を1クエリでUNION ALL取得する
+      mockRdbExecutor.mockResolvedValueOnce({
+        rows: [
+          { rowKind: 'source', sourceType: 'read', media: 'qiita', count: 2 },
+          { rowKind: 'source', sourceType: 'read', media: 'zenn', count: 1 },
+          { rowKind: 'source', sourceType: 'skip', media: 'qiita', count: 1 },
+          { rowKind: 'source', sourceType: 'skip', media: 'hatena', count: 1 },
+          {
+            rowKind: 'read',
+            readHistoryId: 10,
+            articleId: 1,
+            media: 'qiita',
+            title: 'Go error handling',
+            url: 'https://example.com/go-error-handling',
+            readAt: '2026-03-07T03:00:00.000Z',
+          },
+          {
+            rowKind: 'read',
+            readHistoryId: 9,
+            articleId: 1,
+            media: 'qiita',
+            title: 'Go error handling',
+            url: 'https://example.com/go-error-handling',
+            readAt: '2026-03-07T02:00:00.000Z',
+          },
+        ],
+      })
 
       const result = await queryImpl.getDailyDiary(10n, '2026-03-07', 1, 10)
 
       expect(result.isOk()).toBe(true)
-      expect(mockRdbExecutor).toHaveBeenCalledTimes(2)
+      expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
       if (result.isOk()) {
         expect(result.value.summary).toEqual({ read: 3, skip: 2 })
         expect(result.value.sources).toEqual([
@@ -375,11 +385,12 @@ describe('QueryImpl', () => {
     })
 
     it('インデックス付き生成列(read_at_norm)で範囲比較・並び替えする', async () => {
-      mockRdbExecutor.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [] })
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
 
       await queryImpl.getDailyDiary(10n, '2026-03-07', 1, 10)
 
-      const readsSql = String(mockRdbExecutor.mock.calls[1]?.[0] ?? '')
+      // サマリー集計とread一覧を1クエリにまとめたため呼び出しは1回
+      const readsSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
       expect(readsSql).toContain('read_at_norm')
       expect(readsSql).toContain('ORDER BY rh.read_at_norm DESC')
       expect(readsSql).not.toContain('unixepoch')

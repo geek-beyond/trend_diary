@@ -12,43 +12,40 @@ interface ApiCallResponse {
 const toHttpError = (status: number, statusText: string) =>
   status >= 500 ? new ServerError(statusText, status) : new ClientError(statusText, status)
 
-export const createSWRFetcher = () => {
-  const client = getApiClientForClient()
+const fetcher = async <T>(url: string): Promise<T> => {
+  // 応答が遅い相手で画面がハングするのを防ぐ
+  const response = await fetchWithTimeout(url, {
+    credentials: 'include',
+  })
 
-  const fetcher = async <T>(url: string): Promise<T> => {
-    // 応答が遅い相手で画面がハングするのを防ぐ
-    const response = await fetchWithTimeout(url, {
-      credentials: 'include',
-    })
-
-    if (!response.ok) {
-      throw toHttpError(response.status, response.statusText)
-    }
-
-    return response.safeJson<T>()
+  if (!response.ok) {
+    throw toHttpError(response.status, response.statusText)
   }
 
-  const apiCall = async <T>(apiCall: () => Promise<ApiCallResponse>): Promise<T | null> => {
-    const response = await apiCall()
+  return response.safeJson<T>()
+}
 
-    if (!response.ok) {
-      throw toHttpError(response.status, response.statusText)
-    }
+const apiCall = async <T>(apiCall: () => Promise<ApiCallResponse>): Promise<T | null> => {
+  const response = await apiCall()
 
-    switch (response.status) {
-      case 204:
-        return null
-      default:
-        // oxlint-disable-next-line typescript/consistent-type-assertions -- JSON デシリアライズ結果は実行時まで型が定まらず、呼び出し側が指定するジェネリック T へ橋渡しする境界のため許可する
-        return (await response.json()) as T
-    }
+  if (!response.ok) {
+    throw toHttpError(response.status, response.statusText)
   }
 
-  return {
-    fetcher,
-    apiCall,
-    client,
+  switch (response.status) {
+    case 204:
+      return null
+    default:
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- JSON デシリアライズ結果は実行時まで型が定まらず、呼び出し側が指定するジェネリック T へ橋渡しする境界のため許可する
+      return (await response.json()) as T
   }
 }
+
+// fetcher / apiCall はモジュールスコープで定義済み、client も getApiClientForClient 側でシングルトン化されているため、軽量なオブジェクトリテラルを返すだけでよい
+export const createSWRFetcher = () => ({
+  fetcher,
+  apiCall,
+  client: getApiClientForClient(),
+})
 
 export default createSWRFetcher

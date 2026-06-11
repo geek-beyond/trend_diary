@@ -1,10 +1,9 @@
-import { NotFoundError, ServerError } from '@trend-diary/common/errors'
+import { type NotFoundError, ServerError } from '@trend-diary/common/errors'
 import { toJstDateString } from '@trend-diary/common/locale/date'
 import type { OffsetPaginationResult } from '@trend-diary/common/pagination'
 import { DEFAULT_LIMIT, DEFAULT_PAGE } from '@trend-diary/common/pagination'
 import extractTrimmed from '@trend-diary/common/sanitization'
-import { isNull } from '@trend-diary/common/types/utility'
-import { err, ok, type Result } from 'neverthrow'
+import { err, type Result } from 'neverthrow'
 import type { ArticleMedia } from './media'
 import type { Command, Query } from './repository'
 import type {
@@ -51,9 +50,8 @@ export class UseCase {
     articleId: bigint,
     readAt: Date,
   ): Promise<Result<ReadHistory, ServerError | NotFoundError>> {
-    return this.withValidatedArticle(articleId, (validatedArticleId) =>
-      this.command.createReadHistory(activeUserId, validatedArticleId, readAt),
-    )
+    // 記事存在チェックは command 側のSQLに集約済みのため、ここでは委譲のみ行う
+    return this.command.createReadHistory(activeUserId, articleId, readAt)
   }
 
   async getUnreadDigestionArticles(
@@ -90,40 +88,15 @@ export class UseCase {
     activeUserId: bigint,
     articleId: bigint,
   ): Promise<Result<SkippedArticle, ServerError | NotFoundError>> {
-    return this.withValidatedArticle(articleId, (validatedArticleId) =>
-      this.command.createSkippedArticle(activeUserId, validatedArticleId),
-    )
+    // 記事存在チェックは command 側のSQLに集約済みのため、ここでは委譲のみ行う
+    return this.command.createSkippedArticle(activeUserId, articleId)
   }
 
   async deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
   ): Promise<Result<void, ServerError | NotFoundError>> {
-    return this.withValidatedArticle(articleId, (validatedArticleId) =>
-      this.command.deleteAllReadHistory(activeUserId, validatedArticleId),
-    )
-  }
-
-  private async withValidatedArticle<T>(
-    articleId: bigint,
-    action: (validatedArticleId: bigint) => Promise<Result<T, ServerError>>,
-  ): Promise<Result<T, ServerError | NotFoundError>> {
-    const articleValidation = await this.validateArticleExists(articleId)
-    if (articleValidation.isErr()) return err(articleValidation.error)
-
-    return action(articleValidation.value.articleId)
-  }
-
-  private async validateArticleExists(
-    articleId: bigint,
-  ): Promise<Result<Article, ServerError | NotFoundError>> {
-    const res = await this.query.findArticleById(articleId)
-    if (res.isErr()) return err(res.error)
-
-    if (isNull(res.value)) {
-      return err(new NotFoundError(`Article with ID ${articleId} not found`))
-    }
-
-    return ok(res.value)
+    // 記事存在チェックは command 側のSQLに集約済みのため、ここでは委譲のみ行う
+    return this.command.deleteAllReadHistory(activeUserId, articleId)
   }
 }

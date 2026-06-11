@@ -5,7 +5,6 @@ import { SidebarProvider } from '@/client/components/shadcn/sidebar'
 import useLogout from '@/client/features/authenticate/hooks/use-logout'
 import AppSidebar from './index'
 
-// ログアウト処理は LogoutButton 内部の useLogout が担うため、ここをモックする
 vi.mock('@/client/features/authenticate/hooks/use-logout', () => ({
   default: vi.fn(() => ({
     handleLogout: vi.fn(),

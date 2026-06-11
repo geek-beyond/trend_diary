@@ -15,7 +15,6 @@ type Story = StoryObj<typeof AppHeader>
 // AppHeader は `md:hidden` のモバイル専用ヘッダーで、デスクトップ幅の
 // テスト環境では `display: none` となりアクセシビリティツリーから除外される。
 // そのため role 取得時は `hidden: true` を指定して非表示要素も対象に含める。
-// なお描画のみの検証でログアウト操作は行わないため useLogout のモックは不要。
 
 export const LoggedOut: Story = {
   args: {

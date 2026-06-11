@@ -66,6 +66,20 @@ interface RawDiaryReadRow {
   readAt: string | number | bigint
 }
 
+// サマリー集計行(source)とread一覧行(read)をUNION ALLで1度に取得するための共用行。
+// 各行は rowKind に応じて片方のカラム群だけが非NULLになる
+interface RawDiaryCombinedRow {
+  rowKind: 'source' | 'read'
+  sourceType: 'read' | 'skip' | null
+  media: string
+  count: number | bigint | null
+  readHistoryId: number | bigint | null
+  articleId: number | bigint | null
+  title: string | null
+  url: string | null
+  readAt: string | number | bigint | null
+}
+
 interface DateRange {
   fromDate?: Date
   toDateExclusive?: Date
@@ -102,40 +116,35 @@ export default class QueryImpl implements Query {
 
     const readStatusSql = QueryImpl.buildIsReadSelectSql(dbActiveUserId)
 
-    const queryResultTuple = await Promise.all([
-      wrapDbCall(() =>
-        this.db.all<RawCountRow>(sql`
-          SELECT COUNT(*) as total
-          FROM articles
-          ${whereSql}
-        `),
-      ),
-      wrapDbCall(() =>
-        this.db.all<RawArticleRow>(sql`
-          SELECT
-            article_id as articleId,
-            media,
-            title,
-            author,
-            description,
-            url,
-            created_at as createdAt,
-            ${readStatusSql} as isRead
-          FROM articles
-          ${whereSql}
-          ORDER BY article_id DESC
-          LIMIT ${limit}
-          OFFSET ${(page - 1) * limit}
-        `),
-      ),
-    ])
-    const resolvedQueryResults = QueryImpl.unwrapResultTuple(queryResultTuple)
-    if (resolvedQueryResults.isErr()) {
-      return err(resolvedQueryResults.error)
+    // COUNTと取得を COUNT(*) OVER() で1クエリ(1往復)に集約する。
+    // D1のdb.batchは生SQL(SQLiteRaw)を扱えないため、ウィンドウ関数で総件数を同時に取得する
+    const result = await wrapDbCall(() =>
+      this.db.all<RawArticleRow & RawCountRow>(sql`
+        SELECT
+          article_id as articleId,
+          media,
+          title,
+          author,
+          description,
+          url,
+          created_at as createdAt,
+          ${readStatusSql} as isRead,
+          COUNT(*) OVER() as total
+        FROM articles
+        ${whereSql}
+        ORDER BY article_id DESC
+        LIMIT ${limit}
+        OFFSET ${(page - 1) * limit}
+      `),
+    )
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const [totalRows, articleRows] = resolvedQueryResults.value
-    const total = Number(totalRows[0]?.total ?? 0)
+    const articleRows = result.value
+    // 行が無いページ(該当0件、または範囲外ページ)では total は 0 になる。
+    // db.batchが生SQLを扱えない制約下で1往復を優先した割り切り（範囲外ページはUIのNext無効化で通常到達しない）
+    const total = Number(articleRows[0]?.total ?? 0)
     const mappedArticles = articleRows.map(QueryImpl.mapRawArticleToDomain)
 
     const totalPages = Math.ceil(total / limit)
@@ -229,73 +238,91 @@ export default class QueryImpl implements Query {
       toDateExclusive,
     )
 
-    const queryResultTuple = await Promise.all([
-      wrapDbCall(() =>
-        this.db.all<RawDiaryTypedSourceRow>(sql`
-            SELECT
-              source_type as sourceType,
-              media,
-              count
-            FROM (
-              SELECT
-                'read' as source_type,
-                a.media as media,
-                COUNT(*) as count
-              FROM read_histories rh
-              INNER JOIN articles a ON a.article_id = rh.article_id
-              WHERE
-                rh.active_user_id = ${dbActiveUserId}
-                AND ${readAtRangeSql}
-              GROUP BY a.media
+    // サマリー集計とread一覧を rowKind で判別する1クエリ(1往復)に集約する。
+    // D1のdb.batchは生SQL(SQLiteRaw)を扱えないため、UNION ALLで両者を1度に取得する
+    const result = await wrapDbCall(() =>
+      this.db.all<RawDiaryCombinedRow>(sql`
+        SELECT
+          'source' as rowKind,
+          source_type as sourceType,
+          media,
+          count,
+          NULL as readHistoryId,
+          NULL as articleId,
+          NULL as title,
+          NULL as url,
+          NULL as readAt
+        FROM (
+          SELECT
+            'read' as source_type,
+            a.media as media,
+            COUNT(*) as count
+          FROM read_histories rh
+          INNER JOIN articles a ON a.article_id = rh.article_id
+          WHERE
+            rh.active_user_id = ${dbActiveUserId}
+            AND ${readAtRangeSql}
+          GROUP BY a.media
 
-              UNION ALL
+          UNION ALL
 
-              SELECT
-                'skip' as source_type,
-                a.media as media,
-                COUNT(*) as count
-              FROM skipped_articles sa
-              INNER JOIN articles a ON a.article_id = sa.article_id
-              WHERE
-                sa.active_user_id = ${dbActiveUserId}
-                AND ${skipAtRangeSql}
-              GROUP BY a.media
-            ) diary_sources
-            ORDER BY count DESC, media ASC
-          `),
-      ),
-      wrapDbCall(() =>
-        this.db.all<RawDiaryReadRow>(sql`
-            SELECT
-              rh.read_history_id as readHistoryId,
-              rh.article_id as articleId,
-              a.media as media,
-              a.title as title,
-              a.url as url,
-              rh.read_at as readAt
-            FROM read_histories rh
-            INNER JOIN articles a ON a.article_id = rh.article_id
-            WHERE
-              rh.active_user_id = ${dbActiveUserId}
-              AND ${readAtRangeSql}
-            ORDER BY ${QueryImpl.getNormalizedDateTimeSql('rh.read_at')} DESC, rh.read_history_id DESC
-            LIMIT ${limit}
-            OFFSET ${(page - 1) * limit}
-          `),
-      ),
-    ])
-    const resolvedQueryResults = QueryImpl.unwrapResultTuple(queryResultTuple)
-    if (resolvedQueryResults.isErr()) {
-      return err(resolvedQueryResults.error)
+          SELECT
+            'skip' as source_type,
+            a.media as media,
+            COUNT(*) as count
+          FROM skipped_articles sa
+          INNER JOIN articles a ON a.article_id = sa.article_id
+          WHERE
+            sa.active_user_id = ${dbActiveUserId}
+            AND ${skipAtRangeSql}
+          GROUP BY a.media
+        ) diary_sources
+
+        UNION ALL
+
+        SELECT
+          'read' as rowKind,
+          NULL as sourceType,
+          media,
+          NULL as count,
+          readHistoryId,
+          articleId,
+          title,
+          url,
+          readAt
+        FROM (
+          SELECT
+            rh.read_history_id as readHistoryId,
+            rh.article_id as articleId,
+            a.media as media,
+            a.title as title,
+            a.url as url,
+            rh.read_at as readAt
+          FROM read_histories rh
+          INNER JOIN articles a ON a.article_id = rh.article_id
+          WHERE
+            rh.active_user_id = ${dbActiveUserId}
+            AND ${readAtRangeSql}
+          ORDER BY ${QueryImpl.getNormalizedDateTimeSql('rh.read_at')} DESC, rh.read_history_id DESC
+          LIMIT ${limit}
+          OFFSET ${(page - 1) * limit}
+        ) reads_page
+      `),
+    )
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const [sourceRows, readsRows] = resolvedQueryResults.value
+    const { sourceRows, readsRows } = QueryImpl.splitDiaryCombinedRows(result.value)
     const { readRows: readSourcesRows, skipRows: skipSourcesRows } =
       QueryImpl.splitDiarySourceRows(sourceRows)
     const readCount = QueryImpl.sumDiarySourceCounts(readSourcesRows)
     const skipCount = QueryImpl.sumDiarySourceCounts(skipSourcesRows)
     const readsTotal = readCount
     const totalPages = Math.ceil(readsTotal / limit)
+
+    // reads_pageサブクエリのORDER BY順はSQLiteのUNION ALLを通しても保持される
+    const reads = readsRows.map(QueryImpl.mapRawDiaryReadItem)
 
     return ok({
       date: targetDateJst,
@@ -305,7 +332,7 @@ export default class QueryImpl implements Query {
       },
       sources: QueryImpl.mergeDiarySources(readSourcesRows, skipSourcesRows),
       reads: {
-        data: readsRows.map(QueryImpl.mapRawDiaryReadItem),
+        data: reads,
         page,
         limit,
         total: readsTotal,
@@ -467,22 +494,6 @@ export default class QueryImpl implements Query {
     `
   }
 
-  private static unwrapResultTuple<T extends readonly unknown[]>(
-    results: { [K in keyof T]: Result<T[K], Error> },
-  ): Result<T, ServerError> {
-    const unwrapped: unknown[] = []
-
-    for (const result of results) {
-      if (result.isErr()) {
-        return err(new ServerError(result.error))
-      }
-      unwrapped.push(result.value)
-    }
-
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- 各要素のResultをアンラップした配列がタプルTに一致することはTypeScriptでは表現できないためです
-    return ok(unwrapped as unknown as T)
-  }
-
   private static buildLikeConditionSql(column: string, value: string) {
     const escaped = value.replace(/[%_\\]/g, '\\$&')
     return sql`${sql.raw(column)} LIKE ${`%${escaped}%`} ESCAPE '\\'`
@@ -588,6 +599,30 @@ export default class QueryImpl implements Query {
       grouped.set(row.date, current)
     }
     return grouped
+  }
+
+  private static splitDiaryCombinedRows(rows: RawDiaryCombinedRow[]) {
+    const sourceRows: RawDiaryTypedSourceRow[] = []
+    const readsRows: RawDiaryReadRow[] = []
+
+    for (const row of rows) {
+      if (row.rowKind === 'source') {
+        if (row.sourceType !== null) {
+          sourceRows.push({ sourceType: row.sourceType, media: row.media, count: row.count ?? 0 })
+        }
+      } else if (row.readHistoryId !== null && row.articleId !== null && row.readAt !== null) {
+        readsRows.push({
+          readHistoryId: row.readHistoryId,
+          articleId: row.articleId,
+          media: row.media,
+          title: row.title ?? '',
+          url: row.url ?? '',
+          readAt: row.readAt,
+        })
+      }
+    }
+
+    return { sourceRows, readsRows }
   }
 
   private static splitDiarySourceRows(rows: RawDiaryTypedSourceRow[]) {

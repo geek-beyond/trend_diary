@@ -7,5 +7,11 @@ if (typeof document !== 'undefined') {
   apiUrl = `${window.location.protocol}//${window.location.host}`
 }
 
-const getApiClientForClient = () => getApiClient(apiUrl)
+// レンダーごとの再生成を避けるため、モジュールスコープで単一インスタンスを遅延生成して保持する
+let apiClient: ReturnType<typeof getApiClient> | undefined
+
+const getApiClientForClient = () => {
+  apiClient ??= getApiClient(apiUrl)
+  return apiClient
+}
 export default getApiClientForClient

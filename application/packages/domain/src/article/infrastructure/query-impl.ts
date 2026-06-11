@@ -198,52 +198,41 @@ export default class QueryImpl implements Query {
 
     const mediaCondition = media ? sql`AND articles.media = ${media}` : sql.empty()
 
-    // 残件表示・全消化判定に使う総数と、ペイロードを有界化する分割取得を同一条件で並走させる
-    const whereSql = sql`
-      WHERE
-        ${createdAtRangeSql}
-        AND NOT (${QueryImpl.buildReadHistoryExistsSql(dbActiveUserId)})
-        AND NOT EXISTS (
-          SELECT 1
-          FROM skipped_articles sa
-          WHERE sa.article_id = articles.article_id
-            AND sa.active_user_id = ${dbActiveUserId}
-        )
-        ${mediaCondition}
-    `
-
-    const queryResultTuple = await Promise.all([
-      wrapDbCall(() =>
-        this.db.all<RawCountRow>(sql`
-          SELECT COUNT(*) as total
-          FROM articles
-          ${whereSql}
-        `),
-      ),
-      wrapDbCall(() =>
-        this.db.all<RawArticleRow>(sql`
-          SELECT
-            article_id as articleId,
-            media,
-            title,
-            author,
-            description,
-            url,
-            created_at as createdAt
-          FROM articles
-          ${whereSql}
-          ORDER BY article_id DESC
-          LIMIT ${UNREAD_DIGESTION_LIMIT}
-        `),
-      ),
-    ])
-    const resolvedQueryResults = QueryImpl.unwrapResultTuple(queryResultTuple)
-    if (resolvedQueryResults.isErr()) {
-      return err(resolvedQueryResults.error)
+    // 残件表示・全消化判定に使う未読総数と分割取得を、COUNT(*) OVER()で1クエリ(1往復)に集約する。
+    // D1のdb.batchは生SQLを扱えないため、ウィンドウ関数でLIMIT前の総件数を各行に同時取得する
+    const result = await wrapDbCall(() =>
+      this.db.all<RawArticleRow & RawCountRow>(sql`
+        SELECT
+          article_id as articleId,
+          media,
+          title,
+          author,
+          description,
+          url,
+          created_at as createdAt,
+          COUNT(*) OVER() as total
+        FROM articles
+        WHERE
+          ${createdAtRangeSql}
+          AND NOT (${QueryImpl.buildReadHistoryExistsSql(dbActiveUserId)})
+          AND NOT EXISTS (
+            SELECT 1
+            FROM skipped_articles sa
+            WHERE sa.article_id = articles.article_id
+              AND sa.active_user_id = ${dbActiveUserId}
+          )
+          ${mediaCondition}
+        ORDER BY article_id DESC
+        LIMIT ${UNREAD_DIGESTION_LIMIT}
+      `),
+    )
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
     }
 
-    const [totalRows, articleRows] = resolvedQueryResults.value
-    const total = Number(totalRows[0]?.total ?? 0)
+    const articleRows = result.value
+    // 未読が無い場合は行が返らずtotalも0になる
+    const total = Number(articleRows[0]?.total ?? 0)
 
     return ok({ articles: articleRows.map(QueryImpl.mapRawArticle), total })
   }

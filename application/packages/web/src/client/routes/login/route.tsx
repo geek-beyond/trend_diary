@@ -81,7 +81,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     if (!response.ok) {
       return {
-        formError: resolveLoginErrorMessage({ statusCode: response.status }),
+        formError: resolveLoginErrorMessage(response.status),
       } satisfies LoginActionData
     }
 

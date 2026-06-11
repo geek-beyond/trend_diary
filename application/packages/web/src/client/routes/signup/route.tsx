@@ -81,7 +81,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     if (!response.ok) {
       return {
-        formError: resolveSignupErrorMessage({ statusCode: response.status }),
+        formError: resolveSignupErrorMessage(response.status),
       } satisfies SignupActionData
     }
 

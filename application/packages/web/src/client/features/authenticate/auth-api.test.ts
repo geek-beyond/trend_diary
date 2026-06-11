@@ -36,8 +36,11 @@ describe('callAuthApi', () => {
     appRequest.mockResolvedValue(new Response(null, { status: 200 }))
   })
 
-  it('csrfのOrigin照合を通すため、元リクエストのoriginで絶対URL化したURLでHono appを呼び出す', async () => {
-    const request = new Request('https://trend-diary.example/login', { method: 'POST' })
+  it('元リクエストのoriginで絶対URL化したURLでHono appを呼び出す', async () => {
+    const request = new Request('https://trend-diary.example/login', {
+      method: 'POST',
+      headers: { Origin: 'https://trend-diary.example' },
+    })
 
     await callAuthApi(request, buildContext(buildEnv()), {
       path: '/api/auth/login',
@@ -77,7 +80,10 @@ describe('callAuthApi', () => {
   })
 
   it('bodyをJSON文字列として送信し、envをHono appの第3引数に渡す', async () => {
-    const request = new Request('https://trend-diary.example/login', { method: 'POST' })
+    const request = new Request('https://trend-diary.example/login', {
+      method: 'POST',
+      headers: { 'Sec-Fetch-Site': 'same-origin' },
+    })
     const env = buildEnv()
 
     await callAuthApi(request, buildContext(env), {
@@ -104,6 +110,61 @@ describe('callAuthApi', () => {
     const [, init] = appRequest.mock.calls[0]
     expect(init.method).toBe('GET')
     expect(init.body).toBeUndefined()
+  })
+
+  // フォーム→JSON変換でhono/csrfの検査対象から外れるため、ログインCSRFはcallAuthApi自身が遮断する
+  describe('クロスサイトリクエストの遮断', () => {
+    it('Originが他サイトのPOSTは403を返しAPIを呼ばない', async () => {
+      const request = new Request('https://trend-diary.example/login', {
+        method: 'POST',
+        headers: { Origin: 'https://evil.example' },
+      })
+
+      const response = await callAuthApi(request, buildContext(buildEnv()), {
+        path: '/api/auth/login',
+        method: 'POST',
+        body: { email: 'victim@example.com' },
+      })
+
+      expect(response.status).toBe(403)
+      expect(appRequest).not.toHaveBeenCalled()
+    })
+
+    it('OriginもSec-Fetch-Siteも無いPOSTは403を返しAPIを呼ばない', async () => {
+      const request = new Request('https://trend-diary.example/login', { method: 'POST' })
+
+      const response = await callAuthApi(request, buildContext(buildEnv()), {
+        path: '/api/auth/login',
+        method: 'POST',
+        body: { email: 'victim@example.com' },
+      })
+
+      expect(response.status).toBe(403)
+      expect(appRequest).not.toHaveBeenCalled()
+    })
+
+    it('Sec-Fetch-Siteがsame-originならOriginが無くても通す', async () => {
+      const request = new Request('https://trend-diary.example/login', {
+        method: 'POST',
+        headers: { 'Sec-Fetch-Site': 'same-origin' },
+      })
+
+      await callAuthApi(request, buildContext(buildEnv()), {
+        path: '/api/auth/login',
+        method: 'POST',
+        body: { email: 'test@example.com' },
+      })
+
+      expect(appRequest).toHaveBeenCalled()
+    })
+
+    it('GETはOriginが無くても通す（loaderのセッション確認）', async () => {
+      const request = new Request('https://trend-diary.example/trends')
+
+      await callAuthApi(request, buildContext(buildEnv()), { path: '/api/auth/me', method: 'GET' })
+
+      expect(appRequest).toHaveBeenCalled()
+    })
   })
 })
 

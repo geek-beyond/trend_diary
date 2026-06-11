@@ -4,17 +4,11 @@ interface TurnstileContext {
   }
 }
 
-function readEnv(value?: string) {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : undefined
-}
-
 /**
  * サイトキー未設定の環境ではCAPTCHAをエラーにせずウィジェット非表示で運用するため、undefinedを返す。
+ * シークレット側（API handlerのc.env参照）と設定ソースを揃えるため、process.envへはフォールバックしない。
  */
 export function resolveTurnstileSiteKey(context: TurnstileContext): string | undefined {
-  const fromContext = readEnv(context.cloudflare?.env?.TURNSTILE_SITE_KEY)
-  if (fromContext) return fromContext
-  if (typeof process === 'undefined') return undefined
-  return readEnv(process.env.TURNSTILE_SITE_KEY)
+  const value = context.cloudflare?.env?.TURNSTILE_SITE_KEY?.trim()
+  return value ? value : undefined
 }

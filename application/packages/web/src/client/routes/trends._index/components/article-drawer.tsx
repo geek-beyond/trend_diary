@@ -34,7 +34,6 @@ export default function ArticleDrawer({
   isLoggedIn = false,
 }: Props) {
   const isMobile = useIsMobile()
-  // 記事ごとの開閉状態リセットは親の key={article.articleId} による再マウントで行う
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
 
   const handleOpenChange = (open: boolean) => {

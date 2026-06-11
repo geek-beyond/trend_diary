@@ -65,8 +65,7 @@ export default function TrendsPage({
   const [draftReadStatus, setDraftReadStatus] = useState<ReadStatusType>(selectedReadStatus)
   const [draftDatePreset, setDraftDatePreset] = useState<DatePresetType>(selectedDatePreset)
 
-  // 適用済みフィルタが外部要因（戻る/進む等）で変わったらドラフトを追従させる。
-  // props→state の同期 Effect ではなくレンダー中調整で行い、描画後のちらつきを避ける
+  // props→state の同期 Effect ではなくレンダー中調整にするのは、描画後のちらつきを避けるため
   const [appliedFilters, setAppliedFilters] = useState({
     media: selectedMedia,
     readStatus: selectedReadStatus,

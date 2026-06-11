@@ -93,12 +93,12 @@ export class AuthUseCase {
   }
 
   async getCurrentActiveUser(): Promise<Result<CurrentUser, ClientError | ServerError>> {
-    const authUserResult = await this.repository.getCurrentUser()
-    if (authUserResult.isErr()) {
-      return err(authUserResult.error)
+    const sessionResult = await this.repository.verifySession()
+    if (sessionResult.isErr()) {
+      return err(sessionResult.error)
     }
 
-    return this.findActiveUserByAuthenticationId(authUserResult.value.id)
+    return this.findActiveUserByAuthenticationId(sessionResult.value.authenticationId)
   }
 
   async refreshSession(): Promise<Result<LoginResult, ClientError | ServerError>> {

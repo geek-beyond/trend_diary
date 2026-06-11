@@ -1,5 +1,6 @@
 import type { ExecutionContext, ScheduledController } from '@cloudflare/workers-types'
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
+import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import TEST_ENV from './test-helper/env'
@@ -121,6 +122,31 @@ describe('cron worker scheduled', () => {
       expect((await findByUrl('https://zenn.dev/u/articles/z1')).author).toBe('zenn_creator1')
       expect((await findByUrl('https://example.com/hatena/h1')).description).toBe('はてな本文1')
       expect(discordCallCount()).toBe(0)
+    })
+
+    it('メディア別のRSSフェッチを直列ではなく並列で実行する', async () => {
+      const feedXml: Record<string, string> = {
+        [FEED_URL.qiita]: buildQiitaAtom(QIITA_ITEMS),
+        [FEED_URL.zenn]: buildZennRss(ZENN_ITEMS),
+        [FEED_URL.hatena]: buildHatenaRdf(HATENA_ITEMS),
+      }
+      let activeFetches = 0
+      let peakConcurrency = 0
+      fetchMock.mockImplementation(async (input: unknown) => {
+        const target = String(input)
+        if (target.startsWith(TEST_ENV.DISCORD_WEBHOOK_URL)) return { ok: true, status: 204 }
+        const xml = feedXml[target]
+        if (xml === undefined) throw new Error(`unexpected fetch: ${target}`)
+        activeFetches += 1
+        peakConcurrency = Math.max(peakConcurrency, activeFetches)
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        activeFetches -= 1
+        return rssResponse(xml)
+      })
+
+      await Promise.all(await runScheduled(5000))
+
+      expect(peakConcurrency).toBe(ARTICLE_MEDIA.length)
     })
   })
 

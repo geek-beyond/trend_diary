@@ -1,4 +1,4 @@
-import { Form } from 'react-router'
+import type { FormEvent } from 'react'
 import { Button } from '@/client/components/shadcn/button'
 import { Input } from '@/client/components/shadcn/input'
 import { Label } from '@/client/components/shadcn/label'
@@ -6,6 +6,7 @@ import { TurnstileWidget } from '@/client/features/authenticate/components/turns
 import type { AuthenticateErrors } from '@/client/features/authenticate/validation'
 
 interface Props {
+  onSubmit: (formData: FormData) => void
   submitButtonText: string
   loadingSubmitButtonText: string
   isSubmitting: boolean
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export const AuthenticateForm = ({
+  onSubmit,
   submitButtonText,
   loadingSubmitButtonText,
   isSubmitting,
@@ -23,8 +25,14 @@ export const AuthenticateForm = ({
   formError,
   turnstileSiteKey,
 }: Props) => {
+  // DOMイベントの関心はここで閉じ、呼び出し側（hooks）はFormDataだけを扱えるようにする
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    onSubmit(new FormData(event.currentTarget))
+  }
+
   return (
-    <Form method='post' className='flex flex-1 flex-col gap-6'>
+    <form onSubmit={handleSubmit} className='flex flex-1 flex-col gap-6'>
       <div className='space-y-2'>
         <Label htmlFor='email'>メールアドレス</Label>
         <Input
@@ -53,6 +61,6 @@ export const AuthenticateForm = ({
       <Button role='button' type='submit' className='w-full' disabled={isSubmitting}>
         {isSubmitting ? loadingSubmitButtonText : submitButtonText}
       </Button>
-    </Form>
+    </form>
   )
 }

@@ -15,7 +15,7 @@
 - **フロントエンド**: React + TailwindCSS v4 + shadcn/ui
 - **データベース**: Cloudflare D1 (SQLite) + Drizzle ORM
 - **テスト**: Vitest + Playwright
-- **コード品質**: oxlint（lint）+ Biome（format / import整理 / 命名規則）+ TypeScript
+- **コード品質**: oxlint（lint）+ oxfmt（format / import整理）+ TypeScript
 
 環境変数は.dev.vars.exampleファイルを参考に与える。
 

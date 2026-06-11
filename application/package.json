@@ -1,24 +1,24 @@
 {
   "name": "my-app",
   "type": "module",
-  "packageManager": "pnpm@11.5.1",
-  "engines": {
-    "node": "^20.19.0 || >=22.13.0"
-  },
   "scripts": {
     "dev": "pnpm --filter @trend-diary/web dev",
     "build": "pnpm --filter @trend-diary/web build",
-    "lint": "oxlint && biome ci . && pnpm -r typecheck",
-    "check": "oxlint && biome check .",
-    "check:fix": "oxlint --fix && biome check --write . --unsafe",
+    "lint": "oxlint && oxfmt --check && pnpm -r typecheck",
+    "check": "oxlint && oxfmt --check",
+    "check:fix": "oxlint --fix && oxfmt",
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
     "supabase:status": "supabase status",
     "supabase:stop": "supabase stop"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.16",
     "@typescript/native-preview": "^7.0.0-dev.20251209.1",
+    "oxfmt": "^0.53.0",
     "oxlint": "^1.68.0",
     "typescript": "^5.9.3"
-  }
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.13.0"
+  },
+  "packageManager": "pnpm@11.5.1"
 }

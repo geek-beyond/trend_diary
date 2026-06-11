@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-
 import ExternalServiceError from './external-service-error'
 import ServerError from './server-error'
 

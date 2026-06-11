@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-
 import AlreadyExistsError from './already-exists-error'
 import ClientError from './client-error'
 

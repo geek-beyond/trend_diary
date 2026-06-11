@@ -8,11 +8,9 @@ const mockApiClient = {
   articles: {
     ':article_id': {
       read: {
-        // biome-ignore lint/style/useNamingConvention: $post is a Hono client method name
         $post: vi.fn(),
       },
       unread: {
-        // biome-ignore lint/style/useNamingConvention: $delete is a Hono client method name
         $delete: vi.fn(),
       },
     },

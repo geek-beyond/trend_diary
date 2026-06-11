@@ -56,7 +56,6 @@ beforeEach(() => {
     client: {
       articles: {
         diary: {
-          // biome-ignore lint/style/useNamingConvention: $get is a Hono client method name
           $get: diaryGet,
         },
       },

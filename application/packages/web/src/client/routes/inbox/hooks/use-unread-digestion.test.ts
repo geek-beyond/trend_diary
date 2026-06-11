@@ -64,12 +64,10 @@ describe('useUnreadDigestion', () => {
       client: {
         articles: {
           'unread-digestion': {
-            // biome-ignore lint/style/useNamingConvention: $get is a Hono client method name
             $get: mockUnreadDigestionGet,
           },
           ':article_id': {
             skip: {
-              // biome-ignore lint/style/useNamingConvention: $post is a Hono client method name
               $post: mockSkipPost,
             },
           },

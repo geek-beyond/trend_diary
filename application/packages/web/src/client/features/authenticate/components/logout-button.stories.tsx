@@ -6,14 +6,17 @@ import useLogout from '@/client/features/authenticate/hooks/use-logout'
 import LogoutButton from './logout-button'
 
 vi.mock('@/client/features/authenticate/hooks/use-logout', () => ({
-  default: vi.fn(() => ({
-    handleLogout: vi.fn(),
-    isLoading: false,
-  })),
+  default: vi.fn(),
 }))
+
+const handleLogout = fn()
 
 const meta: Meta<typeof LogoutButton> = {
   component: LogoutButton,
+  beforeEach: () => {
+    handleLogout.mockClear()
+    vi.mocked(useLogout).mockReturnValue({ handleLogout, isLoading: false })
+  },
 }
 export default meta
 
@@ -30,16 +33,10 @@ export const SidebarVariant: Story = {
       </SidebarProvider>
     ),
   ],
-  beforeEach: () => {
-    const handleLogout = fn()
-    vi.mocked(useLogout).mockReturnValue({ handleLogout, isLoading: false })
-  },
   play: async ({ canvas }) => {
     const button = canvas.getByText('ログアウト')
-    await expect(button).toBeInTheDocument()
-
     await userEvent.click(button)
-    await expect(vi.mocked(useLogout).mock.results[0]?.value.handleLogout).toHaveBeenCalled()
+    await expect(handleLogout).toHaveBeenCalled()
   },
 }
 
@@ -47,16 +44,10 @@ export const SheetVariant: Story = {
   args: {
     variant: 'sheet',
   },
-  beforeEach: () => {
-    const handleLogout = fn()
-    vi.mocked(useLogout).mockReturnValue({ handleLogout, isLoading: false })
-  },
   play: async ({ canvas }) => {
     const button = canvas.getByRole('button', { name: 'ログアウト' })
-    await expect(button).toBeInTheDocument()
-
     await userEvent.click(button)
-    await expect(vi.mocked(useLogout).mock.results[0]?.value.handleLogout).toHaveBeenCalled()
+    await expect(handleLogout).toHaveBeenCalled()
   },
 }
 
@@ -65,7 +56,7 @@ export const Loading: Story = {
     variant: 'sheet',
   },
   beforeEach: () => {
-    vi.mocked(useLogout).mockReturnValue({ handleLogout: fn(), isLoading: true })
+    vi.mocked(useLogout).mockReturnValue({ handleLogout, isLoading: true })
   },
   play: async ({ canvas }) => {
     const button = canvas.getByRole('button', { name: 'ログアウト中...' })

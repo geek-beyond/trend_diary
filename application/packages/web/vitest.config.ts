@@ -57,6 +57,7 @@ export default defineConfig(() => {
               'vaul',
               'neverthrow',
               'zod',
+              'swr',
               'swr/mutation',
               'hono/client',
               'storybook/test',

@@ -1,6 +1,5 @@
 import {
   AuthInvalidCredentialsError,
-  AuthSessionMissingError,
   type Session,
   type SupabaseClient,
   type User,
@@ -375,44 +374,28 @@ describe('SupabaseAuthRepository', () => {
     })
   })
 
-  describe('getCurrentUser', () => {
+  describe('verifySession', () => {
     describe('正常系', () => {
-      it('現在のユーザーを返すこと', async () => {
-        const supabaseUser = buildSupabaseUser()
-        resolveAuthMock(client.auth.getUser, {
-          data: { user: supabaseUser },
+      it('検証済みのclaimsからauthenticationIdを返すこと', async () => {
+        resolveAuthMock(client.auth.getClaims, {
+          data: { claims: { sub: 'auth-user-id-123', email: 'test@example.com' } },
           error: null,
         })
 
-        const result = await repository.getCurrentUser()
+        const result = await repository.verifySession()
 
         expect(result.isOk()).toBe(true)
         if (result.isOk()) {
-          expect(result.value.id).toBe(supabaseUser.id)
-          expect(result.value.email).toBe('test@example.com')
+          expect(result.value.authenticationId).toBe('auth-user-id-123')
         }
       })
     })
 
     describe('異常系', () => {
-      it('AuthSessionMissingErrorの場合UnauthorizedError(sessionExists=false)を返すこと', async () => {
-        client.auth.getUser.mockRejectedValue(new AuthSessionMissingError())
+      it('getClaimsが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.getClaims.mockRejectedValue(new Error('network'))
 
-        const result = await repository.getCurrentUser()
-
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(UnauthorizedError)
-          if (result.error instanceof UnauthorizedError) {
-            expect(result.error.context?.sessionExists).toBe(false)
-          }
-        }
-      })
-
-      it('それ以外の例外はServerErrorで包んで返すこと', async () => {
-        client.auth.getUser.mockRejectedValue(new Error('network'))
-
-        const result = await repository.getCurrentUser()
+        const result = await repository.verifySession()
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
@@ -420,13 +403,13 @@ describe('SupabaseAuthRepository', () => {
         }
       })
 
-      it('userがnullの場合UnauthorizedError(sessionExists=true)を返すこと', async () => {
-        resolveAuthMock(client.auth.getUser, {
-          data: { user: null },
-          error: null,
+      it('検証エラーの場合UnauthorizedError(sessionExists=true)を返すこと', async () => {
+        resolveAuthMock(client.auth.getClaims, {
+          data: null,
+          error: { message: 'invalid token', name: 'AuthError', status: 401 },
         })
 
-        const result = await repository.getCurrentUser()
+        const result = await repository.verifySession()
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
@@ -437,18 +420,20 @@ describe('SupabaseAuthRepository', () => {
         }
       })
 
-      it('emailが取得できない場合ServerErrorを返すこと', async () => {
-        const supabaseUser = buildSupabaseUser({ email: undefined })
-        resolveAuthMock(client.auth.getUser, {
-          data: { user: supabaseUser },
+      it('セッションが存在しない場合UnauthorizedError(sessionExists=false)を返すこと', async () => {
+        resolveAuthMock(client.auth.getClaims, {
+          data: null,
           error: null,
         })
 
-        const result = await repository.getCurrentUser()
+        const result = await repository.verifySession()
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
+          expect(result.error).toBeInstanceOf(UnauthorizedError)
+          if (result.error instanceof UnauthorizedError) {
+            expect(result.error.context?.sessionExists).toBe(false)
+          }
         }
       })
     })

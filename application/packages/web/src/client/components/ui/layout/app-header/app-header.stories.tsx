@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect } from 'storybook/test'
+import { vi } from 'vitest'
 import AppHeader from './index'
+
+vi.mock('@/client/features/authenticate/hooks/use-logout', () => ({
+  default: vi.fn(() => ({
+    handleLogout: vi.fn(),
+    isLoading: false,
+  })),
+}))
 
 const meta: Meta<typeof AppHeader> = {
   component: AppHeader,

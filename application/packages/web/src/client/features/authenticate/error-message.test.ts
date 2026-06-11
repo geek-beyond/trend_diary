@@ -28,6 +28,12 @@ describe('authenticate error-message', () => {
       )
     })
 
+    it('statusCode=429はレート制限メッセージになる', () => {
+      expect(resolveLoginErrorMessage({ statusCode: 429 })).toBe(
+        '試行回数が上限に達しました。しばらく時間をおいて再度お試しください。',
+      )
+    })
+
     it('不明なエラーは汎用メッセージになる', () => {
       expect(resolveLoginErrorMessage(new Error('unexpected'))).toBe(AUTH_ERROR_MESSAGES.unexpected)
     })
@@ -37,6 +43,12 @@ describe('authenticate error-message', () => {
     it('statusCode=409は重複メッセージになる', () => {
       const error = new ClientError('already exists', 409)
       expect(resolveSignupErrorMessage(error)).toBe('このメールアドレスは既に使用されています')
+    })
+
+    it('statusCode=429はレート制限メッセージになる', () => {
+      expect(resolveSignupErrorMessage({ statusCode: 429 })).toBe(
+        '試行回数が上限に達しました。しばらく時間をおいて再度お試しください。',
+      )
     })
 
     it('statusCode=500はサーバーエラーメッセージになる', () => {

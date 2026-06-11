@@ -8,14 +8,12 @@ import {
   useLoaderData,
   useNavigation,
 } from 'react-router'
-import {
-  createAuthActionUseCase,
-  resolveTurnstileSiteKey,
-} from '@/client/features/authenticate/auth-action-use-case'
+import { buildSetCookieHeaders, callAuthApi } from '@/client/features/authenticate/auth-api'
 import {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,
 } from '@/client/features/authenticate/error-message'
+import { resolveTurnstileSiteKey } from '@/client/features/authenticate/turnstile'
 import {
   type AuthenticateErrors,
   validateAuthenticateForm,
@@ -71,18 +69,24 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 
   try {
-    const { useCase, headers } = createAuthActionUseCase(request, context)
-    const result = await useCase.login(
-      validation.data.email,
-      validation.data.password,
-      captchaToken,
-    )
+    const response = await callAuthApi(request, context, {
+      path: '/api/auth/login',
+      method: 'POST',
+      body: {
+        email: validation.data.email,
+        password: validation.data.password,
+        captchaToken,
+      },
+    })
 
-    if (result.isErr()) {
-      return { formError: resolveLoginErrorMessage(result.error) } satisfies LoginActionData
+    if (!response.ok) {
+      return {
+        formError: resolveLoginErrorMessage({ statusCode: response.status }),
+      } satisfies LoginActionData
     }
 
-    return redirect('/trends', { headers })
+    // APIが発行したセッションCookieを転送しないと、リダイレクト先でログイン状態にならない
+    return redirect('/trends', { headers: buildSetCookieHeaders(response) })
   } catch (error) {
     logger.error('Unexpected error in login action', error)
     return { formError: AUTH_ERROR_MESSAGES.unexpected } satisfies LoginActionData

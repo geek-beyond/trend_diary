@@ -8,14 +8,12 @@ import {
   useLoaderData,
   useNavigation,
 } from 'react-router'
-import {
-  createAuthActionUseCase,
-  resolveTurnstileSiteKey,
-} from '@/client/features/authenticate/auth-action-use-case'
+import { callAuthApi } from '@/client/features/authenticate/auth-api'
 import {
   AUTH_ERROR_MESSAGES,
   resolveSignupErrorMessage,
 } from '@/client/features/authenticate/error-message'
+import { resolveTurnstileSiteKey } from '@/client/features/authenticate/turnstile'
 import {
   type AuthenticateErrors,
   validateAuthenticateForm,
@@ -71,16 +69,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 
   try {
-    const { useCase, notifier } = createAuthActionUseCase(request, context)
-    const result = await useCase.signup(
-      validation.data.email,
-      validation.data.password,
-      notifier,
-      captchaToken,
-    )
+    const response = await callAuthApi(request, context, {
+      path: '/api/auth/signup',
+      method: 'POST',
+      body: {
+        email: validation.data.email,
+        password: validation.data.password,
+        captchaToken,
+      },
+    })
 
-    if (result.isErr()) {
-      return { formError: resolveSignupErrorMessage(result.error) } satisfies SignupActionData
+    if (!response.ok) {
+      return {
+        formError: resolveSignupErrorMessage({ statusCode: response.status }),
+      } satisfies SignupActionData
     }
 
     return redirect('/login')

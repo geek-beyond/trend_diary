@@ -35,33 +35,31 @@ export default function useSignup(turnstileSiteKey?: string) {
       return
     }
 
-    // 成功後の遷移が完了する前に再活性化すると二重送信され得る
     setIsSubmitting(true)
-    try {
-      const result = await wrapAsyncCall(() => {
-        const client = getApiClientForClient()
-        return client.auth.signup.$post({
-          json: {
-            email: validation.data.email,
-            password: validation.data.password,
-            captchaToken,
-          },
-        })
+    const result = await wrapAsyncCall(() => {
+      const client = getApiClientForClient()
+      return client.auth.signup.$post({
+        json: {
+          email: validation.data.email,
+          password: validation.data.password,
+          captchaToken,
+        },
       })
+    })
 
-      if (result.isErr()) {
-        setFormError(AUTH_ERROR_MESSAGES.unexpected)
-        return
-      }
-      if (!result.value.ok) {
-        setFormError(resolveSignupErrorMessage(result.value.status))
-        return
-      }
-
-      navigate('/login')
-    } finally {
+    if (result.isErr()) {
+      setFormError(AUTH_ERROR_MESSAGES.unexpected)
       setIsSubmitting(false)
+      return
     }
+    if (!result.value.ok) {
+      setFormError(resolveSignupErrorMessage(result.value.status))
+      setIsSubmitting(false)
+      return
+    }
+
+    // 成功時は遷移でアンマウントされるため、ボタンを無効のままにして二重送信を防ぐ
+    navigate('/login')
   }
 
   return { isSubmitting, errors, formError, submit }

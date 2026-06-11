@@ -27,6 +27,14 @@ export interface AuthenticationUser {
 }
 
 /**
+ * JWTのローカル検証で得られる検証済みセッション
+ * NOTE: 毎リクエストのSupabase往復を避けるため、認証ゲートでは認証IDのみを扱う
+ */
+export interface VerifiedSession {
+  authenticationId: string
+}
+
+/**
  * 認証セッションモデル
  */
 export interface AuthenticationSession {

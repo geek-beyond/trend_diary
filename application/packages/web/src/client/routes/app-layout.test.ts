@@ -9,6 +9,9 @@ vi.mock('@/client/features/authenticate/auth-api', async (importOriginal) => {
   return { ...actual, callAuthApi: vi.fn() }
 })
 
+// importOriginal経由でserver側のモジュールグラフが評価されるとclientのカバレッジ分母に入ってしまうため遮断する
+vi.mock('@/server', () => ({ default: { request: vi.fn() } }))
+
 function buildLoaderArgs(): LoaderFunctionArgs {
   const request = new Request('http://localhost/trends')
   return {

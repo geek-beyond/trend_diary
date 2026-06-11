@@ -1,5 +1,4 @@
 import { Menu, TrendingUp } from 'lucide-react'
-import { useNavigate } from 'react-router'
 import { Button } from '@/client/components/shadcn/button'
 import {
   Sheet,
@@ -10,18 +9,15 @@ import {
   SheetTrigger,
 } from '@/client/components/shadcn/sheet'
 import { getVisibleMenuItems } from '@/client/components/ui/layout/sidebar'
-import useSidebar from '@/client/components/ui/layout/sidebar/use-sidebar'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 import NavMenu from '@/client/components/ui/navigation/nav-menu'
-import UserSection from '@/client/components/ui/navigation/user-section'
+import { LogoutButton } from '@/client/features/authenticate'
 
 interface Props {
   isLoggedIn: boolean
 }
 
 export default function AppHeader({ isLoggedIn }: Props) {
-  const navigate = useNavigate()
-  const { handleLogout, isLoading } = useSidebar(navigate)
   const visibleMenuItems = getVisibleMenuItems(isLoggedIn)
 
   return (
@@ -47,9 +43,7 @@ export default function AppHeader({ isLoggedIn }: Props) {
             <div className='flex flex-col gap-4'>
               <NavMenu variant='sheet' menuItems={visibleMenuItems} />
 
-              {isLoggedIn && (
-                <UserSection variant='sheet' onLogout={handleLogout} isLoading={isLoading} />
-              )}
+              {isLoggedIn && <LogoutButton variant='sheet' />}
             </div>
           </SheetContent>
         </Sheet>

@@ -2,20 +2,19 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent } from 'storybook/test'
 import { vi } from 'vitest'
 import { SidebarProvider } from '@/client/components/shadcn/sidebar'
+import useLogout from '@/client/features/authenticate/hooks/use-logout'
 import AppSidebar from './index'
-import useSidebar from './use-sidebar'
 
-// useSidebarフックをモック
-vi.mock('./use-sidebar', () => ({
+// ログアウト処理は LogoutButton 内部の useLogout が担うため、ここをモックする
+vi.mock('@/client/features/authenticate/hooks/use-logout', () => ({
   default: vi.fn(() => ({
     handleLogout: vi.fn(),
     isLoading: false,
   })),
 }))
 
-// デフォルトのuseSidebarモックを設定する関数
 const setDefaultMock = () => {
-  vi.mocked(useSidebar).mockReturnValue({
+  vi.mocked(useLogout).mockReturnValue({
     handleLogout: vi.fn(),
     isLoading: false,
   })
@@ -78,7 +77,7 @@ export const LoadingState: Story = {
   },
   beforeEach: () => {
     // ローディング状態のモックを設定
-    vi.mocked(useSidebar).mockReturnValue({
+    vi.mocked(useLogout).mockReturnValue({
       handleLogout: vi.fn(),
       isLoading: true,
     })

@@ -1,11 +1,15 @@
 import type { RenderHookResult } from '@testing-library/react'
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import useSidebar from './use-sidebar'
+import useLogout from './use-logout'
+
+vi.mock('react-router', () => ({
+  useNavigate: () => vi.fn(),
+}))
 
 vi.mock('@/client/infrastructure/create-swr-fetcher', () => {
   const mockClient = {
-    account: {
+    auth: {
       logout: {
         $delete: vi.fn(),
       },
@@ -21,14 +25,13 @@ vi.mock('@/client/infrastructure/create-swr-fetcher', () => {
   }
 })
 
-type UseSidebarHook = ReturnType<typeof useSidebar>
+type UseLogoutHook = ReturnType<typeof useLogout>
 
-function setupHook(): RenderHookResult<UseSidebarHook, unknown> {
-  const mockNavigate = vi.fn()
-  return renderHook(() => useSidebar(mockNavigate))
+function setupHook(): RenderHookResult<UseLogoutHook, unknown> {
+  return renderHook(() => useLogout())
 }
 
-describe('useSidebar', () => {
+describe('useLogout', () => {
   describe('基本動作', () => {
     it('初期状態ではisLoadingがfalseである', () => {
       const { result } = setupHook()
@@ -44,7 +47,6 @@ describe('useSidebar', () => {
         result.current.handleLogout()
       })
 
-      // エラーが発生しないことを確認
       expect(result.current.handleLogout).toBeDefined()
     })
   })
@@ -64,7 +66,6 @@ describe('useSidebar', () => {
 
   describe('境界値テスト', () => {
     it('フック初期化時の予期しないエラー', () => {
-      // フックの初期化が正常に完了することを確認
       expect(() => {
         const { result } = setupHook()
         expect(result.current).toBeDefined()

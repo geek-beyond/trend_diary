@@ -1,5 +1,4 @@
 import { BarChart3, BookOpenCheck, Inbox, TrendingUp } from 'lucide-react'
-import { useNavigate } from 'react-router'
 import {
   Sidebar,
   SidebarContent,
@@ -11,9 +10,8 @@ import {
 } from '@/client/components/shadcn/sidebar'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 import NavMenu from '@/client/components/ui/navigation/nav-menu'
-import UserSection from '@/client/components/ui/navigation/user-section'
+import { LogoutButton } from '@/client/features/authenticate'
 import type { InternalPath } from '@/client/routes'
-import useSidebar from './use-sidebar'
 
 export interface MenuItem {
   title: string
@@ -56,8 +54,6 @@ interface Props {
 }
 
 export default function AppSidebar({ isLoggedIn }: Props) {
-  const navigate = useNavigate()
-  const { handleLogout, isLoading } = useSidebar(navigate)
   const visibleMenuItems = getVisibleMenuItems(isLoggedIn)
 
   return (
@@ -82,7 +78,7 @@ export default function AppSidebar({ isLoggedIn }: Props) {
           {isLoggedIn && (
             <SidebarGroup className='absolute bottom-0 left-0 w-full'>
               <SidebarGroupContent>
-                <UserSection variant='sidebar' onLogout={handleLogout} isLoading={isLoading} />
+                <LogoutButton variant='sidebar' />
               </SidebarGroupContent>
             </SidebarGroup>
           )}

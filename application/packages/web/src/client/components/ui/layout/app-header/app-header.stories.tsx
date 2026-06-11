@@ -15,7 +15,7 @@ type Story = StoryObj<typeof AppHeader>
 // AppHeader は `md:hidden` のモバイル専用ヘッダーで、デスクトップ幅の
 // テスト環境では `display: none` となりアクセシビリティツリーから除外される。
 // そのため role 取得時は `hidden: true` を指定して非表示要素も対象に含める。
-// なお描画のみの検証でログアウト操作は行わないため useSidebar のモックは不要。
+// なお描画のみの検証でログアウト操作は行わないため useLogout のモックは不要。
 
 export const LoggedOut: Story = {
   args: {
@@ -37,7 +37,7 @@ export const LoggedIn: Story = {
     isLoggedIn: true,
   },
   play: async ({ canvas }) => {
-    // ログイン分岐を通すことでメニュー項目生成・UserSection 生成のコードを網羅する
+    // ログイン分岐を通すことでメニュー項目生成・LogoutButton 生成のコードを網羅する
     await expect(canvas.getByRole('banner', { hidden: true })).toBeInTheDocument()
     await expect(
       canvas.getByRole('button', { name: 'メニューを開く', hidden: true }),

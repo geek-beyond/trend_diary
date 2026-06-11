@@ -196,8 +196,7 @@ export default class QueryImpl implements Query {
 
     const mediaCondition = media ? sql`AND articles.media = ${media}` : sql.empty()
 
-    // 残件表示・全消化判定に使う未読総数と分割取得を、COUNT(*) OVER()で1クエリ(1往復)に集約する。
-    // D1のdb.batchは生SQLを扱えないため、ウィンドウ関数でLIMIT前の総件数を各行に同時取得する
+    // D1のdb.batchは生SQLを扱えないため、総数はウィンドウ関数で一覧と同時に取得する
     const result = await wrapDbCall(() =>
       this.db.all<RawArticleRow & RawCountRow>(sql`
         SELECT

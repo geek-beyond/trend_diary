@@ -275,7 +275,6 @@ describe('QueryImpl', () => {
         media: 'zenn' as const,
       },
     ])('$name をArticleへ変換できる', async ({ createdAt, expectedIso, media }) => {
-      // COUNT(*) OVER() で各行に総数が付与される
       mockRdbExecutor.mockResolvedValue({
         rows: [
           {
@@ -326,7 +325,6 @@ describe('QueryImpl', () => {
       if (result.isOk()) {
         expect(result.value.total).toBe(250)
       }
-      // 1クエリ(1往復)に集約されていること
       expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
       const sqlText = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
       const params = mockRdbExecutor.mock.calls[0]?.[1] ?? []

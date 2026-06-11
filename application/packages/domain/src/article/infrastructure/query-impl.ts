@@ -134,7 +134,8 @@ export default class QueryImpl implements Query {
     }
 
     const articleRows = result.value
-    // 0件時は行が返らないため total は 0 になる
+    // 行が無いページ(該当0件、または範囲外ページ)では total は 0 になる。
+    // db.batchが生SQLを扱えない制約下で1往復を優先した割り切り（範囲外ページはUIのNext無効化で通常到達しない）
     const total = Number(articleRows[0]?.total ?? 0)
     const mappedArticles = articleRows.map(QueryImpl.mapRawArticleToDomain)
 
@@ -312,10 +313,8 @@ export default class QueryImpl implements Query {
     const readsTotal = readCount
     const totalPages = Math.ceil(readsTotal / limit)
 
-    // UNION ALLは出力順を保証しないため、read一覧はJS側で並べ直す
-    const reads = readsRows
-      .map(QueryImpl.mapRawDiaryReadItem)
-      .sort(QueryImpl.compareDiaryReadItemDesc)
+    // reads_pageサブクエリのORDER BY順はSQLiteのUNION ALLを通しても保持される
+    const reads = readsRows.map(QueryImpl.mapRawDiaryReadItem)
 
     return ok({
       date: targetDateJst,
@@ -622,13 +621,6 @@ export default class QueryImpl implements Query {
     }
 
     return { sourceRows, readsRows }
-  }
-
-  private static compareDiaryReadItemDesc(a: DiaryReadItem, b: DiaryReadItem): number {
-    const timeDiff = b.readAt.getTime() - a.readAt.getTime()
-    if (timeDiff !== 0) return timeDiff
-    if (a.readHistoryId === b.readHistoryId) return 0
-    return a.readHistoryId > b.readHistoryId ? -1 : 1
   }
 
   private static splitDiarySourceRows(rows: RawDiaryTypedSourceRow[]) {

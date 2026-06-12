@@ -1,9 +1,10 @@
 import { toJaTimeString } from '@trend-diary/common/locale/date'
 import type { ReactNode } from 'react'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
+// barrel 経由だと記事スライスのデータ取得 hook（swr 依存）まで巻き込み、Storybook 環境で読み込みに失敗するため
+import MediaIcon from '@/client/features/article/components/media-icon'
 import type { ReadItem } from '@/client/features/diary/types'
 import { toSafeExternalPath } from '@/client/lib/url'
-import MediaIcon from '@/client/routes/trends._index/components/media-icon'
 
 interface Props {
   isLoading: boolean

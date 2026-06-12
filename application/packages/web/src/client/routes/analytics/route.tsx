@@ -1,8 +1,8 @@
 import type { MetaFunction } from 'react-router'
 import { useOutletContext } from 'react-router'
+import { useAnalytics } from '@/client/features/diary'
 import type { AppLayoutOutletContext } from '../app-layout'
-import AnalyticsPage from '../diary/analytics-page'
-import useAnalytics from '../diary/hooks/use-analytics'
+import AnalyticsPage from './page'
 
 export const meta: MetaFunction = () => [{ title: '統計 | TrendDiary' }]
 

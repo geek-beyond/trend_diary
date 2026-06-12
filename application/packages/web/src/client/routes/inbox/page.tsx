@@ -2,11 +2,13 @@ import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/client/components/shadcn/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/client/components/shadcn/tooltip'
-import MediaFilter, {
+import {
+  MediaFilter,
+  MediaIcon,
+  type MediaIconType as IconMediaType,
   type MediaType as FilterMediaType,
-} from '../trends._index/components/media-filter'
-import MediaIcon, { type MediaType as IconMediaType } from '../trends._index/components/media-icon'
-import type { Article } from './hooks/use-unread-digestion'
+} from '@/client/features/article'
+import type { Article } from '@/client/features/inbox'
 
 interface Props {
   article: Article | null

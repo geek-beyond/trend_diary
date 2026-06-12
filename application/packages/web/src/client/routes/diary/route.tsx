@@ -1,7 +1,7 @@
 import type { MetaFunction } from 'react-router'
 import { useOutletContext } from 'react-router'
+import { useDiary } from '@/client/features/diary'
 import type { AppLayoutOutletContext } from '../app-layout'
-import useDiary from './hooks/use-diary'
 import DiaryPage from './page'
 
 export const meta: MetaFunction = () => [{ title: 'ダイアリー | TrendDiary' }]

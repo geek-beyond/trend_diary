@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { MetaFunction } from 'react-router'
 import { useOutletContext } from 'react-router'
+import { type MediaType } from '@/client/features/article'
+import { useUnreadDigestion } from '@/client/features/inbox'
 import type { AppLayoutOutletContext } from '../app-layout'
-import type { MediaType } from '../trends._index/components/media-filter'
-import useUnreadDigestion from './hooks/use-unread-digestion'
 import InboxPage from './page'
 
 export const meta: MetaFunction = () => [{ title: '未読消化 | TrendDiary' }]

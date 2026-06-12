@@ -2,7 +2,7 @@ import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { Check } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardTitle } from '@/client/components/shadcn/card'
 import { cn } from '@/client/components/shadcn/lib/utils'
-import type { Article } from '../hooks/use-articles'
+import type { Article } from '@/client/features/article/hooks/use-articles'
 import MediaIcon, { type MediaType } from './media-icon'
 
 interface Props {

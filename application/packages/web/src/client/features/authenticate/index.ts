@@ -1,4 +1,5 @@
-export { AuthenticateForm, LogoutButton } from './ui'
+export { AuthenticateForm } from './components/authenticate-form'
+export { default as LogoutButton } from './components/logout-button'
 export {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,

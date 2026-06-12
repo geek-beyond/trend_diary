@@ -6,11 +6,11 @@ import { SESSION_SWR_KEY } from '@/client/features/authenticate/hooks/use-sessio
 import {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,
-} from '@/client/features/authenticate/lib/error-message'
+} from '@/client/features/authenticate/model/error-message'
 import {
   type AuthenticateErrors,
   validateAuthenticateForm,
-} from '@/client/features/authenticate/lib/validation'
+} from '@/client/features/authenticate/model/validation'
 import getApiClientForClient from '@/client/infrastructure/api'
 
 export default function useLogin(turnstileSiteKey?: string) {

@@ -7,6 +7,31 @@ paths:
 
 React 19.2 + React Compiler 有効（`packages/web` の Vite で `babel-plugin-react-compiler` を適用済み）を前提とする。
 
+## React Compiler を効かせるための書き方
+
+React Compiler はコンポーネント／フックを自動でメモ化しますが、[Rules of React](https://react.dev/reference/rules) に違反するコードは「安全に最適化できない」と判断してそのコンポーネント単位で最適化をスキップ（bailout）します。bailout すると手動メモ化もない以上そのコンポーネントだけ再レンダーが素通りになるため、以下のパターンを避けて Compiler が最適化できる状態を保ちます。
+
+- 手動メモ化（`useMemo` / `useCallback` / `memo`）は書かない
+  - 理由: Compiler が自動で行うため冗長で、二重管理になる。oxlint（`no-restricted-imports` / `no-restricted-properties`）で機械的に禁止済みのため、必要になっても import せずレンダー中の素の計算・関数定義に任せる
+- コンポーネント関数の内部で別のコンポーネントを定義しない（ネスト定義）
+  - 理由: 親が再レンダーするたびに別物のコンポーネント型が生成され、子が毎回アンマウント→再マウントされて state が失われる。Compiler も最適化対象にできない。コンポーネントはモジュールトップレベルに定義し、出し分けは props や子要素の受け渡しで行う
+- レンダー中に props / state / 配列 / オブジェクトを書き換えない（ミューテーション）
+  - 理由: レンダーは純粋であることが前提で、`push` / `sort` / 直接代入などの副作用があると Compiler は最適化を諦める。並べ替え等は元配列をコピーしてから操作する
+- レンダー中に `ref.current` を読み書きしない
+  - 理由: ref はレンダー結果に影響してはならない可変値で、レンダー中に触ると純粋性が崩れる。ref の参照はイベントハンドラや `useEffect` の中だけに留める
+- レンダー中にモジュールスコープ／グローバル変数を書き換えない
+  - 理由: 同上で、外部の可変状態への書き込みはレンダーを不純にする。共有状態は state か外部ストア（購読は `useSyncExternalStore`）で扱う
+- Rules of Hooks を守る（条件分岐・ループ・early return の後・`try/catch` の中でフックを呼ばない）
+  - 理由: フックの呼び出し順が毎回一定でないと Compiler も React 自身も状態を追跡できず、最適化以前に壊れる
+- コンポーネントは `PascalCase`、カスタムフックは `use` 始まりで命名する
+  - 理由: Compiler はこの命名規約で最適化対象を判別する。外れていると（コンポーネントが `camelCase` など）最適化の対象として認識されない
+- `'use no memo'` ディレクティブや react-compiler の `eslint-disable` は原則使わない
+  - 理由: その単位で最適化を明示的に外す逃げ道であり、安易に使うと bailout が常態化する。やむを得ず使う場合は理由をコメントに残す
+
+なお、条件付きで収束する「レンダー中の `setState`」（props から派生する state を調整する用途。例: 直前の props を保持し、変化したフレームだけ `setState` する）は禁止しない。
+
+- 理由: 公式「[You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect)」が Effect より推奨する正当なパターンで、無条件の `setState`（無限ループになる）と違い次のレンダーで条件が偽に収束する。純粋性を壊さないため Compiler も bailout しない
+
 ## useEffect
 
 `useEffect` は「外部システムとの同期」のための仕組みであり、それ以外の用途に使わない。レンダー中の派生計算やイベント起因の処理を Effect に載せると、再レンダーの往復や状態の二重管理を生み、バグの温床になる。判断に迷う場合は React 公式「[You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect)」を参照する。

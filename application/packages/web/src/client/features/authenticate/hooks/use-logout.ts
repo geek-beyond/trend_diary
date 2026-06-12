@@ -1,9 +1,10 @@
-import type { NavigateFunction } from 'react-router'
+import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import useSWRMutation from 'swr/mutation'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 
-export default function useSidebar(navigate: NavigateFunction) {
+export default function useLogout() {
+  const navigate = useNavigate()
   const { client, apiCall } = createSWRFetcher()
 
   const { trigger, isMutating } = useSWRMutation(

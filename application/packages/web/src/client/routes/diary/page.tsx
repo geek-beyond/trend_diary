@@ -1,14 +1,14 @@
-import DiaryLoginRequired from '@/client/features/diary/components/login-required'
-import DiaryPageLayout from '@/client/features/diary/components/page-layout'
-import DiaryReadListSection from '@/client/features/diary/components/read-list-section'
-import DiaryReadPagination from '@/client/features/diary/components/read-pagination'
-import DiarySummarySection from '@/client/features/diary/components/summary-section'
 import {
+  DiaryLoginRequired,
+  DiaryPageLayout,
+  DiaryReadListSection,
+  DiaryReadPagination,
+  DiarySummarySection,
   type ReadItem,
   type ReadPagination,
   type Source,
   type Summary,
-} from '@/client/features/diary/types'
+} from '@/client/features/diary'
 
 interface Props {
   isLoggedIn: boolean

@@ -1,18 +1,19 @@
 import { Button } from '@/client/components/shadcn/button'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/client/components/shadcn/sidebar'
+import useLogout from '@/client/features/authenticate/hooks/use-logout'
 
-interface UserSectionProps {
+interface Props {
   variant: 'sidebar' | 'sheet'
-  onLogout: () => void
-  isLoading: boolean
 }
 
-export default function UserSection({ variant, onLogout, isLoading }: UserSectionProps) {
+export default function LogoutButton({ variant }: Props) {
+  const { handleLogout, isLoading } = useLogout()
+
   if (variant === 'sidebar') {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton onClick={onLogout} disabled={isLoading}>
+          <SidebarMenuButton onClick={handleLogout} disabled={isLoading}>
             {isLoading ? 'ログアウト中...' : 'ログアウト'}
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -23,7 +24,7 @@ export default function UserSection({ variant, onLogout, isLoading }: UserSectio
   return (
     <div className='border-t pt-4 mt-auto'>
       <div className='flex flex-col gap-2 px-3'>
-        <Button onClick={onLogout} disabled={isLoading} variant='outline'>
+        <Button onClick={handleLogout} disabled={isLoading} variant='outline'>
           {isLoading ? 'ログアウト中...' : 'ログアウト'}
         </Button>
       </div>

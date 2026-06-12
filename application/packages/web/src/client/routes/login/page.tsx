@@ -1,5 +1,4 @@
-import { AuthenticateForm } from '@/client/features/authenticate/components/authenticate-form'
-import type { AuthenticateErrors } from '@/client/features/authenticate/validation'
+import { AuthenticateForm, type AuthenticateErrors } from '@/client/features/authenticate'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'

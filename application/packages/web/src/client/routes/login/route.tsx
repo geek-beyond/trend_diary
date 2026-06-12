@@ -1,5 +1,5 @@
 import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
-import { resolveTurnstileSiteKey } from '@/client/features/authenticate/turnstile'
+import { resolveTurnstileSiteKey } from '@/client/features/authenticate'
 import useLogin from './hooks/use-login'
 import LoginPage from './page'
 

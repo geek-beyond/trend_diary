@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor } from 'storybook/test'
-import type { Article } from '../hooks/use-articles'
+import type { Article } from '@/client/features/article/hooks/use-articles'
 import ArticleCard from './article-card'
 
 const defaultArticle: Article = {

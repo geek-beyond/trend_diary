@@ -13,7 +13,7 @@ import {
 } from '@/client/components/shadcn/drawer'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
 import { cn } from '@/client/components/shadcn/lib/utils'
-import type { Article } from '../hooks/use-articles'
+import type { Article } from '@/client/features/article/hooks/use-articles'
 import MediaIcon, { type MediaType } from './media-icon'
 
 const DESCRIPTION_TOGGLE_THRESHOLD = 100

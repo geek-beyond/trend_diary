@@ -1,10 +1,12 @@
 import type { MetaFunction } from 'react-router'
 import { useOutletContext } from 'react-router'
+import {
+  ArticleDrawer,
+  useArticleDrawer,
+  useArticles,
+  useReadArticle,
+} from '@/client/features/article'
 import type { AppLayoutOutletContext } from '../app-layout'
-import ArticleDrawer from './components/article-drawer'
-import useArticleDrawer from './hooks/use-article-drawer'
-import useArticles from './hooks/use-articles'
-import useReadArticle from './hooks/use-read-article'
 import TrendsPage from './page'
 
 export const meta: MetaFunction = () => [{ title: 'トレンド一覧 | TrendDiary' }]

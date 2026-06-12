@@ -4,7 +4,7 @@ import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
-import { getTodayJst, sumSourceSummary } from '@/client/features/diary'
+import { getTodayJst, sumSourceSummary } from '@/client/features/diary/daily-summary'
 import useDiaryApi, {
   type DiaryRangeItemResponse,
   type DiaryResponse,

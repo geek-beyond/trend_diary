@@ -1,9 +1,9 @@
 import { toJaTimeString } from '@trend-diary/common/locale/date'
 import type { ReactNode } from 'react'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
+import { MediaIcon } from '@/client/features/article'
 import type { ReadItem } from '@/client/features/diary/types'
 import { toSafeExternalPath } from '@/client/lib/url'
-import MediaIcon from '@/client/routes/trends._index/components/media-icon'
 
 interface Props {
   isLoading: boolean

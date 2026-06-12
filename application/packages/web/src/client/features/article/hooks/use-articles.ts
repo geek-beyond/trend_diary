@@ -12,9 +12,9 @@ import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
+import type { MediaType } from '@/client/features/article/components/media-filter'
+import type { ReadStatusType } from '@/client/features/article/components/read-status-filter'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
-import type { MediaType } from '../components/media-filter'
-import type { ReadStatusType } from '../components/read-status-filter'
 
 // isRead を含む記事型(フロントエンドではarticleIdをstringに統一)
 export type Article = Omit<ArticleOutput, 'articleId'> & {

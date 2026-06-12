@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router'
 import {
   AUTH_ERROR_MESSAGES,
   resolveSignupErrorMessage,
-} from '@/client/features/authenticate/error-message'
+} from '@/client/features/authenticate/lib/error-message'
 import {
   type AuthenticateErrors,
   validateAuthenticateForm,
-} from '@/client/features/authenticate/validation'
+} from '@/client/features/authenticate/lib/validation'
 import getApiClientForClient from '@/client/infrastructure/api'
 
 export default function useSignup(turnstileSiteKey?: string) {

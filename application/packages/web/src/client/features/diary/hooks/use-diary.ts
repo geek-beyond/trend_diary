@@ -3,7 +3,7 @@ import { DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
-import { getTodayJst, sumSourceSummary } from '@/client/features/diary/daily-summary'
+import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi from './use-diary-api'
 
 interface DiaryReadItem {

@@ -1,4 +1,4 @@
-import type { ReadPagination } from '@/client/features/diary/types'
+import type { ReadPagination } from '@/client/features/diary/model/types'
 
 interface Props {
   onNextPage: () => void

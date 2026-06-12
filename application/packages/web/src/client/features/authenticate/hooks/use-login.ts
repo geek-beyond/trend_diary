@@ -2,15 +2,15 @@ import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useSWRConfig } from 'swr'
+import { SESSION_SWR_KEY } from '@/client/features/authenticate/hooks/use-session'
 import {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,
-} from '@/client/features/authenticate/error-message'
-import { SESSION_SWR_KEY } from '@/client/features/authenticate/hooks/use-session'
+} from '@/client/features/authenticate/model/error-message'
 import {
   type AuthenticateErrors,
   validateAuthenticateForm,
-} from '@/client/features/authenticate/validation'
+} from '@/client/features/authenticate/model/validation'
 import getApiClientForClient from '@/client/infrastructure/api'
 
 export default function useLogin(turnstileSiteKey?: string) {

@@ -1,7 +1,9 @@
 import { toJaTimeString } from '@trend-diary/common/locale/date'
 import type { ReactNode } from 'react'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
-import { MediaIcon } from '@/client/features/article'
+// 表示専用の MediaIcon のみを参照する。Public API barrel 経由だと記事スライスの
+// データ取得 hook（swr 依存）まで巻き込み、Storybook 環境で読み込みに失敗するため葉を直接参照する
+import MediaIcon from '@/client/features/article/components/media-icon'
 import type { ReadItem } from '@/client/features/diary/types'
 import { toSafeExternalPath } from '@/client/lib/url'
 

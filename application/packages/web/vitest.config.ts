@@ -100,6 +100,9 @@ export default defineConfig(() => {
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',
           'src/client/features/diary/components/login-required.tsx',
+          // 表示専用コンポーネントは Storybook のインタラクションテストで担保する。
+          // Public API barrel 経由で client テストにも読み込まれるが、ここでは計測対象外とする
+          'src/client/features/article/components/**',
         ],
         // ベタガキしないと、Github Actionsに閾値が反映されない
         thresholds: {

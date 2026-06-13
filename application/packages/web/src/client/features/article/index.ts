@@ -6,5 +6,10 @@ export { default as MediaFilter, type MediaType } from './components/media-filte
 export { default as MediaIcon, type MediaType as MediaIconType } from './components/media-icon'
 export { default as ReadStatusFilter, type ReadStatusType } from './components/read-status-filter'
 export { default as useArticleDrawer } from './hooks/use-article-drawer'
-export { default as useArticles, type Article, type DatePresetType } from './hooks/use-articles'
+export {
+  default as useArticles,
+  type Article,
+  type DatePresetType,
+  type FilterParams,
+} from './hooks/use-articles'
 export { default as useReadArticle } from './hooks/use-read-article'

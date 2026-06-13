@@ -33,7 +33,7 @@ interface Params {
   datePreset: DatePresetType
 }
 
-interface FilterParams {
+export interface FilterParams {
   media: MediaType
   readStatus: ReadStatusType
   datePreset: DatePresetType

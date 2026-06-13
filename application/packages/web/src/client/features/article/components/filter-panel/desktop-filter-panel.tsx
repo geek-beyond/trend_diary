@@ -1,11 +1,11 @@
 import { Funnel } from 'lucide-react'
+import { type FilterParams } from '../../hooks/use-articles'
 import { FilterControls } from './filter-controls'
-import { type Filters } from './types'
 
 interface DesktopFilterPanelProps {
-  draft: Filters
+  draft: FilterParams
   isLoggedIn: boolean
-  onCommit: (patch: Partial<Filters>) => void
+  onCommit: (patch: Partial<FilterParams>) => void
 }
 
 export function DesktopFilterPanel({ draft, isLoggedIn, onCommit }: DesktopFilterPanelProps) {

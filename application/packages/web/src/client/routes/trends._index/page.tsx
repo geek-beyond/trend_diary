@@ -11,6 +11,7 @@ import {
   type Article,
   ArticleCard,
   type DatePresetType,
+  type FilterParams,
   FilterPanel,
   type MediaType,
   type ReadStatusType,
@@ -36,11 +37,7 @@ interface Props {
   selectedDatePreset: DatePresetType
   toNextPage: (currentPage: number) => void
   toPreviousPage: (currentPage: number) => void
-  onApplyFilters: (filters: {
-    media: MediaType
-    readStatus: ReadStatusType
-    datePreset: DatePresetType
-  }) => void
+  onApplyFilters: (filters: FilterParams) => void
   onToggleRead: (articleId: string, isRead: boolean) => void
   isLoggedIn: boolean
 }

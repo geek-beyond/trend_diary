@@ -1,16 +1,16 @@
 import { ChevronDown, Funnel } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
+import { type FilterParams } from '../../hooks/use-articles'
 import { FilterControls } from './filter-controls'
-import { type Filters } from './types'
 
 interface MobileFilterPanelProps {
   isOpen: boolean
   appliedFilterCount: number
-  draft: Filters
+  draft: FilterParams
   isLoggedIn: boolean
   onToggle: () => void
-  onDraftChange: (patch: Partial<Filters>) => void
+  onDraftChange: (patch: Partial<FilterParams>) => void
   onCancel: () => void
   onClear: () => void
   onApply: () => void

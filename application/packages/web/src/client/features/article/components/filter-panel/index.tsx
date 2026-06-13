@@ -33,10 +33,11 @@ export function FilterPanel({
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [draft, setDraft] = useState<FilterParams>(applied)
 
-  const appliedFilterCount =
-    (applied.media ? 1 : 0) +
-    (isLoggedIn && applied.readStatus === 'unread' ? 1 : 0) +
-    (applied.datePreset !== 'today' ? 1 : 0)
+  const appliedFilterCount = [
+    applied.media !== null,
+    isLoggedIn && applied.readStatus === 'unread',
+    applied.datePreset !== 'today',
+  ].filter(Boolean).length
 
   const commitFilters = (filters: FilterParams) => {
     onApplyFilters(filters)

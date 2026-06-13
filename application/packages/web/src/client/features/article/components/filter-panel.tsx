@@ -1,11 +1,12 @@
 import { ChevronDown, Funnel } from 'lucide-react'
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
 import { scrollToTop } from '@/client/lib/scroll'
 import { type DatePresetType } from '../hooks/use-articles'
 import DatePresetFilter from './date-preset-filter'
+import { FilterField } from './filter-field'
 import MediaFilter, { type MediaType } from './media-filter'
 import ReadStatusFilter, { type ReadStatusType } from './read-status-filter'
 
@@ -16,26 +17,6 @@ interface Filters {
 }
 
 const DEFAULT_FILTERS: Filters = { media: null, readStatus: 'all', datePreset: 'today' }
-
-function FilterField({
-  label,
-  variant,
-  children,
-}: {
-  label: string
-  variant: 'mobile' | 'desktop'
-  children: ReactNode
-}) {
-  const isMobile = variant === 'mobile'
-  return (
-    <div className={isMobile ? 'flex w-full flex-col items-start gap-2' : 'flex flex-col gap-1'}>
-      <span className={twMerge('font-medium text-gray-600', isMobile ? 'text-sm' : 'text-xs')}>
-        {label}
-      </span>
-      {children}
-    </div>
-  )
-}
 
 interface FilterPanelProps {
   selectedMedia: MediaType

@@ -11,20 +11,18 @@ import {
   type Article,
   ArticleCard,
   type DatePresetType,
+  FilterPanel,
   type MediaType,
   type ReadStatusType,
 } from '@/client/features/article'
+import { scrollToTop } from '@/client/lib/scroll'
 import LoadingSpinner from '../../components/ui/feedback/loading-spinner'
-import { FilterPanel } from './filter-panel'
 
-const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-const getPaginationClass = (isDisabled: boolean) => {
-  const baseClass = 'border-solid border border-b-slate-400 cursor-pointer'
-  return twMerge(baseClass, isDisabled ? 'opacity-50 cursor-not-allowed' : '')
-}
+const getPaginationClass = (isDisabled: boolean) =>
+  twMerge(
+    'border-solid border border-b-slate-400 cursor-pointer',
+    isDisabled ? 'opacity-50 cursor-not-allowed' : '',
+  )
 
 interface Props {
   date: Date

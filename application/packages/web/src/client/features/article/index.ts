@@ -1,6 +1,7 @@
 export { default as ArticleCard } from './components/article-card'
 export { default as ArticleDrawer } from './components/article-drawer'
 export { default as DatePresetFilter } from './components/date-preset-filter'
+export { FilterPanel } from './components/filter-panel'
 export { default as MediaFilter, type MediaType } from './components/media-filter'
 export { default as MediaIcon, type MediaType as MediaIconType } from './components/media-icon'
 export { default as ReadStatusFilter, type ReadStatusType } from './components/read-status-filter'

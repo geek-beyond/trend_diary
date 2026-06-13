@@ -39,10 +39,7 @@ export default function Trends() {
     const originalArticle = articles.find((a) => a.articleId === articleId)
     if (!originalArticle) return
 
-    // 1. APIコールで既読/未読を切り替え
     await (isRead ? markAsRead : markAsUnread)(articleId)
-
-    // 2. 再fetchして状態を更新
     reloadArticles()
   }
 

@@ -10,7 +10,7 @@ export const meta: MetaFunction = () => [{ title: '未読消化 | TrendDiary' }]
 
 export default function InboxRoute() {
   const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
-  const [selectedMedia, setSelectedMedia] = useState<MediaType>(null)
+  const [selectedMedia, setSelectedMedia] = useState<MediaType>(undefined)
   const {
     isLoading,
     isJustCompleted,

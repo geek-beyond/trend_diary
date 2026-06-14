@@ -14,7 +14,7 @@ type Story = StoryObj<typeof MediaFilter>
 
 export const AllSelected: Story = {
   args: {
-    selectedMedia: null,
+    selectedMedia: undefined,
     onMediaChange: fn(),
   },
   play: async ({ canvas, step }) => {
@@ -52,7 +52,7 @@ export const ZennSelected: Story = {
 
 export const SelectQiita: Story = {
   args: {
-    selectedMedia: null,
+    selectedMedia: undefined,
     onMediaChange: fn(),
   },
   play: async ({ args, canvas, step }) => {

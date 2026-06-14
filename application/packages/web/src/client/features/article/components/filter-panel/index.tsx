@@ -7,7 +7,7 @@ import { type ReadStatusType } from '../read-status-filter'
 import { DesktopFilterPanel } from './desktop-filter-panel'
 import { MobileFilterPanel } from './mobile-filter-panel'
 
-const DEFAULT_FILTERS: FilterParams = { media: null, readStatus: 'all', datePreset: 'today' }
+const DEFAULT_FILTERS: FilterParams = { media: undefined, readStatus: 'all', datePreset: 'today' }
 
 interface FilterPanelProps {
   selectedMedia: MediaType
@@ -34,7 +34,7 @@ export function FilterPanel({
   const [draft, setDraft] = useState<FilterParams>(applied)
 
   const appliedFilterCount = [
-    applied.media !== null,
+    applied.media !== undefined,
     isLoggedIn && applied.readStatus === 'unread',
     applied.datePreset !== 'today',
   ].filter(Boolean).length

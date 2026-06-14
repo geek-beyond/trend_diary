@@ -14,7 +14,7 @@ describe('InboxPage', () => {
         onRead: vi.fn().mockResolvedValue(undefined),
         onLater: vi.fn(),
         remainingCount: 0,
-        selectedMedia: null,
+        selectedMedia: undefined,
         onMediaChange: vi.fn(),
       }),
     )
@@ -35,7 +35,7 @@ describe('InboxPage', () => {
         onRead: vi.fn().mockResolvedValue(undefined),
         onLater: vi.fn(),
         remainingCount: 0,
-        selectedMedia: null,
+        selectedMedia: undefined,
         onMediaChange: vi.fn(),
       }),
     )

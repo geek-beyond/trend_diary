@@ -136,7 +136,7 @@ export default function useArticles(isLoggedIn = false) {
   const params: Params = {
     page: validPage,
     limit: validLimit,
-    media: mediaParam && isArticleMedia(mediaParam) ? mediaParam : null,
+    media: mediaParam && isArticleMedia(mediaParam) ? mediaParam : undefined,
     readStatus: readStatusParam === '0' ? 'unread' : 'all',
     datePreset: parseDatePreset(fromParam, toParam, todayJstDateString),
   }

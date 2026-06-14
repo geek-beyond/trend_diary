@@ -1,38 +1,55 @@
 import { ChevronDown, Funnel } from 'lucide-react'
+import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
+import { scrollToTop } from '@/client/lib/scroll'
 import { type FilterParams } from '../../hooks/use-articles'
 import { FilterControls } from './filter-controls'
 
+const DEFAULT_FILTERS: FilterParams = { media: undefined, readStatus: 'all', datePreset: 'today' }
+
 interface MobileFilterPanelProps {
-  isOpen: boolean
-  appliedFilterCount: number
-  draft: FilterParams
+  applied: FilterParams
   isLoggedIn: boolean
-  onToggle: () => void
-  onDraftChange: (patch: Partial<FilterParams>) => void
-  onCancel: () => void
-  onClear: () => void
-  onApply: () => void
+  onApplyFilters: (filters: FilterParams) => void
 }
 
-export function MobileFilterPanel({
-  isOpen,
-  appliedFilterCount,
-  draft,
-  isLoggedIn,
-  onToggle,
-  onDraftChange,
-  onCancel,
-  onClear,
-  onApply,
-}: MobileFilterPanelProps) {
+export function MobileFilterPanel({ applied, isLoggedIn, onApplyFilters }: MobileFilterPanelProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [draft, setDraft] = useState<FilterParams>(applied)
+
+  const appliedFilterCount = [
+    applied.media !== undefined,
+    isLoggedIn && applied.readStatus === 'unread',
+    applied.datePreset !== 'today',
+  ].filter(Boolean).length
+
+  const editDraft = (patch: Partial<FilterParams>) => {
+    setDraft((current) => ({ ...current, ...patch }))
+  }
+
+  const commit = (filters: FilterParams) => {
+    onApplyFilters(filters)
+    setIsOpen(false)
+    scrollToTop()
+  }
+
+  const openPanel = () => {
+    setDraft(applied)
+    setIsOpen(true)
+  }
+
+  const closePanel = () => {
+    setDraft(applied)
+    setIsOpen(false)
+  }
+
   return (
     <div className='mb-4 rounded-lg border border-gray-300 bg-white/50 p-4'>
       <button
         type='button'
         className='flex w-full items-center justify-between'
-        onClick={onToggle}
+        onClick={isOpen ? closePanel : openPanel}
         data-slot='mobile-filter-trigger'
       >
         <span className='inline-flex items-center gap-2'>
@@ -60,13 +77,13 @@ export function MobileFilterPanel({
             variant='mobile'
             filters={draft}
             isLoggedIn={isLoggedIn}
-            onChange={onDraftChange}
+            onChange={editDraft}
           />
           <div className='flex items-center justify-end gap-2 pt-2'>
             <Button
               type='button'
               variant='ghost'
-              onClick={onCancel}
+              onClick={closePanel}
               data-slot='mobile-filter-cancel'
             >
               キャンセル
@@ -74,12 +91,12 @@ export function MobileFilterPanel({
             <Button
               type='button'
               variant='outline'
-              onClick={onClear}
+              onClick={() => commit(DEFAULT_FILTERS)}
               data-slot='mobile-filter-clear'
             >
               クリア
             </Button>
-            <Button type='button' onClick={onApply} data-slot='mobile-filter-apply'>
+            <Button type='button' onClick={() => commit(draft)} data-slot='mobile-filter-apply'>
               適用
             </Button>
           </div>

@@ -25,27 +25,29 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
   const [remaining, setRemaining] = useState(0)
   const [isActionLoading, setIsActionLoading] = useState(false)
   const swrKey = enabled ? ['api/articles/unread-digestion', selectedMedia] : null
-  const { data, isLoading, isValidating, mutate } = useSWR<UnreadDigestionResponse>(
-    swrKey,
-    async () => {
-      const query = selectedMedia ? { media: selectedMedia } : {}
-      const result = await apiCall<UnreadDigestionResponse>(() =>
-        client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
-      )
+  const {
+    data,
+    isLoading: isInitialLoading,
+    isValidating,
+    mutate,
+  } = useSWR<UnreadDigestionResponse>(swrKey, async () => {
+    const query = selectedMedia ? { media: selectedMedia } : {}
+    const result = await apiCall<UnreadDigestionResponse>(() =>
+      client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
+    )
 
-      if (!result) {
-        throw new Error('未読消化データの取得に失敗しました')
-      }
+    if (!result) {
+      throw new Error('未読消化データの取得に失敗しました')
+    }
 
-      return {
-        data: result.data.map((article) => ({
-          ...article,
-          createdAt: new Date(article.createdAt),
-        })),
-        total: result.total,
-      }
-    },
-  )
+    return {
+      data: result.data.map((article) => ({
+        ...article,
+        createdAt: new Date(article.createdAt),
+      })),
+      total: result.total,
+    }
+  })
 
   const { isJustCompleted, notifyConsumed } = useCompletionCelebration({
     remaining,
@@ -127,9 +129,12 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     })
   }
 
+  // 次バッチ取得中はキューが空になる。記事表示中のフォーカス再検証ではキューが残るのでローディングを出さない
+  const isFetchingNextBatch = isValidating && queue.length === 0
+  const isLoading = isInitialLoading || isActionLoading || isFetchingNextBatch
+
   return {
-    // 次バッチ取得中はキューが空。記事表示中のフォーカス再検証ではローディングを出さない
-    isLoading: isLoading || isActionLoading || (isValidating && queue.length === 0),
+    isLoading,
     isJustCompleted,
     currentArticle,
     remainingCount: remaining,

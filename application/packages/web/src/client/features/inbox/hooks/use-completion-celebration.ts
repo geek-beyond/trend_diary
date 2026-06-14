@@ -1,39 +1,50 @@
+import { Result } from 'neverthrow'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 const CompletionPendingStorageKey = 'inbox-completion-pending'
 const CompletionDisplayDurationMs = 2500
 
-const setCompletionPending = (pending: boolean) => {
-  try {
-    if (pending) {
-      window.sessionStorage.setItem(CompletionPendingStorageKey, '1')
-      return
-    }
+// sessionStorage はストレージ無効環境（プライベートモード等）で例外を投げうるため Result で包む
+const readPendingFlag = Result.fromThrowable(() =>
+  window.sessionStorage.getItem(CompletionPendingStorageKey),
+)
+const writePendingFlag = Result.fromThrowable(() =>
+  window.sessionStorage.setItem(CompletionPendingStorageKey, '1'),
+)
+const clearPendingFlag = Result.fromThrowable(() =>
+  window.sessionStorage.removeItem(CompletionPendingStorageKey),
+)
 
-    window.sessionStorage.removeItem(CompletionPendingStorageKey)
-  } catch {
-    // INFO: ストレージ利用不可環境では完了演出の遅延再生を無効化する
+function setCompletionPending(pending: boolean) {
+  // 保存できない環境では遅延再生を諦めるだけなので結果は問わない
+  if (pending) {
+    writePendingFlag()
+    return
   }
+
+  clearPendingFlag()
 }
 
-const hasCompletionPending = () => {
-  try {
-    return window.sessionStorage.getItem(CompletionPendingStorageKey) === '1'
-  } catch {
-    return false
-  }
+function hasCompletionPending() {
+  return readPendingFlag()
+    .map((value) => value === '1')
+    .unwrapOr(false)
 }
 
-const subscribeVisibility = (onStoreChange: () => void) => {
+function subscribeVisibility(onStoreChange: () => void) {
   document.addEventListener('visibilitychange', onStoreChange)
   return () => {
     document.removeEventListener('visibilitychange', onStoreChange)
   }
 }
 
-const getVisibilitySnapshot = () => document.visibilityState
+function getVisibilitySnapshot() {
+  return document.visibilityState
+}
 // SSR では可視扱いにし、ハイドレーション後のちらつきを避ける
-const getVisibilityServerSnapshot = () => 'visible' as const
+function getVisibilityServerSnapshot() {
+  return 'visible' as const
+}
 
 interface Params {
   remaining: number

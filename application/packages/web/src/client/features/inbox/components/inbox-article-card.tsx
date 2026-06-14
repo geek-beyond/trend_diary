@@ -11,7 +11,7 @@ interface Props {
   onLater: () => void
 }
 
-const toMediaType = (media: string): MediaIconType => {
+function toMediaType(media: string): MediaIconType {
   if (isArticleMedia(media)) return media
   return 'zenn'
 }

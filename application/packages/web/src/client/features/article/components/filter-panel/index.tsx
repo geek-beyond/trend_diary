@@ -69,21 +69,19 @@ export function FilterPanel({
     setIsFilterOpen(false)
   }
 
-  if (isMobile) {
-    return (
-      <MobileFilterPanel
-        isOpen={isFilterOpen}
-        appliedFilterCount={appliedFilterCount}
-        draft={draft}
-        isLoggedIn={isLoggedIn}
-        onToggle={toggleFilter}
-        onDraftChange={editDraft}
-        onCancel={cancelFilter}
-        onClear={() => commitDraft(DEFAULT_FILTERS)}
-        onApply={() => commitFilters(draft)}
-      />
-    )
-  }
-
-  return <DesktopFilterPanel draft={draft} isLoggedIn={isLoggedIn} onCommit={commitDraft} />
+  return isMobile ? (
+    <MobileFilterPanel
+      isOpen={isFilterOpen}
+      appliedFilterCount={appliedFilterCount}
+      draft={draft}
+      isLoggedIn={isLoggedIn}
+      onToggle={toggleFilter}
+      onDraftChange={editDraft}
+      onCancel={cancelFilter}
+      onClear={() => commitDraft(DEFAULT_FILTERS)}
+      onApply={() => commitFilters(draft)}
+    />
+  ) : (
+    <DesktopFilterPanel draft={draft} isLoggedIn={isLoggedIn} onCommit={commitDraft} />
+  )
 }

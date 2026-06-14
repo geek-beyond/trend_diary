@@ -1,9 +1,10 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { type MediaType, useReadArticle } from '@/client/features/article'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
+import useCompletionCelebration from './use-completion-celebration'
 
 export type Article = Omit<ArticleOutput, 'articleId'> & {
   articleId: string
@@ -15,29 +16,6 @@ interface UnreadDigestionResponse {
 }
 
 const SkipErrorMessage = 'スキップに失敗しました'
-const CompletionPendingStorageKey = 'inbox-completion-pending'
-const CompletionDisplayDurationMs = 2500
-
-const setCompletionPending = (pending: boolean) => {
-  try {
-    if (pending) {
-      window.sessionStorage.setItem(CompletionPendingStorageKey, '1')
-      return
-    }
-
-    window.sessionStorage.removeItem(CompletionPendingStorageKey)
-  } catch {
-    // INFO: ストレージ利用不可環境では完了演出の遅延再生を無効化する
-  }
-}
-
-const hasCompletionPending = () => {
-  try {
-    return window.sessionStorage.getItem(CompletionPendingStorageKey) === '1'
-  } catch {
-    return false
-  }
-}
 
 export default function useUnreadDigestion(enabled: boolean, selectedMedia: MediaType) {
   const { client, apiCall } = createSWRFetcher()
@@ -46,9 +24,6 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
   // バッチ件数ではなく未読総数。残件表示と完了判定の基準にする
   const [remaining, setRemaining] = useState(0)
   const [isActionLoading, setIsActionLoading] = useState(false)
-  const [isJustCompleted, setIsJustCompleted] = useState(false)
-  const completionTriggeredByActionRef = useRef(false)
-
   const swrKey = enabled ? ['api/articles/unread-digestion', selectedMedia] : null
   const { data, isLoading, isValidating, mutate } = useSWR<UnreadDigestionResponse>(
     swrKey,
@@ -72,65 +47,24 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     },
   )
 
+  const { isJustCompleted, notifyConsumed } = useCompletionCelebration({
+    remaining,
+    queueLength: queue.length,
+    batchToken: data,
+  })
+
   useEffect(() => {
     if (!data) return
 
-    completionTriggeredByActionRef.current = false
     // 取得のたびにサーバ総数へ同期し、消化中の楽観的減算のズレを補正する
     setRemaining(data.total)
     setQueue(data.data)
   }, [data])
 
-  useEffect(() => {
-    // 完了演出はサーバ未読総数が操作によって0に達した時だけ出す。
-    // 「操作で消化した」事実は completionTriggeredByActionRef が持ち、
-    // それが立つのは表示中の記事を消化した時＝直前まで remaining>0 だった時に限る
-    const reachedZeroByAction = remaining === 0 && completionTriggeredByActionRef.current
-    const shouldPlayCompletion = reachedZeroByAction || (remaining === 0 && hasCompletionPending())
-
-    if (shouldPlayCompletion && document.visibilityState === 'visible') {
-      setIsJustCompleted(true)
-      setCompletionPending(false)
-    } else if (reachedZeroByAction) {
-      // 操作直後にタブが非表示（別タブで読了等）なら、復帰時に演出を再生するため保留にする
-      setCompletionPending(true)
-    }
-
-    completionTriggeredByActionRef.current = false
-  }, [remaining])
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== 'visible') return
-      if (queue.length !== 0) return
-      if (!hasCompletionPending()) return
-
-      setIsJustCompleted(true)
-      setCompletionPending(false)
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [queue.length])
-
-  useEffect(() => {
-    if (!isJustCompleted) return
-
-    const timerId = window.setTimeout(() => {
-      setIsJustCompleted(false)
-    }, CompletionDisplayDurationMs)
-
-    return () => {
-      window.clearTimeout(timerId)
-    }
-  }, [isJustCompleted])
-
   const currentArticle = queue[0] ?? null
 
   const consumeCurrent = () => {
-    completionTriggeredByActionRef.current = true
+    notifyConsumed()
     setRemaining((prev) => Math.max(0, prev - 1))
     setQueue((prev) => prev.slice(1))
   }

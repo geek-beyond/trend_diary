@@ -8,8 +8,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/client/components/shadcn/chart'
+import LoginRequired from '@/client/components/ui/feedback/login-required'
 import {
-  DiaryLoginRequired,
   DiaryPageLayout,
   DiaryReadListSection,
   DiaryReadPagination,
@@ -86,7 +86,7 @@ export default function AnalyticsPage({
   }
 
   if (!isLoggedIn) {
-    return <DiaryLoginRequired pageTitle={pageTitle} />
+    return <LoginRequired pageTitle={pageTitle} />
   }
 
   return (

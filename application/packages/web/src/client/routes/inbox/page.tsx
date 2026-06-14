@@ -1,3 +1,4 @@
+import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
 import { type Article, InboxArticleCard, InboxCompletionCard } from '@/client/features/inbox'
 
@@ -27,12 +28,7 @@ export default function InboxPage({
   onMediaChange,
 }: Props) {
   if (!isLoggedIn) {
-    return (
-      <div className='p-6'>
-        <h1 className='text-xl font-semibold text-gray-900'>未読消化</h1>
-        <p className='mt-4 text-sm text-gray-600'>この機能はログイン時のみ利用できます</p>
-      </div>
-    )
+    return <LoginRequired pageTitle='未読消化' />
   }
 
   return (
@@ -46,16 +42,14 @@ export default function InboxPage({
         </div>
         <p className='mt-1 text-sm text-gray-600'>残り {remainingCount} 件</p>
 
-        {isLoading && <p className='mt-4 text-sm text-gray-600'>読み込み中...</p>}
-
-        {!isLoading && !article && !isJustCompleted && (
-          <p className='mt-4 text-sm text-gray-600'>未読記事はありません</p>
-        )}
-
-        {!isLoading && !article && isJustCompleted && <InboxCompletionCard />}
-
-        {!isLoading && article && (
+        {isLoading ? (
+          <p className='mt-4 text-sm text-gray-600'>読み込み中...</p>
+        ) : article ? (
           <InboxArticleCard article={article} onSkip={onSkip} onRead={onRead} onLater={onLater} />
+        ) : isJustCompleted ? (
+          <InboxCompletionCard />
+        ) : (
+          <p className='mt-4 text-sm text-gray-600'>未読記事はありません</p>
         )}
       </div>
     </div>

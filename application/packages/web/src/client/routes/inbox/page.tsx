@@ -1,6 +1,6 @@
 import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
-import { type Article, InboxArticleCard, InboxCompletionCard } from '@/client/features/inbox'
+import { type Article, InboxBody } from '@/client/features/inbox'
 
 interface Props {
   article: Article | null
@@ -13,28 +13,6 @@ interface Props {
   remainingCount: number
   selectedMedia: FilterMediaType
   onMediaChange: (media: FilterMediaType) => void
-}
-
-interface BodyProps {
-  article: Article | null
-  isLoading: boolean
-  isJustCompleted: boolean
-  onSkip: () => Promise<void>
-  onRead: () => Promise<void>
-  onLater: () => void
-}
-
-function InboxBody({ article, isLoading, isJustCompleted, onSkip, onRead, onLater }: BodyProps) {
-  if (isLoading) {
-    return <p className='mt-4 text-sm text-gray-600'>読み込み中...</p>
-  }
-  if (article) {
-    return <InboxArticleCard article={article} onSkip={onSkip} onRead={onRead} onLater={onLater} />
-  }
-  if (isJustCompleted) {
-    return <InboxCompletionCard />
-  }
-  return <p className='mt-4 text-sm text-gray-600'>未読記事はありません</p>
 }
 
 export default function InboxPage({

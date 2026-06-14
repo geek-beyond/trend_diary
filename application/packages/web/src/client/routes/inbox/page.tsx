@@ -2,6 +2,7 @@ import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/client/components/shadcn/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/client/components/shadcn/tooltip'
+import LoginRequired from '@/client/components/ui/feedback/login-required'
 import {
   MediaFilter,
   MediaIcon,
@@ -41,12 +42,7 @@ export default function InboxPage({
   onMediaChange,
 }: Props) {
   if (!isLoggedIn) {
-    return (
-      <div className='p-6'>
-        <h1 className='text-xl font-semibold text-gray-900'>未読消化</h1>
-        <p className='mt-4 text-sm text-gray-600'>この機能はログイン時のみ利用できます</p>
-      </div>
-    )
+    return <LoginRequired pageTitle='未読消化' />
   }
 
   return (

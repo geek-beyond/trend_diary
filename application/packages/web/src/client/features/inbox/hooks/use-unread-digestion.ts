@@ -1,5 +1,5 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { type MediaType, useReadArticle } from '@/client/features/article'
@@ -24,6 +24,8 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
   // バッチ件数ではなく未読総数。残件表示と完了判定の基準にする
   const [remaining, setRemaining] = useState(0)
   const [isActionLoading, setIsActionLoading] = useState(false)
+  // 直近で同期済みのバッチ。SWR が新しい応答を返したか（参照が変わったか）の判定に使う
+  const [syncedBatch, setSyncedBatch] = useState<UnreadDigestionResponse>()
   const swrKey = enabled ? ['api/articles/unread-digestion', selectedMedia] : null
   const {
     data,
@@ -49,19 +51,19 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     }
   })
 
+  // SWR が新しいバッチを返したらキュー/残数を同期する。消化中の楽観更新は次の取得まで保持する。
+  // SWR は同一内容の再取得では data の参照を保つため、深く等しい応答ではここをスキップできる
+  if (data && data !== syncedBatch) {
+    setSyncedBatch(data)
+    setRemaining(data.total)
+    setQueue(data.data)
+  }
+
   const { isJustCompleted, notifyConsumed } = useCompletionCelebration({
     remaining,
     queueLength: queue.length,
     batchToken: data,
   })
-
-  useEffect(() => {
-    if (!data) return
-
-    // 取得のたびにサーバ総数へ同期し、消化中の楽観的減算のズレを補正する
-    setRemaining(data.total)
-    setQueue(data.data)
-  }, [data])
 
   const currentArticle = queue[0] ?? null
 

@@ -15,6 +15,28 @@ interface Props {
   onMediaChange: (media: FilterMediaType) => void
 }
 
+interface BodyProps {
+  article: Article | null
+  isLoading: boolean
+  isJustCompleted: boolean
+  onSkip: () => Promise<void>
+  onRead: () => Promise<void>
+  onLater: () => void
+}
+
+function InboxBody({ article, isLoading, isJustCompleted, onSkip, onRead, onLater }: BodyProps) {
+  if (isLoading) {
+    return <p className='mt-4 text-sm text-gray-600'>読み込み中...</p>
+  }
+  if (article) {
+    return <InboxArticleCard article={article} onSkip={onSkip} onRead={onRead} onLater={onLater} />
+  }
+  if (isJustCompleted) {
+    return <InboxCompletionCard />
+  }
+  return <p className='mt-4 text-sm text-gray-600'>未読記事はありません</p>
+}
+
 export default function InboxPage({
   article,
   isLoading,
@@ -42,15 +64,14 @@ export default function InboxPage({
         </div>
         <p className='mt-1 text-sm text-gray-600'>残り {remainingCount} 件</p>
 
-        {isLoading ? (
-          <p className='mt-4 text-sm text-gray-600'>読み込み中...</p>
-        ) : article ? (
-          <InboxArticleCard article={article} onSkip={onSkip} onRead={onRead} onLater={onLater} />
-        ) : isJustCompleted ? (
-          <InboxCompletionCard />
-        ) : (
-          <p className='mt-4 text-sm text-gray-600'>未読記事はありません</p>
-        )}
+        <InboxBody
+          article={article}
+          isLoading={isLoading}
+          isJustCompleted={isJustCompleted}
+          onSkip={onSkip}
+          onRead={onRead}
+          onLater={onLater}
+        />
       </div>
     </div>
   )

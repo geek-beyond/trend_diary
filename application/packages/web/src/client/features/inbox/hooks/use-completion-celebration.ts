@@ -1,50 +1,11 @@
-import { Result } from 'neverthrow'
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import {
+  hasCompletionPending,
+  setCompletionPending,
+} from '@/client/features/inbox/model/completion-pending-storage'
+import useDocumentVisibility from './use-document-visibility'
 
-const CompletionPendingStorageKey = 'inbox-completion-pending'
 const CompletionDisplayDurationMs = 2500
-
-// sessionStorage はストレージ無効環境（プライベートモード等）で例外を投げうるため Result で包む
-const readPendingFlag = Result.fromThrowable(() =>
-  window.sessionStorage.getItem(CompletionPendingStorageKey),
-)
-const writePendingFlag = Result.fromThrowable(() =>
-  window.sessionStorage.setItem(CompletionPendingStorageKey, '1'),
-)
-const clearPendingFlag = Result.fromThrowable(() =>
-  window.sessionStorage.removeItem(CompletionPendingStorageKey),
-)
-
-function setCompletionPending(pending: boolean) {
-  // 保存できない環境では遅延再生を諦めるだけなので結果は問わない
-  if (pending) {
-    writePendingFlag()
-    return
-  }
-
-  clearPendingFlag()
-}
-
-function hasCompletionPending() {
-  return readPendingFlag()
-    .map((value) => value === '1')
-    .unwrapOr(false)
-}
-
-function subscribeVisibility(onStoreChange: () => void) {
-  document.addEventListener('visibilitychange', onStoreChange)
-  return () => {
-    document.removeEventListener('visibilitychange', onStoreChange)
-  }
-}
-
-function getVisibilitySnapshot() {
-  return document.visibilityState
-}
-// SSR では可視扱いにし、ハイドレーション後のちらつきを避ける
-function getVisibilityServerSnapshot() {
-  return 'visible' as const
-}
 
 interface Params {
   remaining: number
@@ -59,11 +20,7 @@ interface Params {
 export default function useCompletionCelebration({ remaining, queueLength, batchToken }: Params) {
   const [isJustCompleted, setIsJustCompleted] = useState(false)
   const actionConsumedRef = useRef(false)
-  const visibilityState = useSyncExternalStore(
-    subscribeVisibility,
-    getVisibilitySnapshot,
-    getVisibilityServerSnapshot,
-  )
+  const visibilityState = useDocumentVisibility()
 
   // 表示中の記事を操作で消化したことを伝える。完了演出の発火条件になる
   const notifyConsumed = () => {

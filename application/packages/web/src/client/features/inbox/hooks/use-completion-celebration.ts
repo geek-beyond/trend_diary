@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 const CompletionPendingStorageKey = 'inbox-completion-pending'
 const CompletionDisplayDurationMs = 2500
@@ -24,6 +24,17 @@ const hasCompletionPending = () => {
   }
 }
 
+const subscribeVisibility = (onStoreChange: () => void) => {
+  document.addEventListener('visibilitychange', onStoreChange)
+  return () => {
+    document.removeEventListener('visibilitychange', onStoreChange)
+  }
+}
+
+const getVisibilitySnapshot = () => document.visibilityState
+// SSR では可視扱いにし、ハイドレーション後のちらつきを避ける
+const getVisibilityServerSnapshot = () => 'visible' as const
+
 interface Params {
   remaining: number
   queueLength: number
@@ -37,6 +48,11 @@ interface Params {
 export default function useCompletionCelebration({ remaining, queueLength, batchToken }: Params) {
   const [isJustCompleted, setIsJustCompleted] = useState(false)
   const actionConsumedRef = useRef(false)
+  const visibilityState = useSyncExternalStore(
+    subscribeVisibility,
+    getVisibilitySnapshot,
+    getVisibilityServerSnapshot,
+  )
 
   // 表示中の記事を操作で消化したことを伝える。完了演出の発火条件になる
   const notifyConsumed = () => {
@@ -52,7 +68,7 @@ export default function useCompletionCelebration({ remaining, queueLength, batch
     const reachedZeroByAction = remaining === 0 && actionConsumedRef.current
     const shouldPlayCompletion = reachedZeroByAction || (remaining === 0 && hasCompletionPending())
 
-    if (shouldPlayCompletion && document.visibilityState === 'visible') {
+    if (shouldPlayCompletion && visibilityState === 'visible') {
       setIsJustCompleted(true)
       setCompletionPending(false)
     } else if (reachedZeroByAction) {
@@ -61,23 +77,17 @@ export default function useCompletionCelebration({ remaining, queueLength, batch
     }
 
     actionConsumedRef.current = false
-  }, [remaining])
+  }, [remaining, visibilityState])
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== 'visible') return
-      if (queueLength !== 0) return
-      if (!hasCompletionPending()) return
+    // タブ復帰時、保留中の完了演出を再生する
+    if (visibilityState !== 'visible') return
+    if (queueLength !== 0) return
+    if (!hasCompletionPending()) return
 
-      setIsJustCompleted(true)
-      setCompletionPending(false)
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [queueLength])
+    setIsJustCompleted(true)
+    setCompletionPending(false)
+  }, [visibilityState, queueLength])
 
   useEffect(() => {
     if (!isJustCompleted) return

@@ -85,9 +85,11 @@ export default function TrendsPage({
       {/* 適用済みフィルタが外部（URL 等）で変わったら draft を初期化したいので key で再マウントする */}
       <FilterPanel
         key={`${selectedMedia ?? ''}__${selectedReadStatus}__${selectedDatePreset}`}
-        selectedMedia={selectedMedia}
-        selectedReadStatus={selectedReadStatus}
-        selectedDatePreset={selectedDatePreset}
+        applied={{
+          media: selectedMedia,
+          readStatus: selectedReadStatus,
+          datePreset: selectedDatePreset,
+        }}
         onApplyFilters={onApplyFilters}
         isLoggedIn={isLoggedIn}
       />

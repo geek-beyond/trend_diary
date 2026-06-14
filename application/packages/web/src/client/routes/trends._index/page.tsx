@@ -61,6 +61,12 @@ export default function TrendsPage({
   const isPrevDisabled = page <= 1
   const isNextDisabled = page >= totalPages
 
+  const appliedFilters: FilterParams = {
+    media: selectedMedia,
+    readStatus: selectedReadStatus,
+    datePreset: selectedDatePreset,
+  }
+
   const handleCardClick = (article: Article) => {
     openDrawer(article)
   }
@@ -82,14 +88,11 @@ export default function TrendsPage({
   return (
     <div className='relative min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-6'>
       <h1 className='pb-4 text-xl italic'>- {toJaDateString(date)} -</h1>
-      {/* 適用済みフィルタが外部（URL 等）で変わったら draft を初期化したいので key で再マウントする */}
+      {/* 適用済みフィルタが外部（URL 等）で変わったら draft を初期化したいので key で再マウントする。
+          key はフィールド追加時の付け忘れを防ぐため applied の値から導出する */}
       <FilterPanel
-        key={`${selectedMedia ?? ''}__${selectedReadStatus}__${selectedDatePreset}`}
-        applied={{
-          media: selectedMedia,
-          readStatus: selectedReadStatus,
-          datePreset: selectedDatePreset,
-        }}
+        key={Object.values(appliedFilters).join('__')}
+        applied={appliedFilters}
         onApplyFilters={onApplyFilters}
         isLoggedIn={isLoggedIn}
       />

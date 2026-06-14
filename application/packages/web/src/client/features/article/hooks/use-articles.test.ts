@@ -492,7 +492,7 @@ describe('useArticles', () => {
 
       await act(async () => {
         result.current.handleFiltersApply({
-          media: null,
+          media: undefined,
           readStatus: 'all',
           datePreset: 'today',
         })
@@ -957,7 +957,11 @@ describe('useArticles', () => {
       mockApiClient.articles.$get.mockResolvedValueOnce(clearedResponse)
 
       await act(async () => {
-        result.current.handleFiltersApply({ media: null, readStatus: 'all', datePreset: 'today' })
+        result.current.handleFiltersApply({
+          media: undefined,
+          readStatus: 'all',
+          datePreset: 'today',
+        })
       })
 
       await waitFor(() => {

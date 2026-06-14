@@ -2,7 +2,7 @@ import { ARTICLE_MEDIA_LABELS, type ArticleMedia } from '@trend-diary/domain/art
 import { Button } from '@/client/components/shadcn/button'
 import { cn } from '@/client/components/shadcn/lib/utils'
 
-export type MediaType = ArticleMedia | null
+export type MediaType = ArticleMedia | undefined
 
 interface Props {
   selectedMedia: MediaType
@@ -10,7 +10,7 @@ interface Props {
 }
 
 const mediaOptions = [
-  { value: null, label: 'すべて', dataSlot: 'media-filter-all' },
+  { value: undefined, label: 'すべて', dataSlot: 'media-filter-all' },
   { value: 'qiita', label: ARTICLE_MEDIA_LABELS.qiita, dataSlot: 'media-filter-qiita' },
   { value: 'zenn', label: ARTICLE_MEDIA_LABELS.zenn, dataSlot: 'media-filter-zenn' },
   { value: 'hatena', label: ARTICLE_MEDIA_LABELS.hatena, dataSlot: 'media-filter-hatena' },

@@ -2,10 +2,10 @@ import { type FilterParams } from '../../hooks/use-articles'
 import DatePresetFilter from '../date-preset-filter'
 import MediaFilter from '../media-filter'
 import ReadStatusFilter from '../read-status-filter'
-import { FilterField } from './filter-field'
+import { FilterField, type FilterVariant } from './filter-field'
 
 interface FilterControlsProps {
-  variant: 'mobile' | 'desktop'
+  variant: FilterVariant
   filters: FilterParams
   isLoggedIn: boolean
   onChange: (patch: Partial<FilterParams>) => void

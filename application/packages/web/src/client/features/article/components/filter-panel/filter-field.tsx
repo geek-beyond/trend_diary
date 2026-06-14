@@ -1,13 +1,15 @@
 import { type ReactNode } from 'react'
 import { twMerge } from 'tailwind-merge'
 
+export type FilterVariant = 'mobile' | 'desktop'
+
 export function FilterField({
   label,
   variant,
   children,
 }: {
   label: string
-  variant: 'mobile' | 'desktop'
+  variant: FilterVariant
   children: ReactNode
 }) {
   const isMobile = variant === 'mobile'

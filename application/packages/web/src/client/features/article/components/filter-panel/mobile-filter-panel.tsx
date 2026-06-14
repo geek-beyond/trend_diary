@@ -34,13 +34,17 @@ export function MobileFilterPanel({ applied, isLoggedIn, onApplyFilters }: Mobil
     scrollToTop()
   }
 
-  const openPanel = () => {
+  const resetDraft = () => {
     setDraft(applied)
+  }
+
+  const openPanel = () => {
+    resetDraft()
     setIsOpen(true)
   }
 
   const closePanel = () => {
-    setDraft(applied)
+    resetDraft()
     setIsOpen(false)
   }
 

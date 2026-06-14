@@ -1,5 +1,5 @@
+import LoginRequired from '@/client/components/ui/feedback/login-required'
 import {
-  DiaryLoginRequired,
   DiaryPageLayout,
   DiaryReadListSection,
   DiaryReadPagination,
@@ -38,7 +38,7 @@ export default function DiaryPage({
   const pageTitle = 'ダイアリー'
 
   if (!isLoggedIn) {
-    return <DiaryLoginRequired pageTitle={pageTitle} />
+    return <LoginRequired pageTitle={pageTitle} />
   }
 
   return (

@@ -15,7 +15,6 @@ const writeFlag = Result.fromThrowable((pending: boolean) => {
 const readFlag = Result.fromThrowable(() => window.sessionStorage.getItem(StorageKey) === '1')
 
 export const completionPendingStorage = {
-  // 保存できない環境では諦めるだけなので結果は問わない
   set(pending: boolean) {
     writeFlag(pending)
   },

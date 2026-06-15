@@ -40,7 +40,7 @@ export default function AppHeader({ isLoggedIn }: Props) {
               <SheetTitle>メニュー</SheetTitle>
               <SheetDescription>ナビゲーションとユーザー設定</SheetDescription>
             </SheetHeader>
-            <div className='flex flex-col gap-4'>
+            <div className='flex flex-col gap-4 flex-1'>
               <NavMenu variant='sheet' menuItems={visibleMenuItems} />
 
               {isLoggedIn && (

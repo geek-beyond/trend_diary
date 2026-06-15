@@ -42,14 +42,17 @@ export default function InboxPage({
         </div>
         <p className='mt-1 text-sm text-gray-600'>残り {remainingCount} 件</p>
 
-        <InboxBody
-          article={article}
-          isLoading={isLoading}
-          isJustCompleted={isJustCompleted}
-          onSkip={onSkip}
-          onRead={onRead}
-          onLater={onLater}
-        />
+        {isLoading ? (
+          <p className='mt-4 text-sm text-gray-600'>読み込み中...</p>
+        ) : (
+          <InboxBody
+            article={article}
+            isJustCompleted={isJustCompleted}
+            onSkip={onSkip}
+            onRead={onRead}
+            onLater={onLater}
+          />
+        )}
       </div>
     </div>
   )

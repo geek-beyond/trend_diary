@@ -11,7 +11,7 @@ import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
 import { AnchorLink } from '../../components/ui/navigation/link'
 
-// ボタン文言はページ側でハードコードするため、その2つを除いた AuthenticateForm の props を引き継ぐ
+// ボタン文言はページごとに固定するため除外する
 type Props = Omit<AuthenticateFormProps, 'submitButtonText' | 'loadingSubmitButtonText'>
 
 export default function SignupPage({

@@ -43,7 +43,13 @@ export default function AppHeader({ isLoggedIn }: Props) {
             <div className='flex flex-col gap-4'>
               <NavMenu variant='sheet' menuItems={visibleMenuItems} />
 
-              {isLoggedIn && <LogoutButton variant='sheet' />}
+              {isLoggedIn && (
+                <div className='border-t pt-4 mt-auto'>
+                  <div className='flex flex-col gap-2 px-3'>
+                    <LogoutButton />
+                  </div>
+                </div>
+              )}
             </div>
           </SheetContent>
         </Sheet>

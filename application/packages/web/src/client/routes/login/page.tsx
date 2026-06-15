@@ -1,11 +1,8 @@
-import { AuthenticateForm, type AuthenticateFormProps } from '@/client/features/authenticate'
+import { AuthenticateForm, type AuthenticateFormBaseProps } from '@/client/features/authenticate'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
 import { AnchorLink } from '../../components/ui/navigation/link'
-
-// ボタン文言はページごとに固定するため除外する
-type Props = Omit<AuthenticateFormProps, 'submitButtonText' | 'loadingSubmitButtonText'>
 
 export default function LoginPage({
   onSubmit,
@@ -13,7 +10,7 @@ export default function LoginPage({
   errors,
   formError,
   turnstileSiteKey,
-}: Props) {
+}: AuthenticateFormBaseProps) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
       <LandingHeader />

@@ -5,15 +5,18 @@ import { Label } from '@/client/components/shadcn/label'
 import { TurnstileWidget } from '@/client/features/authenticate/components/turnstile-widget'
 import type { AuthenticateErrors } from '@/client/features/authenticate/model/validation'
 
-export interface AuthenticateFormProps {
+export interface AuthenticateFormBaseProps {
   onSubmit: (formData: FormData) => void
-  submitButtonText: string
-  loadingSubmitButtonText: string
   isSubmitting: boolean
   errors?: AuthenticateErrors
   formError?: string
   // 未設定の環境ではCAPTCHAを無効とするため任意項目とする
   turnstileSiteKey?: string
+}
+
+export interface AuthenticateFormProps extends AuthenticateFormBaseProps {
+  submitButtonText: string
+  loadingSubmitButtonText: string
 }
 
 export const AuthenticateForm = ({

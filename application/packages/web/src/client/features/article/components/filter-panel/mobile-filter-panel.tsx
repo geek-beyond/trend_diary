@@ -3,9 +3,9 @@ import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
 import { scrollToTop } from '@/client/lib/scroll'
-import { type FilterPanelProps } from '.'
 import { type FilterParams } from '../../hooks/use-articles'
 import { FilterControls } from './filter-controls'
+import { type FilterPanelProps } from './types'
 
 const DEFAULT_FILTERS: FilterParams = { media: undefined, readStatus: 'all', datePreset: 'today' }
 

@@ -1,4 +1,9 @@
-export { AuthenticateForm, type AuthenticateFormBaseProps, LogoutButton } from './ui'
+export {
+  AuthenticateForm,
+  type AuthenticateFormBaseProps,
+  LogoutButton,
+  SidebarLogoutButton,
+} from './ui'
 export {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,

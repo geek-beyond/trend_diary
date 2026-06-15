@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
 import { type AuthenticateErrors, validateAuthenticateForm } from './validation'
 
 describe('validateAuthenticateForm', () => {
@@ -10,8 +11,8 @@ describe('validateAuthenticateForm', () => {
 
       const result = validateAuthenticateForm(formData)
 
-      expect(result.isValid).toBe(true)
-      if (result.isValid) {
+      expect(result.success).toBe(true)
+      if (result.success) {
         expect(result.data.email).toBe('test@example.com')
         expect(result.data.password).toBe('Test@123')
       }
@@ -46,9 +47,9 @@ describe('validateAuthenticateForm', () => {
 
         const result = validateAuthenticateForm(formData)
 
-        expect(result.isValid).toBe(false)
-        if (!result.isValid) {
-          expect(result.errors.email).toBeDefined()
+        expect(result.success).toBe(false)
+        if (!result.success) {
+          expect(z.flattenError(result.error).fieldErrors.email).toBeDefined()
         }
       })
     })
@@ -91,9 +92,9 @@ describe('validateAuthenticateForm', () => {
 
         const result = validateAuthenticateForm(formData)
 
-        expect(result.isValid).toBe(testCase.expectedValid)
-        if (!testCase.expectedValid && !result.isValid) {
-          expect(result.errors.password).toBeDefined()
+        expect(result.success).toBe(testCase.expectedValid)
+        if (!testCase.expectedValid && !result.success) {
+          expect(z.flattenError(result.error).fieldErrors.password).toBeDefined()
         }
       })
     })
@@ -107,10 +108,11 @@ describe('validateAuthenticateForm', () => {
 
       const result = validateAuthenticateForm(formData)
 
-      expect(result.isValid).toBe(false)
-      if (!result.isValid) {
-        expect(result.errors.email).toBeDefined()
-        expect(result.errors.password).toBeDefined()
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const { fieldErrors } = z.flattenError(result.error)
+        expect(fieldErrors.email).toBeDefined()
+        expect(fieldErrors.password).toBeDefined()
       }
     })
   })
@@ -151,10 +153,11 @@ describe('validateAuthenticateForm', () => {
 
         const result = validateAuthenticateForm(formData)
 
-        expect(result.isValid).toBe(false)
-        if (!result.isValid) {
+        expect(result.success).toBe(false)
+        if (!result.success) {
+          const { fieldErrors } = z.flattenError(result.error)
           testCase.expectedErrors.forEach((errorField) => {
-            expect(result.errors[errorField]).toBeDefined()
+            expect(fieldErrors[errorField]).toBeDefined()
           })
         }
       })

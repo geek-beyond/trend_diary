@@ -1,6 +1,7 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { z } from 'zod'
 import {
   AUTH_ERROR_MESSAGES,
   resolveSignupErrorMessage,
@@ -22,8 +23,8 @@ export default function useSignup(turnstileSiteKey?: string) {
     setFormError(undefined)
 
     const validation = validateAuthenticateForm(formData)
-    if (!validation.isValid) {
-      setErrors(validation.errors)
+    if (!validation.success) {
+      setErrors(z.flattenError(validation.error).fieldErrors)
       return
     }
 

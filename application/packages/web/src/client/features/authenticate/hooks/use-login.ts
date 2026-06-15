@@ -2,6 +2,7 @@ import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useSWRConfig } from 'swr'
+import { z } from 'zod'
 import { SESSION_SWR_KEY } from '@/client/features/authenticate/hooks/use-session'
 import {
   AUTH_ERROR_MESSAGES,
@@ -25,8 +26,8 @@ export default function useLogin(turnstileSiteKey?: string) {
     setFormError(undefined)
 
     const validation = validateAuthenticateForm(formData)
-    if (!validation.isValid) {
-      setErrors(validation.errors)
+    if (!validation.success) {
+      setErrors(z.flattenError(validation.error).fieldErrors)
       return
     }
 

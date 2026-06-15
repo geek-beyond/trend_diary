@@ -2,7 +2,7 @@ import type { Article } from '../hooks/use-unread-digestion'
 import InboxArticleCard from './inbox-article-card'
 import InboxCompletionCard from './inbox-completion-card'
 
-interface Props {
+export interface InboxBodyProps {
   article: Article | null
   isJustCompleted: boolean
   onSkip: () => Promise<void>
@@ -10,7 +10,13 @@ interface Props {
   onLater: () => void
 }
 
-export default function InboxBody({ article, isJustCompleted, onSkip, onRead, onLater }: Props) {
+export default function InboxBody({
+  article,
+  isJustCompleted,
+  onSkip,
+  onRead,
+  onLater,
+}: InboxBodyProps) {
   if (article) {
     return <InboxArticleCard article={article} onSkip={onSkip} onRead={onRead} onLater={onLater} />
   }

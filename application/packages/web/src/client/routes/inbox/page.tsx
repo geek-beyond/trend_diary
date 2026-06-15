@@ -1,15 +1,10 @@
 import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
-import { type Article, InboxBody } from '@/client/features/inbox'
+import { InboxBody, type InboxBodyProps } from '@/client/features/inbox'
 
-interface Props {
-  article: Article | null
+interface Props extends InboxBodyProps {
   isLoading: boolean
-  isJustCompleted: boolean
   isLoggedIn: boolean
-  onSkip: () => Promise<void>
-  onRead: () => Promise<void>
-  onLater: () => void
   remainingCount: number
   selectedMedia: FilterMediaType
   onMediaChange: (media: FilterMediaType) => void

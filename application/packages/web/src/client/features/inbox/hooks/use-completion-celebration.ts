@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  hasCompletionPending,
-  setCompletionPending,
-} from '@/client/features/inbox/model/completion-pending-storage'
+import { completionPendingStorage } from '@/client/features/inbox/model/completion-pending-storage'
 import useDocumentVisibility from './use-document-visibility'
 
 const CompletionDisplayDurationMs = 2500
@@ -34,14 +31,15 @@ export default function useCompletionCelebration({ remaining, queueLength, batch
 
   useEffect(() => {
     const reachedZeroByAction = remaining === 0 && actionConsumedRef.current
-    const shouldPlayCompletion = reachedZeroByAction || (remaining === 0 && hasCompletionPending())
+    const shouldPlayCompletion =
+      reachedZeroByAction || (remaining === 0 && completionPendingStorage.has())
 
     if (shouldPlayCompletion && visibilityState === 'visible') {
       setIsJustCompleted(true)
-      setCompletionPending(false)
+      completionPendingStorage.set(false)
     } else if (reachedZeroByAction) {
       // 操作直後にタブが非表示（別タブで読了等）なら、復帰時に演出を再生するため保留にする
-      setCompletionPending(true)
+      completionPendingStorage.set(true)
     }
 
     actionConsumedRef.current = false
@@ -51,10 +49,10 @@ export default function useCompletionCelebration({ remaining, queueLength, batch
     // タブ復帰時、保留中の完了演出を再生する
     if (visibilityState !== 'visible') return
     if (queueLength !== 0) return
-    if (!hasCompletionPending()) return
+    if (!completionPendingStorage.has()) return
 
     setIsJustCompleted(true)
-    setCompletionPending(false)
+    completionPendingStorage.set(false)
   }, [visibilityState, queueLength])
 
   useEffect(() => {

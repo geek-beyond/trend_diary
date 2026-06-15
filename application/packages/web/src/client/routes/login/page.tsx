@@ -1,16 +1,8 @@
-import { AuthenticateForm, type AuthenticateErrors } from '@/client/features/authenticate'
+import { AuthenticateForm, type AuthenticateFormBaseProps } from '@/client/features/authenticate'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
 import { AnchorLink } from '../../components/ui/navigation/link'
-
-interface Props {
-  onSubmit: (formData: FormData) => void
-  isSubmitting: boolean
-  errors?: AuthenticateErrors
-  formError?: string
-  turnstileSiteKey?: string
-}
 
 export default function LoginPage({
   onSubmit,
@@ -18,7 +10,7 @@ export default function LoginPage({
   errors,
   formError,
   turnstileSiteKey,
-}: Props) {
+}: AuthenticateFormBaseProps) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
       <LandingHeader />

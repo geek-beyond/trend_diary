@@ -2,18 +2,9 @@ import { Funnel } from 'lucide-react'
 import { scrollToTop } from '@/client/lib/scroll'
 import { type FilterParams } from '../../hooks/use-articles'
 import { FilterControls } from './filter-controls'
+import { type FilterPanelProps } from './types'
 
-interface DesktopFilterPanelProps {
-  applied: FilterParams
-  isLoggedIn: boolean
-  onApplyFilters: (filters: FilterParams) => void
-}
-
-export function DesktopFilterPanel({
-  applied,
-  isLoggedIn,
-  onApplyFilters,
-}: DesktopFilterPanelProps) {
+export function DesktopFilterPanel({ applied, isLoggedIn, onApplyFilters }: FilterPanelProps) {
   const commitField = (patch: Partial<FilterParams>) => {
     onApplyFilters({ ...applied, ...patch })
     scrollToTop()

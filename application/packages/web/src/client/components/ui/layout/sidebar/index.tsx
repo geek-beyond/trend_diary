@@ -10,7 +10,7 @@ import {
 } from '@/client/components/shadcn/sidebar'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 import NavMenu from '@/client/components/ui/navigation/nav-menu'
-import { LogoutButton } from '@/client/features/authenticate/ui'
+import { SidebarLogoutButton } from '@/client/features/authenticate/ui'
 import type { InternalPath } from '@/client/routes'
 
 export interface MenuItem {
@@ -78,7 +78,7 @@ export default function AppSidebar({ isLoggedIn }: Props) {
           {isLoggedIn && (
             <SidebarGroup className='absolute bottom-0 left-0 w-full'>
               <SidebarGroupContent>
-                <LogoutButton variant='sidebar' />
+                <SidebarLogoutButton />
               </SidebarGroupContent>
             </SidebarGroup>
           )}

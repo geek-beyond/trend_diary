@@ -1,16 +1,11 @@
-import { AuthenticateForm, type AuthenticateErrors } from '@/client/features/authenticate'
+import { AuthenticateForm, type AuthenticateFormProps } from '@/client/features/authenticate'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
 import { AnchorLink } from '../../components/ui/navigation/link'
 
-interface Props {
-  onSubmit: (formData: FormData) => void
-  isSubmitting: boolean
-  errors?: AuthenticateErrors
-  formError?: string
-  turnstileSiteKey?: string
-}
+// ボタン文言はページ側でハードコードするため、その2つを除いた AuthenticateForm の props を引き継ぐ
+type Props = Omit<AuthenticateFormProps, 'submitButtonText' | 'loadingSubmitButtonText'>
 
 export default function LoginPage({
   onSubmit,

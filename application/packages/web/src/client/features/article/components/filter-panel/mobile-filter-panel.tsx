@@ -3,18 +3,13 @@ import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
 import { scrollToTop } from '@/client/lib/scroll'
+import { type FilterPanelProps } from '.'
 import { type FilterParams } from '../../hooks/use-articles'
 import { FilterControls } from './filter-controls'
 
 const DEFAULT_FILTERS: FilterParams = { media: undefined, readStatus: 'all', datePreset: 'today' }
 
-interface MobileFilterPanelProps {
-  applied: FilterParams
-  isLoggedIn: boolean
-  onApplyFilters: (filters: FilterParams) => void
-}
-
-export function MobileFilterPanel({ applied, isLoggedIn, onApplyFilters }: MobileFilterPanelProps) {
+export function MobileFilterPanel({ applied, isLoggedIn, onApplyFilters }: FilterPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [draft, setDraft] = useState<FilterParams>(applied)
 

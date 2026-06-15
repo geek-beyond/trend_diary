@@ -3,7 +3,7 @@ import { type FilterParams } from '../../hooks/use-articles'
 import { DesktopFilterPanel } from './desktop-filter-panel'
 import { MobileFilterPanel } from './mobile-filter-panel'
 
-interface FilterPanelProps {
+export interface FilterPanelProps {
   applied: FilterParams
   onApplyFilters: (filters: FilterParams) => void
   isLoggedIn: boolean

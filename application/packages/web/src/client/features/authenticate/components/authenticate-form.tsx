@@ -5,7 +5,7 @@ import { Label } from '@/client/components/shadcn/label'
 import { TurnstileWidget } from '@/client/features/authenticate/components/turnstile-widget'
 import type { AuthenticateErrors } from '@/client/features/authenticate/model/validation'
 
-interface Props {
+export interface AuthenticateFormProps {
   onSubmit: (formData: FormData) => void
   submitButtonText: string
   loadingSubmitButtonText: string
@@ -24,7 +24,7 @@ export const AuthenticateForm = ({
   errors,
   formError,
   turnstileSiteKey,
-}: Props) => {
+}: AuthenticateFormProps) => {
   // DOMイベントの関心はここで閉じ、呼び出し側（hooks）はFormDataだけを扱えるようにする
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

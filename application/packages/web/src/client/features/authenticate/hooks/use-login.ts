@@ -10,7 +10,7 @@ import {
 } from '@/client/features/authenticate/model/error-message'
 import {
   type AuthenticateErrors,
-  validateAuthenticateForm,
+  authenticateFormSchema,
 } from '@/client/features/authenticate/model/validation'
 import getApiClientForClient from '@/client/infrastructure/api'
 
@@ -25,7 +25,10 @@ export default function useLogin(turnstileSiteKey?: string) {
     setErrors(undefined)
     setFormError(undefined)
 
-    const validation = validateAuthenticateForm(formData)
+    const validation = authenticateFormSchema.safeParse({
+      email: formData.get('email'),
+      password: formData.get('password'),
+    })
     if (!validation.success) {
       setErrors(z.flattenError(validation.error).fieldErrors)
       return

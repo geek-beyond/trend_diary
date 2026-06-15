@@ -5,11 +5,4 @@ export interface AuthenticateErrors {
   password?: string[]
 }
 
-const authenticateFormSchema = authInputSchema.pick({ email: true, password: true })
-
-export function validateAuthenticateForm(formData: FormData) {
-  return authenticateFormSchema.safeParse({
-    email: formData.get('email'),
-    password: formData.get('password'),
-  })
-}
+export const authenticateFormSchema = authInputSchema.pick({ email: true, password: true })

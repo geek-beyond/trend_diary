@@ -1,22 +1,24 @@
 import { type AuthInput, authInputSchema } from '@trend-diary/domain/user'
 import { z } from 'zod'
-import {
-  newValidationError,
-  newValidationSuccess,
-  type ValidationResult,
-} from './validation-result'
 
-// oxlint-disable-next-line typescript/consistent-type-definitions -- Record<string, unknown> 制約を満たすため type エイリアスを使う
-export type AuthenticateErrors = {
+export interface AuthenticateErrors {
   email?: string[]
   password?: string[]
 }
 
 export type AuthenticateFormData = AuthInput
 
-export function validateAuthenticateForm(
-  formData: FormData,
-): ValidationResult<AuthenticateFormData, AuthenticateErrors> {
+type ValidateAuthenticateFormResult =
+  | {
+      isValid: true
+      data: AuthenticateFormData
+    }
+  | {
+      isValid: false
+      errors: AuthenticateErrors
+    }
+
+export function validateAuthenticateForm(formData: FormData): ValidateAuthenticateFormResult {
   const email = formData.get('email')
   const password = formData.get('password')
 
@@ -27,14 +29,20 @@ export function validateAuthenticateForm(
 
   if (!result.success) {
     const { fieldErrors } = z.flattenError(result.error)
-    return newValidationError<AuthenticateErrors>({
-      email: fieldErrors.email,
-      password: fieldErrors.password,
-    })
+    return {
+      isValid: false,
+      errors: {
+        email: fieldErrors.email,
+        password: fieldErrors.password,
+      },
+    }
   }
 
-  return newValidationSuccess<AuthenticateFormData>({
-    email: result.data.email,
-    password: result.data.password,
-  })
+  return {
+    isValid: true,
+    data: {
+      email: result.data.email,
+      password: result.data.password,
+    },
+  }
 }

@@ -9,9 +9,6 @@ const meta: Meta<typeof AuthenticateForm> = {
   args: {
     onSubmit,
   },
-  beforeEach: () => {
-    onSubmit.mockClear()
-  },
 }
 export default meta
 

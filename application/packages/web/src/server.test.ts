@@ -1,5 +1,5 @@
+import app from '@/server'
 import TEST_ENV from '@/test/env'
-import app from '../server'
 
 // app.requestが生成するリクエストURLのオリジン
 const SAME_ORIGIN = 'http://localhost'

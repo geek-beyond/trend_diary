@@ -109,10 +109,10 @@ export default defineConfig(() => {
         ],
         // ベタガキしないと、Github Actionsに閾値が反映されない
         thresholds: {
-          statements: 75,
-          branches: 75,
-          functions: 75,
-          lines: 75,
+          statements: 80,
+          branches: 80,
+          functions: 80,
+          lines: 80,
         },
       },
     },

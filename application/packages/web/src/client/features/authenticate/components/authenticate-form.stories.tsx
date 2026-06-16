@@ -1,9 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect } from 'storybook/test'
+import { expect, fn, userEvent } from 'storybook/test'
 import { AuthenticateForm } from './authenticate-form'
+
+const onSubmit = fn((_formData: FormData) => {})
 
 const meta: Meta<typeof AuthenticateForm> = {
   component: AuthenticateForm,
+  args: {
+    onSubmit,
+  },
 }
 export default meta
 
@@ -98,5 +103,23 @@ export const FormValidationError: Story = {
 
     // ローディング状態ではないため、通常のボタンテキストが表示されることを確認
     await expect(canvas.getByRole('button')).toHaveTextContent('ログイン')
+  },
+}
+
+// 送信時に入力値が FormData として onSubmit へ渡されることを検証する。
+export const SubmitInteraction: Story = {
+  args: defaultArgs,
+  play: async ({ canvas, step }) => {
+    await step('入力して送信すると onSubmit が FormData 付きで呼ばれることを確認', async () => {
+      await userEvent.type(canvas.getByLabelText('メールアドレス'), 'taro@example.com')
+      await userEvent.type(canvas.getByLabelText('パスワード'), 'password123')
+      await userEvent.click(canvas.getByRole('button', { name: 'ログイン' }))
+
+      // 呼び出し回数と引数のどちらも、型付きのモック実体（args.onSubmit と同一参照）で検証して一貫させる
+      await expect(onSubmit).toHaveBeenCalledTimes(1)
+      const formData = onSubmit.mock.calls[0]?.[0]
+      await expect(formData?.get('email')).toBe('taro@example.com')
+      await expect(formData?.get('password')).toBe('password123')
+    })
   },
 }

@@ -1,7 +1,10 @@
 import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { Button } from '@/client/components/shadcn/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/client/components/shadcn/tooltip'
-import { MediaIcon, type MediaIconType } from '@/client/features/article'
+// barrel 経由だと article のデータ取得フック群まで読み込まれるため、表示専用の MediaIcon は実体を直接参照する
+import MediaIcon, {
+  type MediaType as MediaIconType,
+} from '@/client/features/article/components/media-icon'
 import type { Article } from '../hooks/use-unread-digestion'
 
 interface Props {

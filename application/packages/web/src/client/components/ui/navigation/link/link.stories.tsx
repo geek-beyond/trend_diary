@@ -53,10 +53,12 @@ export const AsButtonExternal: ButtonStory = {
     children: 'ボタン風外部リンク',
   },
   play: async ({ canvas, step }) => {
-    await step('ボタン見た目の外部リンクが描画されることを確認', async () => {
+    await step('ボタン見た目の外部リンクが別タブ用の属性を持つことを確認', async () => {
       const link = canvas.getByRole('link', { name: 'ボタン風外部リンク' })
       await expect(link).toHaveAttribute('href', 'https://example.com')
       await expect(link).toHaveAttribute('target', '_blank')
+      // 別タブ遷移時の reverse tabnabbing を防ぐ rel が引き継がれることを担保する
+      await expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow')
     })
   },
 }

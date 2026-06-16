@@ -1,5 +1,5 @@
+import app from '@/server'
 import TEST_ENV from '@/test/env'
-import app from '../server'
 
 describe('GET /api/health', () => {
   it('正常系: 200とstatus okを返す', async () => {

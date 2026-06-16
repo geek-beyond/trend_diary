@@ -1,75 +1,83 @@
-import type { RenderHookResult } from '@testing-library/react'
-import { act, renderHook } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { act, renderHook, waitFor } from '@testing-library/react'
+import { toast } from 'sonner'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import useLogout from './use-logout'
 
+const navigateMock = vi.fn()
+
 vi.mock('react-router', () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigateMock,
 }))
 
-vi.mock('@/client/infrastructure/create-swr-fetcher', () => {
-  const mockClient = {
-    auth: {
-      logout: {
-        $delete: vi.fn(),
-      },
+const apiCallMock = vi.fn()
+const logoutDeleteMock = vi.fn()
+
+vi.mock('@/client/infrastructure/create-swr-fetcher', () => ({
+  default: () => ({
+    apiCall: apiCallMock,
+    client: { auth: { logout: { $delete: logoutDeleteMock } } },
+  }),
+}))
+
+// グローバル設定の no-op trigger では onSuccess/onError が発火しないため、
+// 実際の trigger 相当の振る舞いに差し替えてコールバックまで検証する
+vi.mock('swr/mutation', () => ({
+  default: (
+    key: string,
+    fetcher: (key: string, options: { arg: unknown }) => Promise<unknown>,
+    options?: { onSuccess?: (data: unknown) => void; onError?: (error: unknown) => void },
+  ) => ({
+    trigger: async (arg: unknown) => {
+      try {
+        const data = await fetcher(key, { arg })
+        options?.onSuccess?.(data)
+      } catch (error) {
+        options?.onError?.(error)
+      }
     },
-  }
-  const mockApiCall = vi.fn()
-
-  return {
-    default: () => ({
-      client: mockClient,
-      apiCall: mockApiCall,
-    }),
-  }
-})
-
-type UseLogoutHook = ReturnType<typeof useLogout>
-
-function setupHook(): RenderHookResult<UseLogoutHook, unknown> {
-  return renderHook(() => useLogout())
-}
+    isMutating: false,
+  }),
+}))
 
 describe('useLogout', () => {
-  describe('基本動作', () => {
-    it('初期状態ではisLoadingがfalseである', () => {
-      const { result } = setupHook()
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-      expect(result.current.isLoading).toBe(false)
-      expect(typeof result.current.handleLogout).toBe('function')
-    })
+  describe('正常系', () => {
+    it('ログアウト成功時は/loginへ遷移し成功トーストを表示する', async () => {
+      apiCallMock.mockResolvedValue(null)
 
-    it('handleLogoutが呼び出せる', () => {
-      const { result } = setupHook()
+      const { result } = renderHook(() => useLogout())
 
-      act(() => {
+      await act(async () => {
         result.current.handleLogout()
       })
 
-      expect(result.current.handleLogout).toBeDefined()
+      await waitFor(() => {
+        expect(navigateMock).toHaveBeenCalledWith('/login')
+      })
+      expect(apiCallMock).toHaveBeenCalledTimes(1)
+      expect(toast.success).toHaveBeenCalledWith('ログアウトしました')
+      expect(toast.error).not.toHaveBeenCalled()
     })
   })
 
-  describe('エッジケース', () => {
-    it('複数回handleLogoutを呼び出しても問題ない', () => {
-      const { result } = setupHook()
+  describe('異常系', () => {
+    it('ログアウト失敗時は失敗トーストを表示し遷移しない', async () => {
+      apiCallMock.mockRejectedValue(new Error('network error'))
 
-      act(() => {
-        result.current.handleLogout()
+      const { result } = renderHook(() => useLogout())
+
+      await act(async () => {
         result.current.handleLogout()
       })
 
-      expect(result.current.handleLogout).toBeDefined()
-    })
-  })
-
-  describe('境界値テスト', () => {
-    it('フック初期化時の予期しないエラー', () => {
-      expect(() => {
-        const { result } = setupHook()
-        expect(result.current).toBeDefined()
-      }).not.toThrow()
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('ログアウトに失敗しました')
+      })
+      expect(navigateMock).not.toHaveBeenCalled()
+      expect(toast.success).not.toHaveBeenCalled()
     })
   })
 })

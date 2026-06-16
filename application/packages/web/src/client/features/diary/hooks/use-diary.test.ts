@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { SWRConfig } from 'swr'
@@ -22,6 +22,22 @@ function setupHook(initialEntries: string[] = ['/diary']) {
       ),
   })
 }
+
+const buildDiaryResponse = (page: number) => ({
+  date: '2026-03-01',
+  sources: [
+    { media: 'qiita', read: 1, skip: 0 },
+    { media: 'zenn', read: 0, skip: 0 },
+    { media: 'hatena', read: 0, skip: 0 },
+  ],
+  reads: {
+    data: [],
+    page,
+    totalPages: 3,
+    hasNext: page < 3,
+    hasPrev: page > 1,
+  },
+})
 
 describe('useDiary', () => {
   beforeEach(() => {
@@ -72,5 +88,51 @@ describe('useDiary', () => {
     expect(result.current.dailySummary).toEqual({ read: 3, skip: 2 })
     expect(result.current.readPagination.page).toBe(2)
     expect(result.current.reads[0].readAt).toBeInstanceOf(Date)
+  })
+
+  it('toNextPageを呼ぶと次ページの日次APIを取得する', async () => {
+    const fetchDiary = vi
+      .fn()
+      .mockImplementation((_date: string, page: number) =>
+        Promise.resolve(buildDiaryResponse(page)),
+      )
+    mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange: vi.fn() })
+
+    const { result } = setupHook(['/diary'])
+
+    await waitFor(() => {
+      expect(fetchDiary).toHaveBeenCalledWith(expect.any(String), 1)
+    })
+
+    act(() => {
+      result.current.toNextPage()
+    })
+
+    await waitFor(() => {
+      expect(fetchDiary).toHaveBeenLastCalledWith(expect.any(String), 2)
+    })
+  })
+
+  it('2ページ目でtoPrevPageを呼ぶと1ページ目の日次APIを取得する', async () => {
+    const fetchDiary = vi
+      .fn()
+      .mockImplementation((_date: string, page: number) =>
+        Promise.resolve(buildDiaryResponse(page)),
+      )
+    mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange: vi.fn() })
+
+    const { result } = setupHook(['/diary?page=2'])
+
+    await waitFor(() => {
+      expect(fetchDiary).toHaveBeenCalledWith(expect.any(String), 2)
+    })
+
+    act(() => {
+      result.current.toPrevPage()
+    })
+
+    await waitFor(() => {
+      expect(fetchDiary).toHaveBeenLastCalledWith(expect.any(String), 1)
+    })
   })
 })

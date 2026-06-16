@@ -43,4 +43,104 @@ describe('InboxPage', () => {
     expect(screen.getByText('未読記事はありません')).toBeInTheDocument()
     expect(screen.queryByText('消化完了')).not.toBeInTheDocument()
   })
+
+  it('未ログイン時はログイン要求のみを表示し本文を表示しない', () => {
+    render(
+      createElement(InboxPage, {
+        article: null,
+        isLoading: false,
+        isJustCompleted: false,
+        isLoggedIn: false,
+        onSkip: vi.fn().mockResolvedValue(undefined),
+        onRead: vi.fn().mockResolvedValue(undefined),
+        onLater: vi.fn(),
+        remainingCount: 0,
+        selectedMedia: undefined,
+        onMediaChange: vi.fn(),
+      }),
+    )
+
+    expect(screen.getByText('この機能はログイン時のみ利用できます。')).toBeInTheDocument()
+    expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
+  })
+
+  it('読み込み中は読み込み文言を表示し本文を表示しない', () => {
+    render(
+      createElement(InboxPage, {
+        article: null,
+        isLoading: true,
+        isJustCompleted: false,
+        isLoggedIn: true,
+        onSkip: vi.fn().mockResolvedValue(undefined),
+        onRead: vi.fn().mockResolvedValue(undefined),
+        onLater: vi.fn(),
+        remainingCount: 3,
+        selectedMedia: undefined,
+        onMediaChange: vi.fn(),
+      }),
+    )
+
+    expect(screen.getByText('読み込み中...')).toBeInTheDocument()
+    expect(screen.getByText('残り 3 件')).toBeInTheDocument()
+    expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
+  })
+
+  it('未読記事があるとタイトル・著者・本文と操作ボタンを表示する', () => {
+    render(
+      createElement(InboxPage, {
+        article: {
+          articleId: 'a1',
+          media: 'qiita',
+          title: 'テスト記事タイトル',
+          author: 'テスト著者',
+          description: 'テスト記事の説明文です',
+          url: 'https://example.com/a1',
+          createdAt: new Date('2026-03-01T00:00:00.000Z'),
+        },
+        isLoading: false,
+        isJustCompleted: false,
+        isLoggedIn: true,
+        onSkip: vi.fn().mockResolvedValue(undefined),
+        onRead: vi.fn().mockResolvedValue(undefined),
+        onLater: vi.fn(),
+        remainingCount: 1,
+        selectedMedia: undefined,
+        onMediaChange: vi.fn(),
+      }),
+    )
+
+    expect(screen.getByText('テスト記事タイトル')).toBeInTheDocument()
+    expect(screen.getByText('著者: テスト著者')).toBeInTheDocument()
+    expect(screen.getByText('テスト記事の説明文です')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'スキップ' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '読む' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '後で' })).toBeInTheDocument()
+  })
+
+  it('未知のメディアの記事でもタイトルを表示できる', () => {
+    render(
+      createElement(InboxPage, {
+        article: {
+          articleId: 'a2',
+          media: 'unknown',
+          title: '未知メディアの記事',
+          author: 'テスト著者',
+          description: 'テスト記事の説明文です',
+          url: 'https://example.com/a2',
+          createdAt: new Date('2026-03-01T00:00:00.000Z'),
+        },
+        isLoading: false,
+        isJustCompleted: false,
+        isLoggedIn: true,
+        onSkip: vi.fn().mockResolvedValue(undefined),
+        onRead: vi.fn().mockResolvedValue(undefined),
+        onLater: vi.fn(),
+        remainingCount: 1,
+        selectedMedia: undefined,
+        onMediaChange: vi.fn(),
+      }),
+    )
+
+    expect(screen.getByText('未知メディアの記事')).toBeInTheDocument()
+  })
 })

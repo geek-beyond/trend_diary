@@ -11,7 +11,7 @@ catalog:
   '@supabase/supabase-js': ^2.76.1
   '@types/node': ^25.9.1
   drizzle-orm: 0.45.2
-  hono: ^4.12.23
+  hono: ^4.12.25
   neverthrow: ^8.2.0
   pino: ^10.3.1
   playwright: ^1.60.0

@@ -8,7 +8,7 @@ catalog:
   '@cloudflare/workers-types': ^4.20260608.1
   '@faker-js/faker': ^10.4.0
   '@playwright/test': ^1.60.0
-  '@supabase/supabase-js': ^2.76.1
+  '@supabase/supabase-js': ^2.108.1
   '@types/node': ^25.9.1
   drizzle-orm: 0.45.2
   hono: ^4.12.23

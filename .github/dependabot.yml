@@ -4,10 +4,13 @@ updates:
     directory: "/application"
     schedule:
       interval: "weekly"
-    # pnpm の minimumReleaseAge(3日) と揃え、公開直後のパッケージを提案しない。
+    # pnpm の minimumReleaseAge(3日=4320分) より長くする。
+    # 同日数だと Dependabot(日単位判定) が選んだ版を pnpm(分単位判定) が
+    # 境界差で弾き、lockfile 更新が "No matching version found" で失敗して
+    # PR が作られなくなる（dependabot-core#13165）。閾値に余裕を持たせて回避する。
     # CVE等のセキュリティ更新はクールダウン対象外で即時PRが作成される。
     cooldown:
-      default-days: 3
+      default-days: 5
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

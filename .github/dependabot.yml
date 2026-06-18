@@ -11,9 +11,23 @@ updates:
     # CVE等のセキュリティ更新はクールダウン対象外で即時PRが作成される。
     cooldown:
       default-days: 5
+    # 単一の pnpm-lock.yaml を複数 PR が同時に書き換えると相互に競合し、
+    # branch protection 下では Dependabot がリベースを完了できず詰まる。
+    # minor/patch を 1 PR に集約して lockfile 変更を 1 回に束ね、競合を防ぐ。
+    # major は個別 PR のまま残し、破壊的変更を単独でレビューできるようにする。
+    groups:
+      npm-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     cooldown:
       default-days: 3
+    groups:
+      github-actions:
+        update-types:
+          - "minor"
+          - "patch"

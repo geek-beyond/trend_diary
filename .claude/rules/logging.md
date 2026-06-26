@@ -1,7 +1,7 @@
 ---
 paths:
-  - "**/packages/web/src/server/**/*.ts"
-  - "**/packages/cron/src/**/*.ts"
+  - "**/apps/web/src/server/**/*.ts"
+  - "**/apps/cron/src/**/*.ts"
 ---
 
 # ロギング規約

@@ -1,0 +1,43 @@
+{
+  "skill_name": "dependabot-pr-review",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "dependabot の PR を見て、リリースノートまで読んでマージ可能か判断して。全く問題ないものはマージしてよい。マージ後は main の CI/CD がパスしたことを確認してから次の PR に進んで。修正が必要ならdependabotのブランチで対応して。",
+      "expected_output": "open な Dependabot PR を gh で列挙し、各 PR のリリースノート・破壊的変更を読み、自リポジトリの利用箇所と突き合わせて影響を確定。問題なければ behind を解消して CI green を待ち、gh でマージ。マージ後に main の CI と CD（workflow_run）両方の success を gh run で確認してから次へ進む。",
+      "files": [],
+      "expectations": [
+        "対象 PR の列挙・状態取得・CI/CD 監視を gh CLI（gh pr list / gh pr view / gh pr checks / gh run list / gh run view|watch）で行う方針になっている（CLAUDE.md 準拠）",
+        "GitHub MCP は PR の作成・更新・マージ・ブランチ更新・レビュー返信、または gh が無い環境のフォールバックに限定している",
+        "リリースノート/Changelog を読み、メジャーアップや breaking change を把握する手順がある",
+        "破壊的変更が自リポジトリの実際の利用箇所に当たるかを Grep 等でコードで裏取りしてから判断している（一般論で判断していない）",
+        "マージ後に main の CI だけでなく CD（workflow_run トリガー）も success になることを確認してから次の PR に進む",
+        "外部イベント待ちにフォアグラウンド sleep を使わず、バックグラウンドタイマー＋状態再取得（または gh run watch）で待つ"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "actions/checkout を v6 から v7 に上げる Dependabot PR がある。v7 のリリースノートには『pull_request_target と workflow_run でのフォーク PR チェックアウトをブロックする』という破壊的変更がある。この PR はマージしてよいか判断して。",
+      "expected_output": "破壊的変更の発火条件（フォーク PR を privileged コンテキストでチェックアウト）と、自リポジトリの workflow（cd.yaml の workflow_run は branches:[main] でフィルタし main コミットをデプロイ＝フォーク PR をチェックアウトしない）を突き合わせ、『該当しない＝影響なし』と結論。CI green を確認してマージ可と判断する。",
+      "files": [],
+      "expectations": [
+        ".github/workflows 配下の actions/checkout 利用箇所と workflow_run/pull_request_target の使用状況を Grep で確認している",
+        "workflow_run が branches:[main] でフィルタされ main コミットを対象にしているため、フォーク PR チェックアウトのブロックには当たらないと正しく評価している",
+        "一般論ではなくリポジトリ固有の利用条件に基づいて『影響なし』と判断している",
+        "影響なしと確定した上で、CI green を確認してマージ可と判断している"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "あるメジャーバージョンアップの Dependabot PR で、リリースノートの破壊的変更がこのリポジトリの実装に実際に影響することが分かった。どう対応すべきか。",
+      "expected_output": "影響ありと確定したので自動マージはしない。修正は Dependabot のブランチ上だけで行い、他ブランチは使わない。必要な追従修正やコンフリクト解消をそのブランチにコミット＆push し、CI green を確認してからマージ可否を再判断する。",
+      "files": [],
+      "expectations": [
+        "影響ありのため『全く問題ないもの』に該当せず、勝手にはマージしないと判断している",
+        "修正・コンフリクト解消を Dependabot のブランチ上でのみ行い、他ブランチを使わないと明記している",
+        "修正後に CI green を待ってからマージ可否を再判断する流れになっている",
+        "コミットメッセージに why を残す等、CLAUDE.md の方針に沿っている"
+      ]
+    }
+  ]
+}

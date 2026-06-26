@@ -3,13 +3,13 @@
   "evals": [
     {
       "id": 0,
-      "prompt": "API ハンドラ（application/packages/web/src/server 配下）では、必ずリクエストの入力バリデーションを行う、という決まりをプロジェクトのルールとして追加してほしいです。このルールはサーバーのハンドラ系ファイルだけに効くようにしたいです。",
+      "prompt": "API ハンドラ（application/apps/web/src/server 配下）では、必ずリクエストの入力バリデーションを行う、という決まりをプロジェクトのルールとして追加してほしいです。このルールはサーバーのハンドラ系ファイルだけに効くようにしたいです。",
       "expected_output": ".claude/rules/ 配下に置く想定の Markdown ルールファイル。フロントマターに paths: で server 配下にマッチする glob を指定し、本文は日本語で理由付きの規約。",
       "files": [],
       "expectations": [
         "成果物は .claude/rules/ 配下に置く想定の Markdown ルールファイルである（CLAUDE.md 本体に直書きしていない）",
         "YAML フロントマターでパススコープが指定されており、キー名が正しく paths である（globs/appliesTo 等の誤ったキーではない）",
-        "paths の glob が server 配下（application/packages/web/src/server 等）のファイルにマッチする妥当な指定になっている",
+        "paths の glob が server 配下（application/apps/web/src/server 等）のファイルにマッチする妥当な指定になっている",
         "規約本文が日本語で書かれ、なぜそうするかの理由（why）が含まれている"
       ]
     },

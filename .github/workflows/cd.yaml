@@ -69,8 +69,8 @@ jobs:
             # web と cron が共通で依存するパッケージとルート設定(変わると両方を再デプロイ)
             shared='application/packages/(common|datastore|domain|notification)/|application/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|tsconfig\.json)$'
 
-            if grep -qE "application/packages/web/|$shared" <<<"$files"; then web=true; fi
-            if grep -qE "application/packages/cron/|$shared" <<<"$files"; then cron=true; fi
+            if grep -qE "application/apps/web/|$shared" <<<"$files"; then web=true; fi
+            if grep -qE "application/apps/cron/|$shared" <<<"$files"; then cron=true; fi
             if grep -qE 'application/packages/datastore/migrations/' <<<"$files"; then database=true; fi
           fi
 
@@ -118,7 +118,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./application/packages/web
+          workingDirectory: ./application/apps/web
           command: deploy
           # Secretsで保存するものをActionsで管理し、環境変数として渡す
           secrets: |
@@ -195,7 +195,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./application/packages/cron
+          workingDirectory: ./application/apps/cron
           command: deploy
           secrets: |
             DISCORD_WEBHOOK_URL
@@ -227,5 +227,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./application/packages/web
+          workingDirectory: ./application/apps/web
           command: d1 migrations apply trend-diary-db --remote

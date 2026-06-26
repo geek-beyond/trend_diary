@@ -8,6 +8,8 @@ import { defineConfig } from 'vitest/config'
 const MIGRATIONS_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
   '..',
+  '..',
+  'packages',
   'datastore',
   'migrations',
 )

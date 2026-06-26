@@ -5,7 +5,7 @@ paths:
 
 # React規約
 
-React 19.2 + React Compiler 有効（`packages/web` の Vite で `babel-plugin-react-compiler` を適用済み）を前提とする。本規約はコンポーネント（`.tsx`）だけでなく、カスタムフック（多くは `.ts`）にも等しく適用する（フックも Compiler の最適化対象であり Rules of Hooks の遵守対象のため）。
+React 19.2 + React Compiler 有効（`apps/web` の Vite で `babel-plugin-react-compiler` を適用済み）を前提とする。本規約はコンポーネント（`.tsx`）だけでなく、カスタムフック（多くは `.ts`）にも等しく適用する（フックも Compiler の最適化対象であり Rules of Hooks の遵守対象のため）。
 
 ## React Compiler を効かせるための書き方
 

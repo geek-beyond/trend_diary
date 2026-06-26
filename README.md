@@ -32,7 +32,7 @@ supabase start
 環境変数ファイルをコピー(Cloudflareでは.{env}.vars)
 `supabase start`時に表示される`anon key`を`SUPABASE_ANON_KEY`に設定
 ```sh
-cp packages/web/.dev.vars.example packages/web/.dev.vars
+cp apps/web/.dev.vars.example apps/web/.dev.vars
 ```
 
 ローカル開発用DB（miniflare D1）にマイグレーションを適用

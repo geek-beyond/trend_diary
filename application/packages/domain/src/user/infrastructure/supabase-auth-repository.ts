@@ -16,6 +16,7 @@ import type {
   PasskeyChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
+  RegisteredPasskey,
   VerifiedSession,
 } from '../schema/auth-schema'
 
@@ -343,5 +344,33 @@ export class SupabaseAuthRepository implements AuthRepository {
       user: userResult.value,
       session: this.toSessionObject(data.session, userResult.value),
     })
+  }
+
+  async listPasskeys(): Promise<Result<RegisteredPasskey[], ServerError>> {
+    const result = await wrapAsyncCall(() => this.client.auth.passkey.list())
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { data, error } = result.value
+    if (error || !data) {
+      return err(new ServerError(`Passkey list failed: ${error?.message}`))
+    }
+
+    return ok(data.map((passkey) => ({ id: passkey.id })))
+  }
+
+  async deletePasskey(passkeyId: string): Promise<Result<void, ServerError>> {
+    const result = await wrapAsyncCall(() => this.client.auth.passkey.delete({ passkeyId }))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { error } = result.value
+    if (error) {
+      return err(new ServerError(`Passkey deletion failed: ${error.message}`))
+    }
+
+    return ok(undefined)
   }
 }

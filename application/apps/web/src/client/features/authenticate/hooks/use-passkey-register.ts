@@ -21,7 +21,7 @@ export default function usePasskeyRegister() {
     if (startResult.isErr()) {
       toast.error(PASSKEY_MESSAGES.registerFailed)
       setIsSubmitting(false)
-      return
+      return false
     }
 
     const { challengeId, options } = startResult.value
@@ -33,7 +33,7 @@ export default function usePasskeyRegister() {
     if (ceremonyResult.isErr()) {
       toast.error(PASSKEY_MESSAGES.canceled)
       setIsSubmitting(false)
-      return
+      return false
     }
 
     // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界で受けるだけ
@@ -47,11 +47,12 @@ export default function usePasskeyRegister() {
     if (verifyResult.isErr() || !verifyResult.value.ok) {
       toast.error(PASSKEY_MESSAGES.registerFailed)
       setIsSubmitting(false)
-      return
+      return false
     }
 
     toast.success(PASSKEY_MESSAGES.registered)
     setIsSubmitting(false)
+    return true
   }
 
   return { isSubmitting, register }

@@ -137,6 +137,26 @@ export class AuthUseCase {
     return this.repository.startPasskeyAuthentication()
   }
 
+  async hasRegisteredPasskey(): Promise<Result<boolean, ServerError>> {
+    const result = await this.repository.listPasskeys()
+    if (result.isErr()) return err(result.error)
+
+    return ok(result.value.length > 0)
+  }
+
+  async disablePasskeys(): Promise<Result<void, ServerError>> {
+    const listResult = await this.repository.listPasskeys()
+    if (listResult.isErr()) return err(listResult.error)
+
+    // トグルOFFは「パスキーを使わない」状態にすることなので、登録済みを全て削除する
+    for (const passkey of listResult.value) {
+      const deleteResult = await this.repository.deletePasskey(passkey.id)
+      if (deleteResult.isErr()) return err(deleteResult.error)
+    }
+
+    return ok(undefined)
+  }
+
   async verifyPasskeyLogin(
     input: PasskeyVerifyInput,
   ): Promise<Result<LoginResult, ClientError | ServerError>> {

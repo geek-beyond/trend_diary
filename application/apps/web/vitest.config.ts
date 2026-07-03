@@ -104,6 +104,9 @@ export default defineConfig(() => {
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',
           'src/client/features/diary/components/login-required.tsx',
+          // 登録状態取得・無効化は supa-emu の list/delete 対応(v0.1.4)まで結合テストをskipするため計測対象から外す
+          'src/server/auth/handler/passkey-status.ts',
+          'src/server/auth/handler/passkey-disable.ts',
           // 表示専用コンポーネントは Storybook のインタラクションテストで担保しているため
           'src/client/features/article/components/**',
           // WebAuthn ceremony(navigator.credentials)を叩くフックは jsdom 単体テスト不可。

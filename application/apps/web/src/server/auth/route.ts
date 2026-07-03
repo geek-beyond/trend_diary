@@ -8,10 +8,12 @@ import zodValidator from '@/middleware/zod-validator'
 import login from './handler/login'
 import logout from './handler/logout'
 import me from './handler/me'
+import passkeyDisable from './handler/passkey-disable'
 import passkeyLoginStart from './handler/passkey-login-start'
 import passkeyLoginVerify from './handler/passkey-login-verify'
 import passkeyRegisterStart from './handler/passkey-register-start'
 import passkeyRegisterVerify from './handler/passkey-register-verify'
+import passkeyStatus from './handler/passkey-status'
 import signup from './handler/signup'
 
 const app = new Hono<Env>()
@@ -37,5 +39,8 @@ const app = new Hono<Env>()
     zodValidator('json', passkeyVerifyInputSchema),
     passkeyRegisterVerify,
   )
+  // passkey管理(要認証)。設定画面のトグルが登録状態の取得と無効化に使う
+  .get('/passkey', passkeyGate, authenticator, passkeyStatus)
+  .delete('/passkey', passkeyGate, authenticator, passkeyDisable)
 
 export default app

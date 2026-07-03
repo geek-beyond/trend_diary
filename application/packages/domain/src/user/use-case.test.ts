@@ -637,4 +637,95 @@ describe('AuthUseCase', () => {
       })
     })
   })
+
+  describe('hasRegisteredPasskey', () => {
+    describe('正常系', () => {
+      it.each([
+        {
+          name: '登録済みが1件以上ならtrueを返す',
+          passkeys: [{ id: 'passkey-1' }],
+          expected: true,
+        },
+        { name: '登録が無ければfalseを返す', passkeys: [], expected: false },
+      ])('$name', async ({ passkeys, expected }) => {
+        repositoryMock.listPasskeys.mockResolvedValue(ok(passkeys))
+
+        const result = await useCase.hasRegisteredPasskey()
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toBe(expected)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('一覧取得が失敗した場合はエラーを返すこと', async () => {
+        const serverError = new ServerError('Passkey list failed')
+        repositoryMock.listPasskeys.mockResolvedValue(err(serverError))
+
+        const result = await useCase.hasRegisteredPasskey()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+      })
+    })
+  })
+
+  describe('disablePasskeys', () => {
+    describe('正常系', () => {
+      it('登録済みpasskeyを全て削除すること', async () => {
+        repositoryMock.listPasskeys.mockResolvedValue(
+          ok([{ id: 'passkey-1' }, { id: 'passkey-2' }]),
+        )
+        repositoryMock.deletePasskey.mockResolvedValue(ok(undefined))
+
+        const result = await useCase.disablePasskeys()
+
+        expect(result.isOk()).toBe(true)
+        expect(repositoryMock.deletePasskey).toHaveBeenCalledTimes(2)
+        expect(repositoryMock.deletePasskey).toHaveBeenCalledWith('passkey-1')
+        expect(repositoryMock.deletePasskey).toHaveBeenCalledWith('passkey-2')
+      })
+
+      it('登録が無ければ削除を呼ばず成功すること', async () => {
+        repositoryMock.listPasskeys.mockResolvedValue(ok([]))
+
+        const result = await useCase.disablePasskeys()
+
+        expect(result.isOk()).toBe(true)
+        expect(repositoryMock.deletePasskey).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('異常系', () => {
+      it('一覧取得が失敗した場合はエラーを返すこと', async () => {
+        const serverError = new ServerError('Passkey list failed')
+        repositoryMock.listPasskeys.mockResolvedValue(err(serverError))
+
+        const result = await useCase.disablePasskeys()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+        expect(repositoryMock.deletePasskey).not.toHaveBeenCalled()
+      })
+
+      it('削除が失敗した場合はエラーを返すこと', async () => {
+        const serverError = new ServerError('Passkey deletion failed')
+        repositoryMock.listPasskeys.mockResolvedValue(ok([{ id: 'passkey-1' }]))
+        repositoryMock.deletePasskey.mockResolvedValue(err(serverError))
+
+        const result = await useCase.disablePasskeys()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+      })
+    })
+  })
 })

@@ -62,3 +62,8 @@ export type PasskeyVerifyInput = z.infer<typeof passkeyVerifyInputSchema>
 export interface PasskeyRegistrationResult {
   id: string
 }
+
+// 無効化(全削除)で個々のpasskeyを指定するためidだけを扱う
+export interface RegisteredPasskey {
+  id: string
+}

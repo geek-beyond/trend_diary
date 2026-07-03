@@ -4,7 +4,6 @@ import PasskeyRegisterButton from '@/client/features/authenticate/components/pas
 
 interface Props {
   isLoggedIn: boolean
-  // passkey無効の環境ではセクションを出さないため任意項目とする
   passkeyEnabled: boolean
 }
 
@@ -21,7 +20,7 @@ export default function SettingsPage({ isLoggedIn, passkeyEnabled }: Props) {
         <h1 className='text-xl font-semibold text-gray-900'>{pageTitle}</h1>
 
         {passkeyEnabled && (
-          <section className='mt-6' data-slot='settings-passkey'>
+          <section className='mt-6'>
             <h2 className='text-sm font-semibold text-gray-700'>パスキー</h2>
             <p className='mt-1 text-sm text-gray-600'>
               パスキーを登録すると、次回から生体認証やデバイスのロックだけでログインできます。

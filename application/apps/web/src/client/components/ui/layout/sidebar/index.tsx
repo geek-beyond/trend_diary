@@ -1,4 +1,4 @@
-import { BarChart3, BookOpenCheck, Inbox, TrendingUp } from 'lucide-react'
+import { BarChart3, BookOpenCheck, Inbox, Settings, TrendingUp } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -42,6 +42,11 @@ const loggedInMenuItems: MenuItem[] = [
     title: '統計',
     url: '/analytics',
     icon: BarChart3,
+  },
+  {
+    title: '設定',
+    url: '/settings',
+    icon: Settings,
   },
 ]
 

@@ -97,10 +97,6 @@ export default defineConfig(() => {
           'src/middleware/error-handler.ts',
           'src/middleware/authenticator/**',
           'src/test/**',
-          // passkeyハンドラは薄い委譲層で、実passkeyを叩くため supa-emu 未対応の間は結合テストで
-          // 網羅できない。委譲先の AuthUseCase / SupabaseAuthRepository は domain 側の単体テストで担保済み。
-          // supa-emu が passkey に対応したら結合テストを追加し、この除外を外す。
-          'src/server/auth/handler/passkey-*.ts',
           'src/client/components/shadcn/**',
           'src/client/routes.ts',
           'src/server/handler-factory.ts',

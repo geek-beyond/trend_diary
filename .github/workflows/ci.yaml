@@ -133,10 +133,11 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: Supabase Emulator のセットアップ
-        uses: rin2yh/supa-emu@002534b987244b792d8a075163abc754462cd44e # v0.1.1
+        uses: rin2yh/supa-emu@20f487578c5f68c92b1daf769efe98dfdbe2c299 # v0.1.2
         with:
-          version: v0.1.1
+          version: v0.1.2
           addr: 127.0.0.1:54321
+          webauthn-rp-id: 127.0.0.1
 
       - name: サーバーのテスト
         uses: ./.github/actions/test_cov

@@ -17,7 +17,7 @@ TURNSTILE_SITE_KEY=
 TURNSTILE_SECRET_KEY=
 
 # passkey(WebAuthn)機能の有効化フラグ。'true'のときのみ有効。
-# ローカルのsupabase CLIがpasskeyに対応していれば有効化する。未対応の間のみ未設定(無効)にする。
+# supabase CLIはpasskey対応済み。config.tomlの[auth.passkey]を有効化したら'true'にする。
 PASSKEY_ENABLED=
 
 # ログレベル(debug,info,warn,error,silent)。未記載の場合の初期値はinfo

@@ -43,7 +43,8 @@ describe('passkey認証', () => {
   }
 
   function req(method: string, path: string, env: Env['Bindings'], cookies?: string) {
-    const headers: Record<string, string> = {}
+    // Content-Type未指定だとcsrf()がtext/plain扱いでDELETEを403にするため、他のテスト同様JSONを明示する
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (cookies) headers.Cookie = cookies
 
     return app.request(path, { method, headers }, env)

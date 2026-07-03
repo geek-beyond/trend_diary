@@ -155,11 +155,6 @@ export class AuthUseCase {
     })
   }
 
-  async hasRegisteredPasskey(): Promise<Result<boolean, ServerError>> {
-    const result = await this.repository.listPasskeys()
-    return result.map((passkeys) => passkeys.length > 0)
-  }
-
   private async findActiveUserByAuthenticationId(
     authenticationId: string,
   ): Promise<Result<CurrentUser, ClientError | ServerError>> {

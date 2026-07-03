@@ -6,7 +6,6 @@ export {
 } from './ui'
 // use-sync-external-storeを巻き込むためui.tsには載せず、こちらの重いバレルから公開する
 export { default as PasskeyLoginButton } from './components/passkey-login-button'
-export { default as PasskeyRegisterPrompt } from './components/passkey-register-prompt'
 export {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,

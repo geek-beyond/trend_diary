@@ -8,7 +8,6 @@ import type {
   PasskeyChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
-  RegisteredPasskey,
   VerifiedSession,
 } from './schema/auth-schema'
 
@@ -120,9 +119,4 @@ export interface AuthRepository {
   verifyPasskeyAuthentication(
     input: PasskeyVerifyInput,
   ): Promise<Result<AuthLoginResult, ClientError | ServerError>>
-
-  /**
-   * 現在のユーザーに登録済みのpasskey一覧を取得する（要認証セッション）
-   */
-  listPasskeys(): Promise<Result<RegisteredPasskey[], ServerError>>
 }

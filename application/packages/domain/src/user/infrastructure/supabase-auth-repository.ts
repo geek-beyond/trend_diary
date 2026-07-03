@@ -16,7 +16,6 @@ import type {
   PasskeyChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
-  RegisteredPasskey,
   VerifiedSession,
 } from '../schema/auth-schema'
 
@@ -280,7 +279,7 @@ export class SupabaseAuthRepository implements AuthRepository {
     const result = await wrapAsyncCall(() =>
       this.client.auth.passkey.verifyRegistration({
         challengeId: input.challengeId,
-        // oxlint-disable-next-line typescript/consistent-type-assertions -- WebAuthn ceremonyの結果JSONはSupabaseが真正性を検証する不透明値のため、境界でSDKの資格情報型に合わせる
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
         credential: input.credential as unknown as VerifyPasskeyRegistrationParams['credential'],
       }),
     )
@@ -294,7 +293,7 @@ export class SupabaseAuthRepository implements AuthRepository {
       return err(new ClientError(`Passkey registration failed: ${error?.message}`, 400))
     }
 
-    return ok({ id: data.id, friendlyName: data.friendly_name })
+    return ok({ id: data.id })
   }
 
   async startPasskeyAuthentication(): Promise<Result<PasskeyChallenge, ClientError | ServerError>> {
@@ -317,7 +316,7 @@ export class SupabaseAuthRepository implements AuthRepository {
     const result = await wrapAsyncCall(() =>
       this.client.auth.passkey.verifyAuthentication({
         challengeId: input.challengeId,
-        // oxlint-disable-next-line typescript/consistent-type-assertions -- WebAuthn ceremonyの結果JSONはSupabaseが真正性を検証する不透明値のため、境界でSDKの資格情報型に合わせる
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
         credential: input.credential as unknown as VerifyPasskeyAuthenticationParams['credential'],
       }),
     )
@@ -344,26 +343,5 @@ export class SupabaseAuthRepository implements AuthRepository {
       user: userResult.value,
       session: this.toSessionObject(data.session, userResult.value),
     })
-  }
-
-  async listPasskeys(): Promise<Result<RegisteredPasskey[], ServerError>> {
-    const result = await wrapAsyncCall(() => this.client.auth.passkey.list())
-    if (result.isErr()) {
-      return err(new ServerError(result.error))
-    }
-
-    const { data, error } = result.value
-    if (error || !data) {
-      return err(new ServerError(`Passkey list failed: ${error?.message}`))
-    }
-
-    return ok(
-      data.map((passkey) => ({
-        id: passkey.id,
-        friendlyName: passkey.friendly_name,
-        createdAt: new Date(passkey.created_at),
-        lastUsedAt: passkey.last_used_at ? new Date(passkey.last_used_at) : undefined,
-      })),
-    )
   }
 }

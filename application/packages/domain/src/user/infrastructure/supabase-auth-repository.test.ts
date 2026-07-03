@@ -599,7 +599,7 @@ describe('SupabaseAuthRepository', () => {
 
   describe('verifyPasskeyRegistration', () => {
     describe('正常系', () => {
-      it('登録済みpasskeyのメタ情報を返すこと', async () => {
+      it('登録されたpasskeyのidを返すこと', async () => {
         resolveAuthMock(client.auth.passkey.verifyRegistration, {
           data: { id: 'passkey-1', friendly_name: 'My device', created_at: '2026-07-03' },
           error: null,
@@ -613,7 +613,6 @@ describe('SupabaseAuthRepository', () => {
         expect(result.isOk()).toBe(true)
         if (result.isOk()) {
           expect(result.value.id).toBe('passkey-1')
-          expect(result.value.friendlyName).toBe('My device')
         }
       })
     })
@@ -762,64 +761,6 @@ describe('SupabaseAuthRepository', () => {
           challengeId: 'challenge-456',
           credential: { id: 'cred', type: 'public-key' },
         })
-
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
-      })
-    })
-  })
-
-  describe('listPasskeys', () => {
-    describe('正常系', () => {
-      it('登録済みpasskey一覧を返すこと', async () => {
-        resolveAuthMock(client.auth.passkey.list, {
-          data: [
-            {
-              id: 'passkey-1',
-              friendly_name: 'My device',
-              created_at: '2026-07-03T00:00:00.000Z',
-              last_used_at: '2026-07-04T00:00:00.000Z',
-            },
-          ],
-          error: null,
-        })
-
-        const result = await repository.listPasskeys()
-
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toHaveLength(1)
-          expect(result.value[0]?.id).toBe('passkey-1')
-          expect(result.value[0]?.createdAt).toBeInstanceOf(Date)
-          expect(result.value[0]?.lastUsedAt).toBeInstanceOf(Date)
-        }
-      })
-
-      it('last_used_atが無い場合はlastUsedAtがundefinedになること', async () => {
-        resolveAuthMock(client.auth.passkey.list, {
-          data: [{ id: 'passkey-1', created_at: '2026-07-03T00:00:00.000Z' }],
-          error: null,
-        })
-
-        const result = await repository.listPasskeys()
-
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value[0]?.lastUsedAt).toBeUndefined()
-        }
-      })
-    })
-
-    describe('異常系', () => {
-      it('errorが存在する場合ServerErrorを返すこと', async () => {
-        resolveAuthMock(client.auth.passkey.list, {
-          data: null,
-          error: { message: 'list failed', name: 'AuthError', status: 500 },
-        })
-
-        const result = await repository.listPasskeys()
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {

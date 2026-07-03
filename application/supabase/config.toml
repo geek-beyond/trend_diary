@@ -122,8 +122,8 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 
-# passkey(WebAuthn)をプライマリ認証の追加手段として提供するための設定。
-# TODO: ローカルのsupa-emu(supabase CLI)がpasskeyに対応したら以下のコメントを解除し有効化する。
+# passkey(WebAuthn)をログインの追加手段として提供するための設定。
+# TODO: ローカルのsupabase CLIがpasskeyに対応したら以下のコメントを解除し有効化する。
 # 対応前に有効化するとAuthコンテナが設定を解釈できず起動しないため、現状は無効のままとする。
 # 本番はSupabaseダッシュボードでpasskeyを有効化し、rp_id/rp_originsを本番ドメインに合わせる。
 # [auth.passkey]

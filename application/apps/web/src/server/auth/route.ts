@@ -12,7 +12,6 @@ import passkeyLoginStart from './handler/passkey-login-start'
 import passkeyLoginVerify from './handler/passkey-login-verify'
 import passkeyRegisterStart from './handler/passkey-register-start'
 import passkeyRegisterVerify from './handler/passkey-register-verify'
-import passkeyStatus from './handler/passkey-status'
 import signup from './handler/signup'
 
 const app = new Hono<Env>()
@@ -38,7 +37,5 @@ const app = new Hono<Env>()
     zodValidator('json', passkeyVerifyInputSchema),
     passkeyRegisterVerify,
   )
-  // 登録案内の出し分けに使う、passkey登録有無(要認証)
-  .get('/passkey', passkeyGate, authenticator, passkeyStatus)
 
 export default app

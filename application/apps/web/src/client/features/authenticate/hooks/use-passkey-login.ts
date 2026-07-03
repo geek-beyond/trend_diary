@@ -8,7 +8,6 @@ import { SESSION_SWR_KEY } from '@/client/features/authenticate/hooks/use-sessio
 import { PASSKEY_MESSAGES } from '@/client/features/authenticate/model/passkey'
 import getApiClientForClient from '@/client/infrastructure/api'
 
-// passkeyログインは「start(サーバーでchallenge発行) → ブラウザのWebAuthn ceremony → verify(サーバーで検証しセッション確立)」の3段
 export default function usePasskeyLogin() {
   const navigate = useNavigate()
   const { mutate } = useSWRConfig()
@@ -33,20 +32,19 @@ export default function usePasskeyLogin() {
 
     const { challengeId, options } = startResult.value
 
-    // サーバーが発行するWebAuthnオプションは不透明JSONのため、ブラウザAPIの入力型に合わせる
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- 不透明JSONをブラウザAPIの入力型へ変換するため
+    // 型はSupabase/ブラウザ側が保証するため、境界でブラウザAPIの入力型に合わせるだけに留める
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- 型定義の実体はブラウザWebAuthn API側にあるため
     const optionsJSON = options as unknown as PublicKeyCredentialRequestOptionsJSON
 
-    // OSのpasskeyダイアログ。ユーザーがキャンセルするとrejectするため、失敗は中断案内に寄せる
     const ceremonyResult = await wrapAsyncCall(() => startAuthentication({ optionsJSON }))
     if (ceremonyResult.isErr()) {
+      // キャンセルは失敗ではないので中断案内に寄せる
       setFormError(PASSKEY_MESSAGES.canceled)
       setIsSubmitting(false)
       return
     }
 
-    // WebAuthn ceremonyの結果JSONを検証用ペイロードとしてそのまま送る
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- ceremony結果をそのまま検証ペイロードへ渡すため
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界で受けるだけ
     const credential = ceremonyResult.value as unknown as Record<string, unknown>
 
     const verifyResult = await wrapAsyncCall(() =>
@@ -60,7 +58,7 @@ export default function usePasskeyLogin() {
       return
     }
 
-    // 未ログイン状態のキャッシュを残さないよう再検証してから遷移する
+    // 未ログイン状態のキャッシュを残したまま遷移すると保護ページで弾かれるため、先に再検証する
     await mutate(SESSION_SWR_KEY)
     navigate('/trends')
   }

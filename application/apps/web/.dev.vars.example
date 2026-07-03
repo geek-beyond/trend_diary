@@ -16,5 +16,9 @@ TURNSTILE_SITE_KEY=
 # ローカルで検証まで動作確認する場合はテスト用secret(`1x0000000000000000000000000000000AA`)を使うと常にpassする。
 TURNSTILE_SECRET_KEY=
 
+# passkey(WebAuthn)機能の有効化フラグ。'true'のときのみ有効。
+# Supabase passkeyはBeta、かつローカルのsupa-emuが未対応のため、ローカルでは未設定(無効)のままにする。
+PASSKEY_ENABLED=
+
 # ログレベル(debug,info,warn,error,silent)。未記載の場合の初期値はinfo
 LOG_LEVEL=

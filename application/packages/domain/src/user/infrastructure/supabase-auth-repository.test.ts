@@ -561,4 +561,271 @@ describe('SupabaseAuthRepository', () => {
       })
     })
   })
+
+  describe('startPasskeyRegistration', () => {
+    describe('正常系', () => {
+      it('challengeIdとoptionsを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.startRegistration, {
+          data: { challenge_id: 'challenge-123', options: { challenge: 'abc' }, expires_at: 100 },
+          error: null,
+        })
+
+        const result = await repository.startPasskeyRegistration()
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.challengeId).toBe('challenge-123')
+          expect(result.value.options).toEqual({ challenge: 'abc' })
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('errorが存在する場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.startRegistration, {
+          data: null,
+          error: { message: 'disabled', name: 'AuthError', status: 500 },
+        })
+
+        const result = await repository.startPasskeyRegistration()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('verifyPasskeyRegistration', () => {
+    describe('正常系', () => {
+      it('登録済みpasskeyのメタ情報を返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.verifyRegistration, {
+          data: { id: 'passkey-1', friendly_name: 'My device', created_at: '2026-07-03' },
+          error: null,
+        })
+
+        const result = await repository.verifyPasskeyRegistration({
+          challengeId: 'challenge-123',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.id).toBe('passkey-1')
+          expect(result.value.friendlyName).toBe('My device')
+        }
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合ClientError(400)を返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.verifyRegistration, {
+          data: null,
+          error: { message: 'invalid credential', name: 'WebAuthnError', status: 400 },
+        })
+
+        const result = await repository.verifyPasskeyRegistration({
+          challengeId: 'challenge-123',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ClientError)
+          if (result.error instanceof ClientError) {
+            expect(result.error.statusCode).toBe(400)
+          }
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.passkey.verifyRegistration.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.verifyPasskeyRegistration({
+          challengeId: 'challenge-123',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('startPasskeyAuthentication', () => {
+    describe('正常系', () => {
+      it('challengeIdとoptionsを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.startAuthentication, {
+          data: { challenge_id: 'challenge-456', options: { challenge: 'xyz' }, expires_at: 100 },
+          error: null,
+        })
+
+        const result = await repository.startPasskeyAuthentication()
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.challengeId).toBe('challenge-456')
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('errorが存在する場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.startAuthentication, {
+          data: null,
+          error: { message: 'disabled', name: 'AuthError', status: 500 },
+        })
+
+        const result = await repository.startPasskeyAuthentication()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('verifyPasskeyAuthentication', () => {
+    describe('正常系', () => {
+      it('セッションとユーザーを含むログイン結果を返すこと', async () => {
+        const supabaseUser = buildSupabaseUser()
+        const supabaseSession = buildSupabaseSession({ user: supabaseUser })
+        resolveAuthMock(client.auth.passkey.verifyAuthentication, {
+          data: { session: supabaseSession, user: supabaseUser },
+          error: null,
+        })
+
+        const result = await repository.verifyPasskeyAuthentication({
+          challengeId: 'challenge-456',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.user.id).toBe(supabaseUser.id)
+          expect(result.value.session.accessToken).toBe('access-token')
+        }
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合ClientError(401)を返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.verifyAuthentication, {
+          data: null,
+          error: { message: 'invalid', name: 'WebAuthnError', status: 401 },
+        })
+
+        const result = await repository.verifyPasskeyAuthentication({
+          challengeId: 'challenge-456',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ClientError)
+          if (result.error instanceof ClientError) {
+            expect(result.error.statusCode).toBe(401)
+          }
+        }
+      })
+
+      it('sessionまたはuserが欠落している場合ServerErrorを返すこと', async () => {
+        const supabaseUser = buildSupabaseUser()
+        resolveAuthMock(client.auth.passkey.verifyAuthentication, {
+          data: { session: null, user: supabaseUser },
+          error: null,
+        })
+
+        const result = await repository.verifyPasskeyAuthentication({
+          challengeId: 'challenge-456',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.passkey.verifyAuthentication.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.verifyPasskeyAuthentication({
+          challengeId: 'challenge-456',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('listPasskeys', () => {
+    describe('正常系', () => {
+      it('登録済みpasskey一覧を返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.list, {
+          data: [
+            {
+              id: 'passkey-1',
+              friendly_name: 'My device',
+              created_at: '2026-07-03T00:00:00.000Z',
+              last_used_at: '2026-07-04T00:00:00.000Z',
+            },
+          ],
+          error: null,
+        })
+
+        const result = await repository.listPasskeys()
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toHaveLength(1)
+          expect(result.value[0]?.id).toBe('passkey-1')
+          expect(result.value[0]?.createdAt).toBeInstanceOf(Date)
+          expect(result.value[0]?.lastUsedAt).toBeInstanceOf(Date)
+        }
+      })
+
+      it('last_used_atが無い場合はlastUsedAtがundefinedになること', async () => {
+        resolveAuthMock(client.auth.passkey.list, {
+          data: [{ id: 'passkey-1', created_at: '2026-07-03T00:00:00.000Z' }],
+          error: null,
+        })
+
+        const result = await repository.listPasskeys()
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value[0]?.lastUsedAt).toBeUndefined()
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('errorが存在する場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.list, {
+          data: null,
+          error: { message: 'list failed', name: 'AuthError', status: 500 },
+        })
+
+        const result = await repository.listPasskeys()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
 })

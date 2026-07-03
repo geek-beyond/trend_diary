@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router'
-import { useSession } from '@/client/features/authenticate'
+import { PasskeyRegisterPrompt, useSession } from '@/client/features/authenticate'
 import { SidebarProvider } from '../components/shadcn/sidebar'
 import AppHeader from '../components/ui/layout/app-header'
 import AppSidebar from '../components/ui/layout/sidebar'
@@ -20,6 +20,7 @@ export default function AppLayout() {
       <AppSidebar isLoggedIn={isLoggedIn} />
       <div className='w-full'>
         <AppHeader isLoggedIn={isLoggedIn} />
+        <PasskeyRegisterPrompt />
         <Outlet context={outletContext} />
       </div>
     </SidebarProvider>

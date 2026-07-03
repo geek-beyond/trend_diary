@@ -7,6 +7,8 @@ import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,
   AuthenticationUser,
+  PasskeyChallenge,
+  PasskeyVerifyInput,
   VerifiedSession,
 } from './schema/auth-schema'
 import { AuthUseCase } from './use-case'
@@ -43,6 +45,16 @@ const mockActiveUser: CurrentUser = {
   displayName: 'テストユーザー',
   createdAt: new Date(),
   updatedAt: new Date(),
+}
+
+const mockChallenge: PasskeyChallenge = {
+  challengeId: 'challenge-id-123',
+  options: { challenge: 'random-challenge' },
+}
+
+const mockVerifyInput: PasskeyVerifyInput = {
+  challengeId: 'challenge-id-123',
+  credential: { id: 'credential-id', type: 'public-key' },
 }
 
 describe('AuthUseCase', () => {
@@ -457,6 +469,215 @@ describe('AuthUseCase', () => {
             expect(result.error).toBeInstanceOf(ServerError)
           }
         })
+      })
+    })
+  })
+
+  describe('startPasskeyRegistration', () => {
+    describe('正常系', () => {
+      it('repositoryのチャレンジをそのまま返す', async () => {
+        // Arrange
+        repositoryMock.startPasskeyRegistration.mockResolvedValue(ok(mockChallenge))
+
+        // Act
+        const result = await useCase.startPasskeyRegistration()
+
+        // Assert
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toEqual(mockChallenge)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('repository失敗時、ServerErrorを返す', async () => {
+        // Arrange
+        const serverError = new ServerError('start failed')
+        repositoryMock.startPasskeyRegistration.mockResolvedValue(err(serverError))
+
+        // Act
+        const result = await useCase.startPasskeyRegistration()
+
+        // Assert
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+      })
+    })
+  })
+
+  describe('verifyPasskeyRegistration', () => {
+    describe('正常系', () => {
+      it('登録結果を返す', async () => {
+        // Arrange
+        repositoryMock.verifyPasskeyRegistration.mockResolvedValue(
+          ok({ id: 'passkey-1', friendlyName: 'My device' }),
+        )
+
+        // Act
+        const result = await useCase.verifyPasskeyRegistration(mockVerifyInput)
+
+        // Assert
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.id).toBe('passkey-1')
+        }
+        expect(repositoryMock.verifyPasskeyRegistration).toHaveBeenCalledWith(mockVerifyInput)
+      })
+    })
+
+    describe('準正常系', () => {
+      it('資格情報が不正な場合、ClientErrorを返す', async () => {
+        // Arrange
+        const clientError = new ClientError('Passkey registration failed', 400)
+        repositoryMock.verifyPasskeyRegistration.mockResolvedValue(err(clientError))
+
+        // Act
+        const result = await useCase.verifyPasskeyRegistration(mockVerifyInput)
+
+        // Assert
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(clientError)
+        }
+      })
+    })
+  })
+
+  describe('startPasskeyLogin', () => {
+    describe('正常系', () => {
+      it('repositoryのチャレンジをそのまま返す', async () => {
+        // Arrange
+        repositoryMock.startPasskeyAuthentication.mockResolvedValue(ok(mockChallenge))
+
+        // Act
+        const result = await useCase.startPasskeyLogin()
+
+        // Assert
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toEqual(mockChallenge)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('repository失敗時、エラーを返す', async () => {
+        // Arrange
+        const serverError = new ServerError('start failed')
+        repositoryMock.startPasskeyAuthentication.mockResolvedValue(err(serverError))
+
+        // Act
+        const result = await useCase.startPasskeyLogin()
+
+        // Assert
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+      })
+    })
+  })
+
+  describe('verifyPasskeyLogin', () => {
+    describe('正常系', () => {
+      it('認証成功時、sessionとactiveUserを返す', async () => {
+        // Arrange
+        repositoryMock.verifyPasskeyAuthentication.mockResolvedValue(
+          ok({ user: mockAuthUser, session: mockSession }),
+        )
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(mockActiveUser))
+
+        // Act
+        const result = await useCase.verifyPasskeyLogin(mockVerifyInput)
+
+        // Assert
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.session).toEqual(mockSession)
+          expect(result.value.activeUser).toEqual(mockActiveUser)
+        }
+        expect(queryMock.findActiveByAuthenticationId).toHaveBeenCalledWith(mockAuthUser.id)
+      })
+    })
+
+    describe('準正常系', () => {
+      it('認証失敗時、エラーを返しactiveUserを引かない', async () => {
+        // Arrange
+        const clientError = new ClientError('Invalid passkey', 401)
+        repositoryMock.verifyPasskeyAuthentication.mockResolvedValue(err(clientError))
+
+        // Act
+        const result = await useCase.verifyPasskeyLogin(mockVerifyInput)
+
+        // Assert
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(clientError)
+        }
+        expect(queryMock.findActiveByAuthenticationId).not.toHaveBeenCalled()
+      })
+
+      it('ActiveUserが見つからない場合、ClientError(404)を返す', async () => {
+        // Arrange
+        repositoryMock.verifyPasskeyAuthentication.mockResolvedValue(
+          ok({ user: mockAuthUser, session: mockSession }),
+        )
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(null))
+
+        // Act
+        const result = await useCase.verifyPasskeyLogin(mockVerifyInput)
+
+        // Assert
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ClientError)
+          expect(result.error.message).toBe('User not found')
+        }
+      })
+    })
+  })
+
+  describe('hasRegisteredPasskey', () => {
+    describe('正常系', () => {
+      it.each([
+        { name: 'passkeyが1件以上ある場合はtrue', count: 2, expected: true },
+        { name: 'passkeyが0件の場合はfalse', count: 0, expected: false },
+      ])('$name', async ({ count, expected }) => {
+        // Arrange
+        const passkeys = Array.from({ length: count }, (_, i) => ({
+          id: `passkey-${i}`,
+          createdAt: new Date(),
+        }))
+        repositoryMock.listPasskeys.mockResolvedValue(ok(passkeys))
+
+        // Act
+        const result = await useCase.hasRegisteredPasskey()
+
+        // Assert
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toBe(expected)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('repository失敗時、ServerErrorを返す', async () => {
+        // Arrange
+        const serverError = new ServerError('list failed')
+        repositoryMock.listPasskeys.mockResolvedValue(err(serverError))
+
+        // Act
+        const result = await useCase.hasRegisteredPasskey()
+
+        // Assert
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
       })
     })
   })

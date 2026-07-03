@@ -24,6 +24,7 @@
     "@radix-ui/react-separator": "^1.1.10",
     "@radix-ui/react-slot": "^1.3.0",
     "@radix-ui/react-tooltip": "^1.2.10",
+    "@simplewebauthn/browser": "^13.3.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "catalog:",
     "@trend-diary/common": "workspace:*",

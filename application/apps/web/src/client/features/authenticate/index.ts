@@ -2,6 +2,8 @@ export {
   AuthenticateForm,
   type AuthenticateFormBaseProps,
   LogoutButton,
+  PasskeyLoginButton,
+  PasskeyRegisterPrompt,
   SidebarLogoutButton,
 } from './ui'
 export {
@@ -9,6 +11,7 @@ export {
   resolveLoginErrorMessage,
   resolveSignupErrorMessage,
 } from './model/error-message'
+export { resolvePasskeyEnabled } from './model/passkey'
 export { resolveTurnstileSiteKey } from './model/turnstile'
 export { default as useLogin } from './hooks/use-login'
 export { default as useSession, SESSION_SWR_KEY } from './hooks/use-session'

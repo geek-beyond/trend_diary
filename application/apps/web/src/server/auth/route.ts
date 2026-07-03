@@ -1,12 +1,18 @@
-import { authInputSchema } from '@trend-diary/domain/user'
+import { authInputSchema, passkeyVerifyInputSchema } from '@trend-diary/domain/user'
 import { Hono } from 'hono'
 import type { Env } from '@/env'
 import { authenticator } from '@/middleware/authenticator'
+import passkeyGate from '@/middleware/passkey-gate'
 import rateLimiter from '@/middleware/rate-limiter'
 import zodValidator from '@/middleware/zod-validator'
 import login from './handler/login'
 import logout from './handler/logout'
 import me from './handler/me'
+import passkeyLoginStart from './handler/passkey-login-start'
+import passkeyLoginVerify from './handler/passkey-login-verify'
+import passkeyRegisterStart from './handler/passkey-register-start'
+import passkeyRegisterVerify from './handler/passkey-register-verify'
+import passkeyStatus from './handler/passkey-status'
 import signup from './handler/signup'
 
 const app = new Hono<Env>()
@@ -14,5 +20,25 @@ const app = new Hono<Env>()
   .post('/login', rateLimiter, zodValidator('json', authInputSchema), login)
   .delete('/logout', logout)
   .get('/me', authenticator, me)
+  // passkey認証(未認証で可)。ブラウザのWebAuthn ceremonyを挟むためstart/verifyの2段構え
+  .post('/passkey/login/start', passkeyGate, rateLimiter, passkeyLoginStart)
+  .post(
+    '/passkey/login/verify',
+    passkeyGate,
+    rateLimiter,
+    zodValidator('json', passkeyVerifyInputSchema),
+    passkeyLoginVerify,
+  )
+  // passkey登録(要認証)。ログイン中ユーザーが自分のpasskeyを登録する
+  .post('/passkey/register/start', passkeyGate, authenticator, passkeyRegisterStart)
+  .post(
+    '/passkey/register/verify',
+    passkeyGate,
+    authenticator,
+    zodValidator('json', passkeyVerifyInputSchema),
+    passkeyRegisterVerify,
+  )
+  // 登録案内の出し分けに使う、passkey登録有無(要認証)
+  .get('/passkey', passkeyGate, authenticator, passkeyStatus)
 
 export default app

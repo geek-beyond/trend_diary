@@ -106,6 +106,12 @@ export default defineConfig(() => {
           'src/client/features/diary/components/login-required.tsx',
           // 表示専用コンポーネントは Storybook のインタラクションテストで担保しているため
           'src/client/features/article/components/**',
+          // WebAuthn ceremony(navigator.credentials)を叩くクライアントグルーは jsdom 単体テスト不可。
+          // サーバ結合テスト(supa-emu)とE2E(supabase CLI)で担保する
+          'src/client/features/authenticate/hooks/use-passkey-login.ts',
+          'src/client/features/authenticate/hooks/use-passkey-register.ts',
+          'src/client/features/authenticate/components/passkey-login-button.tsx',
+          'src/client/features/authenticate/components/passkey-register-button.tsx',
         ],
         // ベタガキしないと、Github Actionsに閾値が反映されない
         thresholds: {

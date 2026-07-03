@@ -43,9 +43,10 @@ describe('passkey認証', () => {
   }
 
   describe('正常系', () => {
-    it('ログイン中ユーザーがpasskeyを登録できる', async () => {
+    it('passkeyを登録し、登録済みpasskeyでログインしてセッションを確立できる', async () => {
       const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
+      // 登録: start(要認証) → verify(要認証)
       const registerStart = await post(
         '/api/auth/passkey/register/start',
         PASSKEY_ENV,
@@ -62,30 +63,10 @@ describe('passkey認証', () => {
         cookies,
       )
       expect(registerVerify.status).toBe(201)
-    })
 
-    // NOTE: supa-emu の /passkeys/authentication/verify が session を { session, user } とネストして返すが、
-    // supabase-js は GoTrue 標準のトップレベル token response({ access_token, refresh_token, ..., user })を
-    // 期待する(内部の _sessionResponse xform)。現状 session が null 扱いになり verify が 500 になるため、
-    // emulator 側で token response をトップレベルに返すよう修正されたら有効化する。
-    it.skip('登録済みpasskeyでログインしてセッションを確立できる', async () => {
-      const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
-
-      const registerStart = await post(
-        '/api/auth/passkey/register/start',
-        PASSKEY_ENV,
-        undefined,
-        cookies,
-      )
-      const registerStartBody: { challengeId: string } = await registerStart.json()
-      await post(
-        '/api/auth/passkey/register/verify',
-        PASSKEY_ENV,
-        { challengeId: registerStartBody.challengeId, credential: { id: CREDENTIAL_ID } },
-        cookies,
-      )
-
+      // 認証: start(未認証で可) → verify(未認証で可) → セッション確立
       const loginStart = await post('/api/auth/passkey/login/start', PASSKEY_ENV)
+      expect(loginStart.status).toBe(200)
       const loginStartBody: { challengeId: string } = await loginStart.json()
 
       const loginVerify = await post('/api/auth/passkey/login/verify', PASSKEY_ENV, {

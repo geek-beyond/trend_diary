@@ -125,9 +125,8 @@ describe('passkey認証', () => {
     })
   })
 
-  // supa-emu v0.1.3 は GET /passkeys・DELETE /passkeys/{id} 未対応のため、対応版(v0.1.4)まで保留する
   describe('登録状態の取得と無効化', () => {
-    it.skip('登録済みなら hasPasskey=true を返し、無効化すると全て削除される', async () => {
+    it('登録済みなら hasPasskey=true を返し、無効化すると全て削除される', async () => {
       const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
       const registerStart = await post(

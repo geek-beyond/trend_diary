@@ -1,4 +1,3 @@
-import { startAuthentication } from '@simplewebauthn/browser'
 import { act, renderHook } from '@testing-library/react'
 import type { MockedFunction } from 'vitest'
 import getApiClientForClient from '@/infrastructure/api'
@@ -7,6 +6,8 @@ import { SESSION_SWR_KEY } from './use-session'
 
 const navigateMock = vi.fn()
 const mutateMock = vi.fn()
+// vi.mockはimport上へ巻き上げられ、モック実体を factory 内で直接参照するため hoisted で初期化する
+const startAuthenticationMock = vi.hoisted(() => vi.fn())
 
 vi.mock('react-router', async (importOriginal) => {
   // oxlint-disable-next-line typescript/consistent-type-imports -- vitestのimportOriginalにモジュール型を渡す定型のため inline import 型を許可する
@@ -16,9 +17,7 @@ vi.mock('react-router', async (importOriginal) => {
 
 vi.mock('swr', () => ({ useSWRConfig: () => ({ mutate: mutateMock }) }))
 
-vi.mock('@simplewebauthn/browser', () => ({ startAuthentication: vi.fn() }))
-
-const startAuthenticationMock = startAuthentication as MockedFunction<typeof startAuthentication>
+vi.mock('@simplewebauthn/browser', () => ({ startAuthentication: startAuthenticationMock }))
 
 const mockApiClient = {
   auth: {
@@ -42,8 +41,7 @@ describe('usePasskeyLogin', () => {
       ok: true,
       json: async () => ({ challengeId: 'challenge-1', options: {} }),
     })
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- ブラウザWebAuthn APIの戻り値をテスト用に最小限で満たすため
-    startAuthenticationMock.mockResolvedValue({ id: 'credential-1' } as never)
+    startAuthenticationMock.mockResolvedValue({ id: 'credential-1' })
     mockApiClient.auth.passkey.login.verify.$post.mockResolvedValue({ ok: true, status: 200 })
   })
 

@@ -1,13 +1,13 @@
-import { startRegistration } from '@simplewebauthn/browser'
 import { act, renderHook } from '@testing-library/react'
 import { toast } from 'sonner'
 import type { MockedFunction } from 'vitest'
 import getApiClientForClient from '@/infrastructure/api'
 import usePasskeyRegister from './use-passkey-register'
 
-vi.mock('@simplewebauthn/browser', () => ({ startRegistration: vi.fn() }))
+// vi.mockはimport上へ巻き上げられ、モック実体を factory 内で直接参照するため hoisted で初期化する
+const startRegistrationMock = vi.hoisted(() => vi.fn())
 
-const startRegistrationMock = startRegistration as MockedFunction<typeof startRegistration>
+vi.mock('@simplewebauthn/browser', () => ({ startRegistration: startRegistrationMock }))
 
 const mockApiClient = {
   auth: {
@@ -31,8 +31,7 @@ describe('usePasskeyRegister', () => {
       ok: true,
       json: async () => ({ challengeId: 'challenge-1', options: {} }),
     })
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- ブラウザWebAuthn APIの戻り値をテスト用に最小限で満たすため
-    startRegistrationMock.mockResolvedValue({ id: 'credential-1' } as never)
+    startRegistrationMock.mockResolvedValue({ id: 'credential-1' })
     mockApiClient.auth.passkey.register.verify.$post.mockResolvedValue({ ok: true, status: 201 })
   })
 

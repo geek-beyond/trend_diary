@@ -1,7 +1,7 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { PASSKEY_MESSAGES } from '@/client/features/authenticate/passkey/model'
+import { PASSKEY_MESSAGES } from '@/client/features/passkey/model'
 import getApiClientForClient from '@/client/infrastructure/api'
 
 export default function usePasskeyDisable() {

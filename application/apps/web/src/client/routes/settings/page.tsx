@@ -1,5 +1,5 @@
 import LoginRequired from '@/client/components/ui/feedback/login-required'
-import { PasskeyToggle } from '@/client/features/authenticate/passkey'
+import { PasskeyToggle } from '@/client/features/passkey'
 
 interface Props {
   isLoggedIn: boolean

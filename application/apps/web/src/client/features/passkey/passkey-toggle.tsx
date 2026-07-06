@@ -1,8 +1,8 @@
 import { Fingerprint } from 'lucide-react'
 import { Switch } from '@/client/components/shadcn/switch'
-import usePasskeyDisable from '@/client/features/authenticate/passkey/use-passkey-disable'
-import usePasskeyRegister from '@/client/features/authenticate/passkey/use-passkey-register'
-import usePasskeyStatus from '@/client/features/authenticate/passkey/use-passkey-status'
+import usePasskeyDisable from '@/client/features/passkey/use-passkey-disable'
+import usePasskeyRegister from '@/client/features/passkey/use-passkey-register'
+import usePasskeyStatus from '@/client/features/passkey/use-passkey-status'
 
 export default function PasskeyToggle() {
   const { hasPasskey, isLoading, mutate } = usePasskeyStatus()

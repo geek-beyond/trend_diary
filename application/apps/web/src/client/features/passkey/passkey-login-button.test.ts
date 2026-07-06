@@ -9,7 +9,7 @@ const hookState: { isSubmitting: boolean; formError: string | undefined } = {
   formError: undefined,
 }
 
-vi.mock('@/client/features/authenticate/passkey/use-passkey-login', () => ({
+vi.mock('@/client/features/passkey/use-passkey-login', () => ({
   default: () => ({ ...hookState, login: loginMock }),
 }))
 

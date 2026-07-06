@@ -4,7 +4,7 @@ import {
   useLoaderData,
   useOutletContext,
 } from 'react-router'
-import { resolvePasskeyEnabled } from '@/client/features/authenticate/passkey'
+import { resolvePasskeyEnabled } from '@/client/features/passkey'
 import type { AppLayoutOutletContext } from '../app-layout'
 import SettingsPage from './page'
 

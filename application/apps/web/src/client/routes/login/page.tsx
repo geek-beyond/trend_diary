@@ -1,5 +1,5 @@
 import { AuthenticateForm, type AuthenticateFormBaseProps } from '@/client/features/authenticate'
-import { PasskeyLoginButton } from '@/client/features/authenticate/passkey'
+import { PasskeyLoginButton } from '@/client/features/passkey'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'

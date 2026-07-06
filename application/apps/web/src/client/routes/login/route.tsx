@@ -1,6 +1,6 @@
 import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
 import { resolveTurnstileSiteKey, useLogin } from '@/client/features/authenticate'
-import { resolvePasskeyEnabled } from '@/client/features/authenticate/passkey'
+import { resolvePasskeyEnabled } from '@/client/features/passkey'
 import LoginPage from './page'
 
 export const meta: MetaFunction = () => [

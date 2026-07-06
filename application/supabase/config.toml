@@ -123,18 +123,17 @@ enable_anonymous_sign_ins = false
 enable_manual_linking = false
 
 # passkey(WebAuthn)をログインの追加手段として提供するための設定。
-# 有効化手順（ローカル/E2E）:
-#   1. 以下のコメントを解除する（passkey対応のsupabase CLIが必要。未対応版で有効化するとAuthコンテナが起動しない）
-#   2. rp_id はアプリを配信する origin のドメインに一致させる（登録可能サフィックス）。
-#      rp_origins にはブラウザがアクセスする origin を列挙する（未列挙だとceremonyが拒否される）。
-#      例: E2E は http://localhost:5173 で配信するため rp_id="localhost" / rp_origins=["http://localhost:5173"]
-# 本番はSupabaseダッシュボードでpasskeyを有効化し、rp_id/rp_originsを本番ドメインに合わせる。
-# [auth.passkey]
-# enabled = true
-# [auth.webauthn]
-# rp_id = "localhost"
-# rp_origins = ["http://localhost:5173"]
-# rp_display_name = "TrendDiary"
+# passkey config は supabase CLI v2.103.0(#5401)でローカルAuthコンテナへ正しく伝播するようになった。
+# CIは v2.105.0 を pin しているため有効化できる。
+# rp_id はアプリを配信する origin のドメイン（登録可能サフィックス）に一致させ、rp_origins には
+# ブラウザがアクセスする origin を列挙する（未列挙だとブラウザがceremonyを拒否する）。
+# ここは E2E/ローカルの http://localhost:5173 前提。本番はダッシュボードで本番ドメインに合わせる。
+[auth.passkey]
+enabled = true
+[auth.webauthn]
+rp_id = "localhost"
+rp_origins = ["http://localhost:5173"]
+rp_display_name = "TrendDiary"
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
 minimum_password_length = 6
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values

@@ -1,16 +1,61 @@
-import { test } from '../fixtures'
+import { faker } from '@faker-js/faker'
+import { expect, test } from '../fixtures'
+import * as userHelper from '../helper/user'
+import { AuthPage } from '../pom/auth-page'
+import { AUTH_FLOW_TIMEOUT } from '../pom/constants'
+import { PasskeyPage } from '../pom/passkey-page'
 
-// パスキー(WebAuthn)登録→ログインのハッピーパス。E2Eは実際のsupabase CLIに対して実行する。
-// NOTE: supabase CLIはpasskey対応済み(https://supabase.com/docs/guides/local-development/cli/config の auth.passkey)。
-// 本E2Eシナリオが未実装のためfixme。実装時は config.toml の [auth.passkey]/[auth.webauthn] を有効化＋PASSKEY_ENABLED=true とし、
-// PlaywrightのCDP仮想オーセンティケータ(`WebAuthn.addVirtualAuthenticator`)で ceremony を通す。
-// 手順の骨子:
-//   1. メール+パスワードでログイン
-//   2. パスキーを登録(仮想オーセンティケータで生成)
-//   3. ログアウト
-//   4. 「パスキーでログイン」から認証し、/trendsへ遷移することを確認
+// パスキー(WebAuthn)登録→ログインのハッピーパス。実際の supabase CLI に対して実行する。
+// supabase CLI は passkey 対応済み（config.toml の [auth.passkey]/[auth.webauthn] を有効化）。
+// ceremony は Playwright の CDP 仮想オーセンティケータ(WebAuthn.addVirtualAuthenticator)で通す。
+const SCENARIO_TIMEOUT = AUTH_FLOW_TIMEOUT * 4
+
 test.describe('パスキー登録・ログインシナリオ', () => {
-  test.fixme('パスキーを登録し、パスキーでログインできる', async () => {
-    // supabase CLIのpasskey対応後に実装する
+  const password = 'Aa1@aaaa'
+  const suffix = faker.string.alphanumeric(10).toLowerCase()
+  const email = faker.internet.email({
+    firstName: 'e2e',
+    lastName: `passkey${suffix}`,
+    provider: 'example.com',
+    allowSpecialCharacters: false,
+  })
+
+  test.afterAll(async ({ rdb }) => {
+    await userHelper.cleanUpByEmailPattern(rdb, email)
+  })
+
+  test('パスキーを登録し、パスキーでログインできる', async ({ page }) => {
+    test.setTimeout(SCENARIO_TIMEOUT)
+
+    // ceremony 前に仮想オーセンティケータを有効化する
+    await PasskeyPage.enableVirtualAuthenticator(page)
+
+    const authPage = new AuthPage(page)
+    const passkeyPage = new PasskeyPage(page)
+
+    // 1. メール+パスワードで新規登録し、ログインする
+    await expect(async () => {
+      await authPage.gotoSignup()
+
+      const signupResult = await authPage.submitSignup(email, password)
+      if (signupResult === 'stayed') {
+        await authPage.expectSignupConflictError()
+        await authPage.gotoLogin()
+      }
+
+      await authPage.waitForLoginPage()
+      await authPage.submitLogin(email, password)
+      await authPage.waitForTrendsPage()
+    }).toPass({ timeout: SCENARIO_TIMEOUT })
+
+    // 2. 設定ページのトグルでパスキーを登録する
+    await passkeyPage.registerPasskeyFromSettings()
+
+    // 3. ログアウトする
+    await passkeyPage.logout()
+
+    // 4. パスキーでログインし、/trends へ遷移する
+    await passkeyPage.loginWithPasskey()
+    await authPage.waitForTrendsPage()
   })
 })

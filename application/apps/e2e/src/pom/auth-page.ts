@@ -15,7 +15,8 @@ export class AuthPage {
     this.emailInput = page.getByLabel('メールアドレス')
     this.passwordInput = page.getByLabel('パスワード')
     this.signupButton = page.getByRole('button', { name: 'アカウント作成' })
-    this.loginButton = page.getByRole('button', { name: 'ログイン' })
+    // 「パスキーでログイン」と部分一致しないよう完全一致で絞る
+    this.loginButton = page.getByRole('button', { name: 'ログイン', exact: true })
     this.loginPageText = page.getByText('アカウントをお持ちでないですか？')
     this.signupConflictErrorText = page.getByText('このメールアドレスは既に使用されています')
     this.trendsPageText = page.getByText('絞り込み')

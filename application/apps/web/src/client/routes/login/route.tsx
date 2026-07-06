@@ -1,6 +1,5 @@
 import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
 import { resolveTurnstileSiteKey, useLogin } from '@/client/features/authenticate'
-import { resolvePasskeyEnabled } from '@/client/features/passkey'
 import LoginPage from './page'
 
 export const meta: MetaFunction = () => [
@@ -28,12 +27,11 @@ export const meta: MetaFunction = () => [
 export function loader({ context }: LoaderFunctionArgs) {
   return {
     turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null,
-    passkeyEnabled: resolvePasskeyEnabled(context),
   }
 }
 
 export default function Login() {
-  const { turnstileSiteKey, passkeyEnabled } = useLoaderData<typeof loader>()
+  const { turnstileSiteKey } = useLoaderData<typeof loader>()
   const { isSubmitting, errors, formError, submit } = useLogin(turnstileSiteKey ?? undefined)
 
   return (
@@ -43,7 +41,6 @@ export default function Login() {
       errors={errors}
       formError={formError}
       turnstileSiteKey={turnstileSiteKey ?? undefined}
-      passkeyEnabled={passkeyEnabled}
     />
   )
 }

@@ -12,21 +12,14 @@ type SettingsPageProps = ComponentProps<typeof SettingsPage>
 
 const buildProps = (overrides: Partial<SettingsPageProps> = {}): SettingsPageProps => ({
   isLoggedIn: true,
-  passkeyEnabled: true,
   ...overrides,
 })
 
 describe('SettingsPage', () => {
-  it('ログイン中でpasskey有効ならパスキートグルを表示する', () => {
+  it('ログイン中はパスキートグルを表示する', () => {
     render(createElement(SettingsPage, buildProps()))
 
     expect(screen.getByRole('switch', { name: 'パスキーを有効にする' })).toBeInTheDocument()
-  })
-
-  it('passkey無効ならパスキーセクションを表示しない', () => {
-    render(createElement(SettingsPage, buildProps({ passkeyEnabled: false })))
-
-    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
   })
 
   it('未ログイン時はログイン要求のみ表示しパスキーセクションを表示しない', () => {

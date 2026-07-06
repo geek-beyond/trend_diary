@@ -5,10 +5,7 @@ import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
 import { AnchorLink } from '../../components/ui/navigation/link'
 
-interface LoginPageProps extends AuthenticateFormBaseProps {
-  // passkey無効の環境では選択肢を出さないため任意項目とする
-  passkeyEnabled?: boolean
-}
+type LoginPageProps = AuthenticateFormBaseProps
 
 export default function LoginPage({
   onSubmit,
@@ -16,7 +13,6 @@ export default function LoginPage({
   errors,
   formError,
   turnstileSiteKey,
-  passkeyEnabled,
 }: LoginPageProps) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
@@ -36,16 +32,14 @@ export default function LoginPage({
               formError={formError}
               turnstileSiteKey={turnstileSiteKey}
             />
-            {passkeyEnabled && (
-              <div className='mt-6 space-y-4'>
-                <div className='flex items-center gap-3'>
-                  <span className='bg-border h-px flex-1' />
-                  <span className='text-muted-foreground text-xs'>または</span>
-                  <span className='bg-border h-px flex-1' />
-                </div>
-                <PasskeyLoginButton />
+            <div className='mt-6 space-y-4'>
+              <div className='flex items-center gap-3'>
+                <span className='bg-border h-px flex-1' />
+                <span className='text-muted-foreground text-xs'>または</span>
+                <span className='bg-border h-px flex-1' />
               </div>
-            )}
+              <PasskeyLoginButton />
+            </div>
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>
             <div className='text-muted-foreground text-center text-sm'>

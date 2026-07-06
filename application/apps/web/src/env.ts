@@ -23,9 +23,6 @@ export interface Env {
     TURNSTILE_SITE_KEY?: string
     // Cloudflare Turnstileのシークレットキー（秘匿）。未設定の環境ではサーバー側のCAPTCHA検証をスキップする
     TURNSTILE_SECRET_KEY?: string
-    // passkey(WebAuthn)機能の有効化フラグ。'true'のときのみ有効。
-    // Supabase側(本番/ローカルのsupabase CLI)がpasskeyに対応した環境で有効化する。既定は無効(未設定)
-    PASSKEY_ENABLED?: string
     // ローカル開発などバインディング未設定の環境ではフェイルオープンするためoptional
     AUTH_RATE_LIMITER?: RateLimiter
   }

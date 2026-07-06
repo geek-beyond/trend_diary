@@ -9,8 +9,6 @@ assets = { directory = "./build/client" }
 LOG_LEVEL = "info"
 # Cloudflare TurnstileのサイトキーはHTMLに埋め込まれる公開値のため[vars]で管理する
 TURNSTILE_SITE_KEY = "0x4AAAAAADiD2o4io1Au9fnq"
-# passkey(WebAuthn)の有効化フラグ。Supabase側でpasskeyを有効化したら "true" にする
-PASSKEY_ENABLED = "false"
 
 [observability]
 enabled = true

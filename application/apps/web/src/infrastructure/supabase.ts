@@ -16,7 +16,7 @@ export function createSupabaseAuthClient(c: Context) {
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     // passkey(auth.passkey.*)はexperimentalなopt-inが必要。namespaceを有効化するだけで、
-    // 実際に叩くのはPASSKEY_ENABLEDでゲートしたルートのみのため、常時有効にしても副作用はない
+    // 実際に叩くのはpasskeyルートのみのため、常時有効にしても副作用はない
     auth: {
       experimental: {
         passkey: true,

@@ -2,7 +2,6 @@ import { authInputSchema, passkeyVerifyInputSchema } from '@trend-diary/domain/u
 import { Hono } from 'hono'
 import type { Env } from '@/env'
 import { authenticator } from '@/middleware/authenticator'
-import passkeyGate from '@/middleware/passkey-gate'
 import rateLimiter from '@/middleware/rate-limiter'
 import zodValidator from '@/middleware/zod-validator'
 import login from './handler/login'
@@ -22,25 +21,23 @@ const app = new Hono<Env>()
   .delete('/logout', logout)
   .get('/me', authenticator, me)
   // passkey認証(未認証で可)。ブラウザのWebAuthn ceremonyを挟むためstart/verifyの2段構え
-  .post('/passkey/login/start', passkeyGate, rateLimiter, passkeyLoginStart)
+  .post('/passkey/login/start', rateLimiter, passkeyLoginStart)
   .post(
     '/passkey/login/verify',
-    passkeyGate,
     rateLimiter,
     zodValidator('json', passkeyVerifyInputSchema),
     passkeyLoginVerify,
   )
   // passkey登録(要認証)。ログイン中ユーザーが自分のpasskeyを登録する
-  .post('/passkey/register/start', passkeyGate, authenticator, passkeyRegisterStart)
+  .post('/passkey/register/start', authenticator, passkeyRegisterStart)
   .post(
     '/passkey/register/verify',
-    passkeyGate,
     authenticator,
     zodValidator('json', passkeyVerifyInputSchema),
     passkeyRegisterVerify,
   )
   // passkey管理(要認証)。設定画面のトグルが登録状態の取得と無効化に使う
-  .get('/passkey', passkeyGate, authenticator, passkeyStatus)
-  .delete('/passkey', passkeyGate, authenticator, passkeyDisable)
+  .get('/passkey', authenticator, passkeyStatus)
+  .delete('/passkey', authenticator, passkeyDisable)
 
 export default app

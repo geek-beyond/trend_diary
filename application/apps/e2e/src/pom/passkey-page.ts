@@ -12,9 +12,8 @@ export class PasskeyPage {
     this.logoutButton = page.getByRole('button', { name: 'ログアウト' })
   }
 
-  // CDPの仮想オーセンティケータを登録する。resident keyでdiscoverableにし、
-  // ユーザー操作なしで ceremony を通す（isUserVerified + automaticPresenceSimulation）。
-  // ログイン(usernameless)でも同じ資格情報を引けるよう ceremony 前に有効化しておく。
+  // resident key で discoverable にし、usernameless なログインでも同じ資格情報を引けるようにする。
+  // isUserVerified + automaticPresenceSimulation でユーザー操作なしに ceremony を通す。
   static async enableVirtualAuthenticator(page: Page): Promise<void> {
     const client = await page.context().newCDPSession(page)
     await client.send('WebAuthn.enable')
@@ -36,7 +35,6 @@ export class PasskeyPage {
     await expect(this.toggle).not.toBeChecked()
 
     await this.toggle.click()
-    // 登録成功後は状態を取り直してトグルがONになる
     await expect(this.toggle).toBeChecked({ timeout: AUTH_FLOW_TIMEOUT })
   }
 

@@ -5,9 +5,8 @@ import { AuthPage } from '../pom/auth-page'
 import { AUTH_FLOW_TIMEOUT } from '../pom/constants'
 import { PasskeyPage } from '../pom/passkey-page'
 
-// パスキー(WebAuthn)登録→ログインのハッピーパス。実際の supabase CLI に対して実行する。
-// supabase CLI は passkey 対応済み（config.toml の [auth.passkey]/[auth.webauthn] を有効化）。
-// ceremony は Playwright の CDP 仮想オーセンティケータ(WebAuthn.addVirtualAuthenticator)で通す。
+// ブラウザの WebAuthn ceremony は実オーセンティケータを介すため、CDP 仮想オーセンティケータで代替する。
+// passkey は supabase CLI 側で有効化が要るため config.toml の [auth.passkey]/[auth.webauthn] を有効化している。
 const SCENARIO_TIMEOUT = AUTH_FLOW_TIMEOUT * 4
 
 test.describe('パスキー登録・ログインシナリオ', () => {
@@ -27,13 +26,12 @@ test.describe('パスキー登録・ログインシナリオ', () => {
   test('パスキーを登録し、パスキーでログインできる', async ({ page }) => {
     test.setTimeout(SCENARIO_TIMEOUT)
 
-    // ceremony 前に仮想オーセンティケータを有効化する
+    // ceremony より前に有効化しないと資格情報を生成できない
     await PasskeyPage.enableVirtualAuthenticator(page)
 
     const authPage = new AuthPage(page)
     const passkeyPage = new PasskeyPage(page)
 
-    // 1. メール+パスワードで新規登録し、ログインする
     await expect(async () => {
       await authPage.gotoSignup()
 
@@ -48,13 +46,9 @@ test.describe('パスキー登録・ログインシナリオ', () => {
       await authPage.waitForTrendsPage()
     }).toPass({ timeout: SCENARIO_TIMEOUT })
 
-    // 2. 設定ページのトグルでパスキーを登録する
     await passkeyPage.registerPasskeyFromSettings()
-
-    // 3. ログアウトする
     await passkeyPage.logout()
 
-    // 4. パスキーでログインし、/trends へ遷移する
     await passkeyPage.loginWithPasskey()
     await authPage.waitForTrendsPage()
   })

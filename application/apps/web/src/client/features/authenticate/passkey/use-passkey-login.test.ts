@@ -1,8 +1,8 @@
 import { act, renderHook } from '@testing-library/react'
 import type { MockedFunction } from 'vitest'
+import { SESSION_SWR_KEY } from '@/client/features/authenticate/hooks/use-session'
 import getApiClientForClient from '@/infrastructure/api'
 import usePasskeyLogin from './use-passkey-login'
-import { SESSION_SWR_KEY } from './use-session'
 
 const navigateMock = vi.fn()
 const mutateMock = vi.fn()

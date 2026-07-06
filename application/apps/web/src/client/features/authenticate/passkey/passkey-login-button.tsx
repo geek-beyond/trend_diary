@@ -1,6 +1,6 @@
 import { Fingerprint } from 'lucide-react'
 import { Button } from '@/client/components/shadcn/button'
-import usePasskeyLogin from '@/client/features/authenticate/hooks/use-passkey-login'
+import usePasskeyLogin from '@/client/features/authenticate/passkey/use-passkey-login'
 
 export default function PasskeyLoginButton() {
   const { isSubmitting, formError, login } = usePasskeyLogin()

@@ -8,13 +8,13 @@ const disableMock = vi.fn()
 const mutateMock = vi.fn()
 const statusState = { hasPasskey: false, isLoading: false }
 
-vi.mock('@/client/features/authenticate/hooks/use-passkey-status', () => ({
+vi.mock('@/client/features/authenticate/passkey/use-passkey-status', () => ({
   default: () => ({ ...statusState, mutate: mutateMock }),
 }))
-vi.mock('@/client/features/authenticate/hooks/use-passkey-register', () => ({
+vi.mock('@/client/features/authenticate/passkey/use-passkey-register', () => ({
   default: () => ({ isSubmitting: false, register: registerMock }),
 }))
-vi.mock('@/client/features/authenticate/hooks/use-passkey-disable', () => ({
+vi.mock('@/client/features/authenticate/passkey/use-passkey-disable', () => ({
   default: () => ({ isSubmitting: false, disable: disableMock }),
 }))
 

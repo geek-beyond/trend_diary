@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useSWRConfig } from 'swr'
 import { SESSION_SWR_KEY } from '@/client/features/authenticate/hooks/use-session'
-import { PASSKEY_MESSAGES } from '@/client/features/authenticate/model/passkey'
+import { PASSKEY_MESSAGES } from '@/client/features/authenticate/passkey/model'
 import getApiClientForClient from '@/client/infrastructure/api'
 
 export default function usePasskeyLogin() {

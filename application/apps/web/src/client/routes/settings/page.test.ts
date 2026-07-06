@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import SettingsPage from './page'
 
 // トグル本体はpasskey-toggle.test.tsで検証するため、ここではセクションの出し分けだけを見る
-vi.mock('@/client/features/authenticate/components/passkey-toggle', () => ({
+vi.mock('@/client/features/authenticate/passkey/passkey-toggle', () => ({
   default: () => createElement('div', { role: 'switch', 'aria-label': 'パスキーを有効にする' }),
 }))
 

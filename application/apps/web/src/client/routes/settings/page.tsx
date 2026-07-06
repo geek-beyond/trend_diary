@@ -1,6 +1,5 @@
 import LoginRequired from '@/client/components/ui/feedback/login-required'
-// barrel経由だと authenticate feature 全体をカバレッジ計測に巻き込むため、コンポーネントを直接importする
-import PasskeyToggle from '@/client/features/authenticate/components/passkey-toggle'
+import { PasskeyToggle } from '@/client/features/authenticate/passkey'
 
 interface Props {
   isLoggedIn: boolean

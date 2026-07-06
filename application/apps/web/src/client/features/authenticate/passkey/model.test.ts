@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolvePasskeyEnabled } from './passkey'
+import { resolvePasskeyEnabled } from './model'
 
 describe('resolvePasskeyEnabled', () => {
   it.each([

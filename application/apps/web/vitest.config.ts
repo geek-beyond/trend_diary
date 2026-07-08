@@ -90,16 +90,14 @@ export default defineConfig(() => {
           'src/server.ts',
           'src/worker.ts',
           'src/infrastructure/**',
-          // 専用テストを持つ rate-limiter.ts のみ計測対象とし、未テストの他ミドルウェアは除外する
+          // 専用テストを持つミドルウェアのみ計測対象とし、未テストの他ミドルウェアは除外する
           'src/middleware/context.ts',
           'src/middleware/zod-validator.ts',
           'src/middleware/request-logger.ts',
           'src/middleware/error-handler.ts',
-          'src/middleware/authenticator/**',
           'src/test/**',
           'src/client/components/shadcn/**',
           'src/client/routes.ts',
-          'src/server/handler-factory.ts',
           'src/client/components/ui/legal',
           'src/client/components/ui/link.tsx',
           'src/client/components/customized/spinner',

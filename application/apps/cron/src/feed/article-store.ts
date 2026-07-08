@@ -1,16 +1,10 @@
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
+import { ARTICLE_MAX_LENGTH } from '@trend-diary/domain/article/schema/article-schema'
 import { err, ok, type Result } from 'neverthrow'
 import type { FetchEnv } from '../env'
 import type { NormalizedItem } from './config'
-
-const MAX_LENGTH = {
-  media: 10,
-  title: 100,
-  author: 30,
-  description: 1024,
-}
 
 // D1のバインドパラメータ上限は1文あたり100個。安全マージンとして上限の80%までを使う
 const MAX_BIND_PARAMETERS = 100
@@ -35,11 +29,11 @@ export async function storeArticles(
   if (items.length === 0) return ok(0)
 
   const normalized = items.map((item) => ({
-    media: truncateByCodePoint(media, MAX_LENGTH.media),
-    title: truncateByCodePoint(item.title, MAX_LENGTH.title),
-    author: truncateByCodePoint(item.author, MAX_LENGTH.author),
-    description: truncateByCodePoint(item.description, MAX_LENGTH.description),
-    url: item.url,
+    media: truncateByCodePoint(media, ARTICLE_MAX_LENGTH.media),
+    title: truncateByCodePoint(item.title, ARTICLE_MAX_LENGTH.title),
+    author: truncateByCodePoint(item.author, ARTICLE_MAX_LENGTH.author),
+    description: truncateByCodePoint(item.description, ARTICLE_MAX_LENGTH.description),
+    url: truncateByCodePoint(item.url, ARTICLE_MAX_LENGTH.url),
   }))
 
   // 同一フィード内のURL重複を除去する（複数行INSERT内の自己重複を避けるため）

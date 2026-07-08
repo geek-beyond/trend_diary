@@ -44,3 +44,26 @@ export interface AuthenticationSession {
   expiresAt?: number
   user: AuthenticationUser
 }
+
+export interface PasskeyChallenge {
+  challengeId: string
+  // optionsはブラウザのnavigator.credentialsへ渡す値で、型の実体はブラウザWebAuthn API側にあるため解釈しない
+  options: unknown
+}
+
+// 真正性はSupabaseが検証するため、ここは形だけ受け取り中身は素通しする
+export const passkeyVerifyInputSchema = z.object({
+  challengeId: z.string().min(1),
+  credential: z.record(z.string(), z.unknown()),
+})
+
+export type PasskeyVerifyInput = z.infer<typeof passkeyVerifyInputSchema>
+
+export interface PasskeyRegistrationResult {
+  id: string
+}
+
+// 無効化(全削除)で個々のpasskeyを指定するためidだけを扱う
+export interface RegisteredPasskey {
+  id: string
+}

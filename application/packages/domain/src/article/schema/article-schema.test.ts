@@ -153,7 +153,7 @@ describe('記事スキーマ', () => {
       expect(() => {
         articleSchema.parse({
           ...validArticle,
-          description: 'a'.repeat(255),
+          description: 'a'.repeat(1024),
         })
       }).not.toThrow()
     })
@@ -162,7 +162,7 @@ describe('記事スキーマ', () => {
       expect(() => {
         articleSchema.parse({
           ...validArticle,
-          description: 'a'.repeat(256),
+          description: 'a'.repeat(1025),
         })
       }).toThrow()
     })

@@ -372,8 +372,20 @@ describe('fetchHatenaArticles', () => {
       const saved = await findByUrl('https://example.com/long')
       expect([...saved.title].length).toBe(100)
       expect([...saved.author].length).toBe(30)
-      // description は domain schema(255) と不整合だが現状は 1024 まで保存される（別タスクで対応）
       expect([...saved.description].length).toBe(1024)
+    })
+
+    it('最大長を超える URL を切り詰めて保存する', async () => {
+      const baseUrl = 'https://example.com/'
+      const longUrl = baseUrl + 'a'.repeat(2100 - baseUrl.length)
+      stubHatena([{ title: '記事', content: '本文', url: longUrl }])
+
+      const result = await fetchHatenaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      const truncatedUrl = [...longUrl].slice(0, 2048).join('')
+      const saved = await findByUrl(truncatedUrl)
+      expect([...saved.url].length).toBe(2048)
     })
 
     it('絵文字をコードポイント単位で切り詰めサロゲートペアを壊さない', async () => {

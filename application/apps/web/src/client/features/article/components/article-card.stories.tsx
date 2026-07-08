@@ -100,7 +100,7 @@ export const KeyboardInteraction: Story = {
     article: qiitaArticle,
   },
   play: async ({ canvas, args, step }) => {
-    const card = canvas.getByRole('button', { name: `${qiitaArticle.title}を開く` })
+    const card = canvas.getByRole('button', { name: `記事「${qiitaArticle.title}」を開く` })
 
     await step('Enterキーでカードが開くことを確認', async () => {
       card.focus()

@@ -43,7 +43,7 @@ export default function ArticleCard({
       <button
         type='button'
         onClick={() => onCardClick(article)}
-        aria-label={`${article.title}を開く`}
+        aria-label={`記事「${article.title}」を開く`}
         className='absolute inset-0 z-0 cursor-pointer rounded-3xl outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]'
       />
 

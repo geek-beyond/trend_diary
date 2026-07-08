@@ -5,7 +5,8 @@ export class TrendsPage {
   private readonly articleCards: Locator
 
   constructor(private readonly page: Page) {
-    this.articleCards = page.getByTestId('article-card')
+    // 本番 UI に現れないテスト専用属性ではなく、記事カードを開くトリガのアクセシブルネームで特定する
+    this.articleCards = page.getByRole('button', { name: /^記事「.+」を開く$/ })
   }
 
   async goto(path = '/trends'): Promise<void> {
@@ -31,7 +32,7 @@ export class TrendsPage {
   }
 
   async openArticleByTitle(title: string): Promise<void> {
-    const articleCard = this.articleCards.filter({ hasText: title }).first()
+    const articleCard = this.page.getByRole('button', { name: `記事「${title}」を開く` }).first()
     await expect(articleCard).toBeVisible({ timeout: TIMEOUT })
     await articleCard.click()
   }

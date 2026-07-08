@@ -67,41 +67,21 @@ export class AuthPage {
   private async fillCredentials(email: string, password: string): Promise<void> {
     await this.waitForFormReady()
 
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      await this.emailInput.fill(email)
-      await this.passwordInput.fill(password)
+    await this.emailInput.fill(email)
+    await this.passwordInput.fill(password)
 
-      const currentEmail = await this.emailInput.inputValue()
-      const currentPassword = await this.passwordInput.inputValue()
-
-      if (currentEmail === email && currentPassword === password) {
-        return
-      }
-
-      await this.page.waitForTimeout(100)
-    }
-
-    throw new Error('failed to fill auth credentials')
+    // ハイドレーション途中の入力は破棄され得るため、値が確定するまで待つ（toHaveValue は自動リトライ）
+    await expect(this.emailInput).toHaveValue(email)
+    await expect(this.passwordInput).toHaveValue(password)
   }
 
   private async waitForFormReady(): Promise<void> {
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      await expect(this.emailInput).toBeVisible()
-      await expect(this.passwordInput).toBeVisible()
-
-      const probeEmail = `ready-check-${attempt}@example.com`
-      await this.emailInput.fill(probeEmail)
-      await this.page.waitForTimeout(200)
-
-      if ((await this.emailInput.inputValue()) === probeEmail) {
-        await this.emailInput.fill('')
-        await this.passwordInput.fill('')
-        return
-      }
-
-      await this.page.waitForTimeout(200)
-    }
-
-    throw new Error('auth form is not ready')
+    // ハイドレーション完了前はフォーム送信ハンドラが未接続で送信が握り潰されるため、
+    // 完了シグナル（root で付与する data-hydrated）と入力要素の操作可能状態を決定的に待つ
+    await expect(this.page.locator('html')).toHaveAttribute('data-hydrated', 'true', {
+      timeout: AUTH_FLOW_TIMEOUT,
+    })
+    await expect(this.emailInput).toBeEditable()
+    await expect(this.passwordInput).toBeEditable()
   }
 }

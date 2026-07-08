@@ -36,6 +36,12 @@ export const meta: MetaFunction = () => [
 ]
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  // E2E がハイドレーション完了を決定的に待てるようマーカーを付与する。
+  // 効果はマウント（=ハイドレーション）後にのみ走るため、SSR 出力との不整合を生まない。
+  React.useEffect(() => {
+    document.documentElement.dataset.hydrated = 'true'
+  }, [])
+
   return (
     <html lang='ja'>
       <head>

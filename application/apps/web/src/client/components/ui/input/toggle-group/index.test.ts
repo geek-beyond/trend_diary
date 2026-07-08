@@ -10,7 +10,7 @@ const options: ToggleOption<string>[] = [
 
 describe('ToggleGroup', () => {
   describe('正常系', () => {
-    it('選択中の値のボタンにのみ選択スタイルが当たる', () => {
+    it('選択中の値のボタンにのみ選択スタイルとaria-pressedが当たる', () => {
       render(
         createElement(ToggleGroup<string>, {
           options,
@@ -20,8 +20,12 @@ describe('ToggleGroup', () => {
         }),
       )
 
-      expect(screen.getByRole('button', { name: '未読' })).toHaveClass('bg-blue-50')
-      expect(screen.getByRole('button', { name: 'すべて' })).not.toHaveClass('bg-blue-50')
+      const selected = screen.getByRole('button', { name: '未読' })
+      const unselected = screen.getByRole('button', { name: 'すべて' })
+      expect(selected).toHaveClass('bg-blue-50')
+      expect(selected).toHaveAttribute('aria-pressed', 'true')
+      expect(unselected).not.toHaveClass('bg-blue-50')
+      expect(unselected).toHaveAttribute('aria-pressed', 'false')
     })
 
     it('ボタンを押すと該当optionのvalueでonSelectが呼ばれる', () => {

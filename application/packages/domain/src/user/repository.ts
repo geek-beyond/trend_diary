@@ -5,6 +5,10 @@ import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,
   AuthenticationUser,
+  PasskeyChallenge,
+  PasskeyRegistrationResult,
+  PasskeyVerifyInput,
+  RegisteredPasskey,
   VerifiedSession,
 } from './schema/auth-schema'
 
@@ -82,4 +86,38 @@ export interface AuthRepository {
    * アクセストークン(JWT)をローカル検証し、検証済みセッションを取得する
    */
   verifySession(): Promise<Result<VerifiedSession, ClientError | ServerError>>
+
+  /**
+   * passkey登録を開始し、WebAuthnの資格情報生成オプションを取得する（要認証セッション）
+   */
+  startPasskeyRegistration(): Promise<Result<PasskeyChallenge, ServerError>>
+
+  /**
+   * ブラウザで生成した資格情報を検証し、passkeyを登録する（要認証セッション）
+   */
+  verifyPasskeyRegistration(
+    input: PasskeyVerifyInput,
+  ): Promise<Result<PasskeyRegistrationResult, ClientError | ServerError>>
+
+  /**
+   * passkey認証を開始し、WebAuthnの資格情報リクエストオプションを取得する（未認証で可）
+   */
+  startPasskeyAuthentication(): Promise<Result<PasskeyChallenge, ClientError | ServerError>>
+
+  /**
+   * ブラウザで生成した資格情報を検証し、セッションを確立する（未認証で可）
+   */
+  verifyPasskeyAuthentication(
+    input: PasskeyVerifyInput,
+  ): Promise<Result<AuthLoginResult, ClientError | ServerError>>
+
+  /**
+   * ログイン中ユーザーの登録済みpasskey一覧を取得する（要認証セッション）
+   */
+  listPasskeys(): Promise<Result<RegisteredPasskey[], ServerError>>
+
+  /**
+   * ログイン中ユーザーのpasskeyを1件削除する（要認証セッション）
+   */
+  deletePasskey(passkeyId: string): Promise<Result<void, ServerError>>
 }

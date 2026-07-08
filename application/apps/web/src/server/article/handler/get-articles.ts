@@ -12,8 +12,7 @@ import {
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
-import type { ArticleResponse } from './article-response'
-import { toArticleResponse } from './article-response'
+import { type ArticleResponse, toArticleResponse } from './article-response'
 
 const readStatusEnum = z.enum(['0', '1'])
 

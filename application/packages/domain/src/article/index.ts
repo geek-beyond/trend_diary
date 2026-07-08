@@ -11,4 +11,3 @@ export function createArticleUseCase(db: RdbClient): UseCase {
 
 export type { Article } from './schema/article-schema'
 export type { QueryParams } from './schema/query-schema'
-export { articleQuerySchema } from './schema/query-schema'

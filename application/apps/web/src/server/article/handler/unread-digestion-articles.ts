@@ -2,14 +2,11 @@ import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
-import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
-
-type ArticleResponse = Omit<ArticleOutput, 'articleId'> & {
-  articleId: string
-}
+import type { ArticleResponse } from './article-response'
+import { toArticleResponse } from './article-response'
 
 interface UnreadDigestionArticlesResponse {
   data: ArticleResponse[]
@@ -48,16 +45,4 @@ export default async function unreadDigestionArticles(
     total: response.total,
   })
   return c.json(response, 200)
-}
-
-function toArticleResponse(article: ArticleOutput): ArticleResponse {
-  return {
-    articleId: article.articleId.toString(),
-    media: article.media,
-    title: article.title,
-    author: article.author,
-    description: article.description,
-    url: article.url,
-    createdAt: article.createdAt,
-  }
 }

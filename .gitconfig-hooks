@@ -1,0 +1,6 @@
+# git 2.54 の config-based hooks 定義。
+# .git/hooks/ へのスクリプト配置と違い、追跡ファイルとして共有でき、pull だけで定義変更が全員に反映される。
+# 有効化は scripts/git-hooks/install.sh（include.path で本ファイルを取り込む）を実行する。
+[hook "pre-push-ci"]
+	event = pre-push
+	command = ./scripts/git-hooks/pre-push.sh

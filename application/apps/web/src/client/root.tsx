@@ -79,6 +79,22 @@ export function ErrorBoundary() {
       </div>
     )
   }
+  // 本番はスタックトレース等の内部情報を画面に晒さず、詳細はログにのみ残す
+  if (import.meta.env.PROD) {
+    // useRouteError() は Error 以外（文字列やオブジェクト等）も返し得るため、
+    // 監視ツールで取りこぼさないよう存在すれば一律ログに残す
+    if (error != null) {
+      // oxlint-disable-next-line no-console -- 本番のクライアント側エラーをログに残すため
+      console.error(error)
+    }
+    return (
+      <div>
+        <h1>Error</h1>
+        <p>予期しないエラーが発生しました。時間をおいて再度お試しください。</p>
+      </div>
+    )
+  }
+
   if (error instanceof Error) {
     return (
       <div>

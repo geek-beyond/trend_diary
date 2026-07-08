@@ -17,11 +17,11 @@ export default function PasskeyLoginButton() {
       >
         <Fingerprint className='mr-2 size-4' />
         {isSubmitting ? 'パスキーで認証中...' : 'パスキーでログイン'}
+        {/* aria-hidden で表示のみ担い、ボタンのアクセシブル名は「パスキーでログイン」に保つ */}
+        <Badge variant='secondary' aria-hidden className='ml-2'>
+          β版
+        </Badge>
       </Button>
-      <p className='text-muted-foreground flex items-center justify-center gap-1.5 text-xs'>
-        <Badge variant='secondary'>β版</Badge>
-        パスキーは試験提供中の機能です
-      </p>
       {formError && <p className='text-destructive text-sm'>{formError}</p>}
     </div>
   )

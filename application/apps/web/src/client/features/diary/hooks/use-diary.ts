@@ -2,6 +2,7 @@ import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagina
 import { DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 import useSWR from 'swr'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi from './use-diary-api'
@@ -31,8 +32,16 @@ export default function useDiary(enabled: boolean) {
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
   const swrKey = enabled && todayJst ? (['api/articles/diary', todayJst, page] as const) : null
-  const { data, isLoading } = useSWR(swrKey, ([, targetDate, targetPage]) =>
-    fetchDiary(targetDate, targetPage),
+  const { data, isLoading } = useSWR(
+    swrKey,
+    ([, targetDate, targetPage]: readonly ['api/articles/diary', string, number]) =>
+      fetchDiary(targetDate, targetPage),
+    {
+      // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する
+      onError: () => {
+        toast.error('エラーが発生しました。時間をおいて再度お試しください。', { id: 'diary-error' })
+      },
+    },
   )
 
   const reads: DiaryReadItem[] =

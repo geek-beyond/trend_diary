@@ -28,7 +28,7 @@ function buildContext(): { c: Context<Env>; logger: FakeLogger } {
   return { c, logger }
 }
 
-// Result を安全に取り出す（想定と異なる分岐なら失敗させる）
+// 想定と異なる分岐に落ちたら即座に失敗させ、取り違えを検知する
 function unwrapOk<T, E>(result: Result<T, E>): T {
   if (result.isErr()) throw result.error
   return result.value
@@ -39,7 +39,6 @@ function unwrapErr<T, E>(result: Result<T, E>): E {
   return result.error
 }
 
-// getCurrentActiveUser の戻り値を差し替えて分岐を制御する
 function mockGetCurrentActiveUser(impl: () => Promise<unknown>) {
   vi.mocked(createAuthUseCase).mockReturnValue(
     // oxlint-disable-next-line typescript/consistent-type-assertions -- テストで必要な getCurrentActiveUser のみを差し替えるため
@@ -57,19 +56,25 @@ describe('validateSession', () => {
   })
 
   describe('正常系', () => {
-    it('アクティブユーザー取得に成功するとセッションユーザーを返すこと', async () => {
+    it('アクティブユーザーを認可に必要な3項目へ絞り込んで返すこと', async () => {
+      // getCurrentActiveUser は authenticationId 等の内部項目も返すが、SESSION_USER には漏らさない
       const currentUser = {
         activeUserId: 123n,
-        displayName: 'テスト太郎',
+        userId: 456n,
+        authenticationId: 'auth-abc',
         email: 'active@example.com',
+        displayName: 'テスト太郎',
       }
       mockGetCurrentActiveUser(() => Promise.resolve(ok(currentUser)))
 
       const { c } = buildContext()
       const result = await validateSession(c)
 
-      expect(result.isOk()).toBe(true)
-      expect(unwrapOk(result).sessionUser).toEqual(currentUser)
+      expect(unwrapOk(result).sessionUser).toEqual({
+        activeUserId: 123n,
+        displayName: 'テスト太郎',
+        email: 'active@example.com',
+      })
     })
   })
 
@@ -80,7 +85,6 @@ describe('validateSession', () => {
       const { c, logger } = buildContext()
       const result = await validateSession(c)
 
-      expect(result.isErr()).toBe(true)
       expect(unwrapErr(result).reason).toBe('no_session')
       // no_session は想定内のため警告・エラーログを出さない
       expect(logger.warn).not.toHaveBeenCalled()
@@ -100,7 +104,6 @@ describe('validateSession', () => {
         const { c, logger } = buildContext()
         const result = await validateSession(c)
 
-        expect(result.isErr()).toBe(true)
         expect(unwrapErr(result).reason).toBe('validation_failed')
         expect(logger.warn).toHaveBeenCalledWith('Session validation failed', { error })
         expect(logger.error).not.toHaveBeenCalled()
@@ -116,7 +119,6 @@ describe('validateSession', () => {
       const { c, logger } = buildContext()
       const result = await validateSession(c)
 
-      expect(result.isErr()).toBe(true)
       expect(unwrapErr(result).reason).toBe('validation_failed')
       expect(logger.error).toHaveBeenCalledWith('Unexpected error occurred', { error: unexpected })
     })
@@ -130,7 +132,6 @@ describe('validateSession', () => {
       const { c, logger } = buildContext()
       const result = await validateSession(c)
 
-      expect(result.isErr()).toBe(true)
       expect(unwrapErr(result).reason).toBe('validation_failed')
       expect(logger.warn).toHaveBeenCalledWith('Session validation setup failed', {
         error: setupError,

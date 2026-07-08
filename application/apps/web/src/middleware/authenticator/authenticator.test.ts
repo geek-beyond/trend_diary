@@ -24,7 +24,6 @@ function buildContext(): {
   return { c, store, next }
 }
 
-// reason に応じた AuthValidationError を作る
 function authError(reason: 'no_session' | 'validation_failed' | 'user_not_found') {
   return Object.assign(new Error(reason), { reason })
 }

@@ -51,7 +51,6 @@ function buildContext(options: BuildContextOptions = {}): {
   return { c, logger }
 }
 
-// execute の戻り値を差し替える最小構成の設定を作る
 function baseConfig<TOutput>(result: Result<TOutput, Error>) {
   return {
     createUseCase: () => ({}),

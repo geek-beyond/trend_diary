@@ -7,10 +7,10 @@ import {
   AUTH_ERROR_MESSAGES,
   type AuthenticateErrors,
   authenticateFormSchema,
-  resolveLoginErrorMessage,
   SESSION_SWR_KEY,
 } from '@/client/entities/auth'
 import getApiClientForClient from '@/client/infrastructure/api'
+import { resolveLoginErrorMessage } from './error-message'
 
 export default function useLogin(turnstileSiteKey?: string) {
   const navigate = useNavigate()

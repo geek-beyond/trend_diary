@@ -6,9 +6,9 @@ import {
   AUTH_ERROR_MESSAGES,
   type AuthenticateErrors,
   authenticateFormSchema,
-  resolveSignupErrorMessage,
 } from '@/client/entities/auth'
 import getApiClientForClient from '@/client/infrastructure/api'
+import { resolveSignupErrorMessage } from './error-message'
 
 export default function useSignup(turnstileSiteKey?: string) {
   const navigate = useNavigate()

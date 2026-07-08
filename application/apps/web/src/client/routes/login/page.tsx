@@ -1,4 +1,4 @@
-import { AuthenticateForm, type AuthenticateFormBaseProps } from '@/client/features/authenticate'
+import { AuthenticateForm, type AuthenticateFormBaseProps } from '@/client/entities/auth'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'

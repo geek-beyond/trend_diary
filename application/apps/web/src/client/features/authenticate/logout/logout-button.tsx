@@ -1,5 +1,5 @@
 import { Button } from '@/client/components/shadcn/button'
-import useLogout from '@/client/features/authenticate/hooks/use-logout'
+import useLogout from './use-logout'
 
 export default function LogoutButton() {
   const { handleLogout, isLoading } = useLogout()

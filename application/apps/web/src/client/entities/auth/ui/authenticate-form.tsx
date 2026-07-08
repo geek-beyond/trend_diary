@@ -2,8 +2,8 @@ import type { FormEvent } from 'react'
 import { Button } from '@/client/components/shadcn/button'
 import { Input } from '@/client/components/shadcn/input'
 import { Label } from '@/client/components/shadcn/label'
-import { TurnstileWidget } from '@/client/features/authenticate/components/turnstile-widget'
-import type { AuthenticateErrors } from '@/client/features/authenticate/model/validation'
+import type { AuthenticateErrors } from '@/client/entities/auth/model/validation'
+import { TurnstileWidget } from './turnstile-widget'
 
 export interface AuthenticateFormBaseProps {
   onSubmit: (formData: FormData) => void

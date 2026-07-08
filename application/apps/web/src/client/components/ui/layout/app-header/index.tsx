@@ -11,7 +11,7 @@ import {
 import { getVisibleMenuItems } from '@/client/components/ui/layout/sidebar'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 import NavMenu from '@/client/components/ui/navigation/nav-menu'
-import { LogoutButton } from '@/client/features/authenticate/ui'
+import { LogoutButton } from '@/client/features/authenticate/logout'
 
 interface Props {
   isLoggedIn: boolean

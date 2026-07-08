@@ -1,4 +1,4 @@
-import { AuthenticateForm, type AuthenticateFormBaseProps } from '@/client/features/authenticate'
+import { AuthenticateForm, type AuthenticateFormBaseProps } from '@/client/entities/auth'
 import {
   Card,
   CardContent,

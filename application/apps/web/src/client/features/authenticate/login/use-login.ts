@@ -1,19 +1,20 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useSWRConfig } from 'swr'
 import { z } from 'zod'
 import {
   AUTH_ERROR_MESSAGES,
-  resolveSignupErrorMessage,
-} from '@/client/features/authenticate/model/error-message'
-import {
   type AuthenticateErrors,
   authenticateFormSchema,
-} from '@/client/features/authenticate/model/validation'
+  resolveLoginErrorMessage,
+  SESSION_SWR_KEY,
+} from '@/client/entities/auth'
 import getApiClientForClient from '@/client/infrastructure/api'
 
-export default function useSignup(turnstileSiteKey?: string) {
+export default function useLogin(turnstileSiteKey?: string) {
   const navigate = useNavigate()
+  const { mutate } = useSWRConfig()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<AuthenticateErrors | undefined>(undefined)
   const [formError, setFormError] = useState<string | undefined>(undefined)
@@ -42,7 +43,7 @@ export default function useSignup(turnstileSiteKey?: string) {
     setIsSubmitting(true)
     const result = await wrapAsyncCall(() => {
       const client = getApiClientForClient()
-      return client.auth.signup.$post({
+      return client.auth.login.$post({
         json: {
           email: validation.data.email,
           password: validation.data.password,
@@ -57,13 +58,15 @@ export default function useSignup(turnstileSiteKey?: string) {
       return
     }
     if (!result.value.ok) {
-      setFormError(resolveSignupErrorMessage(result.value.status))
+      setFormError(resolveLoginErrorMessage(result.value.status))
       setIsSubmitting(false)
       return
     }
 
+    // ログイン前の未ログイン状態がセッションキャッシュに残ったまま遷移しないよう再検証する
+    await mutate(SESSION_SWR_KEY)
     // 成功時は遷移でアンマウントされるため、ボタンを無効のままにして二重送信を防ぐ
-    navigate('/login')
+    navigate('/trends')
   }
 
   return { isSubmitting, errors, formError, submit }

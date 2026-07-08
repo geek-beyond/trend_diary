@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router'
-import { useSession } from '@/client/features/authenticate'
+import { useSession } from '@/client/entities/auth'
 import { SidebarProvider } from '../components/shadcn/sidebar'
 import AppHeader from '../components/ui/layout/app-header'
 import AppSidebar from '../components/ui/layout/sidebar'

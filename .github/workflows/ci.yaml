@@ -8,9 +8,9 @@ on:
     branches:
       - main
 
+# カバレッジコメントを投稿する client-test / server-test のみ pull-requests: write を job-level で付与する
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -54,6 +54,7 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
+      # pnpm lint に含まれる pnpm -r typecheck を型チェックの単一責務とし、他ジョブでは型チェックしない
       - name: Lint
         run: pnpm lint
 
@@ -74,9 +75,6 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
-      - name: 型チェック
-        run: pnpm --filter @trend-diary/${{ matrix.package }} typecheck
-
       - name: テスト
         run: pnpm --filter @trend-diary/${{ matrix.package }} test
 
@@ -93,9 +91,6 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
-      - name: 型チェック
-        run: pnpm --filter @trend-diary/web typecheck
-
       - name: ビルド
         run: pnpm run build
 
@@ -104,6 +99,10 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
+    # test_cov のカバレッジコメント投稿に必要
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -123,6 +122,10 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
+    # test_cov のカバレッジコメント投稿に必要
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -164,7 +167,7 @@ jobs:
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-storybook-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Playwrightのセットアップ(キャッシュミス)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
@@ -204,13 +207,15 @@ jobs:
   e2e:
     name: E2E
     needs: changes
-    if: ${{ needs.changes.outputs.e2e == 'true' && github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.e2e == 'true' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: develop
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          # PRの差分実行(--only-changed)がベースブランチとの比較に全履歴を要するため取得する
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Supabaseのセットアップ
@@ -232,64 +237,20 @@ jobs:
           TURNSTILE_SITE_KEY=
           EOF
 
+      # PRでは変更に関係するテストのみ差分実行し、mainへのpushでは全テストを実行する
       - name: E2Eテストの実行
-        run: pnpm --filter @trend-diary/e2e test --fail-on-flaky-tests
-
-      - name: Playwrightレポートを保存
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ always() && !cancelled() }}
-        with:
-          name: playwright-report-main-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            application/apps/e2e/playwright-report/
-            application/apps/e2e/test-results/
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: Cleanup .dev.vars
-        if: always()
-        run: rm -f apps/web/.dev.vars
-
-  e2e-diff:
-    name: E2E (Diff)
-    needs: changes
-    if: ${{ needs.changes.outputs.e2e == 'true' && github.event_name == 'pull_request' }}
-    timeout-minutes: 15
-    runs-on: ubuntu-latest
-    environment: develop
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          fetch-depth: 0
-
-      - id: setup-supabase
-        name: Supabaseのセットアップ
-        uses: ./.github/actions/setup_supabase
-
-      - name: E2E環境のセットアップ
-        uses: ./.github/actions/setup_e2e
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
-
-      - name: Create .dev.vars for Actions
         run: |
-          cat > apps/web/.dev.vars <<'EOF'
-          # Dev env for Actions (created from secrets)
-          DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
-          SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
-          SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
-          # 本番sitekeyはheadlessで解けずトークン取得待ちがflakyになる。サーバーはsecret未設定で検証skipのため、空指定でwrangler.tomlの[vars]を上書きしウィジェットごと無効化して整合させる
-          TURNSTILE_SITE_KEY=
-          EOF
-
-      - name: E2Eテストの差分実行
-        run: pnpm --filter @trend-diary/e2e test --reporter=github,html --only-changed=origin/$GITHUB_BASE_REF --pass-with-no-tests --fail-on-flaky-tests
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            pnpm --filter @trend-diary/e2e test --reporter=github,html --only-changed=origin/"$GITHUB_BASE_REF" --pass-with-no-tests --fail-on-flaky-tests
+          else
+            pnpm --filter @trend-diary/e2e test --fail-on-flaky-tests
+          fi
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ always() && !cancelled() }}
         with:
-          name: playwright-report-diff-${{ github.run_id }}-${{ github.run_attempt }}
+          name: playwright-report-${{ github.event_name == 'pull_request' && 'diff' || 'main' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             application/apps/e2e/playwright-report/
             application/apps/e2e/test-results/
@@ -302,7 +263,7 @@ jobs:
 
   gate:
     if: ${{ !cancelled() }}
-    needs: [changes, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e, e2e-diff]
+    needs: [changes, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: いずれかのジョブが失敗していないか確認

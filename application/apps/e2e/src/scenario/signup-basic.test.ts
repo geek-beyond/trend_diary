@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker'
-import { expect, test } from '../fixtures'
+import { test } from '../fixtures'
 import * as articleHelper from '../helper/article'
 import * as userHelper from '../helper/user'
 import { AuthPage } from '../pom/auth-page'
@@ -41,21 +41,19 @@ test.describe('新規登録・ログイン後の記事詳細閲覧シナリオ',
   test('ログイン後にトレンド記事の詳細を開ける', async ({ page }) => {
     test.setTimeout(AUTH_SCENARIO_TIMEOUT)
 
-    await expect(async () => {
-      const authPage = new AuthPage(page)
-      await authPage.gotoSignup()
+    const authPage = new AuthPage(page)
+    await authPage.gotoSignup()
 
-      const signupResult = await authPage.submitSignup(email, password)
-      if (signupResult === 'stayed') {
-        await authPage.expectSignupConflictError()
-        await authPage.gotoLogin()
-      }
+    const signupResult = await authPage.submitSignup(email, password)
+    if (signupResult === 'stayed') {
+      await authPage.expectSignupConflictError()
+      await authPage.gotoLogin()
+    }
 
-      await authPage.waitForLoginPage()
+    await authPage.waitForLoginPage()
 
-      await authPage.submitLogin(email, password)
-      await authPage.waitForTrendsPage()
-    }).toPass({ timeout: AUTH_SCENARIO_TIMEOUT })
+    await authPage.submitLogin(email, password)
+    await authPage.waitForTrendsPage()
 
     {
       const trendsPage = new TrendsPage(page)

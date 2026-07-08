@@ -211,43 +211,4 @@ export class SupabaseAuthRepository implements AuthRepository {
 
     return ok({ authenticationId: data.claims.sub })
   }
-
-  async refreshSession(): Promise<Result<AuthLoginResult, ServerError>> {
-    const result = await wrapAsyncCall(() => this.client.auth.refreshSession())
-    if (result.isErr()) {
-      return err(new ServerError(result.error))
-    }
-
-    const {
-      data: { session },
-      error,
-    } = result.value
-    if (error || !session) {
-      return err(new ServerError(`Session refresh failed: ${error?.message}`))
-    }
-
-    const userResult = this.toAuthenticationUser(session.user)
-    if (userResult.isErr()) {
-      return err(userResult.error)
-    }
-
-    return ok({
-      user: userResult.value,
-      session: this.toSessionObject(session, userResult.value),
-    })
-  }
-
-  async deleteUser(userId: string): Promise<Result<void, ServerError>> {
-    const result = await wrapAsyncCall(() => this.client.auth.admin.deleteUser(userId))
-    if (result.isErr()) {
-      return err(new ServerError(result.error))
-    }
-
-    const { error } = result.value
-    if (error) {
-      return err(new ServerError(`User deletion failed: ${error.message}`))
-    }
-
-    return ok(undefined)
-  }
 }

@@ -14,6 +14,14 @@ import * as userHelper from '@/test/helper/user'
 import app from '../../../server'
 import type { ArticleListResponse, ArticleWithReadStatusResponse } from './get-articles'
 
+// searchArticles は異常系テストでのみ失敗させたい。ただし vi.mock はファイル先頭へホイストされ
+// モジュールスコープにしか置けず、異常系 describe の直前には配置できないためここで宣言する。
+// 正常系・準正常系は vi.fn で実装へ委譲するため挙動は変わらない。
+vi.mock('@trend-diary/domain/article', async (importOriginal) => {
+  const actual = await importOriginal<typeof ArticleModule>()
+  return { ...actual, createArticleUseCase: vi.fn(actual.createArticleUseCase) }
+})
+
 interface GetArticlesTestCase {
   name: string
   query: string
@@ -216,6 +224,21 @@ describe('GET /api/articles', () => {
       expect(res.status).toBe(status)
     })
   })
+
+  describe('異常系', () => {
+    it('検索でServerErrorが発生した場合は500を返す', async () => {
+      const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
+      vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {
+        const useCase = actual.createArticleUseCase(rdb)
+        useCase.searchArticles = () =>
+          Promise.resolve(err(new ServerError(new Error('検索に失敗しました'))))
+        return useCase
+      })
+
+      const res = await requestGetArticles()
+      expect(res.status).toBe(500)
+    })
+  })
 })
 
 describe('GET /api/articles 既読情報', () => {
@@ -334,26 +357,5 @@ describe('GET /api/articles 既読情報', () => {
     expect(data.data).toHaveLength(1)
     expect(data.data[0].title).toBe('未読記事')
     expect(data.data[0].isRead).toBe(false)
-  })
-})
-
-// 正常系は実装に委譲し、異常系テストでのみ searchArticles を失敗させたいため spy でラップする
-vi.mock('@trend-diary/domain/article', async (importOriginal) => {
-  const actual = await importOriginal<typeof ArticleModule>()
-  return { ...actual, createArticleUseCase: vi.fn(actual.createArticleUseCase) }
-})
-
-describe('GET /api/articles 異常系', () => {
-  it('検索でServerErrorが発生した場合は500を返す', async () => {
-    const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
-    vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {
-      const useCase = actual.createArticleUseCase(rdb)
-      useCase.searchArticles = () =>
-        Promise.resolve(err(new ServerError(new Error('検索に失敗しました'))))
-      return useCase
-    })
-
-    const res = await app.request('/api/articles', { method: 'GET' }, TEST_ENV)
-    expect(res.status).toBe(500)
   })
 })

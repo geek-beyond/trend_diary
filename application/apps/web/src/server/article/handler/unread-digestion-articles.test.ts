@@ -9,7 +9,10 @@ import * as articleHelper from '@/test/helper/article'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
-// 正常系は実装に委譲し、異常系テストでのみ取得を失敗させたいため spy でラップする
+// getUnreadDigestionArticles は異常系テストでのみ失敗させたい。ただし vi.mock はファイル先頭へ
+// ホイストされモジュールスコープにしか置けず、かつ異常系は共通のログイン(beforeEach)を再利用する
+// ため describe 内にネストしている都合上、その直前には配置できないためここで宣言する。
+// 正常系・準正常系は vi.fn で実装へ委譲するため挙動は変わらない。
 vi.mock('@trend-diary/domain/article', async (importOriginal) => {
   const actual = await importOriginal<typeof ArticleModule>()
   return { ...actual, createArticleUseCase: vi.fn(actual.createArticleUseCase) }

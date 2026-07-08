@@ -8,34 +8,73 @@ import { articleIdParamSchema, createReadHistoryApiSchema } from './read-article
 
 describe('API ReadHistoryスキーマ', () => {
   describe('createReadHistoryApiSchema', () => {
-    it('有効なISO8601文字列を受け入れること', () => {
-      const validRequest = {
-        read_at: '2024-01-01T10:00:00.000Z',
-      }
+    const MS_PER_MINUTE = 60 * 1000
+    const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE
 
-      expect(() => {
-        createReadHistoryApiSchema.parse(validRequest)
-      }).not.toThrow()
+    describe('正常系', () => {
+      it('現在時刻付近のISO8601文字列を受け入れること', () => {
+        const validRequest = {
+          read_at: new Date().toISOString(),
+        }
+
+        expect(() => {
+          createReadHistoryApiSchema.parse(validRequest)
+        }).not.toThrow()
+      })
+
+      it('時計ずれ許容内の近未来（数分先）を受け入れること', () => {
+        const nearFuture = new Date(Date.now() + 2 * MS_PER_MINUTE).toISOString()
+
+        expect(() => {
+          createReadHistoryApiSchema.parse({ read_at: nearFuture })
+        }).not.toThrow()
+      })
+
+      it('ダイアリー窓内の過去日時を受け入れること', () => {
+        const recentPast = new Date(Date.now() - 1 * MS_PER_DAY).toISOString()
+
+        expect(() => {
+          createReadHistoryApiSchema.parse({ read_at: recentPast })
+        }).not.toThrow()
+      })
     })
 
-    it('無効な日時文字列を拒否すること', () => {
-      expect(() => {
-        createReadHistoryApiSchema.parse({
-          read_at: 'invalid-date',
-        })
-      }).toThrow()
+    describe('準正常系', () => {
+      it('無効な日時文字列を拒否すること', () => {
+        expect(() => {
+          createReadHistoryApiSchema.parse({
+            read_at: 'invalid-date',
+          })
+        }).toThrow()
 
-      expect(() => {
-        createReadHistoryApiSchema.parse({
-          read_at: '2024-01-01',
-        })
-      }).toThrow()
-    })
+        expect(() => {
+          createReadHistoryApiSchema.parse({
+            read_at: '2024-01-01',
+          })
+        }).toThrow()
+      })
 
-    it('readAtフィールドが必須であること', () => {
-      expect(() => {
-        createReadHistoryApiSchema.parse({})
-      }).toThrow()
+      it('許容を超える未来日時を拒否すること', () => {
+        const farFuture = new Date(Date.now() + 1 * MS_PER_DAY).toISOString()
+
+        expect(() => {
+          createReadHistoryApiSchema.parse({ read_at: farFuture })
+        }).toThrow()
+      })
+
+      it('ダイアリー窓を超える過去日時を拒否すること', () => {
+        const farPast = new Date(Date.now() - 8 * MS_PER_DAY).toISOString()
+
+        expect(() => {
+          createReadHistoryApiSchema.parse({ read_at: farPast })
+        }).toThrow()
+      })
+
+      it('readAtフィールドが必須であること', () => {
+        expect(() => {
+          createReadHistoryApiSchema.parse({})
+        }).toThrow()
+      })
     })
   })
 
@@ -127,7 +166,8 @@ describe('POST /api/articles/:article_id/read', () => {
 
   describe('正常系', () => {
     it('既読履歴を作成できること', async () => {
-      const fixedReadAt = '2024-01-01T10:00:00.000Z'
+      // ダイアリー窓内かつ未来でない固定時刻（1時間前）で登録する
+      const fixedReadAt = new Date(Date.now() - 60 * 60 * 1000).toISOString()
       const response = await requestReadArticle(testArticleId.toString(), authCookies, fixedReadAt)
 
       expect(response.status).toBe(201)
@@ -153,6 +193,20 @@ describe('POST /api/articles/:article_id/read', () => {
         authCookies,
         'invalid-date',
       )
+
+      expect(response.status).toBe(422)
+    })
+    it('未来日時のreadAtでバリデーションエラーが発生すること', async () => {
+      const farFuture = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+      const response = await requestReadArticle(testArticleId.toString(), authCookies, farFuture)
+
+      expect(response.status).toBe(422)
+    })
+    it('ダイアリー窓を超える過去日時のreadAtでバリデーションエラーが発生すること', async () => {
+      const farPast = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
+
+      const response = await requestReadArticle(testArticleId.toString(), authCookies, farPast)
 
       expect(response.status).toBe(422)
     })

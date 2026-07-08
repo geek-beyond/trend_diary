@@ -90,11 +90,6 @@ export default defineConfig(() => {
           'src/server.ts',
           'src/worker.ts',
           'src/infrastructure/**',
-          // 専用テストを持つミドルウェアのみ計測対象とし、未テストの他ミドルウェアは除外する
-          'src/middleware/context.ts',
-          'src/middleware/zod-validator.ts',
-          'src/middleware/request-logger.ts',
-          'src/middleware/error-handler.ts',
           'src/test/**',
           'src/client/components/shadcn/**',
           'src/client/routes.ts',

@@ -1,5 +1,9 @@
 import { expect, type Locator, type Page } from '@playwright/test'
-import { AUTH_FLOW_TIMEOUT } from './constants'
+import { AUTH_FLOW_TIMEOUT, SUBMIT_OUTCOME_TIMEOUT } from './constants'
+
+type SignupOutcome = 'redirected-to-login' | 'stayed'
+
+const LOGIN_URL_PATTERN = /\/login(?:\?.*)?$/
 
 export class AuthPage {
   private readonly emailInput: Locator
@@ -31,28 +35,44 @@ export class AuthPage {
     await this.page.goto('/login')
   }
 
-  async submitSignup(email: string, password: string): Promise<'redirected-to-login' | 'stayed'> {
-    await this.fillCredentials(email, password)
-    await this.signupButton.click()
+  async submitSignup(email: string, password: string): Promise<SignupOutcome> {
+    // ハイドレーション未完了だと送信ハンドラ未接続でクリックが握り潰されるため、
+    // 合成マーカーは使わず本番の送信結果（/login への遷移 or 重複エラー表示）が出るまで fill+click を再試行する
+    await expect(async () => {
+      // 前回のクリックが遅れて成立した場合に二重送信しない
+      if (await this.currentSignupOutcome()) {
+        return
+      }
+      await this.fillCredentials(email, password)
+      await this.signupButton.click()
+      await expect
+        .poll(() => this.currentSignupOutcome(), { timeout: SUBMIT_OUTCOME_TIMEOUT })
+        .toBeDefined()
+    }).toPass({ timeout: AUTH_FLOW_TIMEOUT })
 
-    return Promise.race([
-      this.page
-        .waitForURL(/\/login(?:\?.*)?$/, { timeout: AUTH_FLOW_TIMEOUT })
-        .then(() => 'redirected-to-login' as const),
-      this.signupConflictErrorText
-        .waitFor({ state: 'visible', timeout: AUTH_FLOW_TIMEOUT })
-        .then(() => 'stayed' as const),
-    ])
+    const outcome = await this.currentSignupOutcome()
+    if (!outcome) {
+      throw new Error('サインアップの送信結果を判定できませんでした')
+    }
+    return outcome
   }
 
   async waitForLoginPage(): Promise<void> {
-    await expect(this.page).toHaveURL(/\/login(?:\?.*)?$/, { timeout: AUTH_FLOW_TIMEOUT })
+    await expect(this.page).toHaveURL(LOGIN_URL_PATTERN, { timeout: AUTH_FLOW_TIMEOUT })
     await expect(this.loginPageText).toBeVisible({ timeout: 5000 })
   }
 
   async submitLogin(email: string, password: string): Promise<void> {
-    await this.fillCredentials(email, password)
-    await this.loginButton.click()
+    // submitSignup と同様、本番の送信結果（/login からの離脱＝/trends への遷移）が出るまで再試行する
+    await expect(async () => {
+      // 前回のクリックが遅れて成立した場合に二重送信しない
+      if (!LOGIN_URL_PATTERN.test(this.page.url())) {
+        return
+      }
+      await this.fillCredentials(email, password)
+      await this.loginButton.click()
+      await expect(this.page).not.toHaveURL(LOGIN_URL_PATTERN, { timeout: SUBMIT_OUTCOME_TIMEOUT })
+    }).toPass({ timeout: AUTH_FLOW_TIMEOUT })
   }
 
   async expectSignupConflictError(): Promise<void> {
@@ -66,43 +86,25 @@ export class AuthPage {
   }
 
   private async fillCredentials(email: string, password: string): Promise<void> {
-    await this.waitForFormReady()
+    await expect(this.emailInput).toBeEditable()
+    await expect(this.passwordInput).toBeEditable()
 
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      await this.emailInput.fill(email)
-      await this.passwordInput.fill(password)
+    await this.emailInput.fill(email)
+    await this.passwordInput.fill(password)
 
-      const currentEmail = await this.emailInput.inputValue()
-      const currentPassword = await this.passwordInput.inputValue()
-
-      if (currentEmail === email && currentPassword === password) {
-        return
-      }
-
-      await this.page.waitForTimeout(100)
-    }
-
-    throw new Error('failed to fill auth credentials')
+    // 非制御フォームのため、ハイドレーション途中の入力は破棄され得る。値が確定しなければ throw し、
+    // 呼び出し側の toPass で fill+click ごと再試行させる
+    await expect(this.emailInput).toHaveValue(email, { timeout: SUBMIT_OUTCOME_TIMEOUT })
+    await expect(this.passwordInput).toHaveValue(password, { timeout: SUBMIT_OUTCOME_TIMEOUT })
   }
 
-  private async waitForFormReady(): Promise<void> {
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      await expect(this.emailInput).toBeVisible()
-      await expect(this.passwordInput).toBeVisible()
-
-      const probeEmail = `ready-check-${attempt}@example.com`
-      await this.emailInput.fill(probeEmail)
-      await this.page.waitForTimeout(200)
-
-      if ((await this.emailInput.inputValue()) === probeEmail) {
-        await this.emailInput.fill('')
-        await this.passwordInput.fill('')
-        return
-      }
-
-      await this.page.waitForTimeout(200)
+  private async currentSignupOutcome(): Promise<SignupOutcome | undefined> {
+    if (LOGIN_URL_PATTERN.test(this.page.url())) {
+      return 'redirected-to-login'
     }
-
-    throw new Error('auth form is not ready')
+    if (await this.signupConflictErrorText.isVisible()) {
+      return 'stayed'
+    }
+    return undefined
   }
 }

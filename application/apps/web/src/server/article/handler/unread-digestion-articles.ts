@@ -3,7 +3,6 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
-import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
@@ -29,10 +28,7 @@ export default async function unreadDigestionArticles(
   c: ZodValidatedQueryContext<UnreadDigestionQuery>,
 ): Promise<Response> {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)
-  if (!sessionUser) {
-    throw new HTTPException(401, { message: 'Unauthorized' })
-  }
+  const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!
   const query = c.req.valid('query')
 
   const rdb = getRdbClient(c.env.DB)

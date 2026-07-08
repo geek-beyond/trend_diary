@@ -1,7 +1,6 @@
-import TEST_ENV from '@/test/env'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
-import app from '../../../server'
 
 // supa-emuは署名検証をしないため、資格情報は id だけのダミーで登録・認証を通せる
 const CREDENTIAL_ID = 'server-test-passkey-credential'
@@ -24,26 +23,17 @@ describe('passkey認証', () => {
   })
 
   function post(path: string, body?: unknown, cookies?: string) {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (cookies) headers.Cookie = cookies
-
-    return app.request(
-      path,
-      {
-        method: 'POST',
-        headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
-      },
-      TEST_ENV,
-    )
+    return apiRequest(path, {
+      method: 'POST',
+      cookies,
+      contentTypeJson: true,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
   }
 
   function req(method: string, path: string, cookies?: string) {
     // Content-Type未指定だとcsrf()がtext/plain扱いでDELETEを403にするため、他のテスト同様JSONを明示する
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (cookies) headers.Cookie = cookies
-
-    return app.request(path, { method, headers }, TEST_ENV)
+    return apiRequest(path, { method, cookies, contentTypeJson: true })
   }
 
   describe('正常系', () => {

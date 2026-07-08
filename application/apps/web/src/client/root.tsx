@@ -79,6 +79,20 @@ export function ErrorBoundary() {
       </div>
     )
   }
+  // 本番はスタックトレース等の内部情報を画面に晒さず、詳細はログにのみ残す
+  if (import.meta.env.PROD) {
+    if (error instanceof Error) {
+      // oxlint-disable-next-line no-console -- 本番のクライアント側エラーをログに残すため
+      console.error(error)
+    }
+    return (
+      <div>
+        <h1>Error</h1>
+        <p>予期しないエラーが発生しました。時間をおいて再度お試しください。</p>
+      </div>
+    )
+  }
+
   if (error instanceof Error) {
     return (
       <div>

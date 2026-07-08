@@ -297,8 +297,8 @@ importers:
         specifier: ^7.17.0
         version: 7.17.0(@types/node@26.0.1)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(tsx@4.22.4)(typescript@5.9.3)(vite@8.1.0(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))(wrangler@4.105.0(@cloudflare/workers-types@4.20260630.1))
       '@react-router/node':
-        specifier: 7.16.0
-        version: 7.16.0(react-router@7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)
+        specifier: ^7.17.0
+        version: 7.17.0(react-router@7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)
       '@storybook/addon-a11y':
         specifier: ^10.4.6
         version: 10.4.6(storybook@10.4.6(@testing-library/dom@10.4.1)(@types/react@19.2.17)(prettier@3.8.4)(react@19.2.7))
@@ -2279,16 +2279,6 @@ packages:
       typescript:
         optional: true
       wrangler:
-        optional: true
-
-  '@react-router/node@7.16.0':
-    resolution: {integrity: sha512-3S54GArZETvcBHt0cFNJS5ZU66bCNVOoS44MVcGjiGjArBXvWx8xIQ5FO9n1azKGEBpDmJN7NbA+cf3oMCJv3g==}
-    engines: {node: '>=20.0.0'}
-    peerDependencies:
-      react-router: 7.16.0
-      typescript: ^5.1.0 || ^6.0.0
-    peerDependenciesMeta:
-      typescript:
         optional: true
 
   '@react-router/node@7.17.0':
@@ -6069,13 +6059,6 @@ snapshots:
       - terser
       - tsx
       - yaml
-
-  '@react-router/node@7.16.0(react-router@7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)':
-    dependencies:
-      '@mjackson/node-fetch-server': 0.2.0
-      react-router: 7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-    optionalDependencies:
-      typescript: 5.9.3
 
   '@react-router/node@7.17.0(react-router@7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)':
     dependencies:

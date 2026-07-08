@@ -81,7 +81,10 @@ interface DiaryRangeResponse {
 
 export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!
+  const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)
+  if (!sessionUser) {
+    throw new HTTPException(401, { message: 'Unauthorized' })
+  }
   const query = c.req.valid('query')
   const todayJst = resolveTodayJst()
   const fromDate = query.from

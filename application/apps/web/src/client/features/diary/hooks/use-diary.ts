@@ -34,10 +34,12 @@ export default function useDiary(enabled: boolean) {
   const swrKey = enabled && todayJst ? (['api/articles/diary', todayJst, page] as const) : null
   const { data, isLoading } = useSWR(
     swrKey,
-    ([, targetDate, targetPage]) => fetchDiary(targetDate, targetPage),
+    ([, targetDate, targetPage]: readonly ['api/articles/diary', string, number]) =>
+      fetchDiary(targetDate, targetPage),
     {
+      // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する
       onError: () => {
-        toast.error('エラーが発生しました。時間をおいて再度お試しください。')
+        toast.error('エラーが発生しました。時間をおいて再度お試しください。', { id: 'diary-error' })
       },
     },
   )

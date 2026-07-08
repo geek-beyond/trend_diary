@@ -147,6 +147,7 @@ describe('useDiary', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
+          { id: 'diary-error' },
         )
       })
     })

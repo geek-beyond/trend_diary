@@ -1,6 +1,5 @@
 import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { Check } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardTitle } from '@/client/components/shadcn/card'
 import { cn } from '@/client/components/shadcn/lib/utils'
 import type { Article } from '@/client/features/article/hooks/use-articles'
 import MediaIcon, { type MediaType } from './media-icon'
@@ -29,35 +28,22 @@ export default function ArticleCard({
     onToggleRead?.(article.articleId, !isRead)
   }
 
-  // Enter / Space での起動を担保する。role='button' の div はネイティブ button と違い
-  // キー操作でクリックが発火しないため、明示的にハンドリングする。Space は既定のスクロールを止める
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onCardClick(article)
-    }
-  }
-
   return (
-    // 既読トグルをカードの内側に置くとインタラクティブ要素の入れ子になるため、
-    // 兄弟要素として重ね、DOM 上のネストを避ける
+    // 既読トグルをカード（button）の内側に置くとインタラクティブ要素の入れ子になるため、
+    // 兄弟要素として重ねて DOM 上のネストを避ける。ラッパーの group hover でカードの影を維持する
     <div className='group relative h-32 w-full sm:w-64'>
-      <Card
-        data-slot='card'
+      {/* ネイティブ button にすることで Enter/Space での起動・フォーカス・role を標準で得る */}
+      <button
+        type='button'
         data-testid='article-card'
-        // 既読トグルは兄弟要素として重なるため、その上をホバーするとカードの :hover が外れてしまう。
-        // group-hover にしてラッパー全体のホバーで影を維持し、ちらつきを防ぐ
+        onClick={() => onCardClick(article)}
         className={cn(
-          'size-full cursor-pointer rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 group-hover:shadow-xl focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
+          'size-full cursor-pointer rounded-3xl border border-white/40 bg-white/30 p-6 text-left shadow-2xl backdrop-blur-xl transition-all duration-300 group-hover:shadow-xl focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
           isRead && 'opacity-60',
         )}
-        onClick={() => onCardClick(article)}
-        onKeyDown={handleKeyDown}
-        role='button'
-        tabIndex={0}
       >
-        <CardContent className='flex h-full flex-col p-0'>
-          <CardTitle className='line-clamp-2 flex-1 text-sm leading-relaxed font-bold text-gray-700'>
+        <span className='flex h-full flex-col'>
+          <span className='line-clamp-2 flex-1 text-sm leading-relaxed font-bold text-gray-700'>
             <MediaIcon media={toMediaType(article.media)} size='sm' />
             <span className='ml-1'>{article.title}</span>
             {isRead && (
@@ -69,14 +55,14 @@ export default function ArticleCard({
                 <span className='sr-only'>（既読）</span>
               </span>
             )}
-          </CardTitle>
+          </span>
 
           {/* 既読トグルは absolute で右下に重なるため、著者名が潜り込まないよう右側を空ける */}
-          <CardDescription className={cn('mt-3 flex items-end', isLoggedIn && 'pr-16')}>
+          <span className={cn('mt-3 flex items-end', isLoggedIn && 'pr-16')}>
             <span className='min-w-0 truncate text-sm text-gray-600'>{article.author}</span>
-          </CardDescription>
-        </CardContent>
-      </Card>
+          </span>
+        </span>
+      </button>
 
       {isLoggedIn && (
         <button

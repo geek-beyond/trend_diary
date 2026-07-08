@@ -12,67 +12,43 @@ describe('API ReadHistoryスキーマ', () => {
     const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE
 
     describe('正常系', () => {
-      it('現在時刻付近のISO8601文字列を受け入れること', () => {
-        const validRequest = {
-          read_at: new Date().toISOString(),
-        }
+      const validCases = [
+        { name: '現在時刻付近のISO8601文字列を受け入れること', read_at: new Date().toISOString() },
+        {
+          name: '時計ずれ許容内の近未来（数分先）を受け入れること',
+          read_at: new Date(Date.now() + 2 * MS_PER_MINUTE).toISOString(),
+        },
+        {
+          name: 'ダイアリー窓内の過去日時を受け入れること',
+          read_at: new Date(Date.now() - 1 * MS_PER_DAY).toISOString(),
+        },
+      ]
 
+      it.each(validCases)('$name', ({ read_at }) => {
         expect(() => {
-          createReadHistoryApiSchema.parse(validRequest)
-        }).not.toThrow()
-      })
-
-      it('時計ずれ許容内の近未来（数分先）を受け入れること', () => {
-        const nearFuture = new Date(Date.now() + 2 * MS_PER_MINUTE).toISOString()
-
-        expect(() => {
-          createReadHistoryApiSchema.parse({ read_at: nearFuture })
-        }).not.toThrow()
-      })
-
-      it('ダイアリー窓内の過去日時を受け入れること', () => {
-        const recentPast = new Date(Date.now() - 1 * MS_PER_DAY).toISOString()
-
-        expect(() => {
-          createReadHistoryApiSchema.parse({ read_at: recentPast })
+          createReadHistoryApiSchema.parse({ read_at })
         }).not.toThrow()
       })
     })
 
     describe('準正常系', () => {
-      it('無効な日時文字列を拒否すること', () => {
+      const invalidCases = [
+        { name: 'パースできない日時文字列を拒否すること', input: { read_at: 'invalid-date' } },
+        { name: '時刻を含まない日付のみを拒否すること', input: { read_at: '2024-01-01' } },
+        {
+          name: '許容を超える未来日時を拒否すること',
+          input: { read_at: new Date(Date.now() + 1 * MS_PER_DAY).toISOString() },
+        },
+        {
+          name: 'ダイアリー窓を超える過去日時を拒否すること',
+          input: { read_at: new Date(Date.now() - 8 * MS_PER_DAY).toISOString() },
+        },
+        { name: 'read_atフィールドが欠落している場合を拒否すること', input: {} },
+      ]
+
+      it.each(invalidCases)('$name', ({ input }) => {
         expect(() => {
-          createReadHistoryApiSchema.parse({
-            read_at: 'invalid-date',
-          })
-        }).toThrow()
-
-        expect(() => {
-          createReadHistoryApiSchema.parse({
-            read_at: '2024-01-01',
-          })
-        }).toThrow()
-      })
-
-      it('許容を超える未来日時を拒否すること', () => {
-        const farFuture = new Date(Date.now() + 1 * MS_PER_DAY).toISOString()
-
-        expect(() => {
-          createReadHistoryApiSchema.parse({ read_at: farFuture })
-        }).toThrow()
-      })
-
-      it('ダイアリー窓を超える過去日時を拒否すること', () => {
-        const farPast = new Date(Date.now() - 8 * MS_PER_DAY).toISOString()
-
-        expect(() => {
-          createReadHistoryApiSchema.parse({ read_at: farPast })
-        }).toThrow()
-      })
-
-      it('readAtフィールドが必須であること', () => {
-        expect(() => {
-          createReadHistoryApiSchema.parse({})
+          createReadHistoryApiSchema.parse(input)
         }).toThrow()
       })
     })

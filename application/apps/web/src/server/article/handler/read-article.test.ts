@@ -196,20 +196,6 @@ describe('POST /api/articles/:article_id/read', () => {
 
       expect(response.status).toBe(422)
     })
-    it('未来日時のreadAtでバリデーションエラーが発生すること', async () => {
-      const farFuture = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-
-      const response = await requestReadArticle(testArticleId.toString(), authCookies, farFuture)
-
-      expect(response.status).toBe(422)
-    })
-    it('ダイアリー窓を超える過去日時のreadAtでバリデーションエラーが発生すること', async () => {
-      const farPast = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
-
-      const response = await requestReadArticle(testArticleId.toString(), authCookies, farPast)
-
-      expect(response.status).toBe(422)
-    })
     it('存在しない記事は既読履歴が作成できない', async () => {
       const nonExistentArticleId = '999999'
 

@@ -22,11 +22,15 @@ export const createReadHistoryApiSchema = z.object({
   read_at: z
     .string()
     .datetime()
-    .refine((value) => new Date(value).getTime() <= Date.now() + READ_AT_FUTURE_TOLERANCE_MS, {
-      message: READ_AT_FUTURE_MESSAGE,
-    })
-    .refine((value) => new Date(value).getTime() >= Date.now() - READ_AT_PAST_WINDOW_MS, {
-      message: READ_AT_PAST_MESSAGE,
+    .superRefine((value, ctx) => {
+      const time = Date.parse(value)
+      const now = Date.now()
+      if (time > now + READ_AT_FUTURE_TOLERANCE_MS) {
+        ctx.addIssue({ code: 'custom', message: READ_AT_FUTURE_MESSAGE })
+      }
+      if (time < now - READ_AT_PAST_WINDOW_MS) {
+        ctx.addIssue({ code: 'custom', message: READ_AT_PAST_MESSAGE })
+      }
     }),
 })
 

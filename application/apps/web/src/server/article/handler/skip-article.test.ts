@@ -1,6 +1,5 @@
-import app from '@/server'
-import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
@@ -13,19 +12,11 @@ describe('POST /api/articles/:article_id/skip', () => {
 
   async function requestSkipArticle(articleId: string, cookies?: string) {
     // ブラウザは同一オリジンの状態変更リクエストにOriginを付与するため、CSRFミドルウェアを通すよう再現する
-    const headers: Record<string, string> = { Origin: 'http://localhost' }
-    if (cookies) {
-      headers.Cookie = cookies
-    }
-
-    return app.request(
-      `/api/articles/${articleId}/skip`,
-      {
-        method: 'POST',
-        headers,
-      },
-      TEST_ENV,
-    )
+    return apiRequest(`/api/articles/${articleId}/skip`, {
+      method: 'POST',
+      cookies,
+      origin: 'http://localhost',
+    })
   }
 
   beforeEach(async () => {

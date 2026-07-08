@@ -1,6 +1,5 @@
-import app from '@/server'
-import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
@@ -13,19 +12,11 @@ describe('DELETE /api/articles/:article_id/unread', () => {
 
   async function requestUnreadArticle(articleId: string, cookies: string) {
     // ブラウザは同一オリジンの状態変更リクエストにOriginを付与するため、CSRFミドルウェアを通すよう再現する
-    const headers: Record<string, string> = {
-      Cookie: cookies,
-      Origin: 'http://localhost',
-    }
-
-    return app.request(
-      `/api/articles/${articleId}/unread`,
-      {
-        method: 'DELETE',
-        headers,
-      },
-      TEST_ENV,
-    )
+    return apiRequest(`/api/articles/${articleId}/unread`, {
+      method: 'DELETE',
+      cookies,
+      origin: 'http://localhost',
+    })
   }
 
   beforeEach(async () => {

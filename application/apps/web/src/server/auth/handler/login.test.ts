@@ -1,7 +1,6 @@
-import TEST_ENV from '@/test/env'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
-import app from '../../../server'
 
 describe('POST /api/auth/login', () => {
   const TEST_EMAIL = 'login-test@example.com'
@@ -22,17 +21,7 @@ describe('POST /api/auth/login', () => {
   })
 
   async function requestLogin(body: string) {
-    return app.request(
-      '/api/auth/login',
-      {
-        method: 'POST',
-        body,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-      TEST_ENV,
-    )
+    return apiRequest('/api/auth/login', { method: 'POST', body, contentTypeJson: true })
   }
 
   it('正常系: ログインに成功する', async () => {

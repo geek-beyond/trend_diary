@@ -11,7 +11,10 @@ fi
 
 # 追跡ファイル .gitconfig-hooks を include することで、フック定義の変更が pull だけで反映される
 # （パスは .git/config からの相対参照のためリポジトリルートを指す）
-git config --local include.path ../.gitconfig-hooks
+# include.path は複数値を取れるキーのため、既存値の上書きを避けて --add で追加し、再実行時の重複登録も防ぐ
+if ! git config --local --get-all include.path 2>/dev/null | grep -qx '../.gitconfig-hooks'; then
+  git config --local --add include.path ../.gitconfig-hooks
+fi
 
 echo "フックを有効化しました（pre-commit: lint / pre-push: 単体テスト）。"
 echo "  一時的にスキップ: git commit --no-verify / git push --no-verify"

@@ -41,10 +41,9 @@ function unwrapErr<T, E>(result: Result<T, E>): E {
 
 // getCurrentActiveUser の戻り値を差し替えて分岐を制御する
 function mockGetCurrentActiveUser(impl: () => Promise<unknown>) {
-  const useCase = { getCurrentActiveUser: impl }
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- テストで必要な getCurrentActiveUser のみを差し替えるため
   vi.mocked(createAuthUseCase).mockReturnValue(
-    useCase as unknown as ReturnType<typeof createAuthUseCase>,
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- テストで必要な getCurrentActiveUser のみを差し替えるため
+    { getCurrentActiveUser: impl } as unknown as ReturnType<typeof createAuthUseCase>,
   )
 }
 

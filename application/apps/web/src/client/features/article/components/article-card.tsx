@@ -25,8 +25,7 @@ export default function ArticleCard({
 }: Props) {
   const isRead = article.isRead ?? false
 
-  const handleToggleRead = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleToggleRead = () => {
     onToggleRead?.(article.articleId, !isRead)
   }
 
@@ -35,12 +34,9 @@ export default function ArticleCard({
       data-slot='card'
       data-testid='article-card'
       className={cn(
-        'h-32 w-full sm:w-64 cursor-pointer rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:shadow-xl',
+        'relative h-32 w-full sm:w-64 rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:shadow-xl',
         isRead && 'opacity-60',
       )}
-      onClick={() => onCardClick(article)}
-      role='button'
-      tabIndex={0}
     >
       <CardContent className='flex h-full flex-col p-0'>
         <CardTitle className='line-clamp-2 flex-1 text-sm leading-relaxed font-bold text-gray-700'>
@@ -62,13 +58,21 @@ export default function ArticleCard({
             <button
               type='button'
               onClick={handleToggleRead}
-              className='text-xs text-gray-500 hover:text-gray-700 underline'
+              className='relative z-10 text-xs text-gray-500 hover:text-gray-700 underline'
             >
               {isRead ? '未読にする' : '既読にする'}
             </button>
           )}
         </CardDescription>
       </CardContent>
+
+      {/* カード全面を覆うトリガを兄弟要素にし、既読トグルと入れ子にせず両方を独立した操作要素にする */}
+      <button
+        type='button'
+        onClick={() => onCardClick(article)}
+        aria-label={`${article.title}を開く`}
+        className='absolute inset-0 z-0 cursor-pointer rounded-3xl'
+      />
     </Card>
   )
 }

@@ -15,20 +15,20 @@ type Story = StoryObj<typeof LoadingSpinner>
 export const Default: Story = {
   play: async ({ canvas, step }) => {
     await step('LoadingSpinnerコンポーネントが表示されることを確認', async () => {
-      const container = canvas.getByRole('status', { name: 'Loading...' })
+      const container = canvas.getByRole('status', { name: '読み込み中' })
       await expect(container).toBeInTheDocument()
       await expect(container).toBeVisible()
     })
 
     await step('スピナーが表示されることを確認', async () => {
-      const container = canvas.getByRole('status', { name: 'Loading...' })
+      const container = canvas.getByRole('status', { name: '読み込み中' })
       const spinner = container.querySelector('div > div')
       await expect(spinner).toBeInTheDocument()
       await expect(spinner).toBeVisible()
     })
 
     await step('スピナーが回転アニメーションしていることを確認', async () => {
-      const container = canvas.getByRole('status', { name: 'Loading...' })
+      const container = canvas.getByRole('status', { name: '読み込み中' })
       const spinner = container.querySelector('div > div')
       await expect(spinner).not.toBeNull()
       if (!spinner) {

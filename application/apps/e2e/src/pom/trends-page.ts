@@ -5,9 +5,7 @@ export class TrendsPage {
   private readonly articleCards: Locator
 
   constructor(private readonly page: Page) {
-    this.articleCards = page
-      .getByRole('button')
-      .filter({ has: page.getByRole('img', { name: /(?:qiita|zenn|hatena) icon/ }) })
+    this.articleCards = page.getByTestId('article-card')
   }
 
   async goto(path = '/trends'): Promise<void> {

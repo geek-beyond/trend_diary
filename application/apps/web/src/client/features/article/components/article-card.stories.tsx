@@ -94,6 +94,30 @@ export const ClickInteraction: Story = {
   },
 }
 
+// キーボード操作でカードを開けることの確認（Tab でフォーカス → Enter/Space で開く）
+export const KeyboardInteraction: Story = {
+  args: {
+    article: qiitaArticle,
+  },
+  play: async ({ canvas, args, step }) => {
+    const card = canvas.getByRole('button', { name: `${qiitaArticle.title}を開く` })
+
+    await step('Enterキーでカードが開くことを確認', async () => {
+      card.focus()
+      await expect(card).toHaveFocus()
+      await userEvent.keyboard('{Enter}')
+      await expect(args.onCardClick).toHaveBeenCalledWith(qiitaArticle)
+      await expect(args.onCardClick).toHaveBeenCalledTimes(1)
+    })
+
+    await step('Spaceキーでカードが開くことを確認', async () => {
+      card.focus()
+      await userEvent.keyboard(' ')
+      await expect(args.onCardClick).toHaveBeenCalledTimes(2)
+    })
+  },
+}
+
 export const HoverInteraction: Story = {
   args: {
     article: qiitaArticle,
@@ -208,6 +232,11 @@ export const ToggleReadInteraction: Story = {
       await userEvent.click(toggleButton)
 
       await expect(args.onToggleRead).toHaveBeenCalledWith(unreadArticle.articleId, true)
+    })
+
+    await step('既読ボタンのクリックではカードが開かないことを確認', async () => {
+      // 開くトリガと既読トグルが独立した操作要素であること（入れ子でないこと）の担保
+      await expect(args.onCardClick).not.toHaveBeenCalled()
     })
   },
 }

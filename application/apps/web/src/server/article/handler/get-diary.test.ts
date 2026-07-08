@@ -1,11 +1,14 @@
 import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
+import { Hono } from 'hono'
 import { z } from 'zod'
+import type { Env } from '@/env'
+import zodValidator from '@/middleware/zod-validator'
 import app from '@/server'
 import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
-import { diaryQuerySchema } from './get-diary'
+import getDiary, { diaryQuerySchema } from './get-diary'
 
 interface DiaryRangeResponse {
   data: Array<{
@@ -346,6 +349,24 @@ describe('GET /api/articles/diary', () => {
     if (fromResult.isErr()) throw fromResult.error
 
     const response = await requestDiaryRange(`from=${fromResult.value}&to=${todayJst}`)
+    expect(response.status).toBe(401)
+  })
+})
+
+// authenticator ミドルウェアは実運用で SESSION_USER を保証するが、ハンドラ側の
+// 明示的な 401 チェック（防御的分岐）自体を直接検証するため、ミドルウェアを介さず単体で叩く
+describe('getDiary ハンドラ単体', () => {
+  it('SESSION_USER が未設定なら401を返す', async () => {
+    const standaloneApp = new Hono<Env>().get(
+      '/',
+      zodValidator('query', diaryQuerySchema),
+      getDiary,
+    )
+    const response = await standaloneApp.request(
+      '/?from=2026-07-01&to=2026-07-01',
+      { method: 'GET' },
+      TEST_ENV,
+    )
     expect(response.status).toBe(401)
   })
 })

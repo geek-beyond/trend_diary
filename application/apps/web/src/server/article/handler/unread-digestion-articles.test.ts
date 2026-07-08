@@ -1,8 +1,12 @@
+import { Hono } from 'hono'
+import type { Env } from '@/env'
+import zodValidator from '@/middleware/zod-validator'
 import app from '@/server'
 import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
+import unreadDigestionArticles, { unreadDigestionQuerySchema } from './unread-digestion-articles'
 
 interface UnreadDigestionResponse {
   data: Array<{
@@ -120,5 +124,19 @@ describe('GET /api/articles/unread-digestion', () => {
     expect(json.data.map((item) => item.title)).toEqual(expect.arrayContaining(expectedTitles!))
     expect(json.data).toHaveLength(expectedTitles!.length)
     expect(json.total).toBe(expectedTitles!.length)
+  })
+})
+
+// authenticator ミドルウェアは実運用で SESSION_USER を保証するが、ハンドラ側の
+// 明示的な 401 チェック（防御的分岐）自体を直接検証するため、ミドルウェアを介さず単体で叩く
+describe('unreadDigestionArticles ハンドラ単体', () => {
+  it('SESSION_USER が未設定なら401を返す', async () => {
+    const standaloneApp = new Hono<Env>().get(
+      '/',
+      zodValidator('query', unreadDigestionQuerySchema),
+      unreadDigestionArticles,
+    )
+    const response = await standaloneApp.request('/', { method: 'GET' }, TEST_ENV)
+    expect(response.status).toBe(401)
   })
 })

@@ -82,14 +82,4 @@ export interface AuthRepository {
    * アクセストークン(JWT)をローカル検証し、検証済みセッションを取得する
    */
   verifySession(): Promise<Result<VerifiedSession, ClientError | ServerError>>
-
-  /**
-   * セッションを更新する
-   */
-  refreshSession(): Promise<Result<AuthLoginResult, ServerError>>
-
-  /**
-   * ユーザーを削除する（補償トランザクション用）
-   */
-  deleteUser(userId: string): Promise<Result<void, ServerError>>
 }

@@ -1,11 +1,9 @@
-import { AuthenticateForm, type AuthenticateFormBaseProps } from '@/client/features/authenticate'
+import { LoginForm, type LoginFormProps } from '@/client/features/authenticate/login'
 import { PasskeyLoginButton } from '@/client/features/passkey'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
 import { AnchorLink } from '../../components/ui/navigation/link'
-
-type LoginPageProps = AuthenticateFormBaseProps
 
 export default function LoginPage({
   onSubmit,
@@ -13,7 +11,7 @@ export default function LoginPage({
   errors,
   formError,
   turnstileSiteKey,
-}: LoginPageProps) {
+}: LoginFormProps) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
       <LandingHeader />
@@ -23,10 +21,8 @@ export default function LoginPage({
             <CardTitle className='text-2xl font-bold'>ログイン</CardTitle>
           </CardHeader>
           <CardContent>
-            <AuthenticateForm
+            <LoginForm
               onSubmit={onSubmit}
-              submitButtonText='ログイン'
-              loadingSubmitButtonText='ログイン中...'
               isSubmitting={isSubmitting}
               errors={errors}
               formError={formError}

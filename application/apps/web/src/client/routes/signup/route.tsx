@@ -1,5 +1,6 @@
 import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
-import { resolveTurnstileSiteKey, useSignup } from '@/client/features/authenticate'
+import { resolveTurnstileSiteKey } from '@/client/entities/auth'
+import { useSignup } from '@/client/features/authenticate/signup'
 import SignupPage from './page'
 
 export const meta: MetaFunction = () => [

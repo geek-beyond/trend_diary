@@ -10,7 +10,7 @@ import {
 } from '@/client/components/shadcn/sidebar'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 import NavMenu from '@/client/components/ui/navigation/nav-menu'
-import { SidebarLogoutButton } from '@/client/features/authenticate/ui'
+import { SidebarLogoutButton } from '@/client/features/authenticate/logout'
 import type { InternalPath } from '@/client/routes'
 
 export interface MenuItem {

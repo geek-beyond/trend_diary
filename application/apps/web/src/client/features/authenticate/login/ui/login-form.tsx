@@ -2,10 +2,10 @@ import type { FormEvent } from 'react'
 import { Button } from '@/client/components/shadcn/button'
 import { Input } from '@/client/components/shadcn/input'
 import { Label } from '@/client/components/shadcn/label'
-import { TurnstileWidget } from '@/client/features/authenticate/components/turnstile-widget'
-import type { AuthenticateErrors } from '@/client/features/authenticate/model/validation'
+import type { AuthenticateErrors } from '@/client/entities/auth/model/validation'
+import { TurnstileWidget } from '@/client/entities/auth/ui/turnstile-widget'
 
-export interface AuthenticateFormBaseProps {
+export interface LoginFormProps {
   onSubmit: (formData: FormData) => void
   isSubmitting: boolean
   errors?: AuthenticateErrors
@@ -14,20 +14,13 @@ export interface AuthenticateFormBaseProps {
   turnstileSiteKey?: string
 }
 
-export interface AuthenticateFormProps extends AuthenticateFormBaseProps {
-  submitButtonText: string
-  loadingSubmitButtonText: string
-}
-
-export const AuthenticateForm = ({
+export default function LoginForm({
   onSubmit,
-  submitButtonText,
-  loadingSubmitButtonText,
   isSubmitting,
   errors,
   formError,
   turnstileSiteKey,
-}: AuthenticateFormProps) => {
+}: LoginFormProps) {
   // DOMイベントの関心はここで閉じ、呼び出し側（hooks）はFormDataだけを扱えるようにする
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -62,7 +55,7 @@ export const AuthenticateForm = ({
       {turnstileSiteKey && <TurnstileWidget siteKey={turnstileSiteKey} />}
       {formError && <p className='text-destructive text-sm'>{formError}</p>}
       <Button role='button' type='submit' className='w-full' disabled={isSubmitting}>
-        {isSubmitting ? loadingSubmitButtonText : submitButtonText}
+        {isSubmitting ? 'ログイン中...' : 'ログイン'}
       </Button>
     </form>
   )

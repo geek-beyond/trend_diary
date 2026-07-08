@@ -4,7 +4,7 @@ import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useSWRConfig } from 'swr'
-import { SESSION_SWR_KEY } from '@/client/features/authenticate/hooks/use-session'
+import { SESSION_SWR_KEY } from '@/client/entities/auth'
 import { PASSKEY_MESSAGES } from '@/client/features/passkey/model'
 import getApiClientForClient from '@/client/infrastructure/api'
 

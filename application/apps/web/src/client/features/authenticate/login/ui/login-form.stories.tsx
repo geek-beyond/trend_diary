@@ -1,27 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent } from 'storybook/test'
-import { AuthenticateForm } from './authenticate-form'
+import LoginForm from './login-form'
 
 const onSubmit = fn((_formData: FormData) => {})
 
-const meta: Meta<typeof AuthenticateForm> = {
-  component: AuthenticateForm,
+const meta: Meta<typeof LoginForm> = {
+  component: LoginForm,
   args: {
     onSubmit,
+    isSubmitting: false,
   },
 }
 export default meta
 
-type Story = StoryObj<typeof AuthenticateForm>
-
-const defaultArgs = {
-  loadingSubmitButtonText: 'ログイン中...',
-  submitButtonText: 'ログイン',
-  isSubmitting: false,
-}
+type Story = StoryObj<typeof LoginForm>
 
 export const EmptyForm: Story = {
-  args: defaultArgs,
   play: async ({ canvas }) => {
     // 初期状態の確認
     await expect(canvas.getByLabelText('メールアドレス')).toBeInTheDocument()
@@ -51,10 +45,9 @@ export const EmptyForm: Story = {
 }
 
 // 送信中（isSubmitting）の表示を検証する。
-// AuthenticateForm は表示専用コンポーネントのため、送信中状態は props で渡す。
+// LoginForm は表示専用コンポーネントのため、送信中状態は props で渡す。
 export const Submitting: Story = {
   args: {
-    ...defaultArgs,
     isSubmitting: true,
   },
   play: async ({ canvas }) => {
@@ -72,7 +65,6 @@ export const Submitting: Story = {
 // ウィジェット本体は外部スクリプトに依存するため、ここでは既存フィールドの描画のみ確認する。
 export const WithTurnstile: Story = {
   args: {
-    ...defaultArgs,
     turnstileSiteKey: '1x00000000000000000000AA',
   },
   play: async ({ canvas }) => {
@@ -86,7 +78,6 @@ export const WithTurnstile: Story = {
 // バリデーション結果（errors）は props で渡される設計のため、ここでは errors を直接与える。
 export const FormValidationError: Story = {
   args: {
-    ...defaultArgs,
     errors: {
       password: ['パスワードは8文字以上必要です'],
     },
@@ -108,7 +99,6 @@ export const FormValidationError: Story = {
 
 // 送信時に入力値が FormData として onSubmit へ渡されることを検証する。
 export const SubmitInteraction: Story = {
-  args: defaultArgs,
   play: async ({ canvas, step }) => {
     await step('入力して送信すると onSubmit が FormData 付きで呼ばれることを確認', async () => {
       await userEvent.type(canvas.getByLabelText('メールアドレス'), 'taro@example.com')

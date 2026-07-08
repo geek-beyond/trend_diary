@@ -1,4 +1,4 @@
-import { AuthenticateForm, type AuthenticateFormBaseProps } from '@/client/entities/auth'
+import { SignupForm, type SignupFormProps } from '@/client/features/authenticate/signup'
 import {
   Card,
   CardContent,
@@ -17,7 +17,7 @@ export default function SignupPage({
   errors,
   formError,
   turnstileSiteKey,
-}: AuthenticateFormBaseProps) {
+}: SignupFormProps) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
       <LandingHeader />
@@ -28,10 +28,8 @@ export default function SignupPage({
             <CardDescription>以下の情報を入力してアカウントを作成してください</CardDescription>
           </CardHeader>
           <CardContent>
-            <AuthenticateForm
+            <SignupForm
               onSubmit={onSubmit}
-              submitButtonText='アカウント作成'
-              loadingSubmitButtonText='アカウント作成中...'
               isSubmitting={isSubmitting}
               errors={errors}
               formError={formError}

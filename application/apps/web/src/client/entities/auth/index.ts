@@ -1,4 +1,3 @@
-export { AuthenticateForm, type AuthenticateFormBaseProps } from './ui/authenticate-form'
 export {
   AUTH_ERROR_MESSAGES,
   resolveLoginErrorMessage,

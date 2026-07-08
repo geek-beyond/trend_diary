@@ -99,13 +99,13 @@ describe('POST /api/articles/:article_id/read', () => {
   beforeEach(async () => {
     // アカウント作成・ログイン
     const { userId, authenticationId } = await userHelper.create(
-      'test@example.com',
+      'read-article-test@example.com',
       'Test@password123',
     )
     createdUserIds.userIds.push(userId)
     createdUserIds.authIds.push(authenticationId)
 
-    const loginData = await userHelper.login('test@example.com', 'Test@password123')
+    const loginData = await userHelper.login('read-article-test@example.com', 'Test@password123')
     testActiveUserId = loginData.activeUserId
     authCookies = loginData.cookies
 

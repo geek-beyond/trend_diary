@@ -1,4 +1,5 @@
 import { LoginForm, type LoginFormProps } from '@/client/features/authenticate/login'
+import { PasskeyLoginButton } from '@/client/features/passkey'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
@@ -27,6 +28,14 @@ export default function LoginPage({
               formError={formError}
               turnstileSiteKey={turnstileSiteKey}
             />
+            <div className='mt-6 space-y-4'>
+              <div className='flex items-center gap-3'>
+                <span className='bg-border h-px flex-1' />
+                <span className='text-muted-foreground text-xs'>または</span>
+                <span className='bg-border h-px flex-1' />
+              </div>
+              <PasskeyLoginButton />
+            </div>
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>
             <div className='text-muted-foreground text-center text-sm'>

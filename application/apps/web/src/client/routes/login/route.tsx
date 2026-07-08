@@ -26,7 +26,9 @@ export const meta: MetaFunction = () => [
 ]
 
 export function loader({ context }: LoaderFunctionArgs) {
-  return { turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null }
+  return {
+    turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null,
+  }
 }
 
 export default function Login() {

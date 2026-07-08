@@ -3,13 +3,22 @@ import {
   type Session,
   type SupabaseClient,
   type User,
+  type VerifyPasskeyAuthenticationParams,
+  type VerifyPasskeyRegistrationParams,
 } from '@supabase/supabase-js'
 import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/common/errors'
 import UnauthorizedError from '@trend-diary/common/errors/client-error/unauthorized-error'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { err, ok, type Result } from 'neverthrow'
 import type { AuthLoginResult, AuthRepository, AuthSignupResult } from '../repository'
-import type { AuthenticationUser, VerifiedSession } from '../schema/auth-schema'
+import type {
+  AuthenticationUser,
+  PasskeyChallenge,
+  PasskeyRegistrationResult,
+  PasskeyVerifyInput,
+  RegisteredPasskey,
+  VerifiedSession,
+} from '../schema/auth-schema'
 
 /**
  * Supabaseのユーザー登録エラーが「既に存在する」ことを示すかチェック
@@ -212,40 +221,115 @@ export class SupabaseAuthRepository implements AuthRepository {
     return ok({ authenticationId: data.claims.sub })
   }
 
-  async refreshSession(): Promise<Result<AuthLoginResult, ServerError>> {
-    const result = await wrapAsyncCall(() => this.client.auth.refreshSession())
+  async startPasskeyRegistration(): Promise<Result<PasskeyChallenge, ServerError>> {
+    const result = await wrapAsyncCall(() => this.client.auth.passkey.startRegistration())
     if (result.isErr()) {
       return err(new ServerError(result.error))
     }
 
-    const {
-      data: { session },
-      error,
-    } = result.value
-    if (error || !session) {
-      return err(new ServerError(`Session refresh failed: ${error?.message}`))
+    const { data, error } = result.value
+    if (error || !data) {
+      return err(new ServerError(`Passkey registration start failed: ${error?.message}`))
     }
 
-    const userResult = this.toAuthenticationUser(session.user)
+    return ok({ challengeId: data.challenge_id, options: data.options })
+  }
+
+  async verifyPasskeyRegistration(
+    input: PasskeyVerifyInput,
+  ): Promise<Result<PasskeyRegistrationResult, ClientError | ServerError>> {
+    const result = await wrapAsyncCall(() =>
+      this.client.auth.passkey.verifyRegistration({
+        challengeId: input.challengeId,
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
+        credential: input.credential as unknown as VerifyPasskeyRegistrationParams['credential'],
+      }),
+    )
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { data, error } = result.value
+    if (error || !data) {
+      // 資格情報の不一致など、ユーザーの再操作で解消しうる失敗として400で返す
+      return err(new ClientError(`Passkey registration failed: ${error?.message}`, 400))
+    }
+
+    return ok({ id: data.id })
+  }
+
+  async startPasskeyAuthentication(): Promise<Result<PasskeyChallenge, ClientError | ServerError>> {
+    const result = await wrapAsyncCall(() => this.client.auth.passkey.startAuthentication())
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { data, error } = result.value
+    if (error || !data) {
+      return err(new ServerError(`Passkey authentication start failed: ${error?.message}`))
+    }
+
+    return ok({ challengeId: data.challenge_id, options: data.options })
+  }
+
+  async verifyPasskeyAuthentication(
+    input: PasskeyVerifyInput,
+  ): Promise<Result<AuthLoginResult, ClientError | ServerError>> {
+    const result = await wrapAsyncCall(() =>
+      this.client.auth.passkey.verifyAuthentication({
+        challengeId: input.challengeId,
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
+        credential: input.credential as unknown as VerifyPasskeyAuthenticationParams['credential'],
+      }),
+    )
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { data, error } = result.value
+    if (error) {
+      // 資格情報の不一致・失効などは認証失敗として401で返す
+      return err(new ClientError('Invalid passkey', 401))
+    }
+
+    if (!data?.user || !data.session) {
+      return err(new ServerError('Passkey authentication failed'))
+    }
+
+    const userResult = this.toAuthenticationUser(data.user)
     if (userResult.isErr()) {
       return err(userResult.error)
     }
 
     return ok({
       user: userResult.value,
-      session: this.toSessionObject(session, userResult.value),
+      session: this.toSessionObject(data.session, userResult.value),
     })
   }
 
-  async deleteUser(userId: string): Promise<Result<void, ServerError>> {
-    const result = await wrapAsyncCall(() => this.client.auth.admin.deleteUser(userId))
+  async listPasskeys(): Promise<Result<RegisteredPasskey[], ServerError>> {
+    const result = await wrapAsyncCall(() => this.client.auth.passkey.list())
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { data, error } = result.value
+    if (error || !data) {
+      return err(new ServerError(`Passkey list failed: ${error?.message}`))
+    }
+
+    return ok(data.map((passkey) => ({ id: passkey.id })))
+  }
+
+  async deletePasskey(passkeyId: string): Promise<Result<void, ServerError>> {
+    const result = await wrapAsyncCall(() => this.client.auth.passkey.delete({ passkeyId }))
     if (result.isErr()) {
       return err(new ServerError(result.error))
     }
 
     const { error } = result.value
     if (error) {
-      return err(new ServerError(`User deletion failed: ${error.message}`))
+      return err(new ServerError(`Passkey deletion failed: ${error.message}`))
     }
 
     return ok(undefined)

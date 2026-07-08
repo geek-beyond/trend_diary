@@ -31,13 +31,13 @@ describe('DELETE /api/articles/:article_id/unread', () => {
   beforeEach(async () => {
     // アカウント作成・ログイン
     const { userId, authenticationId } = await userHelper.create(
-      'test@example.com',
+      'unread-article-test@example.com',
       'Test@password123',
     )
     createdUserIds.userIds.push(userId)
     createdUserIds.authIds.push(authenticationId)
 
-    const loginData = await userHelper.login('test@example.com', 'Test@password123')
+    const loginData = await userHelper.login('unread-article-test@example.com', 'Test@password123')
     testActiveUserId = loginData.activeUserId
     authCookies = loginData.cookies
 

@@ -2,7 +2,12 @@ import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
 import type { AuthRepository, CaptchaVerifier, Command, Notifier, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
-import type { AuthenticationSession } from './schema/auth-schema'
+import type {
+  AuthenticationSession,
+  PasskeyChallenge,
+  PasskeyRegistrationResult,
+  PasskeyVerifyInput,
+} from './schema/auth-schema'
 
 /**
  * サインアップ結果
@@ -50,7 +55,7 @@ export class AuthUseCase {
 
     if (activeUserResult.isErr()) {
       // NOTE: ここで認証ユーザーは作成済みだがactive_user作成に失敗しており、
-      // 認証側に孤児ユーザーが残る。同期補償(repository.deleteUser)はSupabaseの
+      // 認証側に孤児ユーザーが残る。同期補償(認証ユーザーの削除)はSupabaseの
       // 管理者権限(service_role)を要するが、サインアップ経路(anonクライアント)に
       // admin権限を持たせるべきではないため同期補償は行わない。対応候補は、
       // service_roleを持つ別cronでactive_user未紐付けの認証ユーザーを定期
@@ -101,9 +106,44 @@ export class AuthUseCase {
     return this.findActiveUserByAuthenticationId(sessionResult.value.authenticationId)
   }
 
-  async refreshSession(): Promise<Result<LoginResult, ClientError | ServerError>> {
-    // 認証でセッション更新
-    const authResult = await this.repository.refreshSession()
+  async startPasskeyRegistration(): Promise<Result<PasskeyChallenge, ServerError>> {
+    return this.repository.startPasskeyRegistration()
+  }
+
+  async verifyPasskeyRegistration(
+    input: PasskeyVerifyInput,
+  ): Promise<Result<PasskeyRegistrationResult, ClientError | ServerError>> {
+    return this.repository.verifyPasskeyRegistration(input)
+  }
+
+  async startPasskeyLogin(): Promise<Result<PasskeyChallenge, ClientError | ServerError>> {
+    return this.repository.startPasskeyAuthentication()
+  }
+
+  async hasRegisteredPasskey(): Promise<Result<boolean, ServerError>> {
+    const result = await this.repository.listPasskeys()
+    if (result.isErr()) return err(result.error)
+
+    return ok(result.value.length > 0)
+  }
+
+  async disablePasskeys(): Promise<Result<void, ServerError>> {
+    const listResult = await this.repository.listPasskeys()
+    if (listResult.isErr()) return err(listResult.error)
+
+    // トグルOFFは「パスキーを使わない」状態にすることなので、登録済みを全て削除する
+    for (const passkey of listResult.value) {
+      const deleteResult = await this.repository.deletePasskey(passkey.id)
+      if (deleteResult.isErr()) return err(deleteResult.error)
+    }
+
+    return ok(undefined)
+  }
+
+  async verifyPasskeyLogin(
+    input: PasskeyVerifyInput,
+  ): Promise<Result<LoginResult, ClientError | ServerError>> {
+    const authResult = await this.repository.verifyPasskeyAuthentication(input)
     if (authResult.isErr()) return err(authResult.error)
 
     const { user, session } = authResult.value

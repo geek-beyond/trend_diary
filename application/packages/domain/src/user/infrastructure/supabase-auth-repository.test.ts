@@ -439,77 +439,32 @@ describe('SupabaseAuthRepository', () => {
     })
   })
 
-  describe('refreshSession', () => {
+  describe('startPasskeyRegistration', () => {
     describe('正常系', () => {
-      it('セッション更新成功時に新セッションを返すこと', async () => {
-        const supabaseUser = buildSupabaseUser()
-        const supabaseSession = buildSupabaseSession({ user: supabaseUser })
-        resolveAuthMock(client.auth.refreshSession, {
-          data: { user: supabaseUser, session: supabaseSession },
+      it('challengeIdとoptionsを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.startRegistration, {
+          data: { challenge_id: 'challenge-123', options: { challenge: 'abc' }, expires_at: 100 },
           error: null,
         })
 
-        const result = await repository.refreshSession()
+        const result = await repository.startPasskeyRegistration()
 
         expect(result.isOk()).toBe(true)
         if (result.isOk()) {
-          expect(result.value.user.id).toBe(supabaseUser.id)
-          expect(result.value.session.accessToken).toBe('access-token')
+          expect(result.value.challengeId).toBe('challenge-123')
+          expect(result.value.options).toEqual({ challenge: 'abc' })
         }
       })
     })
 
     describe('異常系', () => {
-      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
-        client.auth.refreshSession.mockRejectedValue(new Error('network'))
-
-        const result = await repository.refreshSession()
-
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
-      })
-
       it('errorが存在する場合ServerErrorを返すこと', async () => {
-        resolveAuthMock(client.auth.refreshSession, {
-          data: { user: null, session: null },
-          error: { message: 'refresh failed', name: 'AuthError', status: 401 },
+        resolveAuthMock(client.auth.passkey.startRegistration, {
+          data: null,
+          error: { message: 'disabled', name: 'AuthError', status: 500 },
         })
 
-        const result = await repository.refreshSession()
-
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
-      })
-
-      it('sessionがnullの場合ServerErrorを返すこと', async () => {
-        resolveAuthMock(client.auth.refreshSession, {
-          data: { user: null, session: null },
-          error: null,
-        })
-
-        const result = await repository.refreshSession()
-
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
-      })
-
-      it('emailが取得できない場合ServerErrorを返すこと', async () => {
-        const supabaseUser = buildSupabaseUser({ email: undefined })
-        resolveAuthMock(client.auth.refreshSession, {
-          data: {
-            user: supabaseUser,
-            session: buildSupabaseSession({ user: supabaseUser }),
-          },
-          error: null,
-        })
-
-        const result = await repository.refreshSession()
+        const result = await repository.startPasskeyRegistration()
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
@@ -519,44 +474,266 @@ describe('SupabaseAuthRepository', () => {
     })
   })
 
-  describe('deleteUser', () => {
+  describe('verifyPasskeyRegistration', () => {
     describe('正常系', () => {
-      it('削除成功時にvoidを返すこと', async () => {
-        resolveAuthMock(client.auth.admin.deleteUser, {
-          data: { user: null },
+      it('登録されたpasskeyのidを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.verifyRegistration, {
+          data: { id: 'passkey-1', friendly_name: 'My device', created_at: '2026-07-03' },
           error: null,
         })
 
-        const result = await repository.deleteUser('auth-user-id-123')
+        const result = await repository.verifyPasskeyRegistration({
+          challengeId: 'challenge-123',
+          credential: { id: 'cred', type: 'public-key' },
+        })
 
         expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.id).toBe('passkey-1')
+        }
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合ClientError(400)を返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.verifyRegistration, {
+          data: null,
+          error: { message: 'invalid credential', name: 'WebAuthnError', status: 400 },
+        })
+
+        const result = await repository.verifyPasskeyRegistration({
+          challengeId: 'challenge-123',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ClientError)
+          if (result.error instanceof ClientError) {
+            expect(result.error.statusCode).toBe(400)
+          }
+        }
       })
     })
 
     describe('異常系', () => {
       it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
-        client.auth.admin.deleteUser.mockRejectedValue(new Error('network'))
+        client.auth.passkey.verifyRegistration.mockRejectedValue(new Error('network down'))
 
-        const result = await repository.deleteUser('auth-user-id-123')
+        const result = await repository.verifyPasskeyRegistration({
+          challengeId: 'challenge-123',
+          credential: { id: 'cred', type: 'public-key' },
+        })
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
         }
       })
+    })
+  })
 
-      it('errorが存在する場合ServerErrorを返すこと', async () => {
-        resolveAuthMock(client.auth.admin.deleteUser, {
-          data: { user: null },
-          error: { message: 'delete failed', name: 'AuthError', status: 500 },
+  describe('startPasskeyAuthentication', () => {
+    describe('正常系', () => {
+      it('challengeIdとoptionsを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.startAuthentication, {
+          data: { challenge_id: 'challenge-456', options: { challenge: 'xyz' }, expires_at: 100 },
+          error: null,
         })
 
-        const result = await repository.deleteUser('auth-user-id-123')
+        const result = await repository.startPasskeyAuthentication()
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.challengeId).toBe('challenge-456')
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('errorが存在する場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.startAuthentication, {
+          data: null,
+          error: { message: 'disabled', name: 'AuthError', status: 500 },
+        })
+
+        const result = await repository.startPasskeyAuthentication()
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
           expect(result.error).toBeInstanceOf(ServerError)
-          expect(result.error.message).toContain('User deletion failed')
+        }
+      })
+    })
+  })
+
+  describe('verifyPasskeyAuthentication', () => {
+    describe('正常系', () => {
+      it('セッションとユーザーを含むログイン結果を返すこと', async () => {
+        const supabaseUser = buildSupabaseUser()
+        const supabaseSession = buildSupabaseSession({ user: supabaseUser })
+        resolveAuthMock(client.auth.passkey.verifyAuthentication, {
+          data: { session: supabaseSession, user: supabaseUser },
+          error: null,
+        })
+
+        const result = await repository.verifyPasskeyAuthentication({
+          challengeId: 'challenge-456',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.user.id).toBe(supabaseUser.id)
+          expect(result.value.session.accessToken).toBe('access-token')
+        }
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合ClientError(401)を返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.verifyAuthentication, {
+          data: null,
+          error: { message: 'invalid', name: 'WebAuthnError', status: 401 },
+        })
+
+        const result = await repository.verifyPasskeyAuthentication({
+          challengeId: 'challenge-456',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ClientError)
+          if (result.error instanceof ClientError) {
+            expect(result.error.statusCode).toBe(401)
+          }
+        }
+      })
+
+      it('sessionまたはuserが欠落している場合ServerErrorを返すこと', async () => {
+        const supabaseUser = buildSupabaseUser()
+        resolveAuthMock(client.auth.passkey.verifyAuthentication, {
+          data: { session: null, user: supabaseUser },
+          error: null,
+        })
+
+        const result = await repository.verifyPasskeyAuthentication({
+          challengeId: 'challenge-456',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.passkey.verifyAuthentication.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.verifyPasskeyAuthentication({
+          challengeId: 'challenge-456',
+          credential: { id: 'cred', type: 'public-key' },
+        })
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('listPasskeys', () => {
+    describe('正常系', () => {
+      it('登録済みpasskeyのidだけを取り出して返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.list, {
+          data: [
+            { id: 'passkey-1', friendly_name: 'My device', created_at: '2026-07-03' },
+            { id: 'passkey-2', created_at: '2026-07-03' },
+          ],
+          error: null,
+        })
+
+        const result = await repository.listPasskeys()
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toEqual([{ id: 'passkey-1' }, { id: 'passkey-2' }])
+        }
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.list, {
+          data: null,
+          error: { message: 'list failed', name: 'AuthError', status: 500 },
+        })
+
+        const result = await repository.listPasskeys()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.passkey.list.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.listPasskeys()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('deletePasskey', () => {
+    describe('正常系', () => {
+      it('指定したidで削除を呼び出し成功すること', async () => {
+        resolveAuthMock(client.auth.passkey.delete, { data: null, error: null })
+
+        const result = await repository.deletePasskey('passkey-1')
+
+        expect(result.isOk()).toBe(true)
+        expect(client.auth.passkey.delete).toHaveBeenCalledWith({ passkeyId: 'passkey-1' })
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.passkey.delete, {
+          data: null,
+          error: { message: 'delete failed', name: 'AuthError', status: 500 },
+        })
+
+        const result = await repository.deletePasskey('passkey-1')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.passkey.delete.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.deletePasskey('passkey-1')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
         }
       })
     })

@@ -94,6 +94,42 @@ export const ClickInteraction: Story = {
   },
 }
 
+export const EnterKeyInteraction: Story = {
+  args: {
+    article: qiitaArticle,
+  },
+  play: async ({ canvas, args, step }) => {
+    const card = canvas.getByRole('button')
+
+    await step('カードにフォーカスしEnterでonCardClickが呼ばれることを確認', async () => {
+      card.focus()
+      await expect(card).toHaveFocus()
+      await userEvent.keyboard('{Enter}')
+
+      await expect(args.onCardClick).toHaveBeenCalledWith(qiitaArticle)
+      await expect(args.onCardClick).toHaveBeenCalledTimes(1)
+    })
+  },
+}
+
+export const SpaceKeyInteraction: Story = {
+  args: {
+    article: qiitaArticle,
+  },
+  play: async ({ canvas, args, step }) => {
+    const card = canvas.getByRole('button')
+
+    await step('カードにフォーカスしSpaceでonCardClickが呼ばれることを確認', async () => {
+      card.focus()
+      await expect(card).toHaveFocus()
+      await userEvent.keyboard('{ }')
+
+      await expect(args.onCardClick).toHaveBeenCalledWith(qiitaArticle)
+      await expect(args.onCardClick).toHaveBeenCalledTimes(1)
+    })
+  },
+}
+
 export const HoverInteraction: Story = {
   args: {
     article: qiitaArticle,
@@ -203,11 +239,21 @@ export const ToggleReadInteraction: Story = {
     isLoggedIn: true,
   },
   play: async ({ canvas, args, step }) => {
+    await step('既読トグルが独立してフォーカスできることを確認', async () => {
+      const toggleButton = canvas.getByRole('button', { name: '既読にする' })
+      toggleButton.focus()
+      await expect(toggleButton).toHaveFocus()
+    })
+
     await step('既読ボタンクリックでonToggleReadが呼ばれることを確認', async () => {
-      const toggleButton = canvas.getByText('既読にする')
+      const toggleButton = canvas.getByRole('button', { name: '既読にする' })
       await userEvent.click(toggleButton)
 
       await expect(args.onToggleRead).toHaveBeenCalledWith(unreadArticle.articleId, true)
+    })
+
+    await step('既読トグルを押してもドロワー（onCardClick）が開かないことを確認', async () => {
+      await expect(args.onCardClick).not.toHaveBeenCalled()
     })
   },
 }

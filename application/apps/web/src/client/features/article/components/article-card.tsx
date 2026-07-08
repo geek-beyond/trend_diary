@@ -25,50 +25,65 @@ export default function ArticleCard({
 }: Props) {
   const isRead = article.isRead ?? false
 
-  const handleToggleRead = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleToggleRead = () => {
     onToggleRead?.(article.articleId, !isRead)
   }
 
-  return (
-    <Card
-      data-slot='card'
-      data-testid='article-card'
-      className={cn(
-        'h-32 w-full sm:w-64 cursor-pointer rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:shadow-xl',
-        isRead && 'opacity-60',
-      )}
-      onClick={() => onCardClick(article)}
-      role='button'
-      tabIndex={0}
-    >
-      <CardContent className='flex h-full flex-col p-0'>
-        <CardTitle className='line-clamp-2 flex-1 text-sm leading-relaxed font-bold text-gray-700'>
-          <MediaIcon media={toMediaType(article.media)} size='sm' />
-          <span className='ml-1'>{article.title}</span>
-          {isRead && (
-            <span
-              data-testid='read-indicator'
-              className='ml-1 inline-flex items-center text-green-600'
-            >
-              <Check className='h-4 w-4' />
-            </span>
-          )}
-        </CardTitle>
+  // Enter / Space での起動を担保する。role='button' の div はネイティブ button と違い
+  // キー操作でクリックが発火しないため、明示的にハンドリングする。Space は既定のスクロールを止める
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onCardClick(article)
+    }
+  }
 
-        <CardDescription className='mt-3 flex items-end justify-between'>
-          <span className='text-sm text-gray-600'>{article.author}</span>
-          {isLoggedIn && (
-            <button
-              type='button'
-              onClick={handleToggleRead}
-              className='text-xs text-gray-500 hover:text-gray-700 underline'
-            >
-              {isRead ? '未読にする' : '既読にする'}
-            </button>
-          )}
-        </CardDescription>
-      </CardContent>
-    </Card>
+  return (
+    // 既読トグルをカードの内側に置くとインタラクティブ要素の入れ子になるため、
+    // 兄弟要素として重ね、DOM 上のネストを避ける
+    <div className='relative h-32 w-full sm:w-64'>
+      <Card
+        data-slot='card'
+        data-testid='article-card'
+        className={cn(
+          'size-full cursor-pointer rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:shadow-xl',
+          isRead && 'opacity-60',
+        )}
+        onClick={() => onCardClick(article)}
+        onKeyDown={handleKeyDown}
+        role='button'
+        tabIndex={0}
+      >
+        <CardContent className='flex h-full flex-col p-0'>
+          <CardTitle className='line-clamp-2 flex-1 text-sm leading-relaxed font-bold text-gray-700'>
+            <MediaIcon media={toMediaType(article.media)} size='sm' />
+            <span className='ml-1'>{article.title}</span>
+            {isRead && (
+              <span
+                data-testid='read-indicator'
+                className='ml-1 inline-flex items-center text-green-600'
+              >
+                <Check className='h-4 w-4' />
+              </span>
+            )}
+          </CardTitle>
+
+          {/* 既読トグルは absolute で右下に重なるため、著者名が潜り込まないよう右側を空ける */}
+          <CardDescription className={cn('mt-3 flex items-end', isLoggedIn && 'pr-16')}>
+            <span className='truncate text-sm text-gray-600'>{article.author}</span>
+          </CardDescription>
+        </CardContent>
+      </Card>
+
+      {isLoggedIn && (
+        <button
+          type='button'
+          onClick={handleToggleRead}
+          className='absolute right-6 bottom-6 z-10 text-xs text-gray-500 underline hover:text-gray-700'
+        >
+          {isRead ? '未読にする' : '既読にする'}
+        </button>
+      )}
+    </div>
   )
 }

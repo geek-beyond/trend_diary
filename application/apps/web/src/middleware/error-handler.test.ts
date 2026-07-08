@@ -39,7 +39,7 @@ describe('errorHandler', () => {
     discordError.mockResolvedValue(undefined)
   })
 
-  describe('正常系', () => {
+  describe('準正常系', () => {
     it('4xx の HTTPException は warn ログを出し Discord 通知せずに返すこと', async () => {
       const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
       const res = await errorHandler(
@@ -54,9 +54,7 @@ describe('errorHandler', () => {
       // 4xx はサーバー障害ではないため通知しない
       expect(discordError).not.toHaveBeenCalled()
     })
-  })
 
-  describe('準正常系', () => {
     it('5xx の HTTPException は error ログと Discord 通知を行うこと', async () => {
       const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
       const res = await errorHandler(

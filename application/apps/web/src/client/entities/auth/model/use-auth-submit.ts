@@ -13,16 +13,10 @@ interface AuthSubmitPayload {
 interface UseAuthSubmitParams {
   turnstileSiteKey?: string
   request: (payload: AuthSubmitPayload) => Promise<{ ok: boolean; status: number }>
-  // 機能ごとに異なるステータス→文言の解決を注入する
   resolveErrorMessage: (status: number) => string
-  // 成功後の遷移やキャッシュ再検証など機能固有の後処理を注入する
   onSuccess: () => void | Promise<void>
 }
 
-/**
- * login / signup で共通のフォーム送信フロー（バリデーション・CAPTCHA確認・送信・エラー整形）をまとめる。
- * エンドポイント・エラー解決・成功後処理だけが機能ごとに異なるため、それらを引数で受け取る。
- */
 export default function useAuthSubmit({
   turnstileSiteKey,
   request,

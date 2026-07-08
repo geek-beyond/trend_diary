@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent } from 'storybook/test'
 import { vi } from 'vitest'
 import { SidebarProvider } from '@/client/components/shadcn/sidebar'
-import useLogout from '@/client/features/authenticate/hooks/use-logout'
 import SidebarLogoutButton from './sidebar-logout-button'
+import useLogout from './use-logout'
 
-vi.mock('@/client/features/authenticate/hooks/use-logout', () => ({
+vi.mock('./use-logout', () => ({
   default: vi.fn(),
 }))
 

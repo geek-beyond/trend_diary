@@ -1,19 +1,28 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
 import { z } from 'zod'
-import {
-  AUTH_ERROR_MESSAGES,
-  resolveSignupErrorMessage,
-} from '@/client/features/authenticate/model/error-message'
-import {
-  type AuthenticateErrors,
-  authenticateFormSchema,
-} from '@/client/features/authenticate/model/validation'
-import getApiClientForClient from '@/client/infrastructure/api'
+import { AUTH_ERROR_MESSAGES } from '../lib/error-message'
+import { type AuthenticateErrors, authenticateFormSchema } from './validation'
 
-export default function useSignup(turnstileSiteKey?: string) {
-  const navigate = useNavigate()
+interface AuthSubmitPayload {
+  email: string
+  password: string
+  captchaToken?: string
+}
+
+interface UseAuthSubmitParams {
+  turnstileSiteKey?: string
+  request: (payload: AuthSubmitPayload) => Promise<{ ok: boolean; status: number }>
+  resolveErrorMessage: (status: number) => string
+  onSuccess: () => void | Promise<void>
+}
+
+export default function useAuthSubmit({
+  turnstileSiteKey,
+  request,
+  resolveErrorMessage,
+  onSuccess,
+}: UseAuthSubmitParams) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<AuthenticateErrors | undefined>(undefined)
   const [formError, setFormError] = useState<string | undefined>(undefined)
@@ -40,16 +49,13 @@ export default function useSignup(turnstileSiteKey?: string) {
     }
 
     setIsSubmitting(true)
-    const result = await wrapAsyncCall(() => {
-      const client = getApiClientForClient()
-      return client.auth.signup.$post({
-        json: {
-          email: validation.data.email,
-          password: validation.data.password,
-          captchaToken,
-        },
-      })
-    })
+    const result = await wrapAsyncCall(() =>
+      request({
+        email: validation.data.email,
+        password: validation.data.password,
+        captchaToken,
+      }),
+    )
 
     if (result.isErr()) {
       setFormError(AUTH_ERROR_MESSAGES.unexpected)
@@ -57,13 +63,13 @@ export default function useSignup(turnstileSiteKey?: string) {
       return
     }
     if (!result.value.ok) {
-      setFormError(resolveSignupErrorMessage(result.value.status))
+      setFormError(resolveErrorMessage(result.value.status))
       setIsSubmitting(false)
       return
     }
 
     // 成功時は遷移でアンマウントされるため、ボタンを無効のままにして二重送信を防ぐ
-    navigate('/login')
+    await onSuccess()
   }
 
   return { isSubmitting, errors, formError, submit }

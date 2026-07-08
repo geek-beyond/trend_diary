@@ -55,7 +55,7 @@ pnpm --filter @trend-diary/web d1:apply:local
 pnpm dev
 ```
 
-Gitフックの有効化（任意・推奨。git 2.54以上が必要）。commit前にlint、push前に単体テストが自動実行される。詳細は[Gitフック（pre-commit / pre-push）の有効化](docs/how_to_guides/git_hooks_setup.md)
+Gitフックの有効化（必須。git 2.54以上が必要）。commit前にlint、push前に単体テストが自動実行される。詳細は[Gitフック（pre-commit / pre-push）の有効化](docs/how_to_guides/git_hooks_setup.md)
 
 ```sh
 ./scripts/git-hooks/install.sh

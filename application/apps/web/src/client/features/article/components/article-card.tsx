@@ -38,6 +38,15 @@ export default function ArticleCard({
         isRead && 'opacity-60',
       )}
     >
+      {/* カード全面を覆うトリガを兄弟要素にし、既読トグルと入れ子にせず両方を独立した操作要素にする。
+          主要操作を先にフォーカスさせるため既読トグルより DOM 上で前に置く（absolute のため描画順は不変） */}
+      <button
+        type='button'
+        onClick={() => onCardClick(article)}
+        aria-label={`${article.title}を開く`}
+        className='absolute inset-0 z-0 cursor-pointer rounded-3xl outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]'
+      />
+
       <CardContent className='flex h-full flex-col p-0'>
         <CardTitle className='line-clamp-2 flex-1 text-sm leading-relaxed font-bold text-gray-700'>
           <MediaIcon media={toMediaType(article.media)} size='sm' />
@@ -65,14 +74,6 @@ export default function ArticleCard({
           )}
         </CardDescription>
       </CardContent>
-
-      {/* カード全面を覆うトリガを兄弟要素にし、既読トグルと入れ子にせず両方を独立した操作要素にする */}
-      <button
-        type='button'
-        onClick={() => onCardClick(article)}
-        aria-label={`${article.title}を開く`}
-        className='absolute inset-0 z-0 cursor-pointer rounded-3xl'
-      />
     </Card>
   )
 }

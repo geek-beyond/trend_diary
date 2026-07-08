@@ -1,3 +1,4 @@
+import { Badge } from '@/client/components/shadcn/badge'
 import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { PasskeyToggle } from '@/client/features/passkey'
 
@@ -19,7 +20,10 @@ export default function SettingsPage({ isLoggedIn }: Props) {
 
         <section className='mt-6 flex items-start justify-between gap-4'>
           <div>
-            <h2 className='text-sm font-semibold text-gray-700'>パスキー</h2>
+            <div className='flex items-center gap-2'>
+              <h2 className='text-sm font-semibold text-gray-700'>パスキー</h2>
+              <Badge variant='secondary'>β版</Badge>
+            </div>
             <p className='mt-1 text-sm text-gray-600'>
               パスキーを有効にすると、次回から生体認証やデバイスのロックだけでログインできます。
             </p>

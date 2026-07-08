@@ -5,7 +5,7 @@ import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
-import { type ArticleResponse, toArticleResponse } from './article-response'
+import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 interface UnreadDigestionArticlesResponse {
   data: ArticleResponse[]

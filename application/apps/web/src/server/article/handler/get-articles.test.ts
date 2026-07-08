@@ -1,6 +1,11 @@
 import { faker } from '@faker-js/faker'
+import { ServerError } from '@trend-diary/common/errors'
 import { articles, readHistories } from '@trend-diary/datastore/drizzle-orm/schema'
+import type * as ArticleModule from '@trend-diary/domain/article'
+import { createArticleUseCase } from '@trend-diary/domain/article'
 import { inArray } from 'drizzle-orm'
+import { err } from 'neverthrow'
+import { vi } from 'vitest'
 import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
 import { testRdb as db } from '@/test/helper/rdb'
@@ -8,6 +13,12 @@ import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import app from '../../../server'
 import type { ArticleListResponse, ArticleWithReadStatusResponse } from './get-articles'
+
+// 正常系は実装に委譲し、異常系テストでのみ searchArticles を失敗させたいため spy でラップする
+vi.mock('@trend-diary/domain/article', async (importOriginal) => {
+  const actual = await importOriginal<typeof ArticleModule>()
+  return { ...actual, createArticleUseCase: vi.fn(actual.createArticleUseCase) }
+})
 
 interface GetArticlesTestCase {
   name: string
@@ -329,5 +340,20 @@ describe('GET /api/articles 既読情報', () => {
     expect(data.data).toHaveLength(1)
     expect(data.data[0].title).toBe('未読記事')
     expect(data.data[0].isRead).toBe(false)
+  })
+})
+
+describe('GET /api/articles 準正常系', () => {
+  it('検索でServerErrorが発生した場合は500を返す', async () => {
+    const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
+    vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {
+      const useCase = actual.createArticleUseCase(rdb)
+      useCase.searchArticles = () =>
+        Promise.resolve(err(new ServerError(new Error('検索に失敗しました'))))
+      return useCase
+    })
+
+    const res = await app.request('/api/articles', { method: 'GET' }, TEST_ENV)
+    expect(res.status).toBe(500)
   })
 })

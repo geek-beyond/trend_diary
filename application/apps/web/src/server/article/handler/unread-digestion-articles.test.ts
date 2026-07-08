@@ -1,8 +1,19 @@
+import { ServerError } from '@trend-diary/common/errors'
+import type * as ArticleModule from '@trend-diary/domain/article'
+import { createArticleUseCase } from '@trend-diary/domain/article'
+import { err } from 'neverthrow'
+import { vi } from 'vitest'
 import app from '@/server'
 import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
+
+// 正常系は実装に委譲し、異常系テストでのみ取得を失敗させたいため spy でラップする
+vi.mock('@trend-diary/domain/article', async (importOriginal) => {
+  const actual = await importOriginal<typeof ArticleModule>()
+  return { ...actual, createArticleUseCase: vi.fn(actual.createArticleUseCase) }
+})
 
 interface UnreadDigestionResponse {
   data: Array<{
@@ -120,5 +131,18 @@ describe('GET /api/articles/unread-digestion', () => {
     expect(json.data.map((item) => item.title)).toEqual(expect.arrayContaining(expectedTitles!))
     expect(json.data).toHaveLength(expectedTitles!.length)
     expect(json.total).toBe(expectedTitles!.length)
+  })
+
+  it('取得でServerErrorが発生した場合は500を返す', async () => {
+    const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
+    vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {
+      const useCase = actual.createArticleUseCase(rdb)
+      useCase.getUnreadDigestionArticles = () =>
+        Promise.resolve(err(new ServerError(new Error('取得に失敗しました'))))
+      return useCase
+    })
+
+    const response = await requestUnreadDigestion(undefined, authCookies)
+    expect(response.status).toBe(500)
   })
 })

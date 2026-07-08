@@ -16,9 +16,10 @@ export default function useLogout() {
       return apiCall(() => client.auth.logout.$delete())
     },
     {
-      onSuccess: async () => {
-        // ログアウト後もセッションキャッシュが古いログイン状態を保持しないよう再検証する
-        await mutate(SESSION_SWR_KEY)
+      onSuccess: () => {
+        // ログアウト後もセッションキャッシュが古いログイン状態を保持しないよう再検証する。
+        // ログアウト自体は成功しており、再検証の成否で遷移を止めたくないため投げっぱなしにする
+        void mutate(SESSION_SWR_KEY)
         navigate('/login')
         toast.success('ログアウトしました')
       },

@@ -122,7 +122,7 @@ export const SpaceKeyInteraction: Story = {
     await step('カードにフォーカスしSpaceでonCardClickが呼ばれることを確認', async () => {
       card.focus()
       await expect(card).toHaveFocus()
-      await userEvent.keyboard('{ }')
+      await userEvent.keyboard(' ')
 
       await expect(args.onCardClick).toHaveBeenCalledWith(qiitaArticle)
       await expect(args.onCardClick).toHaveBeenCalledTimes(1)
@@ -240,13 +240,13 @@ export const ToggleReadInteraction: Story = {
   },
   play: async ({ canvas, args, step }) => {
     await step('既読トグルが独立してフォーカスできることを確認', async () => {
-      const toggleButton = canvas.getByRole('button', { name: '既読にする' })
+      const toggleButton = canvas.getByRole('button', { name: /既読にする/ })
       toggleButton.focus()
       await expect(toggleButton).toHaveFocus()
     })
 
     await step('既読ボタンクリックでonToggleReadが呼ばれることを確認', async () => {
-      const toggleButton = canvas.getByRole('button', { name: '既読にする' })
+      const toggleButton = canvas.getByRole('button', { name: /既読にする/ })
       await userEvent.click(toggleButton)
 
       await expect(args.onToggleRead).toHaveBeenCalledWith(unreadArticle.articleId, true)

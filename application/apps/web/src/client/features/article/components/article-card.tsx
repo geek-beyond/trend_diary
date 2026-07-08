@@ -41,12 +41,14 @@ export default function ArticleCard({
   return (
     // 既読トグルをカードの内側に置くとインタラクティブ要素の入れ子になるため、
     // 兄弟要素として重ね、DOM 上のネストを避ける
-    <div className='relative h-32 w-full sm:w-64'>
+    <div className='group relative h-32 w-full sm:w-64'>
       <Card
         data-slot='card'
         data-testid='article-card'
+        // 既読トグルは兄弟要素として重なるため、その上をホバーするとカードの :hover が外れてしまう。
+        // group-hover にしてラッパー全体のホバーで影を維持し、ちらつきを防ぐ
         className={cn(
-          'size-full cursor-pointer rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:shadow-xl',
+          'size-full cursor-pointer rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 group-hover:shadow-xl focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
           isRead && 'opacity-60',
         )}
         onClick={() => onCardClick(article)}
@@ -64,13 +66,14 @@ export default function ArticleCard({
                 className='ml-1 inline-flex items-center text-green-600'
               >
                 <Check className='h-4 w-4' />
+                <span className='sr-only'>（既読）</span>
               </span>
             )}
           </CardTitle>
 
           {/* 既読トグルは absolute で右下に重なるため、著者名が潜り込まないよう右側を空ける */}
           <CardDescription className={cn('mt-3 flex items-end', isLoggedIn && 'pr-16')}>
-            <span className='truncate text-sm text-gray-600'>{article.author}</span>
+            <span className='min-w-0 truncate text-sm text-gray-600'>{article.author}</span>
           </CardDescription>
         </CardContent>
       </Card>
@@ -79,6 +82,9 @@ export default function ArticleCard({
         <button
           type='button'
           onClick={handleToggleRead}
+          // 一覧に多数のカードが並ぶため、ラベルだけだとどの記事への操作か判別できない。
+          // 記事タイトルを含めて支援技術に文脈を伝える
+          aria-label={`${article.title}を${isRead ? '未読' : '既読'}にする`}
           className='absolute right-6 bottom-6 z-10 text-xs text-gray-500 underline hover:text-gray-700'
         >
           {isRead ? '未読にする' : '既読にする'}

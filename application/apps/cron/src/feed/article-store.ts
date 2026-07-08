@@ -28,8 +28,11 @@ export async function storeArticles(
   const db = getRdbClient(env.DB)
   if (items.length === 0) return ok(0)
 
+  // media はバッチ全体で不変のため切り詰めをループ外で一度だけ行う
+  const truncatedMedia = truncateByCodePoint(media, ARTICLE_MAX_LENGTH.media)
+
   const normalized = items.map((item) => ({
-    media: truncateByCodePoint(media, ARTICLE_MAX_LENGTH.media),
+    media: truncatedMedia,
     title: truncateByCodePoint(item.title, ARTICLE_MAX_LENGTH.title),
     author: truncateByCodePoint(item.author, ARTICLE_MAX_LENGTH.author),
     description: truncateByCodePoint(item.description, ARTICLE_MAX_LENGTH.description),

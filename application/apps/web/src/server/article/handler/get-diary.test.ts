@@ -1,8 +1,7 @@
 import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
 import { z } from 'zod'
-import app from '@/server'
-import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import { diaryQuerySchema } from './get-diary'
@@ -48,19 +47,7 @@ function toJstDateTime(date: string, time: string) {
 
 async function requestDiaryRange(query?: string, cookies?: string) {
   const suffix = query ? `?${query}` : ''
-  const headers: Record<string, string> = {}
-  if (cookies) {
-    headers.Cookie = cookies
-  }
-
-  return app.request(
-    `/api/articles/diary${suffix}`,
-    {
-      method: 'GET',
-      headers,
-    },
-    TEST_ENV,
-  )
+  return apiRequest(`/api/articles/diary${suffix}`, { method: 'GET', cookies })
 }
 
 describe('diaryQuerySchema', () => {

@@ -1,7 +1,6 @@
-import TEST_ENV from '@/test/env'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
-import app from '../../../server'
 
 describe('DELETE /api/auth/logout', () => {
   const TEST_EMAIL = 'logout-test@example.com'
@@ -22,18 +21,7 @@ describe('DELETE /api/auth/logout', () => {
   })
 
   async function requestLogout() {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    }
-
-    return app.request(
-      '/api/auth/logout',
-      {
-        method: 'DELETE',
-        headers,
-      },
-      TEST_ENV,
-    )
+    return apiRequest('/api/auth/logout', { method: 'DELETE', contentTypeJson: true })
   }
 
   it('正常系: ログアウトに成功する', async () => {

@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker'
-import app from '@/server'
-import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import { articleIdParamSchema, createReadHistoryApiSchema } from './read-article'
@@ -93,22 +92,11 @@ describe('POST /api/articles/:article_id/read', () => {
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
 
   async function requestReadArticle(articleId: string, cookies: string, readAt?: string) {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Cookie: cookies,
-    }
-
-    return app.request(
-      `/api/articles/${articleId}/read`,
-      {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          read_at: readAt || faker.date.recent().toISOString(),
-        }),
-      },
-      TEST_ENV,
-    )
+    return apiRequest(`/api/articles/${articleId}/read`, {
+      method: 'POST',
+      cookies,
+      json: { read_at: readAt || faker.date.recent().toISOString() },
+    })
   }
 
   beforeEach(async () => {

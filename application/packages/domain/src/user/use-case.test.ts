@@ -147,7 +147,7 @@ describe('AuthUseCase', () => {
       })
 
       // NOTE: active_user作成失敗時の孤児認証ユーザーの補償は、admin権限を要する
-      // deleteUserが必要だが、サインアップ経路(anonクライアント)にadmin権限を
+      // 認証ユーザー削除が必要だが、サインアップ経路(anonクライアント)にadmin権限を
       // 持たせるべきではないため未実装。仕様・対応候補はuse-case.ts側のコメントに
       // 記載し、別イシューで再設計する。
     })
@@ -371,97 +371,6 @@ describe('AuthUseCase', () => {
 
           // Act
           const result = await useCase.getCurrentActiveUser()
-
-          // Assert
-          expect(result.isErr()).toBe(true)
-          if (result.isErr()) {
-            expect(result.error).toBeInstanceOf(ServerError)
-          }
-        })
-      })
-    })
-  })
-
-  describe('refreshSession', () => {
-    describe('正常系', () => {
-      it('セッション更新成功時、新しいsessionとactiveUserを返す', async () => {
-        // Arrange
-        const newSession: AuthenticationSession = {
-          ...mockSession,
-          accessToken: 'new-access-token',
-          refreshToken: 'new-refresh-token',
-        }
-        repositoryMock.refreshSession.mockResolvedValue(
-          ok({
-            user: mockAuthUser,
-            session: newSession,
-          }),
-        )
-        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(mockActiveUser))
-
-        // Act
-        const result = await useCase.refreshSession()
-
-        // Assert
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value.session).toEqual(newSession)
-          expect(result.value.activeUser).toEqual(mockActiveUser)
-        }
-        expect(repositoryMock.refreshSession).toHaveBeenCalled()
-        expect(queryMock.findActiveByAuthenticationId).toHaveBeenCalledWith(mockAuthUser.id)
-      })
-    })
-
-    describe('異常系', () => {
-      it('repository.refreshSession失敗時、エラーを返す', async () => {
-        // Arrange
-        const authError = new ClientError('Session expired', 401)
-        repositoryMock.refreshSession.mockResolvedValue(err(authError))
-
-        // Act
-        const result = await useCase.refreshSession()
-
-        // Assert
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBe(authError)
-        }
-        expect(queryMock.findActiveByAuthenticationId).not.toHaveBeenCalled()
-      })
-
-      describe('認証成功後', () => {
-        beforeEach(() => {
-          repositoryMock.refreshSession.mockResolvedValue(
-            ok({
-              user: mockAuthUser,
-              session: mockSession,
-            }),
-          )
-        })
-
-        it('ActiveUserが見つからない場合、ClientError(404)を返す', async () => {
-          // Arrange
-          queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(null))
-
-          // Act
-          const result = await useCase.refreshSession()
-
-          // Assert
-          expect(result.isErr()).toBe(true)
-          if (result.isErr()) {
-            expect(result.error).toBeInstanceOf(ClientError)
-            expect(result.error.message).toBe('User not found')
-          }
-        })
-
-        it('クエリ失敗時、ServerErrorを返す', async () => {
-          // Arrange
-          const dbError = new Error('Database connection failed')
-          queryMock.findActiveByAuthenticationId.mockResolvedValue(err(dbError))
-
-          // Act
-          const result = await useCase.refreshSession()
 
           // Assert
           expect(result.isErr()).toBe(true)

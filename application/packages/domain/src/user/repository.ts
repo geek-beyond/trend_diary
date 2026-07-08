@@ -88,16 +88,6 @@ export interface AuthRepository {
   verifySession(): Promise<Result<VerifiedSession, ClientError | ServerError>>
 
   /**
-   * セッションを更新する
-   */
-  refreshSession(): Promise<Result<AuthLoginResult, ServerError>>
-
-  /**
-   * ユーザーを削除する（補償トランザクション用）
-   */
-  deleteUser(userId: string): Promise<Result<void, ServerError>>
-
-  /**
    * passkey登録を開始し、WebAuthnの資格情報生成オプションを取得する（要認証セッション）
    */
   startPasskeyRegistration(): Promise<Result<PasskeyChallenge, ServerError>>

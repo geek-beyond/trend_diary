@@ -55,7 +55,7 @@ export class AuthUseCase {
 
     if (activeUserResult.isErr()) {
       // NOTE: ここで認証ユーザーは作成済みだがactive_user作成に失敗しており、
-      // 認証側に孤児ユーザーが残る。同期補償(repository.deleteUser)はSupabaseの
+      // 認証側に孤児ユーザーが残る。同期補償(認証ユーザーの削除)はSupabaseの
       // 管理者権限(service_role)を要するが、サインアップ経路(anonクライアント)に
       // admin権限を持たせるべきではないため同期補償は行わない。対応候補は、
       // service_roleを持つ別cronでactive_user未紐付けの認証ユーザーを定期
@@ -104,23 +104,6 @@ export class AuthUseCase {
     }
 
     return this.findActiveUserByAuthenticationId(sessionResult.value.authenticationId)
-  }
-
-  async refreshSession(): Promise<Result<LoginResult, ClientError | ServerError>> {
-    // 認証でセッション更新
-    const authResult = await this.repository.refreshSession()
-    if (authResult.isErr()) return err(authResult.error)
-
-    const { user, session } = authResult.value
-
-    const activeUserResult = await this.findActiveUserByAuthenticationId(user.id)
-
-    if (activeUserResult.isErr()) return err(activeUserResult.error)
-
-    return ok({
-      session,
-      activeUser: activeUserResult.value,
-    })
   }
 
   async startPasskeyRegistration(): Promise<Result<PasskeyChallenge, ServerError>> {

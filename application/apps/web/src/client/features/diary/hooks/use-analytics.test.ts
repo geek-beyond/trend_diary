@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
+import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import useAnalytics from './use-analytics'
@@ -250,6 +251,44 @@ describe('useAnalytics', () => {
 
     await waitFor(() => {
       expect(fetchDiary).toHaveBeenLastCalledWith(targetDate, 2)
+    })
+  })
+
+  describe('異常系', () => {
+    it('週次集計の取得に失敗するとエラーのトーストを表示する', async () => {
+      const fetchDiaryRange = vi.fn().mockRejectedValue(new Error('取得に失敗しました'))
+      const fetchDiary = vi.fn()
+
+      mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange })
+
+      setupHook()
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          'エラーが発生しました。時間をおいて再度お試しください。',
+          { id: 'diary-analytics-error' },
+        )
+      })
+    })
+
+    it('選択日の日次取得に失敗するとエラーのトーストを表示する', async () => {
+      const targetDate = buildDates(getTodayJst())[5]
+      const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
+        const dates = buildDates(to).filter((date) => date >= from)
+        return Promise.resolve(dates.map((date) => buildRangeItemResponse(date, 1, 0)))
+      })
+      const fetchDiary = vi.fn().mockRejectedValue(new Error('取得に失敗しました'))
+
+      mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange })
+
+      setupHook([`/analytics?date=${targetDate}`])
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          'エラーが発生しました。時間をおいて再度お試しください。',
+          { id: 'diary-analytics-error' },
+        )
+      })
     })
   })
 })

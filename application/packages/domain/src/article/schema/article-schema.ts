@@ -1,13 +1,23 @@
 import { createdAt } from '@trend-diary/common/schemas'
 import { z } from 'zod'
 
+// 各フィールドの最大長。cron の切り詰めとスキーマ検証を同一のソースに依存させ、
+// 保存される実データがスキーマ検証を必ず満たすようにする
+export const ARTICLE_MAX_LENGTH = {
+  media: 10,
+  title: 100,
+  author: 30,
+  description: 1024,
+  url: 2048,
+} as const
+
 export const articleSchema = z.object({
   articleId: z.bigint(),
-  media: z.string().max(10),
-  title: z.string().max(100),
-  author: z.string().max(30),
-  description: z.string().max(255),
-  url: z.string().url().max(2048),
+  media: z.string().max(ARTICLE_MAX_LENGTH.media),
+  title: z.string().max(ARTICLE_MAX_LENGTH.title),
+  author: z.string().max(ARTICLE_MAX_LENGTH.author),
+  description: z.string().max(ARTICLE_MAX_LENGTH.description),
+  url: z.string().url().max(ARTICLE_MAX_LENGTH.url),
   createdAt,
 })
 

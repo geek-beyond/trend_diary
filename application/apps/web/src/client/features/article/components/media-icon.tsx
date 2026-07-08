@@ -16,15 +16,15 @@ export function toMediaType(media: string): MediaType {
 const mediaConfig: Record<MediaType, { iconImage: string; altText: string }> = {
   qiita: {
     iconImage: '/images/qiita-icon.png',
-    altText: 'qiita icon',
+    altText: 'Qiitaのアイコン',
   },
   zenn: {
     iconImage: '/images/zenn-icon.svg',
-    altText: 'zenn icon',
+    altText: 'Zennのアイコン',
   },
   hatena: {
     iconImage: '/images/hatena-icon.svg',
-    altText: 'hatena icon',
+    altText: 'はてなのアイコン',
   },
 }
 

@@ -3,6 +3,7 @@ import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagina
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 import useSWR from 'swr'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi, {
@@ -20,6 +21,13 @@ interface DiaryPoint {
 interface SummaryRangeData {
   points: DiaryPoint[]
   weeklySources: DiarySource[]
+}
+
+// 週次・日次の2つの取得が同時に失敗しても通知を1つに集約するため、固定 id でトーストを重複させない
+const notifyFetchError = () => {
+  toast.error('エラーが発生しました。時間をおいて再度お試しください。', {
+    id: 'diary-analytics-error',
+  })
 }
 
 const buildAvailableDates = (todayJst: string) =>
@@ -87,6 +95,9 @@ export default function useAnalytics(enabled: boolean) {
         })),
       }
     },
+    {
+      onError: notifyFetchError,
+    },
   )
 
   const swrKey: ['api/articles/diary', string, number] | null =
@@ -95,6 +106,9 @@ export default function useAnalytics(enabled: boolean) {
     swrKey,
     ([, date, currentPage]: ['api/articles/diary', string, number]) =>
       fetchDiary(date, currentPage),
+    {
+      onError: notifyFetchError,
+    },
   )
 
   const reads = data?.reads.data.map((read) => ({ ...read, readAt: new Date(read.readAt) })) ?? []

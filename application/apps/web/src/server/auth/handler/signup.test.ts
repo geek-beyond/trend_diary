@@ -1,6 +1,5 @@
-import TEST_ENV from '@/test/env'
+import { apiRequest } from '@/test/helper/request'
 import * as userHelper from '@/test/helper/user'
-import app from '../../../server'
 
 describe('POST /api/auth/signup', () => {
   let emailSequence = 0
@@ -25,17 +24,7 @@ describe('POST /api/auth/signup', () => {
   })
 
   async function requestSignup(body: string) {
-    return app.request(
-      '/api/auth/signup',
-      {
-        method: 'POST',
-        body,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-      TEST_ENV,
-    )
+    return apiRequest('/api/auth/signup', { method: 'POST', body, contentTypeJson: true })
   }
 
   it('正常系: signupが成功する', async () => {

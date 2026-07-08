@@ -3,9 +3,8 @@ import type * as ArticleModule from '@trend-diary/domain/article'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { err } from 'neverthrow'
 import { vi } from 'vitest'
-import app from '@/server'
-import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
@@ -34,18 +33,7 @@ describe('GET /api/articles/unread-digestion', () => {
 
   async function requestUnreadDigestion(query?: string, cookies?: string) {
     const suffix = query ? `?${query}` : ''
-    const headers: Record<string, string> = {}
-    if (cookies) {
-      headers.Cookie = cookies
-    }
-    return app.request(
-      `/api/articles/unread-digestion${suffix}`,
-      {
-        method: 'GET',
-        headers,
-      },
-      TEST_ENV,
-    )
+    return apiRequest(`/api/articles/unread-digestion${suffix}`, { method: 'GET', cookies })
   }
 
   beforeEach(async () => {

@@ -1,13 +1,37 @@
 import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
+import { DIARY_DAYS } from '@trend-diary/domain/article/diary'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedParamJsonContext } from '@/middleware/zod-validator'
 
+const MS_PER_MINUTE = 60 * 1000
+const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE
+
+// クライアント端末の時計ずれを吸収するため、未来方向にこの幅だけ許容する
+const READ_AT_FUTURE_TOLERANCE_MS = 5 * MS_PER_MINUTE
+// 集計対象（ダイアリー窓）と整合させ、過去方向はこの範囲までのみ許容する
+const READ_AT_PAST_WINDOW_MS = DIARY_DAYS * MS_PER_DAY
+
+const READ_AT_FUTURE_MESSAGE = 'read_at must not be in the future'
+const READ_AT_PAST_MESSAGE = `read_at must be within the last ${DIARY_DAYS} days`
+
 // API用スキーマ
 export const createReadHistoryApiSchema = z.object({
-  read_at: z.string().datetime(),
+  read_at: z
+    .string()
+    .datetime()
+    .superRefine((value, ctx) => {
+      const time = Date.parse(value)
+      const now = Date.now()
+      if (time > now + READ_AT_FUTURE_TOLERANCE_MS) {
+        ctx.addIssue({ code: 'custom', message: READ_AT_FUTURE_MESSAGE })
+      }
+      if (time < now - READ_AT_PAST_WINDOW_MS) {
+        ctx.addIssue({ code: 'custom', message: READ_AT_PAST_MESSAGE })
+      }
+    }),
 })
 
 export const articleIdParamSchema = z.object({

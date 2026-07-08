@@ -1,41 +1,55 @@
 import { faker } from '@faker-js/faker'
-import app from '@/server'
-import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import { articleIdParamSchema, createReadHistoryApiSchema } from './read-article'
 
 describe('API ReadHistoryスキーマ', () => {
   describe('createReadHistoryApiSchema', () => {
-    it('有効なISO8601文字列を受け入れること', () => {
-      const validRequest = {
-        read_at: '2024-01-01T10:00:00.000Z',
-      }
+    const MS_PER_MINUTE = 60 * 1000
+    const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE
 
-      expect(() => {
-        createReadHistoryApiSchema.parse(validRequest)
-      }).not.toThrow()
+    describe('正常系', () => {
+      const validCases = [
+        { name: '現在時刻付近のISO8601文字列を受け入れること', read_at: new Date().toISOString() },
+        {
+          name: '時計ずれ許容内の近未来（数分先）を受け入れること',
+          read_at: new Date(Date.now() + 2 * MS_PER_MINUTE).toISOString(),
+        },
+        {
+          name: 'ダイアリー窓内の過去日時を受け入れること',
+          read_at: new Date(Date.now() - 1 * MS_PER_DAY).toISOString(),
+        },
+      ]
+
+      it.each(validCases)('$name', ({ read_at }) => {
+        expect(() => {
+          createReadHistoryApiSchema.parse({ read_at })
+        }).not.toThrow()
+      })
     })
 
-    it('無効な日時文字列を拒否すること', () => {
-      expect(() => {
-        createReadHistoryApiSchema.parse({
-          read_at: 'invalid-date',
-        })
-      }).toThrow()
+    describe('準正常系', () => {
+      const invalidCases = [
+        { name: 'パースできない日時文字列を拒否すること', input: { read_at: 'invalid-date' } },
+        { name: '時刻を含まない日付のみを拒否すること', input: { read_at: '2024-01-01' } },
+        {
+          name: '許容を超える未来日時を拒否すること',
+          input: { read_at: new Date(Date.now() + 1 * MS_PER_DAY).toISOString() },
+        },
+        {
+          name: 'ダイアリー窓を超える過去日時を拒否すること',
+          input: { read_at: new Date(Date.now() - 8 * MS_PER_DAY).toISOString() },
+        },
+        { name: 'read_atフィールドが欠落している場合を拒否すること', input: {} },
+      ]
 
-      expect(() => {
-        createReadHistoryApiSchema.parse({
-          read_at: '2024-01-01',
-        })
-      }).toThrow()
-    })
-
-    it('readAtフィールドが必須であること', () => {
-      expect(() => {
-        createReadHistoryApiSchema.parse({})
-      }).toThrow()
+      it.each(invalidCases)('$name', ({ input }) => {
+        expect(() => {
+          createReadHistoryApiSchema.parse(input)
+        }).toThrow()
+      })
     })
   })
 
@@ -78,22 +92,11 @@ describe('POST /api/articles/:article_id/read', () => {
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
 
   async function requestReadArticle(articleId: string, cookies: string, readAt?: string) {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Cookie: cookies,
-    }
-
-    return app.request(
-      `/api/articles/${articleId}/read`,
-      {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          read_at: readAt || faker.date.recent().toISOString(),
-        }),
-      },
-      TEST_ENV,
-    )
+    return apiRequest(`/api/articles/${articleId}/read`, {
+      method: 'POST',
+      cookies,
+      json: { read_at: readAt || faker.date.recent().toISOString() },
+    })
   }
 
   beforeEach(async () => {
@@ -127,7 +130,8 @@ describe('POST /api/articles/:article_id/read', () => {
 
   describe('正常系', () => {
     it('既読履歴を作成できること', async () => {
-      const fixedReadAt = '2024-01-01T10:00:00.000Z'
+      // ダイアリー窓内かつ未来でない固定時刻（1時間前）で登録する
+      const fixedReadAt = new Date(Date.now() - 60 * 60 * 1000).toISOString()
       const response = await requestReadArticle(testArticleId.toString(), authCookies, fixedReadAt)
 
       expect(response.status).toBe(201)

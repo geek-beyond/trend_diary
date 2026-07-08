@@ -136,7 +136,7 @@ export const QiitaArticle: Story = {
   },
   play: async ({ step }) => {
     await step('Qiitaメディアアイコンが表示されることを確認', async () => {
-      const mediaIcon = within(document.body).getByAltText('qiita icon')
+      const mediaIcon = within(document.body).getByAltText('Qiitaのアイコン')
       await expect(mediaIcon).toBeInTheDocument()
     })
 
@@ -155,7 +155,7 @@ export const ZennArticle: Story = {
   },
   play: async ({ step }) => {
     await step('Zennメディアアイコンが表示されることを確認', async () => {
-      const mediaIcon = within(document.body).getByAltText('zenn icon')
+      const mediaIcon = within(document.body).getByAltText('Zennのアイコン')
       await expect(mediaIcon).toBeInTheDocument()
     })
   },

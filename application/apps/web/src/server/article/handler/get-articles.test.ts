@@ -6,12 +6,11 @@ import { createArticleUseCase } from '@trend-diary/domain/article'
 import { inArray } from 'drizzle-orm'
 import { err } from 'neverthrow'
 import { vi } from 'vitest'
-import TEST_ENV from '@/test/env'
 import * as articleHelper from '@/test/helper/article'
 import { testRdb as db } from '@/test/helper/rdb'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
-import app from '../../../server'
 import type { ArticleListResponse, ArticleWithReadStatusResponse } from './get-articles'
 
 // searchArticles は異常系テストでのみ失敗させたい。ただし vi.mock はファイル先頭へホイストされ
@@ -30,11 +29,7 @@ interface GetArticlesTestCase {
 
 async function requestGetArticles(query: string = '', cookies?: string) {
   const url = query ? `/api/articles?${query}` : '/api/articles'
-  const headers: Record<string, string> = {}
-  if (cookies) {
-    headers.Cookie = cookies
-  }
-  return app.request(url, { method: 'GET', headers }, TEST_ENV)
+  return apiRequest(url, { method: 'GET', cookies })
 }
 
 describe('GET /api/articles', () => {

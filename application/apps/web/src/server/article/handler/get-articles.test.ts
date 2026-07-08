@@ -14,12 +14,6 @@ import * as userHelper from '@/test/helper/user'
 import app from '../../../server'
 import type { ArticleListResponse, ArticleWithReadStatusResponse } from './get-articles'
 
-// 正常系は実装に委譲し、異常系テストでのみ searchArticles を失敗させたいため spy でラップする
-vi.mock('@trend-diary/domain/article', async (importOriginal) => {
-  const actual = await importOriginal<typeof ArticleModule>()
-  return { ...actual, createArticleUseCase: vi.fn(actual.createArticleUseCase) }
-})
-
 interface GetArticlesTestCase {
   name: string
   query: string
@@ -343,7 +337,13 @@ describe('GET /api/articles 既読情報', () => {
   })
 })
 
-describe('GET /api/articles 準正常系', () => {
+// 正常系は実装に委譲し、異常系テストでのみ searchArticles を失敗させたいため spy でラップする
+vi.mock('@trend-diary/domain/article', async (importOriginal) => {
+  const actual = await importOriginal<typeof ArticleModule>()
+  return { ...actual, createArticleUseCase: vi.fn(actual.createArticleUseCase) }
+})
+
+describe('GET /api/articles 異常系', () => {
   it('検索でServerErrorが発生した場合は500を返す', async () => {
     const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
     vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {

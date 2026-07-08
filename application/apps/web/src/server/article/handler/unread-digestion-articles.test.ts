@@ -92,57 +92,53 @@ describe('GET /api/articles/unread-digestion', () => {
     createdArticleIds.length = 0
   })
 
-  it.each([
-    {
-      name: '当日未読かつ未skipの記事のみ返す',
-      query: undefined,
-      cookies: () => authCookies,
-      status: 200,
-      expectedTitles: ['未読消化対象', '未読消化対象Zenn'],
-    },
-    {
-      name: 'media=qiita指定時はqiitaのみ返す',
-      query: 'media=qiita',
-      cookies: () => authCookies,
-      status: 200,
-      expectedTitles: ['未読消化対象'],
-    },
-    {
-      name: '未認証時は401',
-      query: undefined,
-      cookies: () => undefined,
-      status: 401,
-      expectedTitles: undefined,
-    },
-    {
-      name: '不正なmediaは422',
-      query: 'media=invalid',
-      cookies: () => authCookies,
-      status: 422,
-      expectedTitles: undefined,
-    },
-  ])('$name', async ({ query, cookies, status, expectedTitles }) => {
-    const response = await requestUnreadDigestion(query, cookies())
-    expect(response.status).toBe(status)
+  describe('正常系', () => {
+    it.each([
+      {
+        name: '当日未読かつ未skipの記事のみ返す',
+        query: undefined,
+        expectedTitles: ['未読消化対象', '未読消化対象Zenn'],
+      },
+      {
+        name: 'media=qiita指定時はqiitaのみ返す',
+        query: 'media=qiita',
+        expectedTitles: ['未読消化対象'],
+      },
+    ])('$name', async ({ query, expectedTitles }) => {
+      const response = await requestUnreadDigestion(query, authCookies)
+      expect(response.status).toBe(200)
 
-    if (status !== 200) return
-
-    const json: UnreadDigestionResponse = await response.json()
-    expect(json.data.map((item) => item.title)).toEqual(expect.arrayContaining(expectedTitles!))
-    expect(json.data).toHaveLength(expectedTitles!.length)
-    expect(json.total).toBe(expectedTitles!.length)
+      const json: UnreadDigestionResponse = await response.json()
+      expect(json.data.map((item) => item.title)).toEqual(expect.arrayContaining(expectedTitles))
+      expect(json.data).toHaveLength(expectedTitles.length)
+      expect(json.total).toBe(expectedTitles.length)
+    })
   })
 
-  it('取得でServerErrorが発生した場合は500を返す', async () => {
-    const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
-    vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {
-      const useCase = actual.createArticleUseCase(rdb)
-      useCase.getUnreadDigestionArticles = () =>
-        Promise.resolve(err(new ServerError(new Error('取得に失敗しました'))))
-      return useCase
+  describe('準正常系', () => {
+    it('未認証時は401', async () => {
+      const response = await requestUnreadDigestion()
+      expect(response.status).toBe(401)
     })
 
-    const response = await requestUnreadDigestion(undefined, authCookies)
-    expect(response.status).toBe(500)
+    it('不正なmediaは422', async () => {
+      const response = await requestUnreadDigestion('media=invalid', authCookies)
+      expect(response.status).toBe(422)
+    })
+  })
+
+  describe('異常系', () => {
+    it('取得でServerErrorが発生した場合は500を返す', async () => {
+      const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
+      vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {
+        const useCase = actual.createArticleUseCase(rdb)
+        useCase.getUnreadDigestionArticles = () =>
+          Promise.resolve(err(new ServerError(new Error('取得に失敗しました'))))
+        return useCase
+      })
+
+      const response = await requestUnreadDigestion(undefined, authCookies)
+      expect(response.status).toBe(500)
+    })
   })
 })

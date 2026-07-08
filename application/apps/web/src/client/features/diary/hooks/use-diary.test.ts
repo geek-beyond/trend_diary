@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
+import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import useDiary from './use-diary'
@@ -133,6 +134,21 @@ describe('useDiary', () => {
 
     await waitFor(() => {
       expect(fetchDiary).toHaveBeenLastCalledWith(expect.any(String), 1)
+    })
+  })
+
+  describe('異常系', () => {
+    it('日次APIの取得に失敗するとエラーのトーストを表示する', async () => {
+      const fetchDiary = vi.fn().mockRejectedValue(new Error('取得に失敗しました'))
+      mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange: vi.fn() })
+
+      setupHook(['/diary'])
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          'エラーが発生しました。時間をおいて再度お試しください。',
+        )
+      })
     })
   })
 })

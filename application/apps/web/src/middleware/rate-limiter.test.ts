@@ -1,6 +1,6 @@
 import type { Env } from '@/env'
-import app from '@/server'
 import TEST_ENV from '@/test/env'
+import { apiRequest } from '@/test/helper/request'
 
 describe('レートリミットミドルウェア', () => {
   // limit()の結果を制御してレートリミットの挙動を検証する
@@ -26,18 +26,11 @@ describe('レートリミットミドルウェア', () => {
   }
 
   function requestAuth(path: string, env: Env['Bindings']) {
-    return app.request(
-      path,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          email: 'rate-limit-test@example.com',
-          password: 'Test@password123',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
+    return apiRequest(path, {
+      method: 'POST',
+      json: { email: 'rate-limit-test@example.com', password: 'Test@password123' },
       env,
-    )
+    })
   }
 
   describe('正常系', () => {

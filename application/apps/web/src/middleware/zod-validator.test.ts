@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
+import { apiRequest } from '@/test/helper/request'
 import zodValidator from './zod-validator'
 
 // zodValidator の 422 変換フックを検証するための最小ルート
@@ -8,11 +9,7 @@ const app = new Hono().post('/', zodValidator('json', z.object({ name: z.string(
 )
 
 function postJson(body: unknown) {
-  return app.request('/', {
-    method: 'POST',
-    body: JSON.stringify(body),
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return apiRequest('/', { method: 'POST', json: body, app })
 }
 
 describe('zodValidator', () => {

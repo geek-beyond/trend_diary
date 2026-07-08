@@ -1,7 +1,6 @@
-import TEST_ENV from '@/test/env'
+import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
-import app from '../../../server'
 
 describe('GET /api/auth/me', () => {
   const TEST_EMAIL = 'me-test@example.com'
@@ -22,21 +21,7 @@ describe('GET /api/auth/me', () => {
   })
 
   async function requestMe(cookies?: string) {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    }
-    if (cookies) {
-      headers.Cookie = cookies
-    }
-
-    return app.request(
-      '/api/auth/me',
-      {
-        method: 'GET',
-        headers,
-      },
-      TEST_ENV,
-    )
+    return apiRequest('/api/auth/me', { method: 'GET', cookies, contentTypeJson: true })
   }
 
   it('正常系: 現在のユーザー情報を取得できる', async () => {

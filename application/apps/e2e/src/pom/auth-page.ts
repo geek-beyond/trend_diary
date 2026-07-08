@@ -37,18 +37,19 @@ export class AuthPage {
   async submitSignup(email: string, password: string): Promise<SignupOutcome> {
     // ハイドレーション未完了だと送信ハンドラ未接続でクリックが握り潰されるため、
     // 合成マーカーは使わず本番の送信結果（/login への遷移 or 重複エラー表示）が出るまで fill+click を再試行する
-    let outcome: SignupOutcome | undefined
     await expect(async () => {
       // 前回のクリックが遅れて成立した場合に二重送信しない
-      outcome = await this.currentSignupOutcome()
-      if (outcome) {
+      if (await this.currentSignupOutcome()) {
         return
       }
       await this.fillCredentials(email, password)
       await this.signupButton.click()
-      outcome = await this.waitForSignupOutcome()
+      await expect
+        .poll(() => this.currentSignupOutcome(), { timeout: SUBMIT_OUTCOME_TIMEOUT })
+        .toBeDefined()
     }).toPass({ timeout: AUTH_FLOW_TIMEOUT })
 
+    const outcome = await this.currentSignupOutcome()
     if (!outcome) {
       throw new Error('サインアップの送信結果を判定できませんでした')
     }
@@ -94,25 +95,6 @@ export class AuthPage {
     // 呼び出し側の toPass で fill+click ごと再試行させる
     await expect(this.emailInput).toHaveValue(email, { timeout: SUBMIT_OUTCOME_TIMEOUT })
     await expect(this.passwordInput).toHaveValue(password, { timeout: SUBMIT_OUTCOME_TIMEOUT })
-  }
-
-  private async waitForSignupOutcome(): Promise<SignupOutcome> {
-    let outcome: SignupOutcome | undefined
-    await expect
-      .poll(
-        async () => {
-          outcome = await this.currentSignupOutcome()
-          return outcome
-        },
-        { timeout: SUBMIT_OUTCOME_TIMEOUT },
-      )
-      .toBeDefined()
-
-    // poll 成立時点で outcome は必ず定義済みだが、型の絞り込みのため明示的に確認する
-    if (!outcome) {
-      throw new Error('サインアップの送信結果を判定できませんでした')
-    }
-    return outcome
   }
 
   private async currentSignupOutcome(): Promise<SignupOutcome | undefined> {

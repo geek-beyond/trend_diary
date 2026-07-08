@@ -13,6 +13,7 @@ fi
 # （パスは .git/config からの相対参照のためリポジトリルートを指す）
 git config --local include.path ../.gitconfig-hooks
 
-echo "pre-push フックを有効化しました。"
-echo "  一時的にスキップ: git push --no-verify"
-echo "  恒久的に無効化:   git config --local hook.pre-push-ci.enabled false"
+echo "フックを有効化しました（pre-commit: lint / pre-push: 単体テスト）。"
+echo "  一時的にスキップ: git commit --no-verify / git push --no-verify"
+echo "  恒久的に無効化:   git config --local hook.pre-commit-lint.enabled false"
+echo "                    git config --local hook.pre-push-test.enabled false"

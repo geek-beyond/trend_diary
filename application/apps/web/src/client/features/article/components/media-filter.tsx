@@ -1,7 +1,6 @@
-import { ARTICLE_MEDIA_LABELS, type ArticleMedia } from '@trend-diary/domain/article/media'
+import { ARTICLE_MEDIA_LABELS } from '@trend-diary/domain/article/media'
 import { ToggleGroup, type ToggleOption } from '@/client/components/ui/input/toggle-group'
-
-export type MediaType = ArticleMedia | undefined
+import type { MediaType } from '@/client/features/article/hooks/use-articles'
 
 interface Props {
   selectedMedia: MediaType

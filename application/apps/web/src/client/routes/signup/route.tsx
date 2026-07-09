@@ -1,29 +1,19 @@
 import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
 import { resolveTurnstileSiteKey } from '@/client/entities/auth'
 import { useSignup } from '@/client/features/authenticate/signup'
+import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import SignupPage from './page'
 
-export const meta: MetaFunction = () => [
-  { title: 'アカウント作成 | TrendDiary' },
-  {
-    name: 'description',
-    content:
-      'TrendDiaryのアカウントを作成して、技術トレンドの管理を始めましょう。無料で始められる技術者向けサービスです。',
-  },
-  { property: 'og:title', content: 'アカウント作成 | TrendDiary' },
-  {
-    property: 'og:description',
-    content:
-      'TrendDiaryのアカウントを作成して、技術トレンドの管理を始めましょう。無料で始められる技術者向けサービスです。',
-  },
-  { property: 'og:url', content: '/signup' },
-  { name: 'twitter:title', content: 'アカウント作成 | TrendDiary' },
-  {
-    name: 'twitter:description',
-    content:
-      'TrendDiaryのアカウントを作成して、技術トレンドの管理を始めましょう。無料で始められる技術者向けサービスです。',
-  },
-]
+export const meta: MetaFunction = ({ matches }) =>
+  mergeMeta(
+    matches,
+    pageMeta({
+      title: 'アカウント作成 | TrendDiary',
+      description:
+        'TrendDiaryのアカウントを作成して、技術トレンドの管理を始めましょう。無料で始められる技術者向けサービスです。',
+      path: '/signup',
+    }),
+  )
 
 export function loader({ context }: LoaderFunctionArgs) {
   return { turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null }

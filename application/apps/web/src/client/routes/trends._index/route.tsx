@@ -6,10 +6,19 @@ import {
   useArticles,
   useReadArticle,
 } from '@/client/features/article'
+import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import type { AppLayoutOutletContext } from '../app-layout'
 import TrendsPage from './page'
 
-export const meta: MetaFunction = () => [{ title: 'トレンド一覧 | TrendDiary' }]
+export const meta: MetaFunction = ({ matches }) =>
+  mergeMeta(
+    matches,
+    pageMeta({
+      title: 'トレンド一覧 | TrendDiary',
+      description: 'QiitaやZennの最新記事を一覧で確認し、読んだかどうかを記録できます。',
+      path: '/trends',
+    }),
+  )
 
 export default function Trends() {
   const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()

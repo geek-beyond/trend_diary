@@ -118,46 +118,6 @@ importers:
         specifier: 'catalog:'
         version: 4.105.0(@cloudflare/workers-types@4.20260630.1)
 
-  apps/e2e:
-    dependencies:
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.108.2
-      '@trend-diary/common':
-        specifier: workspace:*
-        version: link:../../packages/common
-      '@trend-diary/datastore':
-        specifier: workspace:*
-        version: link:../../packages/datastore
-      '@trend-diary/domain':
-        specifier: workspace:*
-        version: link:../../packages/domain
-      drizzle-orm:
-        specifier: 'catalog:'
-        version: 0.45.2(@cloudflare/workers-types@4.20260630.1)(@libsql/client@0.17.3)
-      wrangler:
-        specifier: 'catalog:'
-        version: 4.105.0(@cloudflare/workers-types@4.20260630.1)
-    devDependencies:
-      '@cloudflare/vitest-pool-workers':
-        specifier: 'catalog:'
-        version: 0.16.20(@cloudflare/workers-types@4.20260630.1)(@vitest/runner@4.1.9)(@vitest/snapshot@4.1.9)(vitest@4.1.9)
-      '@cloudflare/workers-types':
-        specifier: 'catalog:'
-        version: 4.20260630.1
-      '@faker-js/faker':
-        specifier: 'catalog:'
-        version: 10.5.0
-      '@playwright/test':
-        specifier: 'catalog:'
-        version: 1.61.1
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.0.1
-      playwright:
-        specifier: 'catalog:'
-        version: 1.61.1
-
   apps/web:
     dependencies:
       '@hono/zod-validator':
@@ -359,6 +319,46 @@ importers:
       wrangler:
         specifier: 'catalog:'
         version: 4.105.0(@cloudflare/workers-types@4.20260630.1)
+
+  e2e:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.108.2
+      '@trend-diary/common':
+        specifier: workspace:*
+        version: link:../packages/common
+      '@trend-diary/datastore':
+        specifier: workspace:*
+        version: link:../packages/datastore
+      '@trend-diary/domain':
+        specifier: workspace:*
+        version: link:../packages/domain
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@4.20260630.1)(@libsql/client@0.17.3)
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.105.0(@cloudflare/workers-types@4.20260630.1)
+    devDependencies:
+      '@cloudflare/vitest-pool-workers':
+        specifier: 'catalog:'
+        version: 0.16.20(@cloudflare/workers-types@4.20260630.1)(@vitest/runner@4.1.9)(@vitest/snapshot@4.1.9)(vitest@4.1.9)
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 4.20260630.1
+      '@faker-js/faker':
+        specifier: 'catalog:'
+        version: 10.5.0
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.61.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.0.1
+      playwright:
+        specifier: 'catalog:'
+        version: 1.61.1
 
   packages/common:
     dependencies:

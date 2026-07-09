@@ -40,7 +40,7 @@
     `readD1Migrations` で読み込み、`getPlatformProxy`（`persist: false`）の**インメモリ D1**へ適用します。
   - プロセスごとに新規の DB が立ち上がるため、冪等管理は不要です。
 - **E2Eテスト** `pnpm --filter @trend-diary/e2e test`
-  - Playwright の `globalSetup`（`apps/e2e/src/global-setup.ts`）が
+  - Playwright の `globalSetup`（`e2e/src/global-setup.ts`）が
     `apps/web/.wrangler/state/v3` の**miniflare local D1** へ適用します。
   - `d1_migrations` テーブルで適用済みを管理する冪等な適用のため、毎回実行しても安全です。
   - `webServer` は `pnpm build && pnpm exec wrangler dev --port 5173`（cwd は `apps/web`）で

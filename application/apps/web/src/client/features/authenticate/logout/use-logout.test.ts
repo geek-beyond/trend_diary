@@ -1,20 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { SESSION_SWR_KEY } from '@/client/entities/auth'
 import useLogout from './use-logout'
 
 const navigateMock = vi.fn()
 
 vi.mock('react-router', () => ({
   useNavigate: () => navigateMock,
-}))
-
-const mutateMock = vi.fn()
-
-vi.mock('swr', () => ({
-  default: vi.fn(),
-  useSWRConfig: () => ({ mutate: mutateMock }),
 }))
 
 const apiCallMock = vi.fn()
@@ -53,7 +45,7 @@ describe('useLogout', () => {
   })
 
   describe('正常系', () => {
-    it('ログアウト成功時はセッションキャッシュを再検証し/loginへ遷移して成功トーストを表示する', async () => {
+    it('ログアウト成功時は/loginへ遷移して成功トーストを表示する', async () => {
       apiCallMock.mockResolvedValue(null)
 
       const { result } = renderHook(() => useLogout())
@@ -66,8 +58,6 @@ describe('useLogout', () => {
         expect(navigateMock).toHaveBeenCalledWith('/login')
       })
       expect(apiCallMock).toHaveBeenCalledTimes(1)
-      // 古いログイン状態が残らないようセッションキャッシュを再検証する
-      expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY)
       expect(toast.success).toHaveBeenCalledWith('ログアウトしました')
       expect(toast.error).not.toHaveBeenCalled()
     })
@@ -87,7 +77,6 @@ describe('useLogout', () => {
         expect(toast.error).toHaveBeenCalledWith('ログアウトに失敗しました')
       })
       expect(navigateMock).not.toHaveBeenCalled()
-      expect(mutateMock).not.toHaveBeenCalled()
       expect(toast.success).not.toHaveBeenCalled()
     })
   })

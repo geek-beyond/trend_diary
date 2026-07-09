@@ -1,25 +1,21 @@
 import { BookOpen, Calendar, Monitor, TrendingUp, Users } from 'lucide-react'
 import type { MetaFunction } from 'react-router'
+import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import Footer from '../components/ui/layout/footer'
 import LandingHeader from '../components/ui/layout/landing-header'
 import { AnchorLink } from '../components/ui/navigation/link'
 import { ClipText } from '../components/ui/typography/clip-text'
 
-export const meta: MetaFunction = () => [
-  { property: 'og:title', content: 'TrendDiary | 技術トレンドを効率的に管理' },
-  {
-    property: 'og:description',
-    content:
-      'QiitaやZennの記事を日記のように管理し、技術トレンドを見逃さない。技術者向けのトレンド管理ブラウザアプリです。',
-  },
-  { property: 'og:url', content: '/' },
-  { name: 'twitter:title', content: 'TrendDiary | 技術トレンドを効率的に管理' },
-  {
-    name: 'twitter:description',
-    content:
-      'QiitaやZennの記事を日記のように管理し、技術トレンドを見逃さない。技術者向けのトレンド管理ブラウザアプリです。',
-  },
-]
+export const meta: MetaFunction = ({ matches, location }) =>
+  mergeMeta(
+    matches,
+    pageMeta({
+      title: 'TrendDiary | 技術トレンドを効率的に管理',
+      description:
+        'QiitaやZennの記事を日記のように管理し、技術トレンドを見逃さない。技術者向けのトレンド管理ブラウザアプリです。',
+      path: location.pathname,
+    }),
+  )
 
 const TrendDiaryTopPage = () => {
   return (

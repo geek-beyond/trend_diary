@@ -14,6 +14,10 @@ export function normalizeDateTime(value: string | number | bigint): Date {
   return new Date(value)
 }
 
+export function serializeDateTime(value: Date): string {
+  return value.toISOString()
+}
+
 export const dateTime = customType<{
   data: Date
   driverData: string | number | bigint
@@ -21,10 +25,6 @@ export const dateTime = customType<{
   dataType() {
     return 'DATETIME'
   },
-  toDriver(value: Date): string {
-    return value.toISOString()
-  },
-  fromDriver(value: string | number | bigint): Date {
-    return normalizeDateTime(value)
-  },
+  toDriver: serializeDateTime,
+  fromDriver: normalizeDateTime,
 })

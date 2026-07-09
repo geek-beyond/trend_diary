@@ -49,12 +49,6 @@ trend_diary/
 └── docs/                       # ドキュメント（adr / how_to_guides / system_config）
 ```
 
-### GitHub操作
-
-- GitHub操作は原則`gh` CLIで行う
-- GitHub MCP（`mcp__github__*`）は原則禁止。ただし**PRの作成・更新**と**レビューコメントへの返信**はMCP利用可
-- 上記以外（Issue・CIなど）は`gh` CLIで行うこと
-
 ### レビュー時のprefix
 
 レビューコメントには以下のprefixをつける:

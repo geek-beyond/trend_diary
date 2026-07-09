@@ -24,9 +24,10 @@ export default function Trends() {
   const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
   const {
     articles,
-    reloadArticles,
+    updateArticleReadState,
     isLoading,
     hasError,
+    retry,
     page,
     totalPages,
     date,
@@ -46,11 +47,9 @@ export default function Trends() {
   const { markAsRead, markAsUnread } = useReadArticle()
 
   const handleToggleRead = async (articleId: string, isRead: boolean) => {
-    const originalArticle = articles.find((a) => a.articleId === articleId)
-    if (!originalArticle) return
-
-    await (isRead ? markAsRead : markAsUnread)(articleId)
-    reloadArticles()
+    await updateArticleReadState(articleId, isRead, () =>
+      (isRead ? markAsRead : markAsUnread)(articleId),
+    )
   }
 
   const handleMarkAsRead = async (articleId: string) => {
@@ -65,7 +64,7 @@ export default function Trends() {
         openDrawer={openDrawer}
         isLoading={isLoading}
         hasError={hasError}
-        onRetry={reloadArticles}
+        onRetry={retry}
         page={page}
         totalPages={totalPages}
         selectedMedia={selectedMedia}

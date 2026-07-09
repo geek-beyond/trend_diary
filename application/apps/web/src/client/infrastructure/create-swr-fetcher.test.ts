@@ -1,4 +1,5 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
+import { toast } from 'sonner'
 import { describe, expect, it, vi } from 'vitest'
 import { createSWRFetcher } from './create-swr-fetcher'
 
@@ -53,6 +54,25 @@ describe('createSWRFetcher', () => {
       const promise = fetcher('http://example.com/api')
       await expect(promise).rejects.toBeInstanceOf(ClientError)
       await expect(promise).rejects.toHaveProperty('statusCode', 404)
+    })
+
+    it('401の場合はセッション切れの案内トーストを表示する', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+      }
+      // oxlint-disable-next-line typescript/no-explicit-any, typescript/consistent-type-assertions -- テスト用に最小限のフィールドだけ持つモックを Response として渡す必要があるため、any と型アサーションを許可する
+      vi.mocked(fetch).mockResolvedValue(mockResponse as any)
+
+      const { fetcher } = createSWRFetcher()
+
+      const promise = fetcher('http://example.com/api')
+      await expect(promise).rejects.toBeInstanceOf(ClientError)
+      expect(toast.error).toHaveBeenCalledWith(
+        'セッションの有効期限が切れました。再度ログインしてください。',
+        { id: 'session-expired' },
+      )
     })
   })
 

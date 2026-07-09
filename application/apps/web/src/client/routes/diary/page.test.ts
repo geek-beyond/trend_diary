@@ -31,29 +31,8 @@ const reads = [
 ]
 
 describe('DiaryPage', () => {
-  it('未ログイン時は利用制限メッセージのみ表示する', () => {
+  it('対象日と読了一覧を表示する', () => {
     renderDiaryPage({
-      isLoggedIn: false,
-      targetDate: '2026-03-08',
-      dateResolveError: false,
-      dailySummary: { read: 6, skip: 3 },
-      sources,
-      reads,
-      readPagination: { page: 1, totalPages: 2, hasNext: true, hasPrev: false },
-      isLoading: false,
-      hasError: false,
-      onRetry: vi.fn(),
-      onNextPage: vi.fn(),
-      onPrevPage: vi.fn(),
-    })
-
-    expect(screen.getByRole('heading', { name: 'ダイアリー' })).toBeInTheDocument()
-    expect(screen.getByText('この機能はログイン時のみ利用できます。')).toBeInTheDocument()
-  })
-
-  it('ログイン時は対象日と読了一覧を表示する', () => {
-    renderDiaryPage({
-      isLoggedIn: true,
       targetDate: '2026-03-08',
       dateResolveError: false,
       dailySummary: { read: 6, skip: 3 },
@@ -80,7 +59,6 @@ describe('DiaryPage', () => {
 
   it('読了記事URLがhttp/https以外ならリンク表示しない', () => {
     renderDiaryPage({
-      isLoggedIn: true,
       targetDate: '2026-03-08',
       dateResolveError: false,
       dailySummary: { read: 1, skip: 0 },
@@ -109,7 +87,6 @@ describe('DiaryPage', () => {
 
   it('日付解決に失敗したときはエラーメッセージを表示する', () => {
     renderDiaryPage({
-      isLoggedIn: true,
       targetDate: null,
       dateResolveError: true,
       dailySummary: { read: 0, skip: 0 },
@@ -131,7 +108,6 @@ describe('DiaryPage', () => {
   it('取得エラー時は再試行ボタン付きのエラー表示をし読了一覧を表示しない', () => {
     const onRetry = vi.fn()
     renderDiaryPage({
-      isLoggedIn: true,
       targetDate: '2026-03-08',
       dateResolveError: false,
       dailySummary: { read: 6, skip: 3 },
@@ -152,5 +128,26 @@ describe('DiaryPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '再試行' }))
     expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('取得エラー時でも再取得中はエラー表示ではなく読み込み中の表示にする', () => {
+    renderDiaryPage({
+      targetDate: '2026-03-08',
+      dateResolveError: false,
+      dailySummary: { read: 6, skip: 3 },
+      sources,
+      reads,
+      readPagination: { page: 1, totalPages: 2, hasNext: true, hasPrev: false },
+      isLoading: true,
+      hasError: true,
+      onRetry: vi.fn(),
+      onNextPage: vi.fn(),
+      onPrevPage: vi.fn(),
+    })
+
+    expect(
+      screen.queryByText('エラーが発生しました。時間をおいて再度お試しください。'),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
   })
 })

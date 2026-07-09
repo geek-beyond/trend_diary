@@ -18,7 +18,7 @@ export default function FetchErrorState({
     >
       <p>{message}</p>
       <Button type='button' variant='outline' size='sm' className='mt-2' onClick={onRetry}>
-        <RotateCcw />
+        <RotateCcw className='mr-2 size-4' />
         再試行
       </Button>
     </div>

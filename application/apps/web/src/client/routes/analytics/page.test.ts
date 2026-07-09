@@ -54,7 +54,6 @@ describe('AnalyticsPage', () => {
   it('日付未選択時は週次集計を表示し、一覧は案内文を表示する', () => {
     render(
       createElement(AnalyticsPage, {
-        isLoggedIn: true,
         selectedDate: null,
         dateResolveError: false,
         summaryRange: [
@@ -92,7 +91,6 @@ describe('AnalyticsPage', () => {
 
     render(
       createElement(AnalyticsPage, {
-        isLoggedIn: true,
         selectedDate: '2026-03-08',
         dateResolveError: false,
         summaryRange: [
@@ -127,7 +125,6 @@ describe('AnalyticsPage', () => {
   it('日付解決に失敗したときはエラーメッセージを表示する', () => {
     render(
       createElement(AnalyticsPage, {
-        isLoggedIn: true,
         selectedDate: null,
         dateResolveError: true,
         summaryRange: [],
@@ -155,7 +152,6 @@ describe('AnalyticsPage', () => {
     const onRetry = vi.fn()
     render(
       createElement(AnalyticsPage, {
-        isLoggedIn: true,
         selectedDate: '2026-03-08',
         dateResolveError: false,
         summaryRange: [{ date: '2026-03-08', read: 2, skip: 1 }],
@@ -182,5 +178,32 @@ describe('AnalyticsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '再試行' }))
     expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('取得エラー時でも再取得中はエラー表示ではなく通常のグラフ・一覧表示にする', () => {
+    render(
+      createElement(AnalyticsPage, {
+        selectedDate: '2026-03-08',
+        dateResolveError: false,
+        summaryRange: [{ date: '2026-03-08', read: 2, skip: 1 }],
+        weeklySummary: { read: 20, skip: 7 },
+        dailySummary: { read: 3, skip: 1 },
+        sources,
+        reads,
+        readPagination: { page: 2, totalPages: 3, hasNext: true, hasPrev: true },
+        isLoading: true,
+        hasError: true,
+        onRetry: vi.fn(),
+        onSelectDate: vi.fn(),
+        onClearSelectedDate: vi.fn(),
+        onNextPage: vi.fn(),
+        onPrevPage: vi.fn(),
+      }),
+    )
+
+    expect(
+      screen.queryByText('エラーが発生しました。時間をおいて再度お試しください。'),
+    ).not.toBeInTheDocument()
+    expect(screen.getByTestId('analytics-chart')).toBeInTheDocument()
   })
 })

@@ -9,7 +9,6 @@ import {
   ChartTooltipContent,
 } from '@/client/components/shadcn/chart'
 import FetchErrorState from '@/client/components/ui/feedback/fetch-error-state'
-import LoginRequired from '@/client/components/ui/feedback/login-required'
 import {
   DiaryPageLayout,
   DiaryReadListSection,
@@ -33,7 +32,6 @@ type ChartClickState = {
 } | null
 
 interface Props {
-  isLoggedIn: boolean
   selectedDate: string | null
   dateResolveError: boolean
   summaryRange: SummaryRangePoint[]
@@ -63,7 +61,6 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export default function AnalyticsPage({
-  isLoggedIn,
   selectedDate,
   dateResolveError,
   summaryRange,
@@ -90,13 +87,9 @@ export default function AnalyticsPage({
     }
   }
 
-  if (!isLoggedIn) {
-    return <LoginRequired pageTitle={pageTitle} />
-  }
-
   return (
     <DiaryPageLayout pageTitle={pageTitle} dateResolveError={dateResolveError}>
-      {hasError ? (
+      {hasError && !isLoading ? (
         <FetchErrorState onRetry={onRetry} />
       ) : (
         <>

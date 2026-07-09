@@ -5,13 +5,18 @@ import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
 import { AnchorLink } from '../../components/ui/navigation/link'
 
+interface Props extends LoginFormProps {
+  redirectTo?: string
+}
+
 export default function LoginPage({
   onSubmit,
   isSubmitting,
   errors,
   formError,
   turnstileSiteKey,
-}: LoginFormProps) {
+  redirectTo,
+}: Props) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
       <LandingHeader />
@@ -34,7 +39,7 @@ export default function LoginPage({
                 <span className='text-muted-foreground text-xs'>または</span>
                 <span className='bg-border h-px flex-1' />
               </div>
-              <PasskeyLoginButton />
+              <PasskeyLoginButton redirectTo={redirectTo} />
             </div>
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>

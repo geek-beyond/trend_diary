@@ -1,19 +1,21 @@
-import { Outlet } from 'react-router'
+import { Navigate, Outlet, useLocation } from 'react-router'
 import { useSession } from '@/client/entities/auth'
-import type { AppLayoutOutletContext } from './app-layout'
 
 export default function ProtectedLayout() {
   const { isLoggedIn, isLoading } = useSession()
+  const location = useLocation()
 
   // セッション確定までは配下を描画しない。ログイン判定が定まる前に描画すると
-  // 未ログイン画面（LoginRequired）が一瞬表示されてしまうため、確定後にのみ描画する
+  // 未ログイン画面が一瞬表示されてしまうため、確定後にのみ描画する
   if (isLoading) {
     return null
   }
 
-  const outletContext: AppLayoutOutletContext = {
-    isLoggedIn,
+  // 初回アクセスかセッション切れかを区別せず同じ導線に寄せ、挙動を統一する
+  if (!isLoggedIn) {
+    const redirectTo = `${location.pathname}${location.search}${location.hash}`
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirectTo)}`} replace />
   }
 
-  return <Outlet context={outletContext} />
+  return <Outlet />
 }

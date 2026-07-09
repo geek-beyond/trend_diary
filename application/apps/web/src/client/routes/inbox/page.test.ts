@@ -16,7 +16,6 @@ const buildProps = (overrides: Partial<InboxPageProps> = {}): InboxPageProps => 
   hasError: false,
   onRetry: vi.fn(),
   isJustCompleted: false,
-  isLoggedIn: true,
   onSkip: vi.fn().mockResolvedValue(undefined),
   onRead: vi.fn().mockResolvedValue(undefined),
   onLater: vi.fn(),
@@ -51,13 +50,6 @@ describe('InboxPage', () => {
 
     expect(screen.getByText('未読記事はありません')).toBeInTheDocument()
     expect(screen.queryByText('消化完了')).not.toBeInTheDocument()
-  })
-
-  it('未ログイン時はログイン要求のみを表示し本文を表示しない', () => {
-    renderInboxPage(buildProps({ isLoggedIn: false }))
-
-    expect(screen.getByText('この機能はログイン時のみ利用できます。')).toBeInTheDocument()
-    expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
   })
 
   it('読み込み中はスケルトンを表示し本文を表示しない', () => {
@@ -102,6 +94,15 @@ describe('InboxPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '再試行' }))
     expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('取得エラー時でも再取得中はエラー表示ではなくスケルトンを表示する', () => {
+    renderInboxPage(buildProps({ hasError: true, isLoading: true, remainingCount: 3 }))
+
+    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
+    expect(
+      screen.queryByText('エラーが発生しました。時間をおいて再度お試しください。'),
+    ).not.toBeInTheDocument()
   })
 
   it('通常の0件状態ではトレンド一覧への導線を表示する', () => {

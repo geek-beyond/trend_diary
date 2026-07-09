@@ -1,16 +1,20 @@
 import { act, renderHook } from '@testing-library/react'
 import type { MockedFunction } from 'vitest'
+import { SESSION_SWR_KEY } from '@/client/entities/auth'
 import { buildFormData } from '@/client/test/helper/form-data'
 import getApiClientForClient from '@/infrastructure/api'
 import useLogin from './use-login'
 
 const navigateMock = vi.fn()
+const mutateMock = vi.fn()
 
 vi.mock('react-router', async (importOriginal) => {
   // oxlint-disable-next-line typescript/consistent-type-imports -- vitestのimportOriginalにモジュール型を渡す定型のため inline import 型を許可する
   const actual = await importOriginal<typeof import('react-router')>()
   return { ...actual, useNavigate: () => navigateMock }
 })
+
+vi.mock('swr', () => ({ useSWRConfig: () => ({ mutate: mutateMock }) }))
 
 const mockApiClient = {
   auth: {
@@ -56,6 +60,26 @@ describe('useLogin', () => {
 
       expect(navigateMock).toHaveBeenCalledWith('/trends')
       expect(result.current.formError).toBeUndefined()
+    })
+
+    it('ログイン成功時は購読者の有無に依存せずセッションキャッシュを直接ログイン済みへ更新する', async () => {
+      const { result } = renderHook(() => useLogin())
+
+      await act(async () => {
+        await result.current.submit(buildFormData(validForm))
+      })
+
+      expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY, true, { revalidate: false })
+    })
+
+    it('redirectToを指定した場合、ログイン成功時はそのパスへ遷移する', async () => {
+      const { result } = renderHook(() => useLogin(undefined, '/diary?page=2'))
+
+      await act(async () => {
+        await result.current.submit(buildFormData(validForm))
+      })
+
+      expect(navigateMock).toHaveBeenCalledWith('/diary?page=2')
     })
   })
 

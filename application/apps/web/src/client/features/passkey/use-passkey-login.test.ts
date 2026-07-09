@@ -53,9 +53,19 @@ describe('usePasskeyLogin', () => {
         await result.current.login()
       })
 
-      expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY)
+      expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY, true, { revalidate: false })
       expect(navigateMock).toHaveBeenCalledWith('/trends')
       expect(result.current.formError).toBeUndefined()
+    })
+
+    it('redirectToを指定した場合、成功時はそのパスへ遷移する', async () => {
+      const { result } = renderHook(() => usePasskeyLogin('/diary?page=2'))
+
+      await act(async () => {
+        await result.current.login()
+      })
+
+      expect(navigateMock).toHaveBeenCalledWith('/diary?page=2')
     })
   })
 

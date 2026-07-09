@@ -1,17 +1,8 @@
 import { Badge } from '@/client/components/shadcn/badge'
-import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { PasskeyToggle } from '@/client/features/passkey'
 
-interface Props {
-  isLoggedIn: boolean
-}
-
-export default function SettingsPage({ isLoggedIn }: Props) {
+export default function SettingsPage() {
   const pageTitle = '設定'
-
-  if (!isLoggedIn) {
-    return <LoginRequired pageTitle={pageTitle} />
-  }
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-6'>

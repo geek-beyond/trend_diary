@@ -34,23 +34,20 @@ describe('resolveLogLevel', () => {
     }
   })
 
-  it('LOG_LEVEL 未設定なら既定の info を返す', () => {
-    expect(resolveLogLevel()).toBe('info')
-  })
-
-  it('不正な LOG_LEVEL は既定の info にフォールバックする', () => {
-    process.env.LOG_LEVEL = 'verbose'
-    expect(resolveLogLevel()).toBe('info')
-  })
-
-  it('妥当な LOG_LEVEL はそのまま返す', () => {
-    process.env.LOG_LEVEL = 'debug'
-    expect(resolveLogLevel()).toBe('debug')
-  })
-
-  it('前後の空白を無視して解決する', () => {
-    process.env.LOG_LEVEL = '  warn  '
-    expect(resolveLogLevel()).toBe('warn')
+  it.each([
+    { name: 'LOG_LEVEL 未設定なら既定の info を返す', input: undefined, expected: 'info' },
+    {
+      name: '不正な LOG_LEVEL は既定の info にフォールバックする',
+      input: 'verbose',
+      expected: 'info',
+    },
+    { name: '妥当な LOG_LEVEL はそのまま返す', input: 'debug', expected: 'debug' },
+    { name: '前後の空白を無視して解決する', input: '  warn  ', expected: 'warn' },
+  ])('$name', ({ input, expected }) => {
+    if (input !== undefined) {
+      process.env.LOG_LEVEL = input
+    }
+    expect(resolveLogLevel()).toBe(expected)
   })
 })
 

@@ -53,6 +53,7 @@ runs:
           git fetch --no-tags origin "$BASE"
           if [[ -n "$(git diff --name-only "origin/${BASE}" HEAD -- \
               package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json \
+              vitest.coverage.ts \
               ../.github/workflows/ci.yaml ../.github/actions)" ]]; then
             run_all=true
           fi

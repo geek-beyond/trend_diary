@@ -52,7 +52,7 @@ export const Loading: Story = {
     isLoading: true,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByText('読み込み中...')).toBeInTheDocument()
+    await expect(canvas.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
   },
 }
 

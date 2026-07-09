@@ -95,7 +95,6 @@ export default defineConfig(() => {
           'src/client/routes.ts',
           'src/client/components/ui/legal',
           'src/client/components/ui/link.tsx',
-          'src/client/components/customized/spinner',
           'src/client/features/diary/components/login-required.tsx',
           // 表示専用コンポーネントは Storybook のインタラクションテストで担保しているため
           'src/client/features/article/components/**',

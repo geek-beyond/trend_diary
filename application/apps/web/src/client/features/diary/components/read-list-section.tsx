@@ -1,5 +1,6 @@
 import { toJaTimeString } from '@trend-diary/common/locale/date'
 import type { ReactNode } from 'react'
+import { Skeleton } from '@/client/components/shadcn/skeleton'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 // barrel 経由だと記事スライスのデータ取得 hook（swr 依存）まで巻き込み、Storybook 環境で読み込みに失敗するため
 import MediaIcon from '@/client/features/article/components/media-icon'
@@ -23,7 +24,22 @@ export default function DiaryReadListSection({
     <div className='mt-6'>
       <h2 className='text-sm font-semibold text-gray-700'>読了した記事一覧</h2>
       {isLoading && shouldShowDailyDetails && (
-        <p className='mt-2 text-sm text-gray-500'>読み込み中...</p>
+        <ul
+          role='status'
+          aria-label='読み込み中'
+          className='mt-2 space-y-2'
+          data-slot='diary-read-list-skeleton'
+        >
+          {['s1', 's2', 's3'].map((key) => (
+            <li key={key} className='flex items-center justify-between gap-3'>
+              <div className='flex min-w-0 flex-1 items-center gap-2'>
+                <Skeleton className='h-4 w-4 shrink-0 rounded-sm' />
+                <Skeleton className='h-4 w-2/3' />
+              </div>
+              <Skeleton className='h-3 w-12 shrink-0' />
+            </li>
+          ))}
+        </ul>
       )}
       {!isLoading && (!shouldShowDailyDetails || reads.length === 0) && emptyState}
       {!isLoading && shouldShowDailyDetails && reads.length > 0 && (

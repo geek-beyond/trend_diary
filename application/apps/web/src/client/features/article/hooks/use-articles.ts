@@ -186,15 +186,14 @@ export default function useArticles(isLoggedIn = false) {
     },
   )
 
-  // 「未読のみ」フィルタ表示中に既読化した記事は、再フェッチを待たず一覧から即座に取り除く。
   // 表示中の一覧が「未読のみ」という条件と矛盾したまま残ると、フィルタが効いていないように見えるため
   const applyReadStateToCache =
-    (articleId: string, isRead: boolean) =>
+    (articleId: string, isRead: boolean, shouldRemoveFromList: boolean) =>
     (current?: ArticlesResponse): ArticlesResponse => {
       // current は表示中の一覧を楽観更新する際に必ず存在するが、SWR の型上は undefined もあり得るためフォールバックを用意する
       const base = current ?? { data: [], page: params.page, limit: params.limit, totalPages: 1 }
 
-      if (params.readStatus === 'unread' && isRead) {
+      if (shouldRemoveFromList) {
         return {
           ...base,
           data: base.data.filter((article) => article.articleId !== articleId),
@@ -214,7 +213,8 @@ export default function useArticles(isLoggedIn = false) {
     isRead: boolean,
     request: () => Promise<boolean>,
   ) => {
-    const applyReadState = applyReadStateToCache(articleId, isRead)
+    const shouldRemoveFromList = params.readStatus === 'unread' && isRead
+    const applyReadState = applyReadStateToCache(articleId, isRead, shouldRemoveFromList)
 
     // request側で失敗時のエラートーストを表示済みのため、ここでは楽観データのロールバックのみで良い
     await wrapAsyncCall(() =>
@@ -228,9 +228,8 @@ export default function useArticles(isLoggedIn = false) {
           optimisticData: applyReadState,
           rollbackOnError: true,
           populateCache: true,
-          // 「未読のみ」フィルタ中に記事を取り除いた場合だけ再検証する。
           // 表示件数がlimit未満のまま残る（次ページの記事が繰り上がらない）のを防ぐため
-          revalidate: params.readStatus === 'unread' && isRead,
+          revalidate: shouldRemoveFromList,
         },
       ),
     )

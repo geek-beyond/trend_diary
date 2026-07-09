@@ -1,20 +1,14 @@
-import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { Check } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardTitle } from '@/client/components/shadcn/card'
 import { cn } from '@/client/components/shadcn/lib/utils'
 import type { Article } from '@/client/features/article/hooks/use-articles'
-import MediaIcon, { type MediaType } from './media-icon'
+import MediaIcon, { toMediaType } from './media-icon'
 
 interface Props {
   article: Article
   onCardClick: (article: Article) => void
   onToggleRead?: (articleId: string, isRead: boolean) => void
   isLoggedIn?: boolean
-}
-
-const toMediaType = (media: string): MediaType => {
-  if (isArticleMedia(media)) return media
-  return 'zenn'
 }
 
 export default function ArticleCard({

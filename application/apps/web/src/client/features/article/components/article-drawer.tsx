@@ -1,5 +1,4 @@
 import { toJaDateString } from '@trend-diary/common/locale'
-import { isArticleMedia } from '@trend-diary/domain/article/media'
 import { Calendar, Check, ExternalLink, User, X } from 'lucide-react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -14,7 +13,7 @@ import {
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
 import { cn } from '@/client/components/shadcn/lib/utils'
 import type { Article } from '@/client/features/article/hooks/use-articles'
-import MediaIcon, { type MediaType } from './media-icon'
+import MediaIcon, { toMediaType } from './media-icon'
 
 const DESCRIPTION_TOGGLE_THRESHOLD = 100
 
@@ -41,11 +40,6 @@ export default function ArticleDrawer({
   }
 
   const isRead = article.isRead ?? false
-  const toMediaType = (media: string): MediaType => {
-    if (isArticleMedia(media)) return media
-    return 'zenn'
-  }
-
   const media = toMediaType(article.media)
   const drawerDirection = isMobile ? 'bottom' : 'right'
   const drawerContentClass = isMobile

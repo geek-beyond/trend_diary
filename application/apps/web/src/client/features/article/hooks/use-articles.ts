@@ -6,15 +6,16 @@ import {
   offsetPaginationMobileSchema,
   offsetPaginationSchema,
 } from '@trend-diary/common/pagination/schema'
-import { isArticleMedia } from '@trend-diary/domain/article/media'
+import { type ArticleMedia, isArticleMedia } from '@trend-diary/domain/article/media'
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
-import type { MediaType } from '@/client/features/article/components/media-filter'
-import type { ReadStatusType } from '@/client/features/article/components/read-status-filter'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
+
+export type MediaType = ArticleMedia | undefined
+export type ReadStatusType = 'all' | 'unread'
 
 // isRead を含む記事型(フロントエンドではarticleIdをstringに統一)
 export type Article = Omit<ArticleOutput, 'articleId'> & {

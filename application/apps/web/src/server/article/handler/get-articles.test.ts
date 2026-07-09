@@ -1,12 +1,25 @@
 import { faker } from '@faker-js/faker'
+import { ServerError } from '@trend-diary/common/errors'
 import { articles, readHistories } from '@trend-diary/datastore/drizzle-orm/schema'
+import type * as ArticleModule from '@trend-diary/domain/article'
+import { createArticleUseCase } from '@trend-diary/domain/article'
 import { inArray } from 'drizzle-orm'
+import { err } from 'neverthrow'
+import { vi } from 'vitest'
 import * as articleHelper from '@/test/helper/article'
 import { testRdb as db } from '@/test/helper/rdb'
 import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import type { ArticleListResponse, ArticleWithReadStatusResponse } from './get-articles'
+
+// searchArticles は異常系テストでのみ失敗させたい。ただし vi.mock はファイル先頭へホイストされ
+// モジュールスコープにしか置けず、異常系 describe の直前には配置できないためここで宣言する。
+// 正常系・準正常系は vi.fn で実装へ委譲するため挙動は変わらない。
+vi.mock('@trend-diary/domain/article', async (importOriginal) => {
+  const actual = await importOriginal<typeof ArticleModule>()
+  return { ...actual, createArticleUseCase: vi.fn(actual.createArticleUseCase) }
+})
 
 interface GetArticlesTestCase {
   name: string
@@ -204,6 +217,21 @@ describe('GET /api/articles', () => {
     it.each(testCases)('$name', async ({ query, status }) => {
       const res = await requestGetArticles(query)
       expect(res.status).toBe(status)
+    })
+  })
+
+  describe('異常系', () => {
+    it('検索でServerErrorが発生した場合は500を返す', async () => {
+      const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
+      vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {
+        const useCase = actual.createArticleUseCase(rdb)
+        useCase.searchArticles = () =>
+          Promise.resolve(err(new ServerError(new Error('検索に失敗しました'))))
+        return useCase
+      })
+
+      const res = await requestGetArticles()
+      expect(res.status).toBe(500)
     })
   })
 })

@@ -4,40 +4,17 @@ import { offsetPaginationSchema } from '@trend-diary/common/pagination'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import type { QueryParams } from '@trend-diary/domain/article'
 import { createArticleUseCase } from '@trend-diary/domain/article'
-import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
-import type {
-  ArticleOutput,
-  ArticleWithOptionalReadStatus,
-} from '@trend-diary/domain/article/schema/article-schema'
+import {
+  baseArticleSearchSchema,
+  DATE_RANGE_ERROR_MESSAGE,
+  dateRangeRefine,
+} from '@trend-diary/domain/article/schema/query-schema'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import { type ArticleResponse, toArticleResponse } from '../article-response'
 
-const mediaEnum = z.enum(ARTICLE_MEDIA)
 const readStatusEnum = z.enum(['0', '1'])
-const dateStringSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .optional()
-
-const baseArticleSearchSchema = z.object({
-  title: z.string().optional(),
-  author: z.string().optional(),
-  media: mediaEnum.optional(),
-  from: dateStringSchema,
-  to: dateStringSchema,
-})
-
-// 日付の範囲チェック用のrefine関数
-const dateRangeRefine = <T extends { from?: string; to?: string }>(data: T) => {
-  if (data.from && data.to) {
-    return data.from <= data.to
-  }
-  return true
-}
-
-// エラーメッセージ
-const DATE_RANGE_ERROR_MESSAGE = 'fromはtoより前の日付を指定してください'
 
 export const apiArticleQuerySchema = baseArticleSearchSchema
   .extend({
@@ -50,10 +27,7 @@ export const apiArticleQuerySchema = baseArticleSearchSchema
 
 export type ApiQueryParams = z.infer<typeof apiArticleQuerySchema>
 
-export type ArticleResponse = Omit<ArticleOutput, 'articleId'> & {
-  articleId: string
-  isRead?: boolean
-}
+export type { ArticleResponse }
 
 export type ArticleWithReadStatusResponse = ArticleResponse & {
   isRead: boolean
@@ -83,7 +57,7 @@ export default async function getArticles(c: ZodValidatedQueryContext<ApiQueryPa
   const paginationResult = result.value
   logger.info('articles retrieved successfully', { count: paginationResult.data.length })
   const response: ArticleListResponse = {
-    data: paginationResult.data.map(convertToResponse),
+    data: paginationResult.data.map(toArticleResponse),
     page: paginationResult.page,
     limit: paginationResult.limit,
     total: paginationResult.total,
@@ -113,18 +87,5 @@ function convertApiQueryParams(params: ApiQueryParams): QueryParams {
     from: params.from,
     to: params.to,
     readStatus,
-  }
-}
-
-function convertToResponse(article: ArticleWithOptionalReadStatus): ArticleResponse {
-  return {
-    articleId: article.articleId.toString(),
-    media: article.media,
-    title: article.title,
-    author: article.author,
-    description: article.description,
-    url: article.url,
-    createdAt: article.createdAt,
-    isRead: article.isRead,
   }
 }

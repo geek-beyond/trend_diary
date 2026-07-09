@@ -19,6 +19,8 @@ describe('resolveLoginRedirectTarget', () => {
       { outline: 'プロトコル相対URL', input: '//evil.example.com' },
       { outline: 'バックスラッシュ始まりのURL', input: '/\\evil.example.com' },
       { outline: 'スラッシュから始まらない相対パス', input: 'diary' },
+      { outline: 'タブを挟んだプロトコル相対URL', input: '/\t//evil.example.com' },
+      { outline: '改行を挟んだプロトコル相対URL', input: '/\n//evil.example.com' },
     ])('$outlineはundefinedを返す', ({ input }) => {
       expect(resolveLoginRedirectTarget(input)).toBeUndefined()
     })

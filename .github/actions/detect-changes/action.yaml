@@ -42,10 +42,13 @@ runs:
       run: |
         set -euo pipefail
 
-        all_pkg_names() {
-          pnpm -r exec pwd \
-            | sed -n -e 's#.*/\(packages\|apps\)/\([^/]*\)$#\2#p' -e 's#.*/e2e$#e2e#p' \
+        parse_pkg_names() {
+          sed -n -e 's#.*/\(packages\|apps\)/\([^/]*\)$#\2#p' -e 's#.*/e2e$#e2e#p' \
             | sort -u
+        }
+
+        all_pkg_names() {
+          pnpm -r exec pwd | parse_pkg_names
         }
 
         run_all=false
@@ -64,9 +67,7 @@ runs:
         if [[ "$run_all" == "true" ]]; then
           names=$(all_pkg_names)
         else
-          names=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd \
-            | sed -n -e 's#.*/\(packages\|apps\)/\([^/]*\)$#\2#p' -e 's#.*/e2e$#e2e#p' \
-            | sort -u)
+          names=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd | parse_pkg_names)
         fi
 
         echo "変更パッケージ(依存先含む, run_all=${run_all}): ${names:-(なし)}"

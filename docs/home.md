@@ -21,7 +21,7 @@
 
 テストファイルの配置は以下のルールに従う:
 - ユニットテスト（`*.test.ts`）: 実装されているコードと同じ階層に配置
-- E2Eテスト: `apps/e2e`に配置（`@trend-diary/e2e`パッケージ）
+- E2Eテスト: `e2e`に配置（`@trend-diary/e2e`パッケージ）
 - テストヘルパー: `src/test/helper`に配置
 - テストモック: `src/test/__mocks__`に配置（ドメイン層テストで使用）
 - Vitestセットアップ: `src/test/setup`に配置

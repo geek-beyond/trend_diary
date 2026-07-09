@@ -16,12 +16,13 @@ export default function useLogout() {
       return apiCall(() => client.auth.logout.$delete())
     },
     {
-      onSuccess: () => {
-        // 非同期の再検証(revalidate)だとnavigate後にセッションキャッシュが古いまま残り、
-        // その間にProtectedLayoutが元のページへのredirectクエリ付きで割り込む余地がある。
-        // notifySessionExpiredと同様に即時反映させ、navigateを最終的な遷移として確定させる
+      onSuccess: async () => {
+        // navigateの完了(コミット)を待たずにセッションキャッシュを更新すると、/settingsを
+        // 抜けきる前にProtectedLayoutがまだ古いログイン状態と現在地を見て、元のページへの
+        // redirectクエリ付きで割り込む余地がある。navigateが確定しProtectedLayoutの管轄外に
+        // 出てからキャッシュを更新することで、この割り込みを構造的に防ぐ
+        await navigate('/login')
         void mutate(SESSION_SWR_KEY, false, { revalidate: false })
-        navigate('/login')
         toast.success('ログアウトしました')
       },
       onError: () => {

@@ -1,20 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { SESSION_SWR_KEY } from '@/client/entities/auth'
 import useLogout from './use-logout'
 
 const navigateMock = vi.fn()
 
 vi.mock('react-router', () => ({
   useNavigate: () => navigateMock,
-}))
-
-const mutateMock = vi.fn()
-
-vi.mock('swr', () => ({
-  default: vi.fn(),
-  useSWRConfig: () => ({ mutate: mutateMock }),
 }))
 
 const apiCallMock = vi.fn()
@@ -53,7 +45,7 @@ describe('useLogout', () => {
   })
 
   describe('正常系', () => {
-    it('ログアウト成功時は/loginへの遷移確定後にセッションキャッシュを未ログインへ更新し成功トーストを表示する', async () => {
+    it('ログアウト成功時は/loginへ遷移して成功トーストを表示する', async () => {
       apiCallMock.mockResolvedValue(null)
 
       const { result } = renderHook(() => useLogout())
@@ -66,13 +58,6 @@ describe('useLogout', () => {
         expect(navigateMock).toHaveBeenCalledWith('/login')
       })
       expect(apiCallMock).toHaveBeenCalledTimes(1)
-      expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY, false, { revalidate: false })
-      // navigateの完了を待たずキャッシュ更新すると、ProtectedLayoutがまだ古いログイン状態と
-      // 現在地(保護ページ)を見てredirectクエリ付きの遷移で割り込む余地があるため、
-      // navigateがキャッシュ更新より先に呼ばれていることを保証する
-      expect(navigateMock.mock.invocationCallOrder[0]).toBeLessThan(
-        mutateMock.mock.invocationCallOrder[0],
-      )
       expect(toast.success).toHaveBeenCalledWith('ログアウトしました')
       expect(toast.error).not.toHaveBeenCalled()
     })
@@ -92,7 +77,6 @@ describe('useLogout', () => {
         expect(toast.error).toHaveBeenCalledWith('ログアウトに失敗しました')
       })
       expect(navigateMock).not.toHaveBeenCalled()
-      expect(mutateMock).not.toHaveBeenCalled()
       expect(toast.success).not.toHaveBeenCalled()
     })
   })

@@ -30,11 +30,6 @@ export default function Login() {
   const { turnstileSiteKey } = useLoaderData<typeof loader>()
   const [searchParams] = useSearchParams()
   const redirectTo = resolveLoginRedirectTarget(searchParams.get('redirect'))
-  // TEMP-DEBUG: E2E失敗の原因調査用。原因特定後に必ず削除する
-  console.warn('[TEMP-DEBUG-LoginRoute] render', {
-    rawRedirect: searchParams.get('redirect'),
-    resolvedRedirectTo: redirectTo,
-  })
   const { isSubmitting, errors, formError, submit } = useLogin(
     turnstileSiteKey ?? undefined,
     redirectTo,

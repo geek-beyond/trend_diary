@@ -61,8 +61,6 @@ export default function usePasskeyLogin(redirectTo?: string) {
     // mutate(key)は購読中のuseSWRがないと再検証されず、遷移先ページのProtectedLayoutが
     // 古い未ログイン状態を読んでログイン画面へ押し戻してしまうため、値を直接確定させる
     await mutate(SESSION_SWR_KEY, true, { revalidate: false })
-    // TEMP-DEBUG: E2E失敗の原因調査用。原因特定後に必ず削除する
-    console.warn('[TEMP-DEBUG-usePasskeyLogin] navigating', { redirectTo })
     navigate(redirectTo ?? '/trends')
   }
 

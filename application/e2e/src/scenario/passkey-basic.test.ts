@@ -26,11 +26,6 @@ test.describe('パスキー登録・ログインシナリオ', () => {
   test('パスキーを登録し、パスキーでログインできる', async ({ page }) => {
     test.setTimeout(SCENARIO_TIMEOUT)
 
-    // TEMP-DEBUG: E2E失敗の原因調査用。原因特定後に必ず削除する
-    page.on('console', (msg) => {
-      console.log(`[browser-console:${msg.type()}]`, msg.text())
-    })
-
     // ceremony より前に有効化しないと資格情報を生成できない
     await PasskeyPage.enableVirtualAuthenticator(page)
 

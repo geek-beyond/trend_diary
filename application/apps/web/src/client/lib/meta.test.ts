@@ -72,4 +72,19 @@ describe('mergeMeta', () => {
       { title: '子のtitle' },
     ])
   })
+
+  it('rel違いのlinkタグ（favicon/apple-touch-icon）は別キーとして両方継承する', () => {
+    const matches = [
+      buildMatch([
+        { tagName: 'link', rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { tagName: 'link', rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+      ]),
+    ]
+
+    expect(mergeMeta(matches, [{ title: '子のtitle' }])).toEqual([
+      { tagName: 'link', rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+      { tagName: 'link', rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+      { title: '子のtitle' },
+    ])
+  })
 })

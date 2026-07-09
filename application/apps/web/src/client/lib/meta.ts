@@ -9,7 +9,6 @@ function metaKey(meta: MetaDescriptor): string {
   if ('charSet' in meta) return 'charSet'
   if ('name' in meta) return `name:${meta.name}`
   if ('property' in meta) return `property:${meta.property}`
-  if ('httpEquiv' in meta) return `httpEquiv:${meta.httpEquiv}`
   if ('tagName' in meta) return `tagName:${meta.tagName}:${'rel' in meta ? meta.rel : ''}`
   return JSON.stringify(meta)
 }

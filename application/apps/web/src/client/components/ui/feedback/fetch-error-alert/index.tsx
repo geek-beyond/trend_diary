@@ -6,14 +6,14 @@ interface Props {
   onRetry: () => void
 }
 
-export default function FetchErrorState({
+export default function FetchErrorAlert({
   message = 'エラーが発生しました。時間をおいて再度お試しください。',
   onRetry,
 }: Props) {
   return (
     <div
       role='alert'
-      data-slot='fetch-error-state'
+      data-slot='fetch-error-alert'
       className='rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'
     >
       <p>{message}</p>

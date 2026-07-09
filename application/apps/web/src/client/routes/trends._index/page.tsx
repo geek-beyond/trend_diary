@@ -8,7 +8,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/client/components/shadcn/pagination'
-import FetchErrorState from '@/client/components/ui/feedback/fetch-error-state'
+import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
 import {
   type Article,
   ArticleCard,
@@ -130,7 +130,7 @@ export default function TrendsPage({
           ))}
         </div>
       ) : hasError ? (
-        <FetchErrorState onRetry={onRetry} />
+        <FetchErrorAlert onRetry={onRetry} />
       ) : articles.length === 0 ? (
         <div className='text-gray-500'>
           <p>記事がありません</p>

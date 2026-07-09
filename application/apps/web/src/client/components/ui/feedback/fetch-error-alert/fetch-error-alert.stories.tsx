@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent } from 'storybook/test'
-import FetchErrorState from './index'
+import FetchErrorAlert from './index'
 
-const meta: Meta<typeof FetchErrorState> = {
-  component: FetchErrorState,
+const meta: Meta<typeof FetchErrorAlert> = {
+  component: FetchErrorAlert,
   parameters: {
     layout: 'centered',
   },
@@ -13,7 +13,7 @@ const meta: Meta<typeof FetchErrorState> = {
 }
 export default meta
 
-type Story = StoryObj<typeof FetchErrorState>
+type Story = StoryObj<typeof FetchErrorAlert>
 
 export const Default: Story = {
   play: async ({ canvas, args, step }) => {

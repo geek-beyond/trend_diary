@@ -8,7 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/client/components/shadcn/chart'
-import FetchErrorState from '@/client/components/ui/feedback/fetch-error-state'
+import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
 import {
   DiaryPageLayout,
   DiaryReadListSection,
@@ -90,7 +90,7 @@ export default function AnalyticsPage({
   return (
     <DiaryPageLayout pageTitle={pageTitle} dateResolveError={dateResolveError}>
       {hasError && !isLoading ? (
-        <FetchErrorState onRetry={onRetry} />
+        <FetchErrorAlert onRetry={onRetry} />
       ) : (
         <>
           <div className='mt-5'>

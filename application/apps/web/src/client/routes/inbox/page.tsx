@@ -1,4 +1,4 @@
-import FetchErrorState from '@/client/components/ui/feedback/fetch-error-state'
+import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
 import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
 import { InboxBody, InboxBodySkeleton, type InboxBodyProps } from '@/client/features/inbox'
 
@@ -39,7 +39,7 @@ export default function InboxPage({
           <InboxBodySkeleton />
         ) : hasError ? (
           <div className='mt-4'>
-            <FetchErrorState onRetry={onRetry} />
+            <FetchErrorAlert onRetry={onRetry} />
           </div>
         ) : (
           <InboxBody

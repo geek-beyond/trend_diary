@@ -5,6 +5,8 @@ import { Skeleton } from '@/client/components/shadcn/skeleton'
 export default function ArticleCardSkeleton() {
   return (
     <Card
+      // 純粋な視覚的プレースホルダーのため支援技術からは隠し、読み込み状態の通知は呼び出し側の role=status に委ねる
+      aria-hidden='true'
       data-slot='card'
       data-testid='article-card-skeleton'
       className='h-32 w-full sm:w-64 rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl'

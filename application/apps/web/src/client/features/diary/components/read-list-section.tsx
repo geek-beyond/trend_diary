@@ -23,24 +23,24 @@ export default function DiaryReadListSection({
   return (
     <div className='mt-6'>
       <h2 className='text-sm font-semibold text-gray-700'>読了した記事一覧</h2>
-      {isLoading && shouldShowDailyDetails && (
-        <ul
-          role='status'
-          aria-label='読み込み中'
-          className='mt-2 space-y-2'
-          data-slot='diary-read-list-skeleton'
-        >
-          {['s1', 's2', 's3'].map((key) => (
-            <li key={key} className='flex items-center justify-between gap-3'>
-              <div className='flex min-w-0 flex-1 items-center gap-2'>
-                <Skeleton className='h-4 w-4 shrink-0 rounded-sm' />
-                <Skeleton className='h-4 w-2/3' />
-              </div>
-              <Skeleton className='h-3 w-12 shrink-0' />
-            </li>
-          ))}
-        </ul>
-      )}
+      {isLoading &&
+        shouldShowDailyDetails && (
+          // ul に role=status を付けると list セマンティクスを上書きし li が孤立するため、div のラッパーに分離する
+          <div role='status' aria-label='読み込み中' data-slot='diary-read-list-skeleton'>
+            {/* 視覚的なプレースホルダーは支援技術から隠し、状態通知は親の role=status に集約する */}
+            <div aria-hidden='true' className='mt-2 space-y-2'>
+              {['s1', 's2', 's3'].map((key) => (
+                <div key={key} className='flex items-center justify-between gap-3'>
+                  <div className='flex min-w-0 flex-1 items-center gap-2'>
+                    <Skeleton className='h-4 w-4 shrink-0 rounded-sm' />
+                    <Skeleton className='h-4 w-2/3' />
+                  </div>
+                  <Skeleton className='h-3 w-12 shrink-0' />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       {!isLoading && (!shouldShowDailyDetails || reads.length === 0) && emptyState}
       {!isLoading && shouldShowDailyDetails && reads.length > 0 && (
         <ul className='mt-2 space-y-2 text-sm' data-slot='diary-read-list'>

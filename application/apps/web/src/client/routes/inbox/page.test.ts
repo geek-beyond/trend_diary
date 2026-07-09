@@ -9,7 +9,6 @@ const buildProps = (overrides: Partial<InboxPageProps> = {}): InboxPageProps => 
   article: null,
   isLoading: false,
   isJustCompleted: false,
-  isLoggedIn: true,
   onSkip: vi.fn().mockResolvedValue(undefined),
   onRead: vi.fn().mockResolvedValue(undefined),
   onLater: vi.fn(),
@@ -44,13 +43,6 @@ describe('InboxPage', () => {
 
     expect(screen.getByText('未読記事はありません')).toBeInTheDocument()
     expect(screen.queryByText('消化完了')).not.toBeInTheDocument()
-  })
-
-  it('未ログイン時はログイン要求のみを表示し本文を表示しない', () => {
-    render(createElement(InboxPage, buildProps({ isLoggedIn: false })))
-
-    expect(screen.getByText('この機能はログイン時のみ利用できます。')).toBeInTheDocument()
-    expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
   })
 
   it('読み込み中はスケルトンを表示し本文を表示しない', () => {

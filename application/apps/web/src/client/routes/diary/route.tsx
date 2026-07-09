@@ -1,8 +1,6 @@
 import type { MetaFunction } from 'react-router'
-import { useOutletContext } from 'react-router'
 import { useDiary } from '@/client/features/diary'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
-import type { AppLayoutOutletContext } from '../app-layout'
 import DiaryPage from './page'
 
 export const meta: MetaFunction = ({ matches, location }) =>
@@ -16,7 +14,6 @@ export const meta: MetaFunction = ({ matches, location }) =>
   )
 
 export default function DiaryRoute() {
-  const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
   const {
     todayJst,
     dateResolveError,
@@ -27,11 +24,10 @@ export default function DiaryRoute() {
     isLoading,
     toNextPage,
     toPrevPage,
-  } = useDiary(isLoggedIn)
+  } = useDiary()
 
   return (
     <DiaryPage
-      isLoggedIn={isLoggedIn}
       targetDate={todayJst}
       dateResolveError={dateResolveError}
       dailySummary={dailySummary}

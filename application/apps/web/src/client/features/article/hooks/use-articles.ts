@@ -13,6 +13,7 @@ import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
+import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 
 export type MediaType = ArticleMedia | undefined
@@ -176,7 +177,10 @@ export default function useArticles(isLoggedIn = false) {
     {
       onError: (error) => {
         if (error instanceof Error) {
-          toast.error('エラーが発生しました。時間をおいて再度お試しください。')
+          notifyErrorUnlessSessionExpired(
+            error,
+            'エラーが発生しました。時間をおいて再度お試しください。',
+          )
         } else {
           toast.error('不明なエラーが発生しました')
           // oxlint-disable-next-line no-console -- 未知のエラーのため

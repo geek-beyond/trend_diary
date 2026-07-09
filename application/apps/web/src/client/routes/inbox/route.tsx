@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import type { MetaFunction } from 'react-router'
-import { useOutletContext } from 'react-router'
 import { type MediaType } from '@/client/features/article'
 import { useUnreadDigestion } from '@/client/features/inbox'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
-import type { AppLayoutOutletContext } from '../app-layout'
 import InboxPage from './page'
 
 export const meta: MetaFunction = ({ matches, location }) =>
@@ -18,7 +16,6 @@ export const meta: MetaFunction = ({ matches, location }) =>
   )
 
 export default function InboxRoute() {
-  const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
   const [selectedMedia, setSelectedMedia] = useState<MediaType>(undefined)
   const {
     isLoading,
@@ -28,14 +25,13 @@ export default function InboxRoute() {
     handleSkip,
     handleRead,
     handleLater,
-  } = useUnreadDigestion(isLoggedIn, selectedMedia)
+  } = useUnreadDigestion(selectedMedia)
 
   return (
     <InboxPage
       article={currentArticle}
       isLoading={isLoading}
       isJustCompleted={isJustCompleted}
-      isLoggedIn={isLoggedIn}
       remainingCount={remainingCount}
       onSkip={handleSkip}
       onRead={handleRead}

@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { ClientError } from '@trend-diary/common/errors'
 import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
@@ -15,7 +16,7 @@ vi.mock('./use-diary-api', () => ({
 const mockedUseDiaryApi = vi.mocked(useDiaryApi)
 
 function setupHook(initialEntries: string[] = ['/analytics']) {
-  return renderHook(() => useAnalytics(true), {
+  return renderHook(() => useAnalytics(), {
     wrapper: ({ children }: { children: ReactNode }) =>
       createElement(
         SWRConfig,
@@ -288,6 +289,22 @@ describe('useAnalytics', () => {
           'エラーが発生しました。時間をおいて再度お試しください。',
           { id: 'diary-analytics-error' },
         )
+      })
+    })
+
+    it('セッション切れ(401)の場合はエラートーストを表示しない', async () => {
+      const fetchDiaryRange = vi.fn().mockRejectedValue(new ClientError('Unauthorized', 401))
+      const fetchDiary = vi.fn()
+
+      mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange })
+
+      setupHook()
+
+      await waitFor(() => {
+        expect(fetchDiaryRange).toHaveBeenCalled()
+      })
+      expect(toast.error).not.toHaveBeenCalledWith(expect.anything(), {
+        id: 'diary-analytics-error',
       })
     })
   })

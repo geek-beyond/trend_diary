@@ -28,24 +28,20 @@ function renderWithChild() {
 describe('ProtectedLayout', () => {
   it.each([
     {
-      scenario: 'セッション確定前',
+      scenario: 'セッション確定前は配下ページを描画しない',
       session: { isLoggedIn: false, isLoading: true },
-      isLoadingView: true,
+      childVisible: false,
     },
     {
-      scenario: 'セッション確定後',
+      scenario: 'セッション確定後は配下ページを描画する',
       session: { isLoggedIn: true, isLoading: false },
-      isLoadingView: false,
+      childVisible: true,
     },
-  ])(
-    '$scenario はローディング表示=$isLoadingView で配下ページの描画を出し分ける',
-    ({ session, isLoadingView }) => {
-      mockUseSession.mockReturnValue(session)
+  ])('$scenario', ({ session, childVisible }) => {
+    mockUseSession.mockReturnValue(session)
 
-      renderWithChild()
+    renderWithChild()
 
-      expect(screen.queryByRole('status', { name: '読み込み中' }) !== null).toBe(isLoadingView)
-      expect(screen.queryByText('保護ページ本体') !== null).toBe(!isLoadingView)
-    },
-  )
+    expect(screen.queryByText('保護ページ本体') !== null).toBe(childVisible)
+  })
 })

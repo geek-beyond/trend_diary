@@ -1,16 +1,14 @@
 import { Outlet } from 'react-router'
-import LoadingSpinner from '@/client/components/ui/feedback/loading-spinner'
 import { useSession } from '@/client/entities/auth'
 import type { AppLayoutOutletContext } from './app-layout'
 
 export default function ProtectedLayout() {
   const { isLoggedIn, isLoading } = useSession()
 
-  // セッション確定までは未ログイン画面のちらつきを避けるためローディングを表示する。
-  // ここで一度だけ待つことで、配下の各ページはログイン確定後のみ描画され、
-  // 画面側はデータ取得のローディング状態だけを扱えばよくなる
+  // セッション確定までは配下を描画しない。ログイン判定が定まる前に描画すると
+  // 未ログイン画面（LoginRequired）が一瞬表示されてしまうため、確定後にのみ描画する
   if (isLoading) {
-    return <LoadingSpinner />
+    return null
   }
 
   const outletContext: AppLayoutOutletContext = {

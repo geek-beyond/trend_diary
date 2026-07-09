@@ -1,36 +1,34 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
-import { toast } from 'sonner'
-import getApiClientForClient from '@/client/infrastructure/api'
+import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
+import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 
 const MarkAsReadErrorMessage = '既読に失敗しました'
 const MarkAsUnreadErrorMessage = '未読に失敗しました'
 
 export default function useReadArticle() {
   const [isLoading, setIsLoading] = useState(false)
+  const { client, apiCall } = createSWRFetcher()
 
   const markAsRead = async (articleId: string): Promise<boolean> => {
     setIsLoading(true)
 
-    const result = await wrapAsyncCall(async () => {
-      const client = getApiClientForClient()
-      const res = await client.articles[':article_id'].read.$post(
-        {
-          param: { article_id: articleId },
-          json: { read_at: new Date().toISOString() },
-        },
-        { init: { credentials: 'include' } },
-      )
-
-      if (res.status !== 201) {
-        throw new Error('Failed to mark as read')
-      }
-    })
+    const result = await wrapAsyncCall(() =>
+      apiCall(() =>
+        client.articles[':article_id'].read.$post(
+          {
+            param: { article_id: articleId },
+            json: { read_at: new Date().toISOString() },
+          },
+          { init: { credentials: 'include' } },
+        ),
+      ),
+    )
 
     setIsLoading(false)
 
     if (result.isErr()) {
-      toast.error(MarkAsReadErrorMessage)
+      notifyErrorUnlessSessionExpired(result.error, MarkAsReadErrorMessage)
       return false
     }
 
@@ -40,24 +38,21 @@ export default function useReadArticle() {
   const markAsUnread = async (articleId: string): Promise<boolean> => {
     setIsLoading(true)
 
-    const result = await wrapAsyncCall(async () => {
-      const client = getApiClientForClient()
-      const res = await client.articles[':article_id'].unread.$delete(
-        {
-          param: { article_id: articleId },
-        },
-        { init: { credentials: 'include' } },
-      )
-
-      if (res.status !== 200) {
-        throw new Error('Failed to mark as unread')
-      }
-    })
+    const result = await wrapAsyncCall(() =>
+      apiCall(() =>
+        client.articles[':article_id'].unread.$delete(
+          {
+            param: { article_id: articleId },
+          },
+          { init: { credentials: 'include' } },
+        ),
+      ),
+    )
 
     setIsLoading(false)
 
     if (result.isErr()) {
-      toast.error(MarkAsUnreadErrorMessage)
+      notifyErrorUnlessSessionExpired(result.error, MarkAsUnreadErrorMessage)
       return false
     }
 

@@ -6,16 +6,25 @@ import {
   useArticles,
   useReadArticle,
 } from '@/client/features/article'
+import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import type { AppLayoutOutletContext } from '../app-layout'
 import TrendsPage from './page'
 
-export const meta: MetaFunction = () => [{ title: 'トレンド一覧 | TrendDiary' }]
+export const meta: MetaFunction = ({ matches, location }) =>
+  mergeMeta(
+    matches,
+    pageMeta({
+      title: 'トレンド一覧 | TrendDiary',
+      description: 'QiitaやZennの最新記事を一覧で確認し、読んだかどうかを記録できます。',
+      path: location.pathname,
+    }),
+  )
 
 export default function Trends() {
   const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
   const {
     articles,
-    reloadArticles,
+    updateArticleReadState,
     isLoading,
     page,
     totalPages,
@@ -36,11 +45,9 @@ export default function Trends() {
   const { markAsRead, markAsUnread } = useReadArticle()
 
   const handleToggleRead = async (articleId: string, isRead: boolean) => {
-    const originalArticle = articles.find((a) => a.articleId === articleId)
-    if (!originalArticle) return
-
-    await (isRead ? markAsRead : markAsUnread)(articleId)
-    reloadArticles()
+    await updateArticleReadState(articleId, isRead, () =>
+      (isRead ? markAsRead : markAsUnread)(articleId),
+    )
   }
 
   const handleMarkAsRead = async (articleId: string) => {

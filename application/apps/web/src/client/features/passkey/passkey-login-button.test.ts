@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { createElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PasskeyLoginButton from './passkey-login-button'
+import usePasskeyLogin from './use-passkey-login'
 
 const loginMock = vi.fn()
 const hookState: { isSubmitting: boolean; formError: string | undefined } = {
@@ -10,8 +11,10 @@ const hookState: { isSubmitting: boolean; formError: string | undefined } = {
 }
 
 vi.mock('@/client/features/passkey/use-passkey-login', () => ({
-  default: () => ({ ...hookState, login: loginMock }),
+  default: vi.fn(() => ({ ...hookState, login: loginMock })),
 }))
+
+const mockedUsePasskeyLogin = vi.mocked(usePasskeyLogin)
 
 describe('PasskeyLoginButton', () => {
   beforeEach(() => {
@@ -34,6 +37,12 @@ describe('PasskeyLoginButton', () => {
       render(createElement(PasskeyLoginButton))
 
       expect(screen.getByRole('button', { name: 'パスキーで認証中...' })).toBeDisabled()
+    })
+
+    it('redirectToを指定するとフックへ渡す', () => {
+      render(createElement(PasskeyLoginButton, { redirectTo: '/diary' }))
+
+      expect(mockedUsePasskeyLogin).toHaveBeenCalledWith('/diary')
     })
   })
 

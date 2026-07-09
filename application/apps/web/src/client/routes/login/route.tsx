@@ -1,29 +1,24 @@
-import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
+import {
+  type LoaderFunctionArgs,
+  type MetaFunction,
+  useLoaderData,
+  useSearchParams,
+} from 'react-router'
 import { resolveTurnstileSiteKey } from '@/client/entities/auth'
-import { useLogin } from '@/client/features/authenticate/login'
+import { resolveLoginRedirectTarget, useLogin } from '@/client/features/authenticate/login'
+import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import LoginPage from './page'
 
-export const meta: MetaFunction = () => [
-  { title: 'ログイン | TrendDiary' },
-  {
-    name: 'description',
-    content:
-      'TrendDiaryにログインして、技術トレンドの管理を始めましょう。Qiita、Zennの記事を効率的に管理できます。',
-  },
-  { property: 'og:title', content: 'ログイン | TrendDiary' },
-  {
-    property: 'og:description',
-    content:
-      'TrendDiaryにログインして、技術トレンドの管理を始めましょう。Qiita、Zennの記事を効率的に管理できます。',
-  },
-  { property: 'og:url', content: '/login' },
-  { name: 'twitter:title', content: 'ログイン | TrendDiary' },
-  {
-    name: 'twitter:description',
-    content:
-      'TrendDiaryにログインして、技術トレンドの管理を始めましょう。Qiita、Zennの記事を効率的に管理できます。',
-  },
-]
+export const meta: MetaFunction = ({ matches, location }) =>
+  mergeMeta(
+    matches,
+    pageMeta({
+      title: 'ログイン | TrendDiary',
+      description:
+        'TrendDiaryにログインして、技術トレンドの管理を始めましょう。Qiita、Zennの記事を効率的に管理できます。',
+      path: location.pathname,
+    }),
+  )
 
 export function loader({ context }: LoaderFunctionArgs) {
   return {
@@ -33,7 +28,12 @@ export function loader({ context }: LoaderFunctionArgs) {
 
 export default function Login() {
   const { turnstileSiteKey } = useLoaderData<typeof loader>()
-  const { isSubmitting, errors, formError, submit } = useLogin(turnstileSiteKey ?? undefined)
+  const [searchParams] = useSearchParams()
+  const redirectTo = resolveLoginRedirectTarget(searchParams.get('redirect'))
+  const { isSubmitting, errors, formError, submit } = useLogin(
+    turnstileSiteKey ?? undefined,
+    redirectTo,
+  )
 
   return (
     <LoginPage
@@ -42,6 +42,7 @@ export default function Login() {
       errors={errors}
       formError={formError}
       turnstileSiteKey={turnstileSiteKey ?? undefined}
+      redirectTo={redirectTo}
     />
   )
 }

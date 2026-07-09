@@ -3,8 +3,8 @@ import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagina
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
 import useSWR from 'swr'
+import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi, {
   type DiaryRangeItemResponse,
@@ -24,8 +24,8 @@ interface SummaryRangeData {
 }
 
 // 週次・日次の2つの取得が同時に失敗しても通知を1つに集約するため、固定 id でトーストを重複させない
-const notifyFetchError = () => {
-  toast.error('エラーが発生しました。時間をおいて再度お試しください。', {
+const notifyFetchError = (error: unknown) => {
+  notifyErrorUnlessSessionExpired(error, 'エラーが発生しました。時間をおいて再度お試しください。', {
     id: 'diary-analytics-error',
   })
 }
@@ -37,7 +37,7 @@ const buildAvailableDates = (todayJst: string) =>
     return dateResult.value
   })
 
-export default function useAnalytics(enabled: boolean) {
+export default function useAnalytics() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { fetchDiary, fetchDiaryRange } = useDiaryApi()
 
@@ -56,7 +56,7 @@ export default function useAnalytics(enabled: boolean) {
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
   const summaryKey =
-    enabled && availableDates.length > 0 ? ['api/articles/diary-summary', ...availableDates] : null
+    availableDates.length > 0 ? ['api/articles/diary-summary', ...availableDates] : null
   const { data: summaryRangeData, isLoading: isSummaryLoading } = useSWR<SummaryRangeData>(
     summaryKey,
     async () => {
@@ -100,8 +100,9 @@ export default function useAnalytics(enabled: boolean) {
     },
   )
 
-  const swrKey: ['api/articles/diary', string, number] | null =
-    enabled && selectedDate ? ['api/articles/diary', selectedDate, page] : null
+  const swrKey: ['api/articles/diary', string, number] | null = selectedDate
+    ? ['api/articles/diary', selectedDate, page]
+    : null
   const { data, isLoading } = useSWR<DiaryResponse>(
     swrKey,
     ([, date, currentPage]: ['api/articles/diary', string, number]) =>

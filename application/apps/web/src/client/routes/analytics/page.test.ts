@@ -54,7 +54,6 @@ describe('AnalyticsPage', () => {
   it('日付未選択時は週次集計を表示し、一覧は案内文を表示する', () => {
     render(
       createElement(AnalyticsPage, {
-        isLoggedIn: true,
         selectedDate: null,
         dateResolveError: false,
         summaryRange: [
@@ -90,7 +89,6 @@ describe('AnalyticsPage', () => {
 
     render(
       createElement(AnalyticsPage, {
-        isLoggedIn: true,
         selectedDate: '2026-03-08',
         dateResolveError: false,
         summaryRange: [
@@ -123,7 +121,6 @@ describe('AnalyticsPage', () => {
   it('日付解決に失敗したときはエラーメッセージを表示する', () => {
     render(
       createElement(AnalyticsPage, {
-        isLoggedIn: true,
         selectedDate: null,
         dateResolveError: true,
         summaryRange: [],

@@ -1,10 +1,8 @@
-import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
 import { InboxBody, InboxBodySkeleton, type InboxBodyProps } from '@/client/features/inbox'
 
 interface Props extends InboxBodyProps {
   isLoading: boolean
-  isLoggedIn: boolean
   remainingCount: number
   selectedMedia: FilterMediaType
   onMediaChange: (media: FilterMediaType) => void
@@ -14,7 +12,6 @@ export default function InboxPage({
   article,
   isLoading,
   isJustCompleted,
-  isLoggedIn,
   onSkip,
   onRead,
   onLater,
@@ -22,10 +19,6 @@ export default function InboxPage({
   selectedMedia,
   onMediaChange,
 }: Props) {
-  if (!isLoggedIn) {
-    return <LoginRequired pageTitle='未読消化' />
-  }
-
   return (
     <div className='min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-6'>
       <div className='mx-auto w-full max-w-3xl rounded-2xl border border-white/40 bg-white/50 p-6 shadow-xl backdrop-blur-sm'>

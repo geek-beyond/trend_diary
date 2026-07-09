@@ -4,14 +4,14 @@ import { useSignup } from '@/client/features/authenticate/signup'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import SignupPage from './page'
 
-export const meta: MetaFunction = ({ matches }) =>
+export const meta: MetaFunction = ({ matches, location }) =>
   mergeMeta(
     matches,
     pageMeta({
       title: 'アカウント作成 | TrendDiary',
       description:
         'TrendDiaryのアカウントを作成して、技術トレンドの管理を始めましょう。無料で始められる技術者向けサービスです。',
-      path: '/signup',
+      path: location.pathname,
     }),
   )
 

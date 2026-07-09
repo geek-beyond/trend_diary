@@ -5,14 +5,14 @@ import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import type { AppLayoutOutletContext } from '../app-layout'
 import AnalyticsPage from './page'
 
-export const meta: MetaFunction = ({ matches }) =>
+export const meta: MetaFunction = ({ matches, location }) =>
   mergeMeta(
     matches,
     pageMeta({
       title: '統計 | TrendDiary',
       description:
         '記事の読了状況を期間ごとに集計し、技術トレンドのキャッチアップ状況を確認できます。',
-      path: '/analytics',
+      path: location.pathname,
     }),
   )
 

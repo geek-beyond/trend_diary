@@ -4,14 +4,14 @@ import { useLogin } from '@/client/features/authenticate/login'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import LoginPage from './page'
 
-export const meta: MetaFunction = ({ matches }) =>
+export const meta: MetaFunction = ({ matches, location }) =>
   mergeMeta(
     matches,
     pageMeta({
       title: 'ログイン | TrendDiary',
       description:
         'TrendDiaryにログインして、技術トレンドの管理を始めましょう。Qiita、Zennの記事を効率的に管理できます。',
-      path: '/login',
+      path: location.pathname,
     }),
   )
 

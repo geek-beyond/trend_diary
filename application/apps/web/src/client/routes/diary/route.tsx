@@ -5,13 +5,13 @@ import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import type { AppLayoutOutletContext } from '../app-layout'
 import DiaryPage from './page'
 
-export const meta: MetaFunction = ({ matches }) =>
+export const meta: MetaFunction = ({ matches, location }) =>
   mergeMeta(
     matches,
     pageMeta({
       title: 'ダイアリー | TrendDiary',
       description: '日ごとの読了記事を日記のように振り返って確認できます。',
-      path: '/diary',
+      path: location.pathname,
     }),
   )
 

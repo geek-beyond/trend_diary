@@ -10,8 +10,8 @@ import {
   useRouteError,
 } from 'react-router'
 import './styles.css'
+import { SITE_URL } from '@/client/lib/meta'
 import { Toaster } from './components/shadcn/sonner'
-import { SITE_URL } from './lib/meta'
 
 export const meta: MetaFunction = () => [
   { charSet: 'utf-8' },

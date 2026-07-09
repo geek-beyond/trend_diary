@@ -7,13 +7,13 @@ import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import type { AppLayoutOutletContext } from '../app-layout'
 import InboxPage from './page'
 
-export const meta: MetaFunction = ({ matches }) =>
+export const meta: MetaFunction = ({ matches, location }) =>
   mergeMeta(
     matches,
     pageMeta({
       title: '未読消化 | TrendDiary',
       description: '未読の記事を1件ずつ確認しながら、読んだかどうかを効率的に管理できます。',
-      path: '/inbox',
+      path: location.pathname,
     }),
   )
 

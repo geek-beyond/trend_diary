@@ -6,14 +6,14 @@ import LandingHeader from '../components/ui/layout/landing-header'
 import { AnchorLink } from '../components/ui/navigation/link'
 import { ClipText } from '../components/ui/typography/clip-text'
 
-export const meta: MetaFunction = ({ matches }) =>
+export const meta: MetaFunction = ({ matches, location }) =>
   mergeMeta(
     matches,
     pageMeta({
       title: 'TrendDiary | 技術トレンドを効率的に管理',
       description:
         'QiitaやZennの記事を日記のように管理し、技術トレンドを見逃さない。技術者向けのトレンド管理ブラウザアプリです。',
-      path: '/',
+      path: location.pathname,
     }),
   )
 

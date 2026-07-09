@@ -14,28 +14,24 @@ function metaKey(meta: MetaDescriptor): string {
 }
 
 /**
- * 親ルート（root等）のmetaを継承しつつ、同じキー（title/name/property等）を持つものだけを
- * overridesで上書きする。React Routerは子ルートがmetaを返すと親のmetaを丸ごと破棄するため、
- * charSetやfaviconなど共通タグを維持したまま画面固有のtitle/descriptionだけ差し替えるために使う。
+ * React Routerは子ルートがmetaを返すと親のmetaを丸ごと破棄するため、charSetやfaviconなど
+ * 共通タグを維持したまま画面固有のtitle/descriptionだけ差し替えるために使う。
  * 独自のmetaを持たない中間レイアウト（app-layout等）はrootのmetaをそのまま複製して引き継ぐため、
- * matchesを平坦化すると同じキーが複数回出現しうる。overridesとの重複除去に加え、継承分どうしの
- * 重複も取り除く。
+ * matchesを平坦化すると同じキーが複数回出現しうる。
  */
 export function mergeMeta(matches: MetaMatches, overrides: MetaDescriptor[]): MetaDescriptor[] {
   const parentMeta = matches.flatMap((match) => match.meta)
-  const overrideKeys = new Set(overrides.map(metaKey))
-  const seenKeys = new Set<string>()
+  const claimedKeys = new Set(overrides.map(metaKey))
   const inherited = parentMeta.filter((meta) => {
     const key = metaKey(meta)
-    if (overrideKeys.has(key) || seenKeys.has(key)) return false
-    seenKeys.add(key)
+    if (claimedKeys.has(key)) return false
+    claimedKeys.add(key)
     return true
   })
   return [...inherited, ...overrides]
 }
 
 /**
- * title/descriptionから、OGP・Twitter Card用のmetaを含めた画面共通のセットを組み立てる。
  * og:urlはSNSシェア時に絶対URLが要求されるため、pathをSITE_URLと結合して生成する。
  */
 export function pageMeta({

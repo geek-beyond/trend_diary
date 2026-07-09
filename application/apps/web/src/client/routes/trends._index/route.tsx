@@ -10,13 +10,13 @@ import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import type { AppLayoutOutletContext } from '../app-layout'
 import TrendsPage from './page'
 
-export const meta: MetaFunction = ({ matches }) =>
+export const meta: MetaFunction = ({ matches, location }) =>
   mergeMeta(
     matches,
     pageMeta({
       title: 'トレンド一覧 | TrendDiary',
       description: 'QiitaやZennの最新記事を一覧で確認し、読んだかどうかを記録できます。',
-      path: '/trends',
+      path: location.pathname,
     }),
   )
 

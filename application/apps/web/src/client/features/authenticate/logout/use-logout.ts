@@ -17,9 +17,10 @@ export default function useLogout() {
     },
     {
       onSuccess: () => {
-        // ログアウト後もセッションキャッシュが古いログイン状態を保持しないよう再検証する。
-        // ログアウト自体は成功しており、再検証の成否で遷移を止めたくないため投げっぱなしにする
-        void mutate(SESSION_SWR_KEY)
+        // 非同期の再検証(revalidate)だとnavigate後にセッションキャッシュが古いまま残り、
+        // その間にProtectedLayoutが元のページへのredirectクエリ付きで割り込む余地がある。
+        // notifySessionExpiredと同様に即時反映させ、navigateを最終的な遷移として確定させる
+        void mutate(SESSION_SWR_KEY, false, { revalidate: false })
         navigate('/login')
         toast.success('ログアウトしました')
       },

@@ -53,7 +53,7 @@ describe('useLogout', () => {
   })
 
   describe('正常系', () => {
-    it('ログアウト成功時はセッションキャッシュを再検証し/loginへ遷移して成功トーストを表示する', async () => {
+    it('ログアウト成功時はセッションキャッシュを即時に未ログインへ更新し/loginへ遷移して成功トーストを表示する', async () => {
       apiCallMock.mockResolvedValue(null)
 
       const { result } = renderHook(() => useLogout())
@@ -66,8 +66,9 @@ describe('useLogout', () => {
         expect(navigateMock).toHaveBeenCalledWith('/login')
       })
       expect(apiCallMock).toHaveBeenCalledTimes(1)
-      // 古いログイン状態が残らないようセッションキャッシュを再検証する
-      expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY)
+      // 古いログイン状態のまま navigate 後に ProtectedLayout の redirect クエリ付き遷移と
+      // 競合しないよう、revalidate を待たず即時反映する
+      expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY, false, { revalidate: false })
       expect(toast.success).toHaveBeenCalledWith('ログアウトしました')
       expect(toast.error).not.toHaveBeenCalled()
     })

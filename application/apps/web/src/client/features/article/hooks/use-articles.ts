@@ -185,7 +185,54 @@ export default function useArticles(isLoggedIn = false) {
     },
   )
 
-  const reloadArticles = () => mutate()
+  // 「未読のみ」フィルタ表示中に既読化した記事は、再フェッチを待たず一覧から即座に取り除く。
+  // 表示中の一覧が「未読のみ」という条件と矛盾したまま残ると、フィルタが効いていないように見えるため
+  const applyReadStateToCache =
+    (articleId: string, isRead: boolean) =>
+    (current?: ArticlesResponse): ArticlesResponse => {
+      // current は表示中の一覧を楽観更新する際に必ず存在するが、SWR の型上は undefined もあり得るためフォールバックを用意する
+      const base = current ?? { data: [], page: params.page, limit: params.limit, totalPages: 1 }
+
+      if (params.readStatus === 'unread' && isRead) {
+        return {
+          ...base,
+          data: base.data.filter((article) => article.articleId !== articleId),
+        }
+      }
+
+      return {
+        ...base,
+        data: base.data.map((article) =>
+          article.articleId === articleId ? { ...article, isRead } : article,
+        ),
+      }
+    }
+
+  const updateArticleReadState = async (
+    articleId: string,
+    isRead: boolean,
+    request: () => Promise<boolean>,
+  ) => {
+    const applyReadState = applyReadStateToCache(articleId, isRead)
+
+    try {
+      await mutate(
+        async (current) => {
+          const succeeded = await request()
+          if (!succeeded) throw new Error('Failed to update read state')
+          return applyReadState(current)
+        },
+        {
+          optimisticData: applyReadState,
+          rollbackOnError: true,
+          populateCache: true,
+          revalidate: false,
+        },
+      )
+    } catch {
+      // request側で失敗時のエラートーストを表示済みのため、ここでは楽観データのロールバックのみで良い
+    }
+  }
 
   const handlePageChange = (newPage: number) => {
     const newParams = new URLSearchParams(searchParams)
@@ -262,7 +309,7 @@ export default function useArticles(isLoggedIn = false) {
   return {
     date,
     articles: data?.data || [],
-    reloadArticles,
+    updateArticleReadState,
     page: data?.page || params.page,
     limit: data?.limit || params.limit,
     totalPages: data?.totalPages || 1,

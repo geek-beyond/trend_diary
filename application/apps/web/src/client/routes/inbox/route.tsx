@@ -9,7 +9,7 @@ import InboxPage from './page'
 export const meta: MetaFunction = () => [{ title: '未読消化 | TrendDiary' }]
 
 export default function InboxRoute() {
-  const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
+  const { isLoggedIn, isSessionLoading } = useOutletContext<AppLayoutOutletContext>()
   const [selectedMedia, setSelectedMedia] = useState<MediaType>(undefined)
   const {
     isLoading,
@@ -27,6 +27,7 @@ export default function InboxRoute() {
       isLoading={isLoading}
       isJustCompleted={isJustCompleted}
       isLoggedIn={isLoggedIn}
+      isSessionLoading={isSessionLoading}
       remainingCount={remainingCount}
       onSkip={handleSkip}
       onRead={handleRead}

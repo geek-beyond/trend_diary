@@ -7,7 +7,7 @@ import AnalyticsPage from './page'
 export const meta: MetaFunction = () => [{ title: '統計 | TrendDiary' }]
 
 export default function AnalyticsRoute() {
-  const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
+  const { isLoggedIn, isSessionLoading } = useOutletContext<AppLayoutOutletContext>()
   const {
     selectedDate,
     dateResolveError,
@@ -27,6 +27,7 @@ export default function AnalyticsRoute() {
   return (
     <AnalyticsPage
       isLoggedIn={isLoggedIn}
+      isSessionLoading={isSessionLoading}
       selectedDate={selectedDate}
       dateResolveError={dateResolveError}
       summaryRange={summaryRange}

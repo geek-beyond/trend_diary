@@ -55,6 +55,7 @@ describe('AnalyticsPage', () => {
     render(
       createElement(AnalyticsPage, {
         isLoggedIn: true,
+        isSessionLoading: false,
         selectedDate: null,
         dateResolveError: false,
         summaryRange: [
@@ -91,6 +92,7 @@ describe('AnalyticsPage', () => {
     render(
       createElement(AnalyticsPage, {
         isLoggedIn: true,
+        isSessionLoading: false,
         selectedDate: '2026-03-08',
         dateResolveError: false,
         summaryRange: [
@@ -124,6 +126,7 @@ describe('AnalyticsPage', () => {
     render(
       createElement(AnalyticsPage, {
         isLoggedIn: true,
+        isSessionLoading: false,
         selectedDate: null,
         dateResolveError: true,
         summaryRange: [],
@@ -143,5 +146,30 @@ describe('AnalyticsPage', () => {
     expect(
       screen.getByText('JST日付の解決に失敗した。時間をおいて再読み込みして。'),
     ).toBeInTheDocument()
+  })
+
+  it('セッション確定前はローディングを表示しログイン要求を表示しない', () => {
+    render(
+      createElement(AnalyticsPage, {
+        isLoggedIn: false,
+        isSessionLoading: true,
+        selectedDate: null,
+        dateResolveError: false,
+        summaryRange: [],
+        weeklySummary: { read: 0, skip: 0 },
+        dailySummary: { read: 0, skip: 0 },
+        sources,
+        reads: [],
+        readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
+        isLoading: false,
+        onSelectDate: vi.fn(),
+        onClearSelectedDate: vi.fn(),
+        onNextPage: vi.fn(),
+        onPrevPage: vi.fn(),
+      }),
+    )
+
+    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
+    expect(screen.queryByText('この機能はログイン時のみ利用できます。')).not.toBeInTheDocument()
   })
 })

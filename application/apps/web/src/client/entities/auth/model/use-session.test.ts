@@ -31,15 +31,16 @@ describe('useSession', () => {
     mockGetApiClientForClient.mockReturnValue(mockApiClient)
   })
 
-  it('セッション確認が完了するまではisLoggedInがfalse', () => {
+  it('セッション確認が完了するまではisLoggedInがfalseかつisLoadingがtrue', () => {
     mockApiClient.auth.me.$get.mockReturnValue(new Promise(() => undefined))
 
     const { result } = renderHook(() => useSession(), { wrapper })
 
     expect(result.current.isLoggedIn).toBe(false)
+    expect(result.current.isLoading).toBe(true)
   })
 
-  it('GET /api/auth/me が200を返した場合はisLoggedInがtrueになる', async () => {
+  it('GET /api/auth/me が200を返した場合はisLoggedInがtrueかつisLoadingがfalseになる', async () => {
     mockApiClient.auth.me.$get.mockResolvedValue({ ok: true, status: 200 })
 
     const { result } = renderHook(() => useSession(), { wrapper })
@@ -47,9 +48,10 @@ describe('useSession', () => {
     await waitFor(() => {
       expect(result.current.isLoggedIn).toBe(true)
     })
+    expect(result.current.isLoading).toBe(false)
   })
 
-  it('未ログイン（401）の場合はisLoggedInがfalseのまま', async () => {
+  it('未ログイン（401）の場合はisLoggedInがfalseのままかつisLoadingがfalseになる', async () => {
     mockApiClient.auth.me.$get.mockResolvedValue({ ok: false, status: 401 })
 
     const { result } = renderHook(() => useSession(), { wrapper })
@@ -58,5 +60,6 @@ describe('useSession', () => {
       expect(mockApiClient.auth.me.$get).toHaveBeenCalled()
     })
     expect(result.current.isLoggedIn).toBe(false)
+    expect(result.current.isLoading).toBe(false)
   })
 })

@@ -11,5 +11,6 @@ export default function useSession() {
     return res.ok
   })
 
-  return { isLoggedIn: data === true }
+  // data===undefined はセッション未確定（ロード中）。未ログイン(false)と区別する
+  return { isLoggedIn: data === true, isLoading: data === undefined }
 }

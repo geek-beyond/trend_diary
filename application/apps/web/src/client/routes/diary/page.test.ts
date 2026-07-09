@@ -30,6 +30,7 @@ describe('DiaryPage', () => {
     render(
       createElement(DiaryPage, {
         isLoggedIn: false,
+        isSessionLoading: false,
         targetDate: '2026-03-08',
         dateResolveError: false,
         dailySummary: { read: 6, skip: 3 },
@@ -46,10 +47,32 @@ describe('DiaryPage', () => {
     expect(screen.getByText('この機能はログイン時のみ利用できます。')).toBeInTheDocument()
   })
 
+  it('セッション確定前はローディングを表示しログイン要求を表示しない', () => {
+    render(
+      createElement(DiaryPage, {
+        isLoggedIn: false,
+        isSessionLoading: true,
+        targetDate: '2026-03-08',
+        dateResolveError: false,
+        dailySummary: { read: 6, skip: 3 },
+        sources,
+        reads,
+        readPagination: { page: 1, totalPages: 2, hasNext: true, hasPrev: false },
+        isLoading: false,
+        onNextPage: vi.fn(),
+        onPrevPage: vi.fn(),
+      }),
+    )
+
+    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
+    expect(screen.queryByText('この機能はログイン時のみ利用できます。')).not.toBeInTheDocument()
+  })
+
   it('ログイン時は対象日と読了一覧を表示する', () => {
     render(
       createElement(DiaryPage, {
         isLoggedIn: true,
+        isSessionLoading: false,
         targetDate: '2026-03-08',
         dateResolveError: false,
         dailySummary: { read: 6, skip: 3 },
@@ -77,6 +100,7 @@ describe('DiaryPage', () => {
     render(
       createElement(DiaryPage, {
         isLoggedIn: true,
+        isSessionLoading: false,
         targetDate: '2026-03-08',
         dateResolveError: false,
         dailySummary: { read: 1, skip: 0 },
@@ -106,6 +130,7 @@ describe('DiaryPage', () => {
     render(
       createElement(DiaryPage, {
         isLoggedIn: true,
+        isSessionLoading: false,
         targetDate: null,
         dateResolveError: true,
         dailySummary: { read: 0, skip: 0 },

@@ -1,3 +1,4 @@
+import LoadingSpinner from '@/client/components/ui/feedback/loading-spinner'
 import LoginRequired from '@/client/components/ui/feedback/login-required'
 import {
   DiaryPageLayout,
@@ -12,6 +13,7 @@ import {
 
 interface Props {
   isLoggedIn: boolean
+  isSessionLoading: boolean
   targetDate: string | null
   dateResolveError: boolean
   dailySummary: Summary
@@ -25,6 +27,7 @@ interface Props {
 
 export default function DiaryPage({
   isLoggedIn,
+  isSessionLoading,
   targetDate,
   dateResolveError,
   dailySummary,
@@ -36,6 +39,11 @@ export default function DiaryPage({
   onPrevPage,
 }: Props) {
   const pageTitle = 'ダイアリー'
+
+  // セッション確定までは未ログイン画面のちらつきを避けるためローディングを表示する
+  if (isSessionLoading) {
+    return <LoadingSpinner />
+  }
 
   if (!isLoggedIn) {
     return <LoginRequired pageTitle={pageTitle} />

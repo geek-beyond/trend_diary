@@ -10,6 +10,7 @@ const buildProps = (overrides: Partial<InboxPageProps> = {}): InboxPageProps => 
   isLoading: false,
   isJustCompleted: false,
   isLoggedIn: true,
+  isSessionLoading: false,
   onSkip: vi.fn().mockResolvedValue(undefined),
   onRead: vi.fn().mockResolvedValue(undefined),
   onLater: vi.fn(),
@@ -50,6 +51,14 @@ describe('InboxPage', () => {
     render(createElement(InboxPage, buildProps({ isLoggedIn: false })))
 
     expect(screen.getByText('この機能はログイン時のみ利用できます。')).toBeInTheDocument()
+    expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
+  })
+
+  it('セッション確定前はローディングを表示しログイン要求を表示しない', () => {
+    render(createElement(InboxPage, buildProps({ isLoggedIn: false, isSessionLoading: true })))
+
+    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
+    expect(screen.queryByText('この機能はログイン時のみ利用できます。')).not.toBeInTheDocument()
     expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
   })
 

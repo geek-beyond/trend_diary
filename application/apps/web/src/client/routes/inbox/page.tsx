@@ -1,9 +1,12 @@
+import FetchErrorState from '@/client/components/ui/feedback/fetch-error-state'
 import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
 import { InboxBody, InboxBodySkeleton, type InboxBodyProps } from '@/client/features/inbox'
 
 interface Props extends InboxBodyProps {
   isLoading: boolean
+  hasError: boolean
+  onRetry: () => void
   isLoggedIn: boolean
   remainingCount: number
   selectedMedia: FilterMediaType
@@ -13,6 +16,8 @@ interface Props extends InboxBodyProps {
 export default function InboxPage({
   article,
   isLoading,
+  hasError,
+  onRetry,
   isJustCompleted,
   isLoggedIn,
   onSkip,
@@ -37,7 +42,11 @@ export default function InboxPage({
         </div>
         <p className='mt-1 text-sm text-gray-600'>残り {remainingCount} 件</p>
 
-        {isLoading ? (
+        {hasError ? (
+          <div className='mt-4'>
+            <FetchErrorState onRetry={onRetry} />
+          </div>
+        ) : isLoading ? (
           <InboxBodySkeleton />
         ) : (
           <InboxBody

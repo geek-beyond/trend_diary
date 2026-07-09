@@ -1,13 +1,20 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { type ComponentProps, createElement } from 'react'
+import { MemoryRouter } from 'react-router'
 import InboxPage from './page'
 
 type InboxPageProps = ComponentProps<typeof InboxPage>
 type InboxArticle = NonNullable<InboxPageProps['article']>
 
+function renderInboxPage(props: InboxPageProps) {
+  return render(createElement(MemoryRouter, null, createElement(InboxPage, props)))
+}
+
 const buildProps = (overrides: Partial<InboxPageProps> = {}): InboxPageProps => ({
   article: null,
   isLoading: false,
+  hasError: false,
+  onRetry: vi.fn(),
   isJustCompleted: false,
   isLoggedIn: true,
   onSkip: vi.fn().mockResolvedValue(undefined),
@@ -32,7 +39,7 @@ const buildArticle = (overrides: Partial<InboxArticle> = {}): InboxArticle => ({
 
 describe('InboxPage', () => {
   it('完了直後は達成カードを表示して通常の0件文言は表示しない', () => {
-    render(createElement(InboxPage, buildProps({ isJustCompleted: true })))
+    renderInboxPage(buildProps({ isJustCompleted: true }))
 
     expect(screen.getByText('消化完了')).toBeInTheDocument()
     expect(screen.queryByText('未読を消化しきった。')).not.toBeInTheDocument()
@@ -40,21 +47,21 @@ describe('InboxPage', () => {
   })
 
   it('通常の0件状態では達成カードを表示しない', () => {
-    render(createElement(InboxPage, buildProps()))
+    renderInboxPage(buildProps())
 
     expect(screen.getByText('未読記事はありません')).toBeInTheDocument()
     expect(screen.queryByText('消化完了')).not.toBeInTheDocument()
   })
 
   it('未ログイン時はログイン要求のみを表示し本文を表示しない', () => {
-    render(createElement(InboxPage, buildProps({ isLoggedIn: false })))
+    renderInboxPage(buildProps({ isLoggedIn: false }))
 
     expect(screen.getByText('この機能はログイン時のみ利用できます。')).toBeInTheDocument()
     expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
   })
 
   it('読み込み中はスケルトンを表示し本文を表示しない', () => {
-    render(createElement(InboxPage, buildProps({ isLoading: true, remainingCount: 3 })))
+    renderInboxPage(buildProps({ isLoading: true, remainingCount: 3 }))
 
     expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
     expect(screen.getByText('残り 3 件')).toBeInTheDocument()
@@ -62,7 +69,7 @@ describe('InboxPage', () => {
   })
 
   it('未読記事があるとタイトル・著者・本文と操作ボタンを表示する', () => {
-    render(createElement(InboxPage, buildProps({ article: buildArticle(), remainingCount: 1 })))
+    renderInboxPage(buildProps({ article: buildArticle(), remainingCount: 1 }))
 
     expect(screen.getByText('テスト記事タイトル')).toBeInTheDocument()
     expect(screen.getByText('著者: テスト著者')).toBeInTheDocument()
@@ -79,8 +86,33 @@ describe('InboxPage', () => {
       title: '未知メディアの記事',
       url: 'https://example.com/a2',
     })
-    render(createElement(InboxPage, buildProps({ article, remainingCount: 1 })))
+    renderInboxPage(buildProps({ article, remainingCount: 1 }))
 
     expect(screen.getByText('未知メディアの記事')).toBeInTheDocument()
+  })
+
+  it('取得エラー時は再試行ボタン付きのエラー表示をし本文を表示しない', () => {
+    const onRetry = vi.fn()
+    renderInboxPage(buildProps({ hasError: true, onRetry, remainingCount: 3 }))
+
+    expect(
+      screen.getByText('エラーが発生しました。時間をおいて再度お試しください。'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '再試行' }))
+    expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('通常の0件状態ではトレンド一覧への導線を表示する', () => {
+    renderInboxPage(buildProps())
+
+    expect(screen.getByRole('link', { name: 'トレンド一覧へ' })).toBeInTheDocument()
+  })
+
+  it('完了直後はトレンド一覧への導線を表示する', () => {
+    renderInboxPage(buildProps({ isJustCompleted: true }))
+
+    expect(screen.getByRole('link', { name: 'トレンド一覧へ' })).toBeInTheDocument()
   })
 })

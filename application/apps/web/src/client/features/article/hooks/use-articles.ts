@@ -153,7 +153,7 @@ export default function useArticles(isLoggedIn = false) {
   }
 
   const swrKey = ['api/articles', query]
-  const { data, isLoading, mutate } = useSWR<ArticlesResponse>(
+  const { data, error, isLoading, mutate } = useSWR<ArticlesResponse>(
     swrKey,
     async () => {
       const result = await apiCall<ArticlesResponse>(() =>
@@ -173,13 +173,13 @@ export default function useArticles(isLoggedIn = false) {
       }
     },
     {
-      onError: (error) => {
-        if (error instanceof Error) {
+      onError: (swrError) => {
+        if (swrError instanceof Error) {
           toast.error('エラーが発生しました。時間をおいて再度お試しください。')
         } else {
           toast.error('不明なエラーが発生しました')
           // oxlint-disable-next-line no-console -- 未知のエラーのため
-          console.error(error)
+          console.error(swrError)
         }
       },
     },
@@ -267,6 +267,7 @@ export default function useArticles(isLoggedIn = false) {
     limit: data?.limit || params.limit,
     totalPages: data?.totalPages || 1,
     isLoading,
+    hasError: !!error,
     setSearchParams,
     toNextPage,
     toPreviousPage,

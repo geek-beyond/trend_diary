@@ -290,5 +290,31 @@ describe('useAnalytics', () => {
         )
       })
     })
+
+    it('週次集計の取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
+      const fetchDiaryRange = vi.fn().mockRejectedValueOnce(new Error('取得に失敗しました'))
+      const fetchDiary = vi.fn()
+
+      mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange })
+
+      const { result } = setupHook()
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(true)
+      })
+
+      fetchDiaryRange.mockImplementation((from: string, to: string) => {
+        const dates = buildDates(to).filter((date) => date >= from)
+        return Promise.resolve(dates.map((date) => buildRangeItemResponse(date, 1, 0)))
+      })
+
+      await act(async () => {
+        await result.current.retry()
+      })
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(false)
+      })
+    })
   })
 })

@@ -279,4 +279,29 @@ describe('useUnreadDigestion', () => {
     expect(result.current.remainingCount).toBe(1)
     expect(result.current.isJustCompleted).toBe(false)
   })
+
+  describe('異常系', () => {
+    it('未読一覧の取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
+      mockUnreadDigestionGet.mockRejectedValueOnce(new Error('取得に失敗しました'))
+
+      const { result } = renderHook(() => useUnreadDigestion(true, undefined), { wrapper })
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(true)
+      })
+
+      mockUnreadDigestionGet.mockResolvedValueOnce({
+        data: [baseArticle],
+        total: 1,
+      })
+
+      await act(async () => {
+        await result.current.retry()
+      })
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(false)
+      })
+    })
+  })
 })

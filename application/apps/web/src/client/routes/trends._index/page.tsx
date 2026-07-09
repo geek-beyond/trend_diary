@@ -1,5 +1,6 @@
 import { toJaDateString } from '@trend-diary/common/locale'
 import { twMerge } from 'tailwind-merge'
+import { Button } from '@/client/components/shadcn/button'
 import {
   Pagination,
   PaginationContent,
@@ -7,6 +8,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/client/components/shadcn/pagination'
+import FetchErrorState from '@/client/components/ui/feedback/fetch-error-state'
 import {
   type Article,
   ArticleCard,
@@ -28,11 +30,19 @@ const getPaginationClass = (isDisabled: boolean) =>
     isDisabled ? 'opacity-50 cursor-not-allowed' : '',
   )
 
+const DEFAULT_FILTERS: FilterParams = {
+  media: undefined,
+  readStatus: 'all',
+  datePreset: 'today',
+}
+
 interface Props {
   date: Date
   articles: Article[]
   openDrawer: (article: Article) => void
   isLoading: boolean
+  hasError: boolean
+  onRetry: () => void
   page: number
   totalPages: number
   selectedMedia: MediaType
@@ -50,6 +60,8 @@ export default function TrendsPage({
   articles,
   openDrawer,
   isLoading,
+  hasError,
+  onRetry,
   page,
   totalPages,
   selectedMedia,
@@ -70,8 +82,15 @@ export default function TrendsPage({
     datePreset: selectedDatePreset,
   }
 
+  const hasActiveFilters =
+    selectedMedia !== undefined || selectedReadStatus !== 'all' || selectedDatePreset !== 'today'
+
   const handleCardClick = (article: Article) => {
     openDrawer(article)
+  }
+
+  const handleResetFilters = () => {
+    onApplyFilters(DEFAULT_FILTERS)
   }
 
   const handlePrevPageClick = () => {
@@ -110,8 +129,23 @@ export default function TrendsPage({
             <ArticleCardSkeleton key={key} />
           ))}
         </div>
+      ) : hasError ? (
+        <FetchErrorState onRetry={onRetry} />
       ) : articles.length === 0 ? (
-        <div className='text-gray-500'>記事がありません</div>
+        <div className='text-gray-500'>
+          <p>記事がありません</p>
+          {hasActiveFilters && (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className='mt-2'
+              onClick={handleResetFilters}
+            >
+              フィルタを解除する
+            </Button>
+          )}
+        </div>
       ) : (
         <div data-slot='page-content'>
           <div className='flex flex-wrap gap-6'>

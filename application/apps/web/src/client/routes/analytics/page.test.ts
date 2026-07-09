@@ -67,6 +67,8 @@ describe('AnalyticsPage', () => {
         reads: [],
         readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
         isLoading: false,
+        hasError: false,
+        onRetry: vi.fn(),
         onSelectDate: vi.fn(),
         onClearSelectedDate: vi.fn(),
         onNextPage: vi.fn(),
@@ -103,6 +105,8 @@ describe('AnalyticsPage', () => {
         reads,
         readPagination: { page: 2, totalPages: 3, hasNext: true, hasPrev: true },
         isLoading: false,
+        hasError: false,
+        onRetry: vi.fn(),
         onSelectDate,
         onClearSelectedDate,
         onNextPage: vi.fn(),
@@ -133,6 +137,8 @@ describe('AnalyticsPage', () => {
         reads: [],
         readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
         isLoading: false,
+        hasError: false,
+        onRetry: vi.fn(),
         onSelectDate: vi.fn(),
         onClearSelectedDate: vi.fn(),
         onNextPage: vi.fn(),
@@ -143,5 +149,38 @@ describe('AnalyticsPage', () => {
     expect(
       screen.getByText('JST日付の解決に失敗した。時間をおいて再読み込みして。'),
     ).toBeInTheDocument()
+  })
+
+  it('取得エラー時は再試行ボタン付きのエラー表示をしグラフや一覧を表示しない', () => {
+    const onRetry = vi.fn()
+    render(
+      createElement(AnalyticsPage, {
+        isLoggedIn: true,
+        selectedDate: '2026-03-08',
+        dateResolveError: false,
+        summaryRange: [{ date: '2026-03-08', read: 2, skip: 1 }],
+        weeklySummary: { read: 20, skip: 7 },
+        dailySummary: { read: 3, skip: 1 },
+        sources,
+        reads,
+        readPagination: { page: 2, totalPages: 3, hasNext: true, hasPrev: true },
+        isLoading: false,
+        hasError: true,
+        onRetry,
+        onSelectDate: vi.fn(),
+        onClearSelectedDate: vi.fn(),
+        onNextPage: vi.fn(),
+        onPrevPage: vi.fn(),
+      }),
+    )
+
+    expect(
+      screen.getByText('エラーが発生しました。時間をおいて再度お試しください。'),
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('analytics-chart')).not.toBeInTheDocument()
+    expect(screen.queryByText('記事タイトル')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '再試行' }))
+    expect(onRetry).toHaveBeenCalledTimes(1)
   })
 })

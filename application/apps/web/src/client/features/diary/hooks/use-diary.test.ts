@@ -151,5 +151,26 @@ describe('useDiary', () => {
         )
       })
     })
+
+    it('日次APIの取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
+      const fetchDiary = vi.fn().mockRejectedValueOnce(new Error('取得に失敗しました'))
+      mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange: vi.fn() })
+
+      const { result } = setupHook(['/diary'])
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(true)
+      })
+
+      fetchDiary.mockResolvedValueOnce(buildDiaryResponse(1))
+
+      await act(async () => {
+        await result.current.retry()
+      })
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(false)
+      })
+    })
   })
 })

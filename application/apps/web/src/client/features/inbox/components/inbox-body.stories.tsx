@@ -49,8 +49,9 @@ export const JustCompleted: Story = {
     isJustCompleted: true,
   },
   play: async ({ canvas, step }) => {
-    await step('完了カードが表示されることを確認', async () => {
+    await step('完了カードが表示され、トレンド一覧への導線があることを確認', async () => {
       await expect(canvas.getByText('消化完了')).toBeInTheDocument()
+      await expect(canvas.getByRole('link', { name: 'トレンド一覧へ' })).toBeInTheDocument()
     })
   },
 }
@@ -62,8 +63,9 @@ export const Empty: Story = {
     isJustCompleted: false,
   },
   play: async ({ canvas, step }) => {
-    await step('未読なしメッセージが表示されることを確認', async () => {
+    await step('未読なしメッセージとトレンド一覧への導線が表示されることを確認', async () => {
       await expect(canvas.getByText('未読記事はありません')).toBeInTheDocument()
+      await expect(canvas.getByRole('link', { name: 'トレンド一覧へ' })).toBeInTheDocument()
     })
   },
 }

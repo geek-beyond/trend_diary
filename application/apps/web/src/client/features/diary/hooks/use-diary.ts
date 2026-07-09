@@ -32,7 +32,7 @@ export default function useDiary(enabled: boolean) {
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
   const swrKey = enabled && todayJst ? (['api/articles/diary', todayJst, page] as const) : null
-  const { data, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     ([, targetDate, targetPage]: readonly ['api/articles/diary', string, number]) =>
       fetchDiary(targetDate, targetPage),
@@ -72,6 +72,8 @@ export default function useDiary(enabled: boolean) {
       hasPrev: false,
     },
     isLoading,
+    hasError: !!error,
+    retry: () => mutate(),
     toNextPage: () => updatePage(page + 1),
     toPrevPage: () => updatePage(page - 1),
   }

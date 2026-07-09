@@ -29,6 +29,7 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
   const swrKey = enabled ? ['api/articles/unread-digestion', selectedMedia] : null
   const {
     data,
+    error,
     isLoading: isInitialLoading,
     isValidating,
     mutate,
@@ -137,6 +138,8 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
 
   return {
     isLoading,
+    hasError: !!error,
+    retry: () => mutate(),
     isJustCompleted,
     currentArticle,
     remainingCount: remaining,

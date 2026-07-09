@@ -647,6 +647,26 @@ describe('useArticles', () => {
         expect(result.current.isLoading).toBe(false)
       })
     })
+
+    it('取得に失敗するとhasErrorがtrueになり、reloadArticlesで再取得に成功するとfalseに戻る', async () => {
+      mockApiClient.articles.$get.mockRejectedValueOnce(new Error('ネットワークエラー'))
+
+      const { result } = setupHook()
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(true)
+      })
+
+      mockApiClient.articles.$get.mockResolvedValueOnce(generateFakeResponse())
+
+      await act(async () => {
+        await result.current.reloadArticles()
+      })
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(false)
+      })
+    })
   })
 
   describe('無効なURLパラメータのフォールバック', () => {

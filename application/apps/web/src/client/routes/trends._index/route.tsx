@@ -26,6 +26,7 @@ export default function Trends() {
     articles,
     reloadArticles,
     isLoading,
+    hasError,
     page,
     totalPages,
     date,
@@ -63,6 +64,8 @@ export default function Trends() {
         articles={articles}
         openDrawer={openDrawer}
         isLoading={isLoading}
+        hasError={hasError}
+        onRetry={reloadArticles}
         page={page}
         totalPages={totalPages}
         selectedMedia={selectedMedia}

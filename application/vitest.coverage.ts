@@ -4,7 +4,7 @@
 // 個別事情（宣言的スキーマや統合テストで担保する箇所の除外など）は引数で上書きする。
 
 // 集約 export 用の index・テスト・テストヘルパは計測対象から外す。
-export const SHARED_COVERAGE_EXCLUDE = [
+const SHARED_COVERAGE_EXCLUDE = [
   'src/**/index.ts',
   'src/**/*.test.ts',
   'src/test/**',
@@ -12,7 +12,7 @@ export const SHARED_COVERAGE_EXCLUDE = [
 ]
 
 // 全パッケージ共通の最低ライン。回帰を防ぐ floor として全パッケージに付与する。
-export const COVERAGE_THRESHOLDS = {
+const COVERAGE_THRESHOLDS = {
   statements: 80,
   branches: 80,
   functions: 80,

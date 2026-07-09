@@ -11,6 +11,7 @@ catalog:
   '@playwright/test': ^1.61.1
   '@supabase/supabase-js': ^2.108.1
   '@types/node': ^26.0.1
+  '@vitest/coverage-istanbul': ^4.1.9
   drizzle-orm: 0.45.2
   hono: ^4.12.27
   neverthrow: ^8.2.0

@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import { defineConfig } from 'vitest/config'
+import { coverageConfig } from '../../vitest.coverage'
 
 // migrations は datastore パッケージで集中管理しているため、パッケージから参照する。
 const MIGRATIONS_DIR = resolve(
@@ -38,6 +39,7 @@ export default defineConfig(async () => {
       setupFiles: ['src/test-helper/setup-d1.ts'],
       include: ['src/**/*.test.ts'],
       watch: false,
+      coverage: coverageConfig({ provider: 'istanbul' }),
     },
   }
 })

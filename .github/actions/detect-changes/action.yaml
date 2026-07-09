@@ -42,9 +42,10 @@ runs:
       run: |
         set -euo pipefail
 
+        # `pnpm -r exec pwd` は各ワークスペースパッケージのルートを1行ずつ返すため、
+        # パス末尾のディレクトリ名がそのままパッケージ短縮名になる。
         parse_pkg_names() {
-          sed -n -e 's#.*/\(packages\|apps\)/\([^/]*\)$#\2#p' -e 's#.*/e2e$#e2e#p' \
-            | sort -u
+          sed 's#.*/##' | sort -u
         }
 
         all_pkg_names() {

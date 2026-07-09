@@ -1,4 +1,5 @@
 export { default as ArticleCard } from './components/article-card'
+export { default as ArticleCardSkeleton } from './components/article-card-skeleton'
 export { default as ArticleDrawer } from './components/article-drawer'
 export { FilterPanel } from './components/filter-panel'
 export { default as MediaFilter } from './components/media-filter'

@@ -20,7 +20,7 @@ const mockGetApiClientForClient = getApiClientForClient as MockedFunction<any>
 function wrapper({ children }: { children: ReactNode }) {
   return createElement(
     SWRConfig,
-    { value: { provider: () => new Map(), dedupingInterval: 0 } },
+    { value: { provider: () => new Map(), dedupingInterval: 0, shouldRetryOnError: false } },
     children,
   )
 }
@@ -31,15 +31,16 @@ describe('useSession', () => {
     mockGetApiClientForClient.mockReturnValue(mockApiClient)
   })
 
-  it('セッション確認が完了するまではisLoggedInがfalse', () => {
+  it('セッション確認が完了するまではisLoggedInがfalseかつisLoadingがtrue', () => {
     mockApiClient.auth.me.$get.mockReturnValue(new Promise(() => undefined))
 
     const { result } = renderHook(() => useSession(), { wrapper })
 
     expect(result.current.isLoggedIn).toBe(false)
+    expect(result.current.isLoading).toBe(true)
   })
 
-  it('GET /api/auth/me が200を返した場合はisLoggedInがtrueになる', async () => {
+  it('GET /api/auth/me が200を返した場合はisLoggedInがtrueかつisLoadingがfalseになる', async () => {
     mockApiClient.auth.me.$get.mockResolvedValue({ ok: true, status: 200 })
 
     const { result } = renderHook(() => useSession(), { wrapper })
@@ -47,15 +48,29 @@ describe('useSession', () => {
     await waitFor(() => {
       expect(result.current.isLoggedIn).toBe(true)
     })
+    expect(result.current.isLoading).toBe(false)
   })
 
-  it('未ログイン（401）の場合はisLoggedInがfalseのまま', async () => {
+  it('未ログイン（401）の場合はisLoggedInがfalseのままかつisLoadingがfalseになる', async () => {
     mockApiClient.auth.me.$get.mockResolvedValue({ ok: false, status: 401 })
 
     const { result } = renderHook(() => useSession(), { wrapper })
 
     await waitFor(() => {
       expect(mockApiClient.auth.me.$get).toHaveBeenCalled()
+    })
+    expect(result.current.isLoggedIn).toBe(false)
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it('通信失敗（例外）の場合はisLoggedInがfalseかつisLoadingがfalseになる', async () => {
+    mockApiClient.auth.me.$get.mockRejectedValue(new Error('Network Error'))
+
+    const { result } = renderHook(() => useSession(), { wrapper })
+
+    // 無限ローディングに陥らず、未ログイン扱いへ収束することを保証する
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
     expect(result.current.isLoggedIn).toBe(false)
   })

@@ -135,15 +135,6 @@ export default function AnalyticsPage({
         isLoading={isLoading}
         shouldShowDailyDetails={shouldShowDailyDetails}
         reads={reads}
-        emptyState={
-          shouldShowDailyDetails ? (
-            <p className='mt-2 text-sm text-gray-500'>読了した記事はまだありません。</p>
-          ) : (
-            <p className='mt-2 text-sm text-gray-500'>
-              グラフの日付をクリックすると、読了記事一覧を表示します。
-            </p>
-          )
-        }
       />
       <DiaryReadPagination
         onNextPage={onNextPage}

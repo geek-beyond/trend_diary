@@ -1,6 +1,6 @@
 import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
-import { InboxBody, type InboxBodyProps } from '@/client/features/inbox'
+import { InboxBody, InboxBodySkeleton, type InboxBodyProps } from '@/client/features/inbox'
 
 interface Props extends InboxBodyProps {
   isLoading: boolean
@@ -38,7 +38,7 @@ export default function InboxPage({
         <p className='mt-1 text-sm text-gray-600'>残り {remainingCount} 件</p>
 
         {isLoading ? (
-          <p className='mt-4 text-sm text-gray-600'>読み込み中...</p>
+          <InboxBodySkeleton />
         ) : (
           <InboxBody
             article={article}

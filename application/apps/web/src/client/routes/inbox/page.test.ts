@@ -53,10 +53,10 @@ describe('InboxPage', () => {
     expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
   })
 
-  it('読み込み中は読み込み文言を表示し本文を表示しない', () => {
+  it('読み込み中はスケルトンを表示し本文を表示しない', () => {
     render(createElement(InboxPage, buildProps({ isLoading: true, remainingCount: 3 })))
 
-    expect(screen.getByText('読み込み中...')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
     expect(screen.getByText('残り 3 件')).toBeInTheDocument()
     expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
   })

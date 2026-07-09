@@ -5,7 +5,7 @@ import SettingsPage from './page'
 export const meta: MetaFunction = () => [{ title: '設定 | TrendDiary' }]
 
 export default function SettingsRoute() {
-  const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
+  const { isLoggedIn, isSessionLoading } = useOutletContext<AppLayoutOutletContext>()
 
-  return <SettingsPage isLoggedIn={isLoggedIn} />
+  return <SettingsPage isLoggedIn={isLoggedIn} isSessionLoading={isSessionLoading} />
 }

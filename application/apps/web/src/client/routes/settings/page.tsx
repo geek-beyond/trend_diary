@@ -1,13 +1,20 @@
 import { Badge } from '@/client/components/shadcn/badge'
+import LoadingSpinner from '@/client/components/ui/feedback/loading-spinner'
 import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { PasskeyToggle } from '@/client/features/passkey'
 
 interface Props {
   isLoggedIn: boolean
+  isSessionLoading: boolean
 }
 
-export default function SettingsPage({ isLoggedIn }: Props) {
+export default function SettingsPage({ isLoggedIn, isSessionLoading }: Props) {
   const pageTitle = '設定'
+
+  // セッション確定までは未ログイン画面のちらつきを避けるためローディングを表示する
+  if (isSessionLoading) {
+    return <LoadingSpinner />
+  }
 
   if (!isLoggedIn) {
     return <LoginRequired pageTitle={pageTitle} />

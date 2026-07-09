@@ -17,12 +17,16 @@ export default function useLogout() {
     },
     {
       onSuccess: async () => {
+        // TEMP-DEBUG: E2E失敗の原因調査用。原因特定後に必ず削除する
+        console.warn('[TEMP-DEBUG-useLogout] before navigate')
         // navigateの完了(コミット)を待たずにセッションキャッシュを更新すると、/settingsを
         // 抜けきる前にProtectedLayoutがまだ古いログイン状態と現在地を見て、元のページへの
         // redirectクエリ付きで割り込む余地がある。navigateが確定しProtectedLayoutの管轄外に
         // 出てからキャッシュを更新することで、この割り込みを構造的に防ぐ
         await navigate('/login')
+        console.warn('[TEMP-DEBUG-useLogout] after navigate resolved')
         void mutate(SESSION_SWR_KEY, false, { revalidate: false })
+        console.warn('[TEMP-DEBUG-useLogout] after mutate called')
         toast.success('ログアウトしました')
       },
       onError: () => {

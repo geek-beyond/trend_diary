@@ -14,6 +14,8 @@ export default function ProtectedLayout() {
   // 初回アクセスかセッション切れかを区別せず同じ導線に寄せ、挙動を統一する
   if (!isLoggedIn) {
     const redirectTo = `${location.pathname}${location.search}${location.hash}`
+    // TEMP-DEBUG: E2E失敗の原因調査用。原因特定後に必ず削除する
+    console.warn('[TEMP-DEBUG-ProtectedLayout]', { pathname: location.pathname, redirectTo })
     return <Navigate to={`/login?redirect=${encodeURIComponent(redirectTo)}`} replace />
   }
 

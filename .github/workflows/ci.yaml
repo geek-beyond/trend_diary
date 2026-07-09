@@ -251,8 +251,8 @@ jobs:
         with:
           name: playwright-report-${{ github.event_name == 'pull_request' && 'diff' || 'main' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            application/apps/e2e/playwright-report/
-            application/apps/e2e/test-results/
+            application/e2e/playwright-report/
+            application/e2e/test-results/
           if-no-files-found: ignore
           retention-days: 30
 

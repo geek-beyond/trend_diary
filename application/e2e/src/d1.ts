@@ -8,10 +8,10 @@ interface TestD1 {
   dispose: () => Promise<void>
 }
 
-// このパッケージ(apps/e2e)から web パッケージ(apps/web)へ辿る。
+// このパッケージ(e2e)から web パッケージ(apps/web)へ辿る。
 // wrangler の設定と miniflare の local D1(.wrangler/state) は web パッケージ基準のため、
 // 実行時の cwd に依存しないよう絶対パスで明示する。
-const WEB_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'web')
+const WEB_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'apps', 'web')
 
 export async function openTestD1(): Promise<TestD1> {
   const proxy = await getPlatformProxy<{ DB: D1Database }>({

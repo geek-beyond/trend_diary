@@ -32,8 +32,8 @@ trend_diary/
 │   │   │       ├── client/     # フロント（components / features / routes / infrastructure / lib）
 │   │   │       ├── middleware/ # 認証等のミドルウェア
 │   │   │       └── infrastructure/
-│   │   ├── cron/               # 定期実行ジョブ（Cloudflare Workers）
-│   │   └── e2e/                # E2Eテスト（Playwright: page / pom / scenario / helper）
+│   │   └── cron/                # 定期実行ジョブ（Cloudflare Workers）
+│   ├── e2e/                     # E2Eテスト（Playwright: pom / scenario / helper。デプロイ物ではないため apps/ とは別階層）
 │   ├── packages/               # 各 app から共有されるライブラリ（@trend-diary/*）
 │   │   ├── common/             # 全パッケージ共通基盤（エラー・ロガー・結果型・環境変数・i18n等）
 │   │   │   └── src/            # env / errors / locale / pagination / result / sanitization / types

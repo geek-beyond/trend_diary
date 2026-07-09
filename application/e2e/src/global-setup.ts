@@ -3,10 +3,9 @@ import { fileURLToPath } from 'node:url'
 import { readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import { openTestD1 } from './d1'
 
-// migrations は datastore パッケージで一元管理しているため、パッケージ(apps/e2e)から相対参照する。
+// migrations は datastore パッケージで一元管理しているため、パッケージ(e2e)から相対参照する。
 const MIGRATIONS_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
   '..',
   '..',
   'packages',

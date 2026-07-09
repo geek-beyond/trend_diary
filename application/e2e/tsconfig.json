@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     // page.evaluate などブラウザコンテキストのコードで DOM 型を参照するため DOM を含める
     "lib": ["ESNext", "DOM", "DOM.Iterable"],

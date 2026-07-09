@@ -226,7 +226,9 @@ export default function useArticles(isLoggedIn = false) {
           optimisticData: applyReadState,
           rollbackOnError: true,
           populateCache: true,
-          revalidate: false,
+          // 「未読のみ」フィルタ中に記事を取り除いた場合だけ再検証する。
+          // 表示件数がlimit未満のまま残る（次ページの記事が繰り上がらない）のを防ぐため
+          revalidate: params.readStatus === 'unread' && isRead,
         },
       )
     } catch {

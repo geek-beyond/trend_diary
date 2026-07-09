@@ -1017,7 +1017,7 @@ describe('useArticles', () => {
         })
       })
 
-      it('未読のみフィルタ表示中に既読化すると、再フェッチを待たず一覧から消える', async () => {
+      it('未読のみフィルタ表示中に既読化すると、リクエストの完了を待たず一覧から消える', async () => {
         const fakeResponse = generateFakeResponse({
           articles: [generateFakeArticle({ articleId: '1', isRead: false })],
           total: 1,
@@ -1031,13 +1031,75 @@ describe('useArticles', () => {
           expect(result.current.articles).toHaveLength(1)
         })
 
+        let resolveRequest: (succeeded: boolean) => void
+        const request = vi.fn(
+          () =>
+            new Promise<boolean>((resolve) => {
+              resolveRequest = resolve
+            }),
+        )
+
+        act(() => {
+          void result.current.updateArticleReadState('1', true, request)
+        })
+
+        await waitFor(() => {
+          expect(result.current.articles).toHaveLength(0)
+        })
+
+        await act(async () => {
+          resolveRequest!(true)
+        })
+      })
+
+      it('未読のみフィルタ表示中に既読化すると、ページの空きを埋めるためバックグラウンドで再検証される', async () => {
+        const fakeResponse = generateFakeResponse({
+          articles: [generateFakeArticle({ articleId: '1', isRead: false })],
+          total: 1,
+          totalPages: 1,
+        })
+        mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
+
+        const { result } = setupHook(['/?read_status=0'], { isLoggedIn: true })
+
+        await waitFor(() => {
+          expect(result.current.articles).toHaveLength(1)
+        })
+        expect(mockApiClient.articles.$get).toHaveBeenCalledTimes(1)
+
         const request = vi.fn().mockResolvedValue(true)
 
         await act(async () => {
           await result.current.updateArticleReadState('1', true, request)
         })
 
-        expect(result.current.articles).toHaveLength(0)
+        await waitFor(() => {
+          expect(mockApiClient.articles.$get).toHaveBeenCalledTimes(2)
+        })
+      })
+
+      it('「すべて」フィルタ表示中に既読化しても再検証は発生しない（表示位置が変わらないため）', async () => {
+        const fakeResponse = generateFakeResponse({
+          articles: [generateFakeArticle({ articleId: '1', isRead: false })],
+          total: 1,
+          totalPages: 1,
+        })
+        mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
+
+        const { result } = setupHook()
+
+        await waitFor(() => {
+          expect(result.current.articles).toHaveLength(1)
+        })
+        expect(mockApiClient.articles.$get).toHaveBeenCalledTimes(1)
+
+        const request = vi.fn().mockResolvedValue(true)
+
+        await act(async () => {
+          await result.current.updateArticleReadState('1', true, request)
+        })
+
+        expect(mockApiClient.articles.$get).toHaveBeenCalledTimes(1)
       })
     })
 

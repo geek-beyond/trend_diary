@@ -23,5 +23,9 @@ export const Default: Story = {
         canvas.getByText('いいペース。次の更新までこのペースをキープしよう。'),
       ).toBeInTheDocument()
     })
+
+    await step('トレンド一覧への導線が表示されることを確認', async () => {
+      await expect(canvas.getByRole('link', { name: 'トレンド一覧へ' })).toBeInTheDocument()
+    })
   },
 }

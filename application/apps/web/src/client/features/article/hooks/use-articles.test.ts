@@ -648,6 +648,26 @@ describe('useArticles', () => {
       })
     })
 
+    it('取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
+      mockApiClient.articles.$get.mockRejectedValueOnce(new Error('ネットワークエラー'))
+
+      const { result } = setupHook()
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(true)
+      })
+
+      mockApiClient.articles.$get.mockResolvedValueOnce(generateFakeResponse())
+
+      await act(async () => {
+        await result.current.retry()
+      })
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(false)
+      })
+    })
+
     it('API呼び出しで401の時、セッション切れの案内トーストのみが表示される', async () => {
       const fakeResponse = generateFakeResponse({ status: 401 })
 

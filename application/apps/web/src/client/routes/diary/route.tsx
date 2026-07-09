@@ -22,6 +22,8 @@ export default function DiaryRoute() {
     reads,
     readPagination,
     isLoading,
+    hasError,
+    retry,
     toNextPage,
     toPrevPage,
   } = useDiary()
@@ -35,6 +37,8 @@ export default function DiaryRoute() {
       reads={reads}
       readPagination={readPagination}
       isLoading={isLoading}
+      hasError={hasError}
+      onRetry={retry}
       onNextPage={toNextPage}
       onPrevPage={toPrevPage}
     />

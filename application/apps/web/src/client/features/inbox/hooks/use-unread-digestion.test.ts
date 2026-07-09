@@ -282,23 +282,48 @@ describe('useUnreadDigestion', () => {
     expect(result.current.isJustCompleted).toBe(false)
   })
 
-  it('スキップAPIが401の場合はエラートーストを表示しない', async () => {
-    mockUnreadDigestionGet.mockResolvedValue({
-      data: [baseArticle],
-      total: 1,
+  describe('異常系', () => {
+    it('未読一覧の取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
+      mockUnreadDigestionGet.mockRejectedValueOnce(new Error('取得に失敗しました'))
+
+      const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(true)
+      })
+
+      mockUnreadDigestionGet.mockResolvedValueOnce({
+        data: [baseArticle],
+        total: 1,
+      })
+
+      await act(async () => {
+        await result.current.retry()
+      })
+
+      await waitFor(() => {
+        expect(result.current.hasError).toBe(false)
+      })
     })
-    mockSkipPost.mockRejectedValue(new ClientError('Unauthorized', 401))
 
-    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+    it('スキップAPIが401の場合はエラートーストを表示しない', async () => {
+      mockUnreadDigestionGet.mockResolvedValue({
+        data: [baseArticle],
+        total: 1,
+      })
+      mockSkipPost.mockRejectedValue(new ClientError('Unauthorized', 401))
 
-    await waitFor(() => {
-      expect(result.current.remainingCount).toBe(1)
+      const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+
+      await waitFor(() => {
+        expect(result.current.remainingCount).toBe(1)
+      })
+
+      await act(async () => {
+        await result.current.handleSkip()
+      })
+
+      expect(toast.error).not.toHaveBeenCalledWith('スキップに失敗しました')
     })
-
-    await act(async () => {
-      await result.current.handleSkip()
-    })
-
-    expect(toast.error).not.toHaveBeenCalledWith('スキップに失敗しました')
   })
 })

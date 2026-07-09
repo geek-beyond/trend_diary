@@ -1,4 +1,5 @@
 import { CheckCircle2 } from 'lucide-react'
+import { AnchorLink } from '@/client/components/ui/navigation/link'
 
 export default function InboxCompletionCard() {
   return (
@@ -15,6 +16,12 @@ export default function InboxCompletionCard() {
           いいペース。次の更新までこのペースをキープしよう。
         </p>
       </div>
+      <AnchorLink
+        to='/trends'
+        className='mt-3 inline-block text-sm text-emerald-900 underline hover:text-emerald-950'
+      >
+        トレンド一覧へ
+      </AnchorLink>
     </section>
   )
 }

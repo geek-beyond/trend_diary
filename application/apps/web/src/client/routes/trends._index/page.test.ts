@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { type ComponentProps, createElement } from 'react'
 import type { Article } from '@/client/features/article'
 import TrendsPage from './page'
@@ -36,6 +36,8 @@ const buildProps = (overrides: Partial<TrendsPageProps> = {}): TrendsPageProps =
   articles: [],
   openDrawer: vi.fn(),
   isLoading: false,
+  hasError: false,
+  onRetry: vi.fn(),
   page: 1,
   totalPages: 1,
   selectedMedia: undefined,
@@ -71,5 +73,49 @@ describe('TrendsPage', () => {
 
     expect(screen.getByText('記事がありません')).toBeInTheDocument()
     expect(screen.queryByRole('status', { name: '記事を読み込み中' })).not.toBeInTheDocument()
+  })
+
+  it('記事が0件でもフィルタ未適用のときはフィルタ解除ボタンを表示しない', () => {
+    render(createElement(TrendsPage, buildProps({ articles: [] })))
+
+    expect(screen.queryByRole('button', { name: 'フィルタを解除する' })).not.toBeInTheDocument()
+  })
+
+  it('記事が0件でフィルタ適用中のときはフィルタ解除ボタンを表示し、押すとフィルタが初期値に戻る', () => {
+    const onApplyFilters = vi.fn()
+    render(
+      createElement(
+        TrendsPage,
+        buildProps({ articles: [], selectedMedia: 'qiita', onApplyFilters }),
+      ),
+    )
+
+    const resetButton = screen.getByRole('button', { name: 'フィルタを解除する' })
+    fireEvent.click(resetButton)
+
+    expect(onApplyFilters).toHaveBeenCalledWith({
+      media: undefined,
+      readStatus: 'all',
+      datePreset: 'today',
+    })
+  })
+
+  it('取得エラー時は再試行ボタン付きのエラー表示をし記事一覧を表示しない', () => {
+    const onRetry = vi.fn()
+    render(
+      createElement(
+        TrendsPage,
+        buildProps({ hasError: true, articles: [buildArticle()], onRetry }),
+      ),
+    )
+
+    expect(
+      screen.getByText('エラーが発生しました。時間をおいて再度お試しください。'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('テスト記事タイトル')).not.toBeInTheDocument()
+    expect(screen.queryByText('記事がありません')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '再試行' }))
+    expect(onRetry).toHaveBeenCalledTimes(1)
   })
 })

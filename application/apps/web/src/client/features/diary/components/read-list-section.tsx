@@ -39,7 +39,14 @@ function ReadListContent({ isLoading, shouldShowDailyDetails, reads }: Props) {
     )
   }
   if (reads.length === 0) {
-    return <p className='mt-2 text-sm text-gray-500'>読了した記事はまだありません。</p>
+    return (
+      <p className='mt-2 text-sm text-gray-500'>
+        <span>読了した記事はまだありません。</span>
+        <AnchorLink to='/trends' className='ml-1 text-blue-700 underline hover:text-blue-800'>
+          トレンド一覧へ
+        </AnchorLink>
+      </p>
+    )
   }
   return (
     <ul className='mt-2 space-y-2 text-sm' data-slot='diary-read-list'>

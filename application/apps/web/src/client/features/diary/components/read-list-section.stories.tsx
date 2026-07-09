@@ -62,6 +62,7 @@ export const Empty: Story = {
   },
   play: async ({ canvas }) => {
     await expect(canvas.getByText('読了した記事はまだありません。')).toBeInTheDocument()
+    await expect(canvas.getByRole('link', { name: 'トレンド一覧へ' })).toBeInTheDocument()
   },
 }
 

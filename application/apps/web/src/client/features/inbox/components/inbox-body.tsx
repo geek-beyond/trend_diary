@@ -1,3 +1,4 @@
+import { AnchorLink } from '@/client/components/ui/navigation/link'
 import type { Article } from '../hooks/use-unread-digestion'
 import InboxArticleCard from './inbox-article-card'
 import InboxCompletionCard from './inbox-completion-card'
@@ -23,5 +24,12 @@ export default function InboxBody({
   if (isJustCompleted) {
     return <InboxCompletionCard />
   }
-  return <p className='mt-4 text-sm text-gray-600'>未読記事はありません</p>
+  return (
+    <p className='mt-4 text-sm text-gray-600'>
+      <span>未読記事はありません</span>
+      <AnchorLink to='/trends' className='ml-1 text-blue-700 underline hover:text-blue-800'>
+        トレンド一覧へ
+      </AnchorLink>
+    </p>
+  )
 }

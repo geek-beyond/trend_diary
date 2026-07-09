@@ -32,15 +32,15 @@ export default function useDiary() {
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
   const swrKey = todayJst ? (['api/articles/diary', todayJst, page] as const) : null
-  const { data, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     ([, targetDate, targetPage]: readonly ['api/articles/diary', string, number]) =>
       fetchDiary(targetDate, targetPage),
     {
       // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する
-      onError: (error) => {
+      onError: (swrError) => {
         notifyErrorUnlessSessionExpired(
-          error,
+          swrError,
           'エラーが発生しました。時間をおいて再度お試しください。',
           { id: 'diary-error' },
         )
@@ -76,6 +76,8 @@ export default function useDiary() {
       hasPrev: false,
     },
     isLoading,
+    hasError: !!error,
+    retry: () => mutate(),
     toNextPage: () => updatePage(page + 1),
     toPrevPage: () => updatePage(page - 1),
   }

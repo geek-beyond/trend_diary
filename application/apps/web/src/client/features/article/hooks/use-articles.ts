@@ -6,6 +6,7 @@ import {
   offsetPaginationMobileSchema,
   offsetPaginationSchema,
 } from '@trend-diary/common/pagination/schema'
+import { wrapAsyncCall } from '@trend-diary/common/result'
 import { type ArticleMedia, isArticleMedia } from '@trend-diary/domain/article/media'
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { useSearchParams } from 'react-router'
@@ -215,8 +216,9 @@ export default function useArticles(isLoggedIn = false) {
   ) => {
     const applyReadState = applyReadStateToCache(articleId, isRead)
 
-    try {
-      await mutate(
+    // request側で失敗時のエラートーストを表示済みのため、ここでは楽観データのロールバックのみで良い
+    await wrapAsyncCall(() =>
+      mutate(
         async (current) => {
           const succeeded = await request()
           if (!succeeded) throw new Error('Failed to update read state')
@@ -230,10 +232,8 @@ export default function useArticles(isLoggedIn = false) {
           // 表示件数がlimit未満のまま残る（次ページの記事が繰り上がらない）のを防ぐため
           revalidate: params.readStatus === 'unread' && isRead,
         },
-      )
-    } catch {
-      // request側で失敗時のエラートーストを表示済みのため、ここでは楽観データのロールバックのみで良い
-    }
+      ),
+    )
   }
 
   const handlePageChange = (newPage: number) => {

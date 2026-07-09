@@ -26,21 +26,26 @@ function renderWithChild() {
 }
 
 describe('ProtectedLayout', () => {
-  it('セッション確定前はローディングを表示し配下ページを描画しない', () => {
-    mockUseSession.mockReturnValue({ isLoggedIn: false, isLoading: true })
+  it.each([
+    {
+      scenario: 'セッション確定前',
+      session: { isLoggedIn: false, isLoading: true },
+      isLoadingView: true,
+    },
+    {
+      scenario: 'セッション確定後',
+      session: { isLoggedIn: true, isLoading: false },
+      isLoadingView: false,
+    },
+  ])(
+    '$scenario はローディング表示=$isLoadingView で配下ページの描画を出し分ける',
+    ({ session, isLoadingView }) => {
+      mockUseSession.mockReturnValue(session)
 
-    renderWithChild()
+      renderWithChild()
 
-    expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
-    expect(screen.queryByText('保護ページ本体')).not.toBeInTheDocument()
-  })
-
-  it('セッション確定後はローディングを出さず配下ページを描画する', () => {
-    mockUseSession.mockReturnValue({ isLoggedIn: true, isLoading: false })
-
-    renderWithChild()
-
-    expect(screen.getByText('保護ページ本体')).toBeInTheDocument()
-    expect(screen.queryByRole('status', { name: '読み込み中' })).not.toBeInTheDocument()
-  })
+      expect(screen.queryByRole('status', { name: '読み込み中' }) !== null).toBe(isLoadingView)
+      expect(screen.queryByText('保護ページ本体') !== null).toBe(!isLoadingView)
+    },
+  )
 })

@@ -18,3 +18,19 @@ export function notifySessionExpired() {
   toast.error(SESSION_EXPIRED_MESSAGE, { id: SESSION_EXPIRED_TOAST_ID })
   void mutate(SESSION_SWR_KEY, false, { revalidate: false })
 }
+
+// セッション切れの案内はnotifySessionExpired側で表示済みのため、
+// 呼び出し側の汎用エラートーストと重複させないための共通ガード
+export function notifyErrorUnlessSessionExpired(
+  error: unknown,
+  message: string,
+  toastOptions?: Parameters<typeof toast.error>[1],
+) {
+  if (isSessionExpiredError(error)) return
+
+  if (toastOptions) {
+    toast.error(message, toastOptions)
+  } else {
+    toast.error(message)
+  }
+}

@@ -13,8 +13,9 @@ export default function useLogin(turnstileSiteKey?: string, redirectTo?: string)
     request: (json) => getApiClientForClient().auth.login.$post({ json }),
     resolveErrorMessage: resolveLoginErrorMessage,
     onSuccess: async () => {
-      // ログイン前の未ログイン状態がセッションキャッシュに残ったまま遷移しないよう再検証する
-      await mutate(SESSION_SWR_KEY)
+      // mutate(key)は購読中のuseSWRがないと再検証されず、遷移先ページのProtectedLayoutが
+      // 古い未ログイン状態を読んでログイン画面へ押し戻してしまうため、値を直接確定させる
+      await mutate(SESSION_SWR_KEY, true, { revalidate: false })
       navigate(redirectTo ?? '/trends')
     },
   })

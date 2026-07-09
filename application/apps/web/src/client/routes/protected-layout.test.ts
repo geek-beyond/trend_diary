@@ -61,5 +61,15 @@ describe('ProtectedLayout', () => {
       expect(router.state.location.pathname).toBe('/login')
       expect(router.state.location.search).toBe(`?redirect=${encodeURIComponent('/?page=2')}`)
     })
+
+    it('元のパスにハッシュがある場合はredirectにハッシュも含める', () => {
+      mockUseSession.mockReturnValue({ isLoggedIn: false, isLoading: false })
+
+      const router = renderWithChild(['/?page=2#section'])
+
+      expect(router.state.location.search).toBe(
+        `?redirect=${encodeURIComponent('/?page=2#section')}`,
+      )
+    })
   })
 })

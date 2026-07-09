@@ -1,8 +1,7 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { useState } from 'react'
-import { toast } from 'sonner'
 import useSWR from 'swr'
-import { isSessionExpiredError } from '@/client/entities/auth'
+import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import { type MediaType, useReadArticle } from '@/client/features/article'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useCompletionCelebration from './use-completion-celebration'
@@ -18,7 +17,7 @@ interface UnreadDigestionResponse {
 
 const SkipErrorMessage = 'スキップに失敗しました'
 
-export default function useUnreadDigestion(enabled: boolean, selectedMedia: MediaType) {
+export default function useUnreadDigestion(selectedMedia: MediaType) {
   const { client, apiCall } = createSWRFetcher()
   const { markAsRead } = useReadArticle()
   const [queue, setQueue] = useState<Article[]>([])
@@ -27,7 +26,7 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
   const [isActionLoading, setIsActionLoading] = useState(false)
   // 直近で同期済みのバッチ。SWR が新しい応答を返したか（参照が変わったか）の判定に使う
   const [syncedBatch, setSyncedBatch] = useState<UnreadDigestionResponse>()
-  const swrKey = enabled ? ['api/articles/unread-digestion', selectedMedia] : null
+  const swrKey = ['api/articles/unread-digestion', selectedMedia]
   const {
     data,
     isLoading: isInitialLoading,
@@ -100,10 +99,7 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
       consumeCurrent()
       fetchNextBatchIfNeeded()
     } catch (error) {
-      // セッション切れの案内はcreateSWRFetcher側で表示済みのため、ここでは重複させない
-      if (!isSessionExpiredError(error)) {
-        toast.error(SkipErrorMessage)
-      }
+      notifyErrorUnlessSessionExpired(error, SkipErrorMessage)
     } finally {
       setIsActionLoading(false)
     }

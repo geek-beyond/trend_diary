@@ -4,6 +4,7 @@ import { mutate } from 'swr'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   isSessionExpiredError,
+  notifyErrorUnlessSessionExpired,
   notifySessionExpired,
   SESSION_EXPIRED_MESSAGE,
 } from './session-expired'
@@ -43,5 +44,29 @@ describe('notifySessionExpired', () => {
 
     expect(toast.error).toHaveBeenCalledWith(SESSION_EXPIRED_MESSAGE, { id: 'session-expired' })
     expect(mutate).toHaveBeenCalledWith(SESSION_SWR_KEY, false, { revalidate: false })
+  })
+})
+
+describe('notifyErrorUnlessSessionExpired', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('正常系', () => {
+    it('セッション切れではない場合は指定したメッセージでトーストを表示する', () => {
+      notifyErrorUnlessSessionExpired(new ClientError('Bad Request', 400), 'エラーが発生しました', {
+        id: 'example-error',
+      })
+
+      expect(toast.error).toHaveBeenCalledWith('エラーが発生しました', { id: 'example-error' })
+    })
+  })
+
+  describe('準正常系', () => {
+    it('セッション切れの場合は指定したメッセージのトーストを表示しない', () => {
+      notifyErrorUnlessSessionExpired(new ClientError('Unauthorized', 401), 'エラーが発生しました')
+
+      expect(toast.error).not.toHaveBeenCalled()
+    })
   })
 })

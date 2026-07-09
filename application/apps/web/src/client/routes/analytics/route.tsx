@@ -1,13 +1,10 @@
 import type { MetaFunction } from 'react-router'
-import { useOutletContext } from 'react-router'
 import { useAnalytics } from '@/client/features/diary'
-import type { AppLayoutOutletContext } from '../app-layout'
 import AnalyticsPage from './page'
 
 export const meta: MetaFunction = () => [{ title: '統計 | TrendDiary' }]
 
 export default function AnalyticsRoute() {
-  const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
   const {
     selectedDate,
     dateResolveError,
@@ -22,11 +19,10 @@ export default function AnalyticsRoute() {
     clearSelectedDate,
     toNextPage,
     toPrevPage,
-  } = useAnalytics(isLoggedIn)
+  } = useAnalytics()
 
   return (
     <AnalyticsPage
-      isLoggedIn={isLoggedIn}
       selectedDate={selectedDate}
       dateResolveError={dateResolveError}
       summaryRange={summaryRange}

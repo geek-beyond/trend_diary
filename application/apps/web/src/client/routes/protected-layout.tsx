@@ -1,6 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { useSession } from '@/client/entities/auth'
-import type { AppLayoutOutletContext } from './app-layout'
 
 export default function ProtectedLayout() {
   const { isLoggedIn, isLoading } = useSession()
@@ -12,16 +11,11 @@ export default function ProtectedLayout() {
     return null
   }
 
-  // 未ログイン（初回アクセス・セッション切れの両方を含む）ならログイン画面へ誘導し、
-  // 再ログイン後に戻れるよう元のパスをクエリパラメータで引き継ぐ
+  // 初回アクセスかセッション切れかを区別せず同じ導線に寄せ、挙動を統一する
   if (!isLoggedIn) {
-    const redirectTo = `${location.pathname}${location.search}`
+    const redirectTo = `${location.pathname}${location.search}${location.hash}`
     return <Navigate to={`/login?redirect=${encodeURIComponent(redirectTo)}`} replace />
   }
 
-  const outletContext: AppLayoutOutletContext = {
-    isLoggedIn,
-  }
-
-  return <Outlet context={outletContext} />
+  return <Outlet />
 }

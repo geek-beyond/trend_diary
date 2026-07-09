@@ -26,30 +26,9 @@ const reads = [
 ]
 
 describe('DiaryPage', () => {
-  it('未ログイン時は利用制限メッセージのみ表示する', () => {
+  it('対象日と読了一覧を表示する', () => {
     render(
       createElement(DiaryPage, {
-        isLoggedIn: false,
-        targetDate: '2026-03-08',
-        dateResolveError: false,
-        dailySummary: { read: 6, skip: 3 },
-        sources,
-        reads,
-        readPagination: { page: 1, totalPages: 2, hasNext: true, hasPrev: false },
-        isLoading: false,
-        onNextPage: vi.fn(),
-        onPrevPage: vi.fn(),
-      }),
-    )
-
-    expect(screen.getByRole('heading', { name: 'ダイアリー' })).toBeInTheDocument()
-    expect(screen.getByText('この機能はログイン時のみ利用できます。')).toBeInTheDocument()
-  })
-
-  it('ログイン時は対象日と読了一覧を表示する', () => {
-    render(
-      createElement(DiaryPage, {
-        isLoggedIn: true,
         targetDate: '2026-03-08',
         dateResolveError: false,
         dailySummary: { read: 6, skip: 3 },
@@ -76,7 +55,6 @@ describe('DiaryPage', () => {
   it('読了記事URLがhttp/https以外ならリンク表示しない', () => {
     render(
       createElement(DiaryPage, {
-        isLoggedIn: true,
         targetDate: '2026-03-08',
         dateResolveError: false,
         dailySummary: { read: 1, skip: 0 },
@@ -105,7 +83,6 @@ describe('DiaryPage', () => {
   it('日付解決に失敗したときはエラーメッセージを表示する', () => {
     render(
       createElement(DiaryPage, {
-        isLoggedIn: true,
         targetDate: null,
         dateResolveError: true,
         dailySummary: { read: 0, skip: 0 },

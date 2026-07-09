@@ -1,4 +1,3 @@
-import LoginRequired from '@/client/components/ui/feedback/login-required'
 import {
   DiaryPageLayout,
   DiaryReadListSection,
@@ -11,7 +10,6 @@ import {
 } from '@/client/features/diary'
 
 interface Props {
-  isLoggedIn: boolean
   targetDate: string | null
   dateResolveError: boolean
   dailySummary: Summary
@@ -24,7 +22,6 @@ interface Props {
 }
 
 export default function DiaryPage({
-  isLoggedIn,
   targetDate,
   dateResolveError,
   dailySummary,
@@ -36,10 +33,6 @@ export default function DiaryPage({
   onPrevPage,
 }: Props) {
   const pageTitle = 'ダイアリー'
-
-  if (!isLoggedIn) {
-    return <LoginRequired pageTitle={pageTitle} />
-  }
 
   return (
     <DiaryPageLayout pageTitle={pageTitle} dateResolveError={dateResolveError}>

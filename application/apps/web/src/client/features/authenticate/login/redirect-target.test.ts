@@ -6,6 +6,11 @@ describe('resolveLoginRedirectTarget', () => {
     it.each([
       { outline: '単純なパス', input: '/diary', expected: '/diary' },
       { outline: 'クエリパラメータ付きのパス', input: '/diary?page=2', expected: '/diary?page=2' },
+      {
+        outline: 'ハッシュ付きのパス',
+        input: '/settings#security',
+        expected: '/settings#security',
+      },
     ])('$outlineはそのまま返す', ({ input, expected }) => {
       expect(resolveLoginRedirectTarget(input)).toBe(expected)
     })
@@ -21,6 +26,9 @@ describe('resolveLoginRedirectTarget', () => {
       { outline: 'スラッシュから始まらない相対パス', input: 'diary' },
       { outline: 'タブを挟んだプロトコル相対URL', input: '/\t//evil.example.com' },
       { outline: '改行を挟んだプロトコル相対URL', input: '/\n//evil.example.com' },
+      { outline: 'ログイン画面自身', input: '/login' },
+      { outline: 'クエリ付きのログイン画面自身', input: '/login?foo=bar' },
+      { outline: '新規登録画面', input: '/signup' },
     ])('$outlineはundefinedを返す', ({ input }) => {
       expect(resolveLoginRedirectTarget(input)).toBeUndefined()
     })

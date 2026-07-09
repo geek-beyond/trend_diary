@@ -16,7 +16,7 @@ vi.mock('./use-diary-api', () => ({
 const mockedUseDiaryApi = vi.mocked(useDiaryApi)
 
 function setupHook(initialEntries: string[] = ['/analytics']) {
-  return renderHook(() => useAnalytics(true), {
+  return renderHook(() => useAnalytics(), {
     wrapper: ({ children }: { children: ReactNode }) =>
       createElement(
         SWRConfig,

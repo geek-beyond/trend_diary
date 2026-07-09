@@ -2,9 +2,8 @@ import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagina
 import { DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
 import useSWR from 'swr'
-import { isSessionExpiredError } from '@/client/entities/auth'
+import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi from './use-diary-api'
 
@@ -19,7 +18,7 @@ interface DiaryReadItem {
 
 const emptySources = ARTICLE_MEDIA.map((media) => ({ media, read: 0, skip: 0 }))
 
-export default function useDiary(enabled: boolean) {
+export default function useDiary() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { fetchDiary } = useDiaryApi()
   const todayJst = getTodayJst()
@@ -32,7 +31,7 @@ export default function useDiary(enabled: boolean) {
   })
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
-  const swrKey = enabled && todayJst ? (['api/articles/diary', todayJst, page] as const) : null
+  const swrKey = todayJst ? (['api/articles/diary', todayJst, page] as const) : null
   const { data, isLoading } = useSWR(
     swrKey,
     ([, targetDate, targetPage]: readonly ['api/articles/diary', string, number]) =>
@@ -40,10 +39,11 @@ export default function useDiary(enabled: boolean) {
     {
       // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する
       onError: (error) => {
-        // セッション切れの案内はcreateSWRFetcher側で表示済みのため、ここでは重複させない
-        if (isSessionExpiredError(error)) return
-
-        toast.error('エラーが発生しました。時間をおいて再度お試しください。', { id: 'diary-error' })
+        notifyErrorUnlessSessionExpired(
+          error,
+          'エラーが発生しました。時間をおいて再度お試しください。',
+          { id: 'diary-error' },
+        )
       },
     },
   )

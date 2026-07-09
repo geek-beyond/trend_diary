@@ -53,7 +53,7 @@ describe('usePasskeyLogin', () => {
         await result.current.login()
       })
 
-      expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY)
+      expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY, true, { revalidate: false })
       expect(navigateMock).toHaveBeenCalledWith('/trends')
       expect(result.current.formError).toBeUndefined()
     })

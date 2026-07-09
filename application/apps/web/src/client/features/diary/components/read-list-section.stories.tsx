@@ -59,19 +59,19 @@ export const Loading: Story = {
 export const Empty: Story = {
   args: {
     reads: [],
-    emptyState: <p>読了した記事はありません。</p>,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByText('読了した記事はありません。')).toBeInTheDocument()
+    await expect(canvas.getByText('読了した記事はまだありません。')).toBeInTheDocument()
   },
 }
 
 export const NoDailyDetails: Story = {
   args: {
     shouldShowDailyDetails: false,
-    emptyState: <p>対象日が選択されていません。</p>,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByText('対象日が選択されていません。')).toBeInTheDocument()
+    await expect(
+      canvas.getByText('グラフの日付をクリックすると、読了記事一覧を表示します。'),
+    ).toBeInTheDocument()
   },
 }

@@ -1,5 +1,4 @@
 import { toJaTimeString } from '@trend-diary/common/locale/date'
-import type { ReactNode } from 'react'
 import { Skeleton } from '@/client/components/shadcn/skeleton'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 // barrel 経由だと記事スライスのデータ取得 hook（swr 依存）まで巻き込み、Storybook 環境で読み込みに失敗するため
@@ -11,15 +10,9 @@ interface Props {
   isLoading: boolean
   shouldShowDailyDetails: boolean
   reads: ReadItem[]
-  emptyState?: ReactNode
 }
 
-export default function DiaryReadListSection({
-  isLoading,
-  shouldShowDailyDetails,
-  reads,
-  emptyState,
-}: Props) {
+export default function DiaryReadListSection({ isLoading, shouldShowDailyDetails, reads }: Props) {
   return (
     <div className='mt-6'>
       <h2 className='text-sm font-semibold text-gray-700'>読了した記事一覧</h2>
@@ -27,19 +20,26 @@ export default function DiaryReadListSection({
         isLoading={isLoading}
         shouldShowDailyDetails={shouldShowDailyDetails}
         reads={reads}
-        emptyState={emptyState}
       />
     </div>
   )
 }
 
-function ReadListContent({ isLoading, shouldShowDailyDetails, reads, emptyState }: Props) {
+function ReadListContent({ isLoading, shouldShowDailyDetails, reads }: Props) {
   // 日次詳細を出す場面のみスケルトンを見せる。analytics の日付未選択時（グラフのみ読込中）は一覧領域には何も出さない
   if (isLoading) {
     return shouldShowDailyDetails ? <ReadListSkeleton /> : null
   }
-  if (!shouldShowDailyDetails || reads.length === 0) {
-    return emptyState
+  // 日付未選択（analytics）はグラフからの導線を案内する
+  if (!shouldShowDailyDetails) {
+    return (
+      <p className='mt-2 text-sm text-gray-500'>
+        グラフの日付をクリックすると、読了記事一覧を表示します。
+      </p>
+    )
+  }
+  if (reads.length === 0) {
+    return <p className='mt-2 text-sm text-gray-500'>読了した記事はまだありません。</p>
   }
   return (
     <ul className='mt-2 space-y-2 text-sm' data-slot='diary-read-list'>

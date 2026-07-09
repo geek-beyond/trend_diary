@@ -8,7 +8,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/client/components/shadcn/chart'
-import LoadingSpinner from '@/client/components/ui/feedback/loading-spinner'
 import LoginRequired from '@/client/components/ui/feedback/login-required'
 import {
   DiaryPageLayout,
@@ -34,7 +33,6 @@ type ChartClickState = {
 
 interface Props {
   isLoggedIn: boolean
-  isSessionLoading: boolean
   selectedDate: string | null
   dateResolveError: boolean
   summaryRange: SummaryRangePoint[]
@@ -63,7 +61,6 @@ const chartConfig = {
 
 export default function AnalyticsPage({
   isLoggedIn,
-  isSessionLoading,
   selectedDate,
   dateResolveError,
   summaryRange,
@@ -86,11 +83,6 @@ export default function AnalyticsPage({
     if (typeof state?.activeLabel === 'string') {
       onSelectDate(state.activeLabel)
     }
-  }
-
-  // セッション確定までは未ログイン画面のちらつきを避けるためローディングを表示する
-  if (isSessionLoading) {
-    return <LoadingSpinner />
   }
 
   if (!isLoggedIn) {

@@ -1,4 +1,3 @@
-import LoadingSpinner from '@/client/components/ui/feedback/loading-spinner'
 import LoginRequired from '@/client/components/ui/feedback/login-required'
 import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
 import { InboxBody, type InboxBodyProps } from '@/client/features/inbox'
@@ -6,7 +5,6 @@ import { InboxBody, type InboxBodyProps } from '@/client/features/inbox'
 interface Props extends InboxBodyProps {
   isLoading: boolean
   isLoggedIn: boolean
-  isSessionLoading: boolean
   remainingCount: number
   selectedMedia: FilterMediaType
   onMediaChange: (media: FilterMediaType) => void
@@ -17,7 +15,6 @@ export default function InboxPage({
   isLoading,
   isJustCompleted,
   isLoggedIn,
-  isSessionLoading,
   onSkip,
   onRead,
   onLater,
@@ -25,11 +22,6 @@ export default function InboxPage({
   selectedMedia,
   onMediaChange,
 }: Props) {
-  // セッション確定までは未ログイン画面のちらつきを避けるためローディングを表示する
-  if (isSessionLoading) {
-    return <LoadingSpinner />
-  }
-
   if (!isLoggedIn) {
     return <LoginRequired pageTitle='未読消化' />
   }

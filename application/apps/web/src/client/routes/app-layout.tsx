@@ -6,15 +6,13 @@ import AppSidebar from '../components/ui/layout/sidebar'
 
 export interface AppLayoutOutletContext {
   isLoggedIn: boolean
-  isSessionLoading: boolean
 }
 
 export default function AppLayout() {
-  const { isLoggedIn, isLoading: isSessionLoading } = useSession()
+  const { isLoggedIn } = useSession()
 
   const outletContext: AppLayoutOutletContext = {
     isLoggedIn,
-    isSessionLoading,
   }
 
   return (

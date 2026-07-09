@@ -7,7 +7,7 @@ import DiaryPage from './page'
 export const meta: MetaFunction = () => [{ title: 'ダイアリー | TrendDiary' }]
 
 export default function DiaryRoute() {
-  const { isLoggedIn, isSessionLoading } = useOutletContext<AppLayoutOutletContext>()
+  const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()
   const {
     todayJst,
     dateResolveError,
@@ -23,7 +23,6 @@ export default function DiaryRoute() {
   return (
     <DiaryPage
       isLoggedIn={isLoggedIn}
-      isSessionLoading={isSessionLoading}
       targetDate={todayJst}
       dateResolveError={dateResolveError}
       dailySummary={dailySummary}

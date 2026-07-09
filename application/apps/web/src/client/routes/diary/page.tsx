@@ -48,12 +48,7 @@ export default function DiaryPage({
         displaySummary={dailySummary}
         targetDate={targetDate ?? undefined}
       />
-      <DiaryReadListSection
-        isLoading={isLoading}
-        shouldShowDailyDetails={true}
-        reads={reads}
-        emptyState={<p className='mt-2 text-sm text-gray-500'>読了した記事はまだありません。</p>}
-      />
+      <DiaryReadListSection isLoading={isLoading} shouldShowDailyDetails={true} reads={reads} />
       <DiaryReadPagination
         onNextPage={onNextPage}
         onPrevPage={onPrevPage}

@@ -10,6 +10,7 @@ import {
 import {
   type Article,
   ArticleCard,
+  ArticleCardSkeleton,
   type DatePresetType,
   type FilterParams,
   FilterPanel,
@@ -17,7 +18,9 @@ import {
   type ReadStatusType,
 } from '@/client/features/article'
 import { scrollToTop } from '@/client/lib/scroll'
-import LoadingSpinner from '../../components/ui/feedback/loading-spinner'
+
+// ローディング中に一覧領域を埋めるスケルトン枚数。1ページの件数に近い枚数で領域の急な伸縮を抑える
+const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`)
 
 const getPaginationClass = (isDisabled: boolean) =>
   twMerge(
@@ -96,7 +99,18 @@ export default function TrendsPage({
         onApplyFilters={onApplyFilters}
         isLoggedIn={isLoggedIn}
       />
-      {articles.length === 0 ? (
+      {isLoading ? (
+        <div
+          role='status'
+          aria-label='記事を読み込み中'
+          className='flex flex-wrap gap-6'
+          data-slot='page-skeleton'
+        >
+          {SKELETON_KEYS.map((key) => (
+            <ArticleCardSkeleton key={key} />
+          ))}
+        </div>
+      ) : articles.length === 0 ? (
         <div className='text-gray-500'>記事がありません</div>
       ) : (
         <div data-slot='page-content'>
@@ -136,8 +150,6 @@ export default function TrendsPage({
           </Pagination>
         </div>
       )}
-
-      {isLoading && <LoadingSpinner />}
     </div>
   )
 }

@@ -1,6 +1,11 @@
-import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
+import {
+  type LoaderFunctionArgs,
+  type MetaFunction,
+  useLoaderData,
+  useSearchParams,
+} from 'react-router'
 import { resolveTurnstileSiteKey } from '@/client/entities/auth'
-import { useLogin } from '@/client/features/authenticate/login'
+import { resolveLoginRedirectTarget, useLogin } from '@/client/features/authenticate/login'
 import LoginPage from './page'
 
 export const meta: MetaFunction = () => [
@@ -33,7 +38,12 @@ export function loader({ context }: LoaderFunctionArgs) {
 
 export default function Login() {
   const { turnstileSiteKey } = useLoaderData<typeof loader>()
-  const { isSubmitting, errors, formError, submit } = useLogin(turnstileSiteKey ?? undefined)
+  const [searchParams] = useSearchParams()
+  const redirectTo = resolveLoginRedirectTarget(searchParams.get('redirect'))
+  const { isSubmitting, errors, formError, submit } = useLogin(
+    turnstileSiteKey ?? undefined,
+    redirectTo,
+  )
 
   return (
     <LoginPage
@@ -42,6 +52,7 @@ export default function Login() {
       errors={errors}
       formError={formError}
       turnstileSiteKey={turnstileSiteKey ?? undefined}
+      redirectTo={redirectTo}
     />
   )
 }

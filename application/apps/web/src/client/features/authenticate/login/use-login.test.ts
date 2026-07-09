@@ -57,6 +57,16 @@ describe('useLogin', () => {
       expect(navigateMock).toHaveBeenCalledWith('/trends')
       expect(result.current.formError).toBeUndefined()
     })
+
+    it('redirectToを指定した場合、ログイン成功時はそのパスへ遷移する', async () => {
+      const { result } = renderHook(() => useLogin(undefined, '/diary?page=2'))
+
+      await act(async () => {
+        await result.current.submit(buildFormData(validForm))
+      })
+
+      expect(navigateMock).toHaveBeenCalledWith('/diary?page=2')
+    })
   })
 
   describe('準正常系', () => {

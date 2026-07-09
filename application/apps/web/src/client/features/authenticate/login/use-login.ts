@@ -4,7 +4,7 @@ import { SESSION_SWR_KEY, useAuthSubmit } from '@/client/entities/auth'
 import getApiClientForClient from '@/client/infrastructure/api'
 import { resolveLoginErrorMessage } from './error-message'
 
-export default function useLogin(turnstileSiteKey?: string) {
+export default function useLogin(turnstileSiteKey?: string, redirectTo?: string) {
   const navigate = useNavigate()
   const { mutate } = useSWRConfig()
 
@@ -15,7 +15,7 @@ export default function useLogin(turnstileSiteKey?: string) {
     onSuccess: async () => {
       // ログイン前の未ログイン状態がセッションキャッシュに残ったまま遷移しないよう再検証する
       await mutate(SESSION_SWR_KEY)
-      navigate('/trends')
+      navigate(redirectTo ?? '/trends')
     },
   })
 }

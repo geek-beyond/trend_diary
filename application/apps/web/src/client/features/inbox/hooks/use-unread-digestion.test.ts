@@ -1,5 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { ClientError } from '@trend-diary/common/errors'
 import { createElement, type ReactNode } from 'react'
+import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import { type MediaType, useReadArticle } from '@/client/features/article'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
@@ -278,5 +280,25 @@ describe('useUnreadDigestion', () => {
 
     expect(result.current.remainingCount).toBe(1)
     expect(result.current.isJustCompleted).toBe(false)
+  })
+
+  it('スキップAPIが401の場合はエラートーストを表示しない', async () => {
+    mockUnreadDigestionGet.mockResolvedValue({
+      data: [baseArticle],
+      total: 1,
+    })
+    mockSkipPost.mockRejectedValue(new ClientError('Unauthorized', 401))
+
+    const { result } = renderHook(() => useUnreadDigestion(true, undefined), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.remainingCount).toBe(1)
+    })
+
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+
+    expect(toast.error).not.toHaveBeenCalledWith('スキップに失敗しました')
   })
 })

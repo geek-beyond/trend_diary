@@ -1,5 +1,6 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { fetchWithTimeout } from '@trend-diary/common/http'
+import { notifySessionExpired } from '@/client/entities/auth'
 import getApiClientForClient from '@/client/infrastructure/api'
 
 interface ApiCallResponse {
@@ -9,8 +10,14 @@ interface ApiCallResponse {
   json: () => Promise<unknown>
 }
 
-const toHttpError = (status: number, statusText: string) =>
-  status >= 500 ? new ServerError(statusText, status) : new ClientError(statusText, status)
+const toHttpError = (status: number, statusText: string) => {
+  // 認証必須APIの401はセッション切れとして一箇所で案内する
+  if (status === 401) {
+    notifySessionExpired()
+  }
+
+  return status >= 500 ? new ServerError(statusText, status) : new ClientError(statusText, status)
+}
 
 const fetcher = async <T>(url: string): Promise<T> => {
   // 応答が遅い相手で画面がハングするのを防ぐ

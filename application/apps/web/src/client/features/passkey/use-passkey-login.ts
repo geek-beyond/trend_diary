@@ -8,7 +8,7 @@ import { SESSION_SWR_KEY } from '@/client/entities/auth'
 import { PASSKEY_MESSAGES } from '@/client/features/passkey/model'
 import getApiClientForClient from '@/client/infrastructure/api'
 
-export default function usePasskeyLogin() {
+export default function usePasskeyLogin(redirectTo?: string) {
   const navigate = useNavigate()
   const { mutate } = useSWRConfig()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -60,7 +60,7 @@ export default function usePasskeyLogin() {
 
     // 未ログイン状態のキャッシュを残したまま遷移すると保護ページで弾かれるため、先に再検証する
     await mutate(SESSION_SWR_KEY)
-    navigate('/trends')
+    navigate(redirectTo ?? '/trends')
   }
 
   return { isSubmitting, formError, login }

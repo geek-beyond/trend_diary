@@ -3,8 +3,12 @@ import { Badge } from '@/client/components/shadcn/badge'
 import { Button } from '@/client/components/shadcn/button'
 import usePasskeyLogin from '@/client/features/passkey/use-passkey-login'
 
-export default function PasskeyLoginButton() {
-  const { isSubmitting, formError, login } = usePasskeyLogin()
+interface Props {
+  redirectTo?: string
+}
+
+export default function PasskeyLoginButton({ redirectTo }: Props) {
+  const { isSubmitting, formError, login } = usePasskeyLogin(redirectTo)
 
   return (
     <div className='space-y-2'>

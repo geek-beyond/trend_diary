@@ -5,6 +5,7 @@ import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/me
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
+import { isSessionExpiredError } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi, {
   type DiaryRangeItemResponse,
@@ -24,7 +25,10 @@ interface SummaryRangeData {
 }
 
 // 週次・日次の2つの取得が同時に失敗しても通知を1つに集約するため、固定 id でトーストを重複させない
-const notifyFetchError = () => {
+const notifyFetchError = (error: unknown) => {
+  // セッション切れの案内はcreateSWRFetcher側で表示済みのため、ここでは重複させない
+  if (isSessionExpiredError(error)) return
+
   toast.error('エラーが発生しました。時間をおいて再度お試しください。', {
     id: 'diary-analytics-error',
   })

@@ -4,6 +4,7 @@ import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/me
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
+import { isSessionExpiredError } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi from './use-diary-api'
 
@@ -38,7 +39,10 @@ export default function useDiary(enabled: boolean) {
       fetchDiary(targetDate, targetPage),
     {
       // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する
-      onError: () => {
+      onError: (error) => {
+        // セッション切れの案内はcreateSWRFetcher側で表示済みのため、ここでは重複させない
+        if (isSessionExpiredError(error)) return
+
         toast.error('エラーが発生しました。時間をおいて再度お試しください。', { id: 'diary-error' })
       },
     },

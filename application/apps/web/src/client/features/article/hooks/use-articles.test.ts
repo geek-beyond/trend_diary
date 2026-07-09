@@ -647,6 +647,25 @@ describe('useArticles', () => {
         expect(result.current.isLoading).toBe(false)
       })
     })
+
+    it('API呼び出しで401の時、セッション切れの案内トーストのみが表示される', async () => {
+      const fakeResponse = generateFakeResponse({ status: 401 })
+
+      mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
+
+      const { result } = setupHook()
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          'セッションの有効期限が切れました。再度ログインしてください。',
+          { id: 'session-expired' },
+        )
+        expect(result.current.isLoading).toBe(false)
+      })
+      expect(toast.error).not.toHaveBeenCalledWith(
+        'エラーが発生しました。時間をおいて再度お試しください。',
+      )
+    })
   })
 
   describe('無効なURLパラメータのフォールバック', () => {

@@ -2,6 +2,7 @@ import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-s
 import { useState } from 'react'
 import { toast } from 'sonner'
 import useSWR from 'swr'
+import { isSessionExpiredError } from '@/client/entities/auth'
 import { type MediaType, useReadArticle } from '@/client/features/article'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useCompletionCelebration from './use-completion-celebration'
@@ -87,21 +88,22 @@ export default function useUnreadDigestion(enabled: boolean, selectedMedia: Medi
     setIsActionLoading(true)
 
     try {
-      const res = await client.articles[':article_id'].skip.$post(
-        {
-          param: { article_id: currentArticle.articleId },
-        },
-        { init: { credentials: 'include' } },
+      await apiCall(() =>
+        client.articles[':article_id'].skip.$post(
+          {
+            param: { article_id: currentArticle.articleId },
+          },
+          { init: { credentials: 'include' } },
+        ),
       )
-
-      if (res.status !== 201) {
-        throw new Error('Failed to skip article')
-      }
 
       consumeCurrent()
       fetchNextBatchIfNeeded()
-    } catch (_error) {
-      toast.error(SkipErrorMessage)
+    } catch (error) {
+      // セッション切れの案内はcreateSWRFetcher側で表示済みのため、ここでは重複させない
+      if (!isSessionExpiredError(error)) {
+        toast.error(SkipErrorMessage)
+      }
     } finally {
       setIsActionLoading(false)
     }

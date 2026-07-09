@@ -10,6 +10,7 @@ import {
   useRouteError,
 } from 'react-router'
 import './styles.css'
+import { SITE_URL } from '@/client/lib/meta'
 import { Toaster } from './components/shadcn/sonner'
 
 export const meta: MetaFunction = () => [
@@ -28,11 +29,17 @@ export const meta: MetaFunction = () => [
   { property: 'og:site_name', content: 'TrendDiary' },
   { property: 'og:type', content: 'website' },
   { property: 'og:locale', content: 'ja_JP' },
+  { property: 'og:image', content: `${SITE_URL}/ogp.png` },
+  { property: 'og:image:width', content: '1200' },
+  { property: 'og:image:height', content: '630' },
+  { property: 'og:image:alt', content: 'TrendDiary | 技術トレンドを効率的に管理' },
   { name: 'twitter:card', content: 'summary_large_image' },
   { name: 'twitter:site', content: '@TrendDiary' },
+  { name: 'twitter:image', content: `${SITE_URL}/ogp.png` },
   { name: 'author', content: 'TrendDiary' },
   { name: 'robots', content: 'index, follow' },
   { tagName: 'link', rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+  { tagName: 'link', rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
 ]
 
 export function Layout({ children }: { children: React.ReactNode }) {

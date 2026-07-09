@@ -3,10 +3,19 @@ import type { MetaFunction } from 'react-router'
 import { useOutletContext } from 'react-router'
 import { type MediaType } from '@/client/features/article'
 import { useUnreadDigestion } from '@/client/features/inbox'
+import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import type { AppLayoutOutletContext } from '../app-layout'
 import InboxPage from './page'
 
-export const meta: MetaFunction = () => [{ title: '未読消化 | TrendDiary' }]
+export const meta: MetaFunction = ({ matches, location }) =>
+  mergeMeta(
+    matches,
+    pageMeta({
+      title: '未読消化 | TrendDiary',
+      description: '未読の記事を1件ずつ確認しながら、読んだかどうかを効率的に管理できます。',
+      path: location.pathname,
+    }),
+  )
 
 export default function InboxRoute() {
   const { isLoggedIn } = useOutletContext<AppLayoutOutletContext>()

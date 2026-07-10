@@ -7,7 +7,7 @@ packages:
 # 各パッケージでは "<dep>": "catalog:" と宣言してここのバージョンを参照する。
 catalog:
   '@cloudflare/vitest-pool-workers': ^0.18.0
-  '@cloudflare/workers-types': ^4.20260627.1
+  '@cloudflare/workers-types': ^5.20260704.1
   '@faker-js/faker': ^10.5.0
   '@playwright/test': ^1.61.1
   '@supabase/supabase-js': ^2.110.0

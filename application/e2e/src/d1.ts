@@ -34,7 +34,13 @@ async function withBusyRetry<T>(run: () => Promise<T>): Promise<T> {
   }
 }
 
-const STATEMENT_EXEC_METHODS = new Set<PropertyKey>(['first', 'run', 'all', 'raw'])
+// satisfies で実在する D1 メソッド名であることを強制し、タイポでリトライ対象から漏れるのを防ぐ
+const STATEMENT_EXEC_METHODS: ReadonlySet<PropertyKey> = new Set([
+  'first',
+  'run',
+  'all',
+  'raw',
+] satisfies (keyof D1PreparedStatement)[])
 
 function wrapStatementWithBusyRetry(statement: D1PreparedStatement): D1PreparedStatement {
   return new Proxy(statement, {
@@ -54,7 +60,10 @@ function wrapStatementWithBusyRetry(statement: D1PreparedStatement): D1PreparedS
   })
 }
 
-const DATABASE_EXEC_METHODS = new Set<PropertyKey>(['batch', 'exec'])
+const DATABASE_EXEC_METHODS: ReadonlySet<PropertyKey> = new Set([
+  'batch',
+  'exec',
+] satisfies (keyof D1Database)[])
 
 function wrapDbWithBusyRetry(db: D1Database): D1Database {
   return new Proxy(db, {

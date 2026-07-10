@@ -1,11 +1,85 @@
 import { dirname, resolve } from 'node:path'
+import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
-import type { D1Database } from '@cloudflare/workers-types'
+import type { D1Database, D1PreparedStatement } from '@cloudflare/workers-types'
 import { getPlatformProxy } from 'wrangler'
 
 interface TestD1 {
   db: D1Database
   dispose: () => Promise<void>
+}
+
+// webServer(wrangler dev)とこのクライアント(getPlatformProxy)は別プロセスの workerd として
+// 同一 SQLite ファイル(.wrangler/state/v3)を共有するため、サーバーの書き込みと重なると
+// SQLITE_BUSY で一時的に失敗する。miniflare は busy_timeout を設定できないため、
+// クライアント側の再試行でロック解放を待って吸収する。
+const BUSY_RETRY_MAX_ATTEMPTS = 5
+const BUSY_RETRY_BASE_DELAY_MS = 100
+
+// SQLITE_BUSY は miniflare の D1 エミュレーションを経由すると「internal error」としか報告されない
+const RETRYABLE_ERROR_PATTERN = /internal error|SQLITE_BUSY|database is locked/i
+
+function isBusyError(error: unknown): boolean {
+  return error instanceof Error && RETRYABLE_ERROR_PATTERN.test(error.message)
+}
+
+async function withBusyRetry<T>(run: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await run()
+    } catch (error) {
+      if (attempt >= BUSY_RETRY_MAX_ATTEMPTS || !isBusyError(error)) throw error
+      await sleep(BUSY_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1))
+    }
+  }
+}
+
+// satisfies で実在する D1 メソッド名であることを強制し、タイポでリトライ対象から漏れるのを防ぐ
+const STATEMENT_EXEC_METHODS: ReadonlySet<PropertyKey> = new Set([
+  'first',
+  'run',
+  'all',
+  'raw',
+] satisfies (keyof D1PreparedStatement)[])
+
+function wrapStatementWithBusyRetry(statement: D1PreparedStatement): D1PreparedStatement {
+  return new Proxy(statement, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver)
+      if (typeof value !== 'function') return value
+      const method = value.bind(target)
+      // bind は新しいステートメントを返すため、戻り値にも再試行を適用し続ける
+      if (prop === 'bind') {
+        return (...args: unknown[]) => wrapStatementWithBusyRetry(method(...args))
+      }
+      if (STATEMENT_EXEC_METHODS.has(prop)) {
+        return (...args: unknown[]) => withBusyRetry(() => method(...args))
+      }
+      return method
+    },
+  })
+}
+
+const DATABASE_EXEC_METHODS: ReadonlySet<PropertyKey> = new Set([
+  'batch',
+  'exec',
+] satisfies (keyof D1Database)[])
+
+function wrapDbWithBusyRetry(db: D1Database): D1Database {
+  return new Proxy(db, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver)
+      if (typeof value !== 'function') return value
+      const method = value.bind(target)
+      if (prop === 'prepare') {
+        return (...args: unknown[]) => wrapStatementWithBusyRetry(method(...args))
+      }
+      if (DATABASE_EXEC_METHODS.has(prop)) {
+        return (...args: unknown[]) => withBusyRetry(() => method(...args))
+      }
+      return method
+    },
+  })
 }
 
 // このパッケージ(e2e)から web パッケージ(apps/web)へ辿る。
@@ -25,5 +99,5 @@ export async function openTestD1(): Promise<TestD1> {
       'D1 バインディング "DB" が見つかりません。wrangler.toml の設定を確認してください。',
     )
   }
-  return { db: proxy.env.DB, dispose: () => proxy.dispose() }
+  return { db: wrapDbWithBusyRetry(proxy.env.DB), dispose: () => proxy.dispose() }
 }

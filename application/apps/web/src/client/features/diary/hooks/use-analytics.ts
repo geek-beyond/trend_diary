@@ -57,7 +57,12 @@ export default function useAnalytics() {
 
   const summaryKey =
     availableDates.length > 0 ? ['api/articles/diary-summary', ...availableDates] : null
-  const { data: summaryRangeData, isLoading: isSummaryLoading } = useSWR<SummaryRangeData>(
+  const {
+    data: summaryRangeData,
+    error: summaryError,
+    isLoading: isSummaryLoading,
+    mutate: mutateSummary,
+  } = useSWR<SummaryRangeData>(
     summaryKey,
     async () => {
       const from = availableDates[0]
@@ -103,7 +108,12 @@ export default function useAnalytics() {
   const swrKey: ['api/articles/diary', string, number] | null = selectedDate
     ? ['api/articles/diary', selectedDate, page]
     : null
-  const { data, isLoading } = useSWR<DiaryResponse>(
+  const {
+    data,
+    error: dailyError,
+    isLoading,
+    mutate: mutateDaily,
+  } = useSWR<DiaryResponse>(
     swrKey,
     ([, date, currentPage]: ['api/articles/diary', string, number]) =>
       fetchDiary(date, currentPage),
@@ -160,6 +170,11 @@ export default function useAnalytics() {
     },
     dateResolveError: hasDateResolveError,
     isLoading: isLoading || isSummaryLoading,
+    hasError: !!summaryError || !!dailyError,
+    retry: () => {
+      void mutateSummary()
+      void mutateDaily()
+    },
     selectDate,
     clearSelectedDate,
     toNextPage: () => updatePage(page + 1),

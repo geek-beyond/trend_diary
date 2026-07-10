@@ -25,6 +25,8 @@ export default function AnalyticsRoute() {
     reads,
     readPagination,
     isLoading,
+    hasError,
+    retry,
     selectDate,
     clearSelectedDate,
     toNextPage,
@@ -42,6 +44,8 @@ export default function AnalyticsRoute() {
       reads={reads}
       readPagination={readPagination}
       isLoading={isLoading}
+      hasError={hasError}
+      onRetry={retry}
       onSelectDate={selectDate}
       onClearSelectedDate={clearSelectedDate}
       onNextPage={toNextPage}

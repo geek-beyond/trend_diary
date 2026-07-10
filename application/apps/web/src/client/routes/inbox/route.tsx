@@ -19,6 +19,8 @@ export default function InboxRoute() {
   const [selectedMedia, setSelectedMedia] = useState<MediaType>(undefined)
   const {
     isLoading,
+    hasError,
+    retry,
     isJustCompleted,
     currentArticle,
     remainingCount,
@@ -31,6 +33,8 @@ export default function InboxRoute() {
     <InboxPage
       article={currentArticle}
       isLoading={isLoading}
+      hasError={hasError}
+      onRetry={retry}
       isJustCompleted={isJustCompleted}
       remainingCount={remainingCount}
       onSkip={handleSkip}

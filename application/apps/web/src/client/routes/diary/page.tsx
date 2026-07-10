@@ -1,3 +1,4 @@
+import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
 import {
   DiaryPageLayout,
   DiaryReadListSection,
@@ -17,6 +18,8 @@ interface Props {
   reads: ReadItem[]
   readPagination: ReadPagination
   isLoading: boolean
+  hasError: boolean
+  onRetry: () => void
   onNextPage: () => void
   onPrevPage: () => void
 }
@@ -29,6 +32,8 @@ export default function DiaryPage({
   reads,
   readPagination,
   isLoading,
+  hasError,
+  onRetry,
   onNextPage,
   onPrevPage,
 }: Props) {
@@ -36,18 +41,24 @@ export default function DiaryPage({
 
   return (
     <DiaryPageLayout pageTitle={pageTitle} dateResolveError={dateResolveError}>
-      <DiarySummarySection
-        sources={sources}
-        displaySummary={dailySummary}
-        targetDate={targetDate ?? undefined}
-      />
-      <DiaryReadListSection isLoading={isLoading} shouldShowDailyDetails={true} reads={reads} />
-      <DiaryReadPagination
-        onNextPage={onNextPage}
-        onPrevPage={onPrevPage}
-        readPagination={readPagination}
-        shouldShowDailyDetails={true}
-      />
+      {hasError && !isLoading ? (
+        <FetchErrorAlert onRetry={onRetry} />
+      ) : (
+        <>
+          <DiarySummarySection
+            sources={sources}
+            displaySummary={dailySummary}
+            targetDate={targetDate ?? undefined}
+          />
+          <DiaryReadListSection isLoading={isLoading} shouldShowDailyDetails={true} reads={reads} />
+          <DiaryReadPagination
+            onNextPage={onNextPage}
+            onPrevPage={onPrevPage}
+            readPagination={readPagination}
+            shouldShowDailyDetails={true}
+          />
+        </>
+      )}
     </DiaryPageLayout>
   )
 }

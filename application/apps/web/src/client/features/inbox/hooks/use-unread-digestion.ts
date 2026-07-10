@@ -29,6 +29,7 @@ export default function useUnreadDigestion(selectedMedia: MediaType) {
   const swrKey = ['api/articles/unread-digestion', selectedMedia]
   const {
     data,
+    error,
     isLoading: isInitialLoading,
     isValidating,
     mutate,
@@ -98,8 +99,8 @@ export default function useUnreadDigestion(selectedMedia: MediaType) {
 
       consumeCurrent()
       fetchNextBatchIfNeeded()
-    } catch (error) {
-      notifyErrorUnlessSessionExpired(error, SkipErrorMessage)
+    } catch (skipError) {
+      notifyErrorUnlessSessionExpired(skipError, SkipErrorMessage)
     } finally {
       setIsActionLoading(false)
     }
@@ -135,6 +136,8 @@ export default function useUnreadDigestion(selectedMedia: MediaType) {
 
   return {
     isLoading,
+    hasError: !!error,
+    retry: () => mutate(),
     isJustCompleted,
     currentArticle,
     remainingCount: remaining,

@@ -8,6 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/client/components/shadcn/chart'
+import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
 import {
   DiaryPageLayout,
   DiaryReadListSection,
@@ -40,6 +41,8 @@ interface Props {
   reads: ReadItem[]
   readPagination: ReadPagination
   isLoading: boolean
+  hasError: boolean
+  onRetry: () => void
   onSelectDate: (date: string) => void
   onClearSelectedDate: () => void
   onNextPage: () => void
@@ -67,6 +70,8 @@ export default function AnalyticsPage({
   reads,
   readPagination,
   isLoading,
+  hasError,
+  onRetry,
   onSelectDate,
   onClearSelectedDate,
   onNextPage,
@@ -84,57 +89,73 @@ export default function AnalyticsPage({
 
   return (
     <DiaryPageLayout pageTitle={pageTitle} dateResolveError={dateResolveError}>
-      <div className='mt-5'>
-        <h2 className='text-sm font-semibold text-gray-700'>グラフ</h2>
-        <div
-          className='mt-2 rounded-lg border border-gray-200 bg-white p-4'
-          data-slot='diary-analytics'
-        >
-          <div className='flex min-h-8 items-center gap-2'>
-            <p className='text-sm font-semibold text-gray-700'>
-              選択日: {selectedDate ? toJaDateString(toJstDate(selectedDate)) : '未選択'}
-            </p>
-            {selectedDate && (
-              <button
-                type='button'
-                onClick={onClearSelectedDate}
-                className='w-24 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-100'
-                data-slot='diary-clear-selected-date'
-              >
-                選択をクリア
-              </button>
-            )}
+      {hasError && !isLoading ? (
+        <FetchErrorAlert onRetry={onRetry} />
+      ) : (
+        <>
+          <div className='mt-5'>
+            <h2 className='text-sm font-semibold text-gray-700'>グラフ</h2>
+            <div
+              className='mt-2 rounded-lg border border-gray-200 bg-white p-4'
+              data-slot='diary-analytics'
+            >
+              <div className='flex min-h-8 items-center gap-2'>
+                <p className='text-sm font-semibold text-gray-700'>
+                  選択日: {selectedDate ? toJaDateString(toJstDate(selectedDate)) : '未選択'}
+                </p>
+                {selectedDate && (
+                  <button
+                    type='button'
+                    onClick={onClearSelectedDate}
+                    className='w-24 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-100'
+                    data-slot='diary-clear-selected-date'
+                  >
+                    選択をクリア
+                  </button>
+                )}
+              </div>
+              <ChartContainer config={chartConfig} className='mt-3 h-56 w-full'>
+                <BarChart data={summaryRange} onClick={handleChartClick}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey='date'
+                    tickLine={false}
+                    tickMargin={8}
+                    axisLine={false}
+                    tickFormatter={formatSummaryDateTick}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent />} />
+                  <Bar
+                    dataKey='read'
+                    fill='var(--color-read)'
+                    radius={4}
+                    className='cursor-pointer'
+                  />
+                  <Bar
+                    dataKey='skip'
+                    fill='var(--color-skip)'
+                    radius={4}
+                    className='cursor-pointer'
+                  />
+                </BarChart>
+              </ChartContainer>
+            </div>
           </div>
-          <ChartContainer config={chartConfig} className='mt-3 h-56 w-full'>
-            <BarChart data={summaryRange} onClick={handleChartClick}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey='date'
-                tickLine={false}
-                tickMargin={8}
-                axisLine={false}
-                tickFormatter={formatSummaryDateTick}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey='read' fill='var(--color-read)' radius={4} className='cursor-pointer' />
-              <Bar dataKey='skip' fill='var(--color-skip)' radius={4} className='cursor-pointer' />
-            </BarChart>
-          </ChartContainer>
-        </div>
-      </div>
-      <DiarySummarySection sources={sources} displaySummary={displaySummary} />
-      <DiaryReadListSection
-        isLoading={isLoading}
-        shouldShowDailyDetails={shouldShowDailyDetails}
-        reads={reads}
-      />
-      <DiaryReadPagination
-        onNextPage={onNextPage}
-        onPrevPage={onPrevPage}
-        readPagination={readPagination}
-        shouldShowDailyDetails={shouldShowDailyDetails}
-      />
+          <DiarySummarySection sources={sources} displaySummary={displaySummary} />
+          <DiaryReadListSection
+            isLoading={isLoading}
+            shouldShowDailyDetails={shouldShowDailyDetails}
+            reads={reads}
+          />
+          <DiaryReadPagination
+            onNextPage={onNextPage}
+            onPrevPage={onPrevPage}
+            readPagination={readPagination}
+            shouldShowDailyDetails={shouldShowDailyDetails}
+          />
+        </>
+      )}
     </DiaryPageLayout>
   )
 }

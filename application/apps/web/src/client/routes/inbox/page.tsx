@@ -1,8 +1,11 @@
+import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
 import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
 import { InboxBody, InboxBodySkeleton, type InboxBodyProps } from '@/client/features/inbox'
 
 interface Props extends InboxBodyProps {
   isLoading: boolean
+  hasError: boolean
+  onRetry: () => void
   remainingCount: number
   selectedMedia: FilterMediaType
   onMediaChange: (media: FilterMediaType) => void
@@ -11,6 +14,8 @@ interface Props extends InboxBodyProps {
 export default function InboxPage({
   article,
   isLoading,
+  hasError,
+  onRetry,
   isJustCompleted,
   onSkip,
   onRead,
@@ -32,6 +37,10 @@ export default function InboxPage({
 
         {isLoading ? (
           <InboxBodySkeleton />
+        ) : hasError ? (
+          <div className='mt-4'>
+            <FetchErrorAlert onRetry={onRetry} />
+          </div>
         ) : (
           <InboxBody
             article={article}

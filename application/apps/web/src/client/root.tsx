@@ -10,6 +10,7 @@ import {
   useRouteError,
 } from 'react-router'
 import './styles.css'
+import { AnchorLink } from '@/client/components/ui/navigation/link'
 import { SITE_URL } from '@/client/lib/meta'
 import { Toaster } from './components/shadcn/sonner'
 
@@ -71,6 +72,16 @@ export default function App() {
   return <Outlet />
 }
 
+function BackToTopLink() {
+  return (
+    <p className='mt-4'>
+      <AnchorLink to='/' className='text-blue-700 underline hover:text-blue-800'>
+        トップへ戻る
+      </AnchorLink>
+    </p>
+  )
+}
+
 // 400台のエラーは不要なのでログ出力しないようにする
 // 参考: https://zenn.dev/mkizka/articles/0db9bc30e1f707#(3)-errorresponseimpl
 export function ErrorBoundary() {
@@ -83,6 +94,7 @@ export function ErrorBoundary() {
           {error.status} {error.statusText}
         </h1>
         <p>{error.data}</p>
+        <BackToTopLink />
       </div>
     )
   }
@@ -98,6 +110,7 @@ export function ErrorBoundary() {
       <div>
         <h1>Error</h1>
         <p>予期しないエラーが発生しました。時間をおいて再度お試しください。</p>
+        <BackToTopLink />
       </div>
     )
   }
@@ -109,8 +122,14 @@ export function ErrorBoundary() {
         <p>{error.message}</p>
         <p>The stack trace is:</p>
         <pre>{error.stack}</pre>
+        <BackToTopLink />
       </div>
     )
   }
-  return <h1>Unknown Error</h1>
+  return (
+    <div>
+      <h1>Unknown Error</h1>
+      <BackToTopLink />
+    </div>
+  )
 }

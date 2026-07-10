@@ -42,8 +42,14 @@ runs:
       run: |
         set -euo pipefail
 
+        # `pnpm -r exec pwd` は各ワークスペースパッケージのルートを1行ずつ返すため、
+        # パス末尾のディレクトリ名がそのままパッケージ短縮名になる。
+        parse_pkg_names() {
+          sed 's#.*/##' | sort -u
+        }
+
         all_pkg_names() {
-          pnpm -r exec pwd | sed -n 's#.*/\(packages\|apps\)/\([^/]*\)$#\2#p' | sort -u
+          pnpm -r exec pwd | parse_pkg_names
         }
 
         run_all=false
@@ -62,8 +68,7 @@ runs:
         if [[ "$run_all" == "true" ]]; then
           names=$(all_pkg_names)
         else
-          names=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd \
-            | sed -n 's#.*/\(packages\|apps\)/\([^/]*\)$#\2#p' | sort -u)
+          names=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd | parse_pkg_names)
         fi
 
         echo "変更パッケージ(依存先含む, run_all=${run_all}): ${names:-(なし)}"

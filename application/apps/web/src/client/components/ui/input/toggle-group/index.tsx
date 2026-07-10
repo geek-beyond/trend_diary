@@ -37,8 +37,9 @@ export function ToggleGroup<T>({
             variant='outline'
             aria-pressed={isSelected}
             className={cn(
-              'border-gray-300 text-gray-700 hover:bg-gray-100',
-              isSelected && 'border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100',
+              'border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+              isSelected &&
+                'border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:hover:bg-blue-900',
             )}
             onClick={() => onSelect(option.value)}
             data-slot={option.dataSlot}

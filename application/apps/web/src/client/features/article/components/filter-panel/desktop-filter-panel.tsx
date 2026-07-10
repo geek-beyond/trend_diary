@@ -11,9 +11,9 @@ export function DesktopFilterPanel({ applied, isLoggedIn, onApplyFilters }: Filt
   }
 
   return (
-    <div className='mb-4 rounded-lg border border-gray-300 bg-white/50 p-4'>
-      <h2 className='mb-3 inline-flex items-center gap-2 text-sm font-semibold text-gray-700'>
-        <Funnel className='h-4 w-4 text-gray-600' />
+    <div className='mb-4 rounded-lg border border-border bg-card/50 p-4'>
+      <h2 className='mb-3 inline-flex items-center gap-2 text-sm font-semibold text-foreground'>
+        <Funnel className='h-4 w-4 text-muted-foreground' />
         <span>絞り込み</span>
       </h2>
       <div className='flex items-start gap-4'>

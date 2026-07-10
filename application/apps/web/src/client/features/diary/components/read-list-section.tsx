@@ -15,7 +15,7 @@ interface Props {
 export default function DiaryReadListSection({ isLoading, shouldShowDailyDetails, reads }: Props) {
   return (
     <div className='mt-6'>
-      <h2 className='text-sm font-semibold text-gray-700'>読了した記事一覧</h2>
+      <h2 className='text-sm font-semibold text-foreground'>読了した記事一覧</h2>
       <ReadListContent
         isLoading={isLoading}
         shouldShowDailyDetails={shouldShowDailyDetails}
@@ -33,14 +33,14 @@ function ReadListContent({ isLoading, shouldShowDailyDetails, reads }: Props) {
   // 日付未選択（analytics）はグラフからの導線を案内する
   if (!shouldShowDailyDetails) {
     return (
-      <p className='mt-2 text-sm text-gray-500'>
+      <p className='mt-2 text-sm text-muted-foreground'>
         グラフの日付をクリックすると、読了記事一覧を表示します。
       </p>
     )
   }
   if (reads.length === 0) {
     return (
-      <p className='mt-2 text-sm text-gray-500'>
+      <p className='mt-2 text-sm text-muted-foreground'>
         <span>読了した記事はまだありません。</span>
         <AnchorLink to='/trends' className='ml-1 text-blue-700 underline hover:text-blue-800'>
           トレンド一覧へ
@@ -56,7 +56,7 @@ function ReadListContent({ isLoading, shouldShowDailyDetails, reads }: Props) {
         return (
           <li
             key={read.readHistoryId}
-            className='flex items-center justify-between gap-3 text-gray-800'
+            className='flex items-center justify-between gap-3 text-foreground'
           >
             <div className='flex min-w-0 flex-1 items-center gap-2'>
               <MediaIcon media={read.media} size='sm' />
@@ -68,10 +68,10 @@ function ReadListContent({ isLoading, shouldShowDailyDetails, reads }: Props) {
                   {read.title}
                 </AnchorLink>
               ) : (
-                <span className='block truncate text-gray-700'>{read.title}</span>
+                <span className='block truncate text-foreground'>{read.title}</span>
               )}
             </div>
-            <p className='shrink-0 text-xs text-gray-500'>{toJaTimeString(read.readAt)}</p>
+            <p className='shrink-0 text-xs text-muted-foreground'>{toJaTimeString(read.readAt)}</p>
           </li>
         )
       })}

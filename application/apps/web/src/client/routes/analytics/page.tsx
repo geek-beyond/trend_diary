@@ -94,20 +94,20 @@ export default function AnalyticsPage({
       ) : (
         <>
           <div className='mt-5'>
-            <h2 className='text-sm font-semibold text-gray-700'>グラフ</h2>
+            <h2 className='text-sm font-semibold text-foreground'>グラフ</h2>
             <div
-              className='mt-2 rounded-lg border border-gray-200 bg-white p-4'
+              className='mt-2 rounded-lg border border-border bg-card p-4'
               data-slot='diary-analytics'
             >
               <div className='flex min-h-8 items-center gap-2'>
-                <p className='text-sm font-semibold text-gray-700'>
+                <p className='text-sm font-semibold text-foreground'>
                   選択日: {selectedDate ? toJaDateString(toJstDate(selectedDate)) : '未選択'}
                 </p>
                 {selectedDate && (
                   <button
                     type='button'
                     onClick={onClearSelectedDate}
-                    className='w-24 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-100'
+                    className='w-24 rounded border border-border bg-card px-2 py-1 text-xs text-foreground hover:bg-muted'
                     data-slot='diary-clear-selected-date'
                   >
                     選択をクリア

@@ -67,7 +67,7 @@ export default function AppSidebar({ isLoggedIn }: Props) {
         <SidebarHeader>
           <AnchorLink
             to='/'
-            className='flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-md transition-colors'
+            className='flex items-center gap-2 px-4 py-2 hover:bg-accent rounded-md transition-colors'
           >
             <TrendingUp className='h-8 w-8 text-blue-600' />
             <span className='text-xl font-semibold'>TrendDiary</span>

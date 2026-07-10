@@ -15,7 +15,9 @@ export function FilterField({
   const isMobile = variant === 'mobile'
   return (
     <div className={isMobile ? 'flex w-full flex-col items-start gap-2' : 'flex flex-col gap-1'}>
-      <span className={twMerge('font-medium text-gray-600', isMobile ? 'text-sm' : 'text-xs')}>
+      <span
+        className={twMerge('font-medium text-muted-foreground', isMobile ? 'text-sm' : 'text-xs')}
+      >
         {label}
       </span>
       {children}

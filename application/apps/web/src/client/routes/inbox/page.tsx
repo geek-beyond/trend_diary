@@ -25,15 +25,15 @@ export default function InboxPage({
   onMediaChange,
 }: Props) {
   return (
-    <div className='min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-6'>
-      <div className='mx-auto w-full max-w-3xl rounded-2xl border border-white/40 bg-white/50 p-6 shadow-xl backdrop-blur-sm'>
-        <h1 className='text-xl font-semibold text-gray-900'>未読消化</h1>
-        <p className='mt-0.5 text-sm text-gray-600'>未読記事を1件ずつ確認できます。</p>
+    <div className='min-h-screen bg-gradient-to-br from-muted to-background p-6'>
+      <div className='mx-auto w-full max-w-3xl rounded-2xl border border-border bg-card/50 p-6 shadow-xl backdrop-blur-sm'>
+        <h1 className='text-xl font-semibold text-foreground'>未読消化</h1>
+        <p className='mt-0.5 text-sm text-muted-foreground'>未読記事を1件ずつ確認できます。</p>
         <div className='mt-2'>
-          <p className='mb-2 text-sm text-gray-600'>メディア</p>
+          <p className='mb-2 text-sm text-muted-foreground'>メディア</p>
           <MediaFilter selectedMedia={selectedMedia} onMediaChange={onMediaChange} />
         </div>
-        <p className='mt-1 text-sm text-gray-600'>残り {remainingCount} 件</p>
+        <p className='mt-1 text-sm text-muted-foreground'>残り {remainingCount} 件</p>
 
         {isLoading ? (
           <InboxBodySkeleton />

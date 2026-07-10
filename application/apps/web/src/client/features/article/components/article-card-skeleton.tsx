@@ -9,7 +9,7 @@ export default function ArticleCardSkeleton() {
       aria-hidden='true'
       data-slot='card'
       data-testid='article-card-skeleton'
-      className='h-32 w-full sm:w-64 rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl'
+      className='h-32 w-full sm:w-64 rounded-3xl border border-border bg-card/30 p-6 shadow-2xl backdrop-blur-xl'
     >
       <CardContent className='flex h-full flex-col p-0'>
         <div className='flex-1 space-y-2'>

@@ -19,7 +19,7 @@ export default function PasskeyToggle() {
 
   return (
     <div className='flex items-center gap-3'>
-      <Fingerprint className='size-4 text-gray-600' />
+      <Fingerprint className='size-4 text-muted-foreground' />
       <Switch
         checked={hasPasskey}
         onCheckedChange={handleToggle}

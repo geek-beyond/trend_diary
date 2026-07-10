@@ -19,7 +19,7 @@ export const meta: MetaFunction = ({ matches, location }) =>
 
 const TrendDiaryTopPage = () => {
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
+    <div className='min-h-screen bg-gradient-to-br from-muted to-background'>
       <LandingHeader />
 
       {/* Hero Section */}
@@ -35,12 +35,12 @@ const TrendDiaryTopPage = () => {
               </div>
             </div>
 
-            <h1 className='text-5xl sm:text-6xl font-bold text-slate-900 tracking-tight mb-6'>
+            <h1 className='text-5xl sm:text-6xl font-bold text-foreground tracking-tight mb-6'>
               技術トレンドを
               <ClipText text='効率的に追跡' className='mt-2' />
             </h1>
 
-            <p className='text-xl text-slate-600 max-w-3xl mx-auto mb-10 leading-relaxed'>
+            <p className='text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed'>
               QiitaやZennの記事を読んだかどうかを管理し、技術トレンドを見逃さない。
               日々のキャッチアップを日記のように記録できるブラウザアプリです。
             </p>
@@ -54,7 +54,7 @@ const TrendDiaryTopPage = () => {
               </AnchorLink>
               <AnchorLink
                 to='/login'
-                className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-slate-300 text-slate-700 rounded-lg text-base sm:text-lg font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all duration-200'
+                className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-border text-foreground rounded-lg text-base sm:text-lg font-semibold hover:border-border hover:bg-muted transition-all duration-200'
               >
                 ログイン
               </AnchorLink>
@@ -73,64 +73,68 @@ const TrendDiaryTopPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className='py-20 bg-white'>
+      <section className='py-20 bg-card'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='text-center mb-16'>
-            <h2 className='text-3xl font-bold text-slate-900 mb-4'>なぜTrendDiaryを選ぶのか？</h2>
-            <p className='text-lg text-slate-600 max-w-2xl mx-auto'>
+            <h2 className='text-3xl font-bold text-foreground mb-4'>なぜTrendDiaryを選ぶのか？</h2>
+            <p className='text-lg text-muted-foreground max-w-2xl mx-auto'>
               Slack
               RSSフィードとは違って特定のアプリに依存せず、Webブラウザからトレンド記事を確認できます。
             </p>
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
-            <div className='text-center p-6 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200'>
+            <div className='text-center p-6 rounded-xl border border-border hover:border-blue-300 hover:shadow-lg transition-all duration-200'>
               <div className='w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4'>
                 <BookOpen className='h-6 w-6 text-blue-600' />
               </div>
-              <h3 className='text-xl font-semibold text-slate-900 mb-2'>読書状況の管理</h3>
-              <p className='text-slate-600'>
+              <h3 className='text-xl font-semibold text-foreground mb-2'>読書状況の管理</h3>
+              <p className='text-muted-foreground'>
                 記事を読んだかどうかを簡単に記録し、読み逃しを防げます。
               </p>
             </div>
 
-            <div className='text-center p-6 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200'>
+            <div className='text-center p-6 rounded-xl border border-border hover:border-blue-300 hover:shadow-lg transition-all duration-200'>
               <div className='w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4'>
                 <TrendingUp className='h-6 w-6 text-green-600' />
               </div>
-              <h3 className='text-xl font-semibold text-slate-900 mb-2'>トレンド追跡</h3>
-              <p className='text-slate-600'>
+              <h3 className='text-xl font-semibold text-foreground mb-2'>トレンド追跡</h3>
+              <p className='text-muted-foreground'>
                 QiitaやZennの最新技術トレンドを効率的にキャッチアップできます
               </p>
             </div>
 
-            <div className='text-center p-6 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200'>
+            <div className='text-center p-6 rounded-xl border border-border hover:border-blue-300 hover:shadow-lg transition-all duration-200'>
               <div className='w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4'>
                 <Users className='h-6 w-6 text-purple-600' />
               </div>
-              <h3 className='text-xl font-semibold text-slate-900 mb-2'>技術者向け</h3>
-              <p className='text-slate-600'>技術者のニーズに特化した、使いやすいインターフェース</p>
+              <h3 className='text-xl font-semibold text-foreground mb-2'>技術者向け</h3>
+              <p className='text-muted-foreground'>
+                技術者のニーズに特化した、使いやすいインターフェース
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* System Requirements */}
-      <section className='py-20 bg-slate-50'>
+      <section className='py-20 bg-muted'>
         <div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='text-center mb-12'>
-            <h2 className='text-3xl font-bold text-slate-900 mb-4'>推奨環境</h2>
-            <p className='text-lg text-slate-600'>TrendDiaryを快適にご利用いただくための推奨環境</p>
+            <h2 className='text-3xl font-bold text-foreground mb-4'>推奨環境</h2>
+            <p className='text-lg text-muted-foreground'>
+              TrendDiaryを快適にご利用いただくための推奨環境
+            </p>
           </div>
 
-          <div className='bg-white rounded-2xl shadow-sm border border-slate-200 p-8'>
+          <div className='bg-card rounded-2xl shadow-sm border border-border p-8'>
             <div className='flex justify-center'>
               <div className='text-center max-w-md'>
                 <div className='w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6'>
                   <Monitor className='h-10 w-10 text-blue-600' />
                 </div>
-                <h3 className='text-2xl font-semibold text-slate-900 mb-4'>推奨環境</h3>
-                <div className='space-y-3 text-slate-600'>
+                <h3 className='text-2xl font-semibold text-foreground mb-4'>推奨環境</h3>
+                <div className='space-y-3 text-muted-foreground'>
                   <div className='flex items-center space-x-3'>
                     <span className='w-2 h-2 bg-blue-500 rounded-full flex-shrink-0'></span>
                     <span className='text-lg'>Mac</span>
@@ -166,7 +170,7 @@ const TrendDiaryTopPage = () => {
           </p>
           <AnchorLink
             to='/signup'
-            className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
+            className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-card text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
           >
             <ClipText text='無料でアカウントを作成' />
           </AnchorLink>

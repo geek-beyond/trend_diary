@@ -25,7 +25,7 @@ export default function InboxBody({
     return <InboxCompletionCard />
   }
   return (
-    <p className='mt-4 text-sm text-gray-600'>
+    <p className='mt-4 text-sm text-muted-foreground'>
       <span>未読記事はありません</span>
       <AnchorLink to='/trends' className='ml-1 text-blue-700 underline hover:text-blue-800'>
         トレンド一覧へ

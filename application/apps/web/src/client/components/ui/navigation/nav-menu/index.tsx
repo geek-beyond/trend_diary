@@ -28,12 +28,12 @@ export default function NavMenu({ variant, menuItems }: NavMenuProps) {
 
   return (
     <nav className='flex flex-col gap-2'>
-      <div className='text-xs font-semibold text-gray-500 px-3'>Application</div>
+      <div className='text-xs font-semibold text-muted-foreground px-3'>Application</div>
       {menuItems.map((item) => (
         <SheetClose key={item.title} asChild={true}>
           <AnchorLink
             to={item.url}
-            className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors'
+            className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent transition-colors'
           >
             <item.icon className='h-5 w-5' />
             <span>{item.title}</span>

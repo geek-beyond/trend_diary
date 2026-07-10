@@ -18,7 +18,7 @@ const COVERAGE_THRESHOLDS = {
 }
 
 interface CoverageOverrides {
-  // workerd は node:inspector 経由のv8カバレッジ計測に非対応のため、cron のみ istanbul を指定する。
+  // workerd は node:inspector 経由のv8カバレッジ計測に非対応のため、provider を上書き可能にする。
   provider?: 'v8' | 'istanbul'
   exclude?: string[]
   thresholds?: Partial<typeof COVERAGE_THRESHOLDS>

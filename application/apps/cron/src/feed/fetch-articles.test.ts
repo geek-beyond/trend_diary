@@ -10,7 +10,7 @@ import {
   type FeedItem,
   rssResponse,
 } from '../test-helper/feed'
-import { testRdb as db } from '../test-helper/rdb'
+import { countArticles, testRdb as db } from '../test-helper/rdb'
 import { fetchHatenaArticles, fetchQiitaArticles, fetchZennArticles } from './fetch-articles'
 
 const fetchMock = vi.fn()
@@ -21,11 +21,6 @@ const logger = new Logger('silent')
 
 function stubFeed(xml: string): void {
   fetchMock.mockResolvedValue(rssResponse(xml))
-}
-
-async function countArticles(): Promise<number> {
-  const rows = await db.select({ url: articles.url }).from(articles)
-  return rows.length
 }
 
 async function findByUrl(url: string) {

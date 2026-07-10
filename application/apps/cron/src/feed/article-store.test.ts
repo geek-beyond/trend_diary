@@ -2,7 +2,7 @@ import type { D1Database } from '@cloudflare/workers-types'
 import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import TEST_ENV from '../test-helper/env'
-import { testRdb as db } from '../test-helper/rdb'
+import { countArticles, testRdb as db } from '../test-helper/rdb'
 import { storeArticles } from './article-store'
 import type { NormalizedItem } from './config'
 
@@ -14,11 +14,6 @@ function normalizedItem(overrides: Partial<NormalizedItem> = {}): NormalizedItem
     url: 'https://example.com/default',
     ...overrides,
   }
-}
-
-async function countArticles(): Promise<number> {
-  const rows = await db.select({ url: articles.url }).from(articles)
-  return rows.length
 }
 
 beforeEach(async () => {
@@ -39,30 +34,26 @@ describe('storeArticles', () => {
       expect(await countArticles()).toBe(0)
     })
 
-    // D1のバインドパラメータ上限100・使用率80%・カラム数5から算出されるチャンクサイズは16件。境界値で検証する。
-    it('バインドパラメータ上限から算出したチャンクサイズちょうどの件数は1回で全件保存する', async () => {
-      const items = Array.from({ length: 16 }, (_, i) =>
-        normalizedItem({ url: `https://example.com/chunk-boundary/${i}` }),
-      )
+    // D1のバインドパラメータ上限100・使用率80%・カラム数5から算出されるチャンクサイズは16件。
+    const chunkBoundaryCases = [
+      { label: 'ちょうどの件数は1回で全件保存する', count: 16 },
+      { label: 'を1件超えると複数回に分けて全件保存する', count: 17 },
+    ]
 
-      const result = await storeArticles('qiita', items, TEST_ENV)
+    it.each(chunkBoundaryCases)(
+      'バインドパラメータ上限から算出したチャンクサイズ$label',
+      async ({ count }) => {
+        const items = Array.from({ length: count }, (_, i) =>
+          normalizedItem({ url: `https://example.com/chunk/${count}/${i}` }),
+        )
 
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) expect(result.value).toBe(16)
-      expect(await countArticles()).toBe(16)
-    })
+        const result = await storeArticles('qiita', items, TEST_ENV)
 
-    it('チャンクサイズを1件超えると複数回に分けて全件保存する', async () => {
-      const items = Array.from({ length: 17 }, (_, i) =>
-        normalizedItem({ url: `https://example.com/chunk-overflow/${i}` }),
-      )
-
-      const result = await storeArticles('qiita', items, TEST_ENV)
-
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) expect(result.value).toBe(17)
-      expect(await countArticles()).toBe(17)
-    })
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) expect(result.value).toBe(count)
+        expect(await countArticles()).toBe(count)
+      },
+    )
   })
 
   describe('異常系', () => {

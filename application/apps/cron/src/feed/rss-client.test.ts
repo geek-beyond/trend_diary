@@ -8,25 +8,13 @@ describe('backoffDelayMs', () => {
       { attempt: 1, expectedMs: 2_000 },
       { attempt: 2, expectedMs: 4_000 },
       { attempt: 4, expectedMs: 16_000 },
-    ]
-
-    it.each(cases)(
-      'attempt=$attempt のとき 2^attempt 倍の $expectedMs ms を返す',
-      ({ attempt, expectedMs }) => {
-        expect(backoffDelayMs(attempt)).toBe(expectedMs)
-      },
-    )
-
-    const clampCases = [
+      // attempt=5以降は理論値(2^attempt×base)が上限を超えるため30,000msにクランプされる
       { attempt: 5, expectedMs: 30_000 },
       { attempt: 10, expectedMs: 30_000 },
     ]
 
-    it.each(clampCases)(
-      'attempt=$attempt で理論値が上限を超える場合は $expectedMs ms にクランプする',
-      ({ attempt, expectedMs }) => {
-        expect(backoffDelayMs(attempt)).toBe(expectedMs)
-      },
-    )
+    it.each(cases)('attempt=$attempt のとき $expectedMs ms を返す', ({ attempt, expectedMs }) => {
+      expect(backoffDelayMs(attempt)).toBe(expectedMs)
+    })
   })
 })

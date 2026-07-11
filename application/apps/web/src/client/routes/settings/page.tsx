@@ -34,7 +34,7 @@ export default function SettingsPage() {
           <PasskeyToggle />
         </section>
 
-        <section className='mt-6 flex items-start justify-between gap-4 border-t border-border pt-6'>
+        <section className='mt-6 flex flex-col gap-2 border-t border-border pt-6 sm:flex-row sm:items-start sm:justify-between sm:gap-4'>
           <div>
             <div className='flex items-center gap-2'>
               <h2 className='text-sm font-semibold text-foreground'>GitHub連携</h2>

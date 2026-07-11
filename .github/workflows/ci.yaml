@@ -236,14 +236,19 @@ jobs:
           TURNSTILE_SITE_KEY=
           EOF
 
-      # PRでは変更に関係するテストのみ差分実行し、mainへのpushでは全テストを実行する
+      # --only-changed は import 依存でテストを選ぶが、E2Eは apps/web を import しないため web の変更を拾えない。web変更のあるPRと main への push は全実行し、それ以外(e2eのみの変更)は差分実行する
       - name: E2Eテストの実行
+        env:
+          WEB_CHANGED: ${{ needs.changes.outputs.web }}
         run: |
+          args=(--fail-on-flaky-tests)
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            pnpm --filter @trend-diary/e2e test --reporter=github,html --only-changed=origin/"$GITHUB_BASE_REF" --pass-with-no-tests --fail-on-flaky-tests
-          else
-            pnpm --filter @trend-diary/e2e test --fail-on-flaky-tests
+            args+=(--reporter=github,html)
+            if [[ "$WEB_CHANGED" != "true" ]]; then
+              args+=(--only-changed=origin/"$GITHUB_BASE_REF" --pass-with-no-tests)
+            fi
           fi
+          pnpm --filter @trend-diary/e2e test "${args[@]}"
 
       - name: Playwrightレポートを保存
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

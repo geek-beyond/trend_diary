@@ -16,8 +16,8 @@ import {
   type DatePresetType,
   type FilterParams,
   FilterPanel,
-  type MediaType,
   type ReadStatusType,
+  type SelectedMedia,
 } from '@/client/features/article'
 import { scrollToTop } from '@/client/lib/scroll'
 
@@ -31,7 +31,7 @@ const getPaginationClass = (isDisabled: boolean) =>
   )
 
 const DEFAULT_FILTERS: FilterParams = {
-  media: undefined,
+  media: [],
   readStatus: 'all',
   datePreset: 'today',
 }
@@ -45,7 +45,7 @@ interface Props {
   onRetry: () => void
   page: number
   totalPages: number
-  selectedMedia: MediaType
+  selectedMedia: SelectedMedia
   selectedReadStatus: ReadStatusType
   selectedDatePreset: DatePresetType
   toNextPage: (currentPage: number) => void
@@ -83,7 +83,7 @@ export default function TrendsPage({
   }
 
   const hasActiveFilters =
-    selectedMedia !== undefined || selectedReadStatus !== 'all' || selectedDatePreset !== 'today'
+    selectedMedia.length > 0 || selectedReadStatus !== 'all' || selectedDatePreset !== 'today'
 
   const handleCardClick = (article: Article) => {
     openDrawer(article)

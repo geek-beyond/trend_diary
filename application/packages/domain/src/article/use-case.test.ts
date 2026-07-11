@@ -84,7 +84,7 @@ describe('ArticleUseCase', () => {
         const params: QueryParams = {
           title: 'test title',
           author: 'test author',
-          media: 'qiita',
+          media: ['qiita'],
           from: '2024-01-01',
           to: '2024-01-31',
           readStatus: false,
@@ -106,7 +106,7 @@ describe('ArticleUseCase', () => {
         const params: QueryParams = {
           title: 'test title',
           author: 'test author',
-          media: 'qiita',
+          media: ['qiita'],
           from: '2024-01-01',
           to: '2024-01-31',
           readStatus: false,
@@ -170,7 +170,7 @@ describe('ArticleUseCase', () => {
 
       it('mediaパラメータのみで検索', async () => {
         const params: QueryParams = {
-          media: 'zenn',
+          media: ['zenn'],
           limit: 20,
           page: 1,
         }
@@ -182,7 +182,7 @@ describe('ArticleUseCase', () => {
         expect(result).toEqual(ok(mockPaginationResult))
         expect(queryMock.searchArticles).toHaveBeenCalledWith(
           {
-            media: 'zenn',
+            media: ['zenn'],
             limit: 20,
             page: 1,
           },

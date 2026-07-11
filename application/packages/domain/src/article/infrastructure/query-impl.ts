@@ -519,7 +519,7 @@ export default class QueryImpl implements Query {
   private static buildSqlWhereClause(params: {
     title?: string
     author?: string
-    media?: string
+    media?: readonly string[]
     from?: string
     to?: string
     readStatus?: boolean
@@ -534,8 +534,12 @@ export default class QueryImpl implements Query {
     if (author) {
       conditions.push(QueryImpl.buildLikeConditionSql('author', author))
     }
-    if (media) {
-      conditions.push(sql`media = ${media}`)
+    if (media && media.length > 0) {
+      const mediaValues = sql.join(
+        media.map((value) => sql`${value}`),
+        sql.raw(', '),
+      )
+      conditions.push(sql`media IN (${mediaValues})`)
     }
 
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(from, to)

@@ -11,6 +11,7 @@ export {
   type DatePresetType,
   type FilterParams,
   type MediaType,
+  type SelectedMedia,
   type ReadStatusType,
 } from './hooks/use-articles'
 export { default as useReadArticle } from './hooks/use-read-article'

@@ -441,7 +441,7 @@ describe('useArticles', () => {
 
       await act(async () => {
         result.current.handleFiltersApply({
-          media: 'qiita',
+          media: ['qiita'],
           readStatus: 'unread',
           datePreset: 'last7days',
         })
@@ -458,7 +458,7 @@ describe('useArticles', () => {
               to: today,
               page: 1,
               limit: 20,
-              media: 'qiita',
+              media: ['qiita'],
               read_status: '0',
             },
           },
@@ -492,7 +492,7 @@ describe('useArticles', () => {
 
       await act(async () => {
         result.current.handleFiltersApply({
-          media: undefined,
+          media: [],
           readStatus: 'all',
           datePreset: 'today',
         })
@@ -795,12 +795,72 @@ describe('useArticles', () => {
             from: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
             page: 1,
             limit: 20,
-            media: 'hatena',
+            media: ['hatena'],
           },
         },
         { init: { credentials: 'include' } },
       )
-      expect(result.current.selectedMedia).toBe('hatena')
+      expect(result.current.selectedMedia).toEqual(['hatena'])
+    })
+
+    it('media が複数指定された場合、複数media条件付きでAPIが呼ばれる', async () => {
+      const fakeResponse = generateFakeResponse({
+        articles: [generateFakeArticle()],
+        page: 1,
+        totalPages: 1,
+      })
+
+      mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
+
+      const { result } = setupHook(['/?media=qiita&media=zenn'])
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
+
+      expect(mockApiClient.articles.$get).toHaveBeenCalledWith(
+        {
+          query: {
+            to: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
+            from: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
+            page: 1,
+            limit: 20,
+            media: ['qiita', 'zenn'],
+          },
+        },
+        { init: { credentials: 'include' } },
+      )
+      expect(result.current.selectedMedia).toEqual(['qiita', 'zenn'])
+    })
+
+    it('media に無効値が混在する場合、有効なmediaのみで絞り込む', async () => {
+      const fakeResponse = generateFakeResponse({
+        articles: [generateFakeArticle()],
+        page: 1,
+        totalPages: 1,
+      })
+
+      mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
+
+      const { result } = setupHook(['/?media=qiita&media=note'])
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
+
+      expect(mockApiClient.articles.$get).toHaveBeenCalledWith(
+        {
+          query: {
+            to: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
+            from: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
+            page: 1,
+            limit: 20,
+            media: ['qiita'],
+          },
+        },
+        { init: { credentials: 'include' } },
+      )
+      expect(result.current.selectedMedia).toEqual(['qiita'])
     })
 
     it('pageとlimitの両方が無効な場合、両方ともデフォルト値でAPIが呼ばれる', async () => {
@@ -953,7 +1013,7 @@ describe('useArticles', () => {
 
       await act(async () => {
         result.current.handleFiltersApply({
-          media: 'qiita',
+          media: ['qiita'],
           readStatus: 'unread',
           datePreset: 'today',
         })
@@ -967,13 +1027,57 @@ describe('useArticles', () => {
               from: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
               page: 1,
               limit: 20,
-              media: 'qiita',
+              media: ['qiita'],
               read_status: '0',
             },
           },
           { init: { credentials: 'include' } },
         )
       })
+    })
+
+    it('handleFiltersApplyで複数媒体を一括適用できる', async () => {
+      const initialResponse = generateFakeResponse({
+        page: 2,
+        totalPages: 3,
+      })
+      const filteredResponse = generateFakeResponse({
+        page: 1,
+        totalPages: 1,
+      })
+      mockApiClient.articles.$get.mockResolvedValueOnce(initialResponse)
+
+      const { result } = setupHook(['/?page=2'], { isLoggedIn: true })
+
+      await waitFor(() => {
+        expect(result.current.page).toBe(2)
+      })
+
+      mockApiClient.articles.$get.mockResolvedValueOnce(filteredResponse)
+
+      await act(async () => {
+        result.current.handleFiltersApply({
+          media: ['qiita', 'hatena'],
+          readStatus: 'all',
+          datePreset: 'today',
+        })
+      })
+
+      await waitFor(() => {
+        expect(mockApiClient.articles.$get).toHaveBeenLastCalledWith(
+          {
+            query: {
+              to: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
+              from: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
+              page: 1,
+              limit: 20,
+              media: ['qiita', 'hatena'],
+            },
+          },
+          { init: { credentials: 'include' } },
+        )
+      })
+      expect(result.current.selectedMedia).toEqual(['qiita', 'hatena'])
     })
 
     it('handleFiltersApplyですべてを適用するとmedia/read_status/pageが除去される', async () => {
@@ -997,7 +1101,7 @@ describe('useArticles', () => {
 
       await act(async () => {
         result.current.handleFiltersApply({
-          media: undefined,
+          media: [],
           readStatus: 'all',
           datePreset: 'today',
         })

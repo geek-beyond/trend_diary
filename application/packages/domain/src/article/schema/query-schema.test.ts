@@ -73,24 +73,30 @@ describe('記事検索スキーマ', () => {
   })
 
   describe('media のバリデーション', () => {
-    it('有効なmedia値を受け入れること', () => {
-      expect(() => {
-        articleQuerySchema.parse({
-          media: 'qiita',
-        })
-      }).not.toThrow()
+    it('有効な単一media値を受け入れ、配列へ正規化すること', () => {
+      expect(articleQuerySchema.parse({ media: 'qiita' }).media).toEqual(['qiita'])
+      expect(articleQuerySchema.parse({ media: 'zenn' }).media).toEqual(['zenn'])
+      expect(articleQuerySchema.parse({ media: 'hatena' }).media).toEqual(['hatena'])
+    })
 
-      expect(() => {
-        articleQuerySchema.parse({
-          media: 'zenn',
-        })
-      }).not.toThrow()
+    it('カンマ区切りの複数media値を配列へ正規化すること', () => {
+      expect(articleQuerySchema.parse({ media: 'qiita,zenn' }).media).toEqual(['qiita', 'zenn'])
+      expect(articleQuerySchema.parse({ media: 'qiita,zenn,hatena' }).media).toEqual([
+        'qiita',
+        'zenn',
+        'hatena',
+      ])
+    })
 
-      expect(() => {
-        articleQuerySchema.parse({
-          media: 'hatena',
-        })
-      }).not.toThrow()
+    it('配列形式の複数media値を受け入れること', () => {
+      expect(articleQuerySchema.parse({ media: ['qiita', 'hatena'] }).media).toEqual([
+        'qiita',
+        'hatena',
+      ])
+    })
+
+    it('空文字のmediaは未指定として扱うこと', () => {
+      expect(articleQuerySchema.parse({ media: '' }).media).toBeUndefined()
     })
 
     it('無効なmedia値を拒否すること', () => {
@@ -103,6 +109,12 @@ describe('記事検索スキーマ', () => {
       expect(() => {
         articleQuerySchema.parse({
           media: 'note',
+        })
+      }).toThrow()
+
+      expect(() => {
+        articleQuerySchema.parse({
+          media: 'qiita,invalid',
         })
       }).toThrow()
     })

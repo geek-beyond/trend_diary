@@ -40,7 +40,7 @@ const buildProps = (overrides: Partial<TrendsPageProps> = {}): TrendsPageProps =
   onRetry: vi.fn(),
   page: 1,
   totalPages: 1,
-  selectedMedia: undefined,
+  selectedMedia: [],
   selectedReadStatus: 'all',
   selectedDatePreset: 'today',
   toNextPage: vi.fn(),
@@ -86,7 +86,7 @@ describe('TrendsPage', () => {
     render(
       createElement(
         TrendsPage,
-        buildProps({ articles: [], selectedMedia: 'qiita', onApplyFilters }),
+        buildProps({ articles: [], selectedMedia: ['qiita'], onApplyFilters }),
       ),
     )
 
@@ -94,7 +94,7 @@ describe('TrendsPage', () => {
     fireEvent.click(resetButton)
 
     expect(onApplyFilters).toHaveBeenCalledWith({
-      media: undefined,
+      media: [],
       readStatus: 'all',
       datePreset: 'today',
     })

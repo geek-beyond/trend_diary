@@ -7,7 +7,7 @@ import {
   offsetPaginationSchema,
 } from '@trend-diary/common/pagination/schema'
 import { wrapAsyncCall } from '@trend-diary/common/result'
-import { ARTICLE_MEDIA, type ArticleMedia, isArticleMedia } from '@trend-diary/domain/article/media'
+import { isArticleMedia } from '@trend-diary/domain/article/media'
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -15,14 +15,10 @@ import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
 import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
+import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../media-selection'
 
-// 媒体フィルタは複数選択に対応する。「すべて」は全メディアを選択した状態で表す
-export type SelectedMedia = ArticleMedia[]
-// 「すべて」を表す既定値。フィルタ無しと同義
-export const ALL_MEDIA: SelectedMedia = [...ARTICLE_MEDIA]
-// 全メディア選択はフィルタ無し（すべて）と同義なので、クエリ・URL からは省く
-export const isAllMediaSelected = (media: SelectedMedia): boolean =>
-  media.length === ARTICLE_MEDIA.length
+// 媒体フィルタの選択状態は media-selection に切り出し、内部で使いつつここから再エクスポートする
+export { ALL_MEDIA, isAllMediaSelected, type SelectedMedia }
 export type ReadStatusType = 'all' | 'unread'
 
 // isRead を含む記事型(フロントエンドではarticleIdをstringに統一)

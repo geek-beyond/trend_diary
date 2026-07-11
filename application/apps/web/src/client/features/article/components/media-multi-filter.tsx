@@ -4,11 +4,7 @@ import {
   type ArticleMedia,
 } from '@trend-diary/domain/article/media'
 import { ToggleButton } from '@/client/components/ui/input/toggle-button'
-import {
-  ALL_MEDIA,
-  isAllMediaSelected,
-  type SelectedMedia,
-} from '@/client/features/article/hooks/use-articles'
+import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../media-selection'
 
 interface Props {
   selectedMedia: SelectedMedia

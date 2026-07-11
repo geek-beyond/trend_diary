@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent } from 'storybook/test'
-import { ALL_MEDIA } from '../hooks/use-articles'
+import { ALL_MEDIA } from '../media-selection'
 import MediaMultiFilter from './media-multi-filter'
 
 const meta: Meta<typeof MediaMultiFilter> = {

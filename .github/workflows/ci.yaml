@@ -236,7 +236,7 @@ jobs:
           TURNSTILE_SITE_KEY=
           EOF
 
-      # E2EはHTTP越しにアプリを叩くため、Playwrightの依存グラフ(import解決)ではページソースの変更を辿れず、--only-changed が web の変更を素通ししてしまう。そのため web に変更のあるPRと main への push では全テストを実行し、web変更のないPR(e2e自体の変更など)のみ差分実行にとどめる
+      # --only-changed は import 依存グラフで対象テストを選ぶが、E2Eはアプリを外部から操作する黒箱テストで apps/web のソースを import しないため、web の変更では対象が選ばれず素通ししてしまう。そのため web に変更のあるPRと main への push では全テストを実行し、web変更のないPR(e2e自体の変更など)のみ差分実行にとどめる
       - name: E2Eテストの実行
         env:
           WEB_CHANGED: ${{ needs.changes.outputs.web }}

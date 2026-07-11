@@ -1,5 +1,3 @@
-/// <reference types="vitest" />
-
 // パッケージ間でカバレッジ方針を統一するための共有プリセット。
 // 個別事情（宣言的スキーマや統合テストで担保する箇所の除外など）は引数で上書きする。
 
@@ -20,15 +18,17 @@ const COVERAGE_THRESHOLDS = {
 }
 
 interface CoverageOverrides {
+  // workerd は node:inspector 経由のv8カバレッジ計測に非対応のため、provider を上書き可能にする。
+  provider?: 'v8' | 'istanbul'
   exclude?: string[]
   thresholds?: Partial<typeof COVERAGE_THRESHOLDS>
 }
 
 export function coverageConfig(overrides: CoverageOverrides = {}) {
-  const { exclude = [], thresholds = {} } = overrides
+  const { provider = 'v8', exclude = [], thresholds = {} } = overrides
   return {
     enabled: true,
-    provider: 'v8' as const,
+    provider,
     // json-summary / json は web のカバレッジコメント投稿アクションが参照するため統一して出力する。
     reporter: ['text', 'json-summary', 'json'],
     include: ['src/**/*.ts'],

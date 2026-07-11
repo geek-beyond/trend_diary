@@ -18,7 +18,9 @@ export default function AppLayout() {
   return (
     <SidebarProvider>
       <AppSidebar isLoggedIn={isLoggedIn} />
-      <div className='w-full'>
+      {/* ヘッダーの高さ分だけ配下が viewport をはみ出し不要なスクロールが出るのを防ぐため、
+          縦 flex にして配下ページが残りの高さを埋められるようにする */}
+      <div className='flex min-h-svh w-full flex-col'>
         <AppHeader isLoggedIn={isLoggedIn} />
         <Outlet context={outletContext} />
       </div>

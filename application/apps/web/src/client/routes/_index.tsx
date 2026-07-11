@@ -128,7 +128,7 @@ const TrendDiaryTopPage = () => {
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div className='bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center'>
               <div className='w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6'>
-                <Smartphone className='h-10 w-10 text-blue-600' />
+                <Smartphone className='size-10 text-blue-600' />
               </div>
               <h3 className='text-2xl font-semibold text-slate-900 mb-4'>スマートフォン</h3>
               <p className='text-slate-600'>
@@ -139,7 +139,7 @@ const TrendDiaryTopPage = () => {
 
             <div className='bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center'>
               <div className='w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6'>
-                <Monitor className='h-10 w-10 text-blue-600' />
+                <Monitor className='size-10 text-blue-600' />
               </div>
               <h3 className='text-2xl font-semibold text-slate-900 mb-4'>デスクトップ</h3>
               <p className='text-slate-600'>

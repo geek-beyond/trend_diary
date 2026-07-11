@@ -147,7 +147,10 @@ test.describe('記事閲覧シナリオ(モバイル)', () => {
       }
       await authPage.waitForLoginPage()
       await authPage.submitLogin(email, password)
-      await authPage.waitForTrendsPage()
+
+      // モバイルでは絞り込みがハンバーガーの Sheet 内にあり、デスクトップ用の
+      // waitForTrendsPage は使えないため、URL と記事カードの表示で trends 到達を待つ
+      await expect(page).toHaveURL(/\/trends(?:\?.*)?$/, { timeout: AUTH_FLOW_TIMEOUT })
 
       // trends → ドロワー
       const trendsPage = new TrendsPage(page)

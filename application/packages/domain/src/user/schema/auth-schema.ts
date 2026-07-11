@@ -45,25 +45,6 @@ export interface AuthenticationSession {
   user: AuthenticationUser
 }
 
-/**
- * 対応するOAuthプロバイダ。追加時はここに増やす
- */
-export type OAuthProvider = 'github'
-
-/**
- * OAuth認可の開始結果。ブラウザをこのURLへリダイレクトさせる
- */
-export interface OAuthAuthorization {
-  url: string
-}
-
-/**
- * 認証ユーザーに紐付くログイン手段（email / github など）
- */
-export interface LinkedIdentity {
-  provider: string
-}
-
 // OAuthログイン開始時のクエリ。redirectはログイン成功後に戻す内部パス
 export const oauthLoginQuerySchema = z.object({
   redirect: z.string().optional(),

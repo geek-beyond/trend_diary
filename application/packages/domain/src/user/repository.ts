@@ -5,15 +5,31 @@ import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,
   AuthenticationUser,
-  LinkedIdentity,
-  OAuthAuthorization,
-  OAuthProvider,
   PasskeyChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
   RegisteredPasskey,
   VerifiedSession,
 } from './schema/auth-schema'
+
+/**
+ * 対応するOAuthプロバイダ。追加時はここに増やす
+ */
+export type OAuthProvider = 'github'
+
+/**
+ * OAuth認可の開始結果。ブラウザをこのURLへリダイレクトさせる
+ */
+export interface OAuthAuthorization {
+  url: string
+}
+
+/**
+ * 認証ユーザーに紐付くログイン手段（email / github など）
+ */
+export interface LinkedIdentity {
+  provider: string
+}
 
 export interface Query {
   findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, Error>>
@@ -133,9 +149,10 @@ export interface AuthRepository {
   ): Promise<Result<OAuthAuthorization, ServerError>>
 
   /**
-   * OAuthコールバックの認可コードをセッションに交換する（未認証で可）
+   * OAuthコールバックの認可コードをセッションに交換し、認証ユーザーを返す（未認証で可）。
+   * セッションの保存自体はSupabaseクライアント(プレゼン層のCookie)が担うため結果には含めない
    */
-  exchangeOAuthCode(code: string): Promise<Result<AuthLoginResult, ClientError | ServerError>>
+  exchangeOAuthCode(code: string): Promise<Result<AuthenticationUser, ClientError | ServerError>>
 
   /**
    * ログイン中ユーザーへOAuthアカウントを連携する認可URLを発行する（要認証セッション）

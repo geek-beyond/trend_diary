@@ -15,7 +15,7 @@ function getSetCookies(res: Response): string[] {
 describe('GitHub OAuth認証', () => {
   describe('正常系', () => {
     it('ログイン開始でSupabaseのGitHub認可URLへリダイレクトする', async () => {
-      const res = await get('/api/auth/oauth/github/login')
+      const res = await get('/api/oauth/github/login')
 
       expect(res.status).toBe(302)
       const location = res.headers.get('Location') ?? ''
@@ -24,7 +24,7 @@ describe('GitHub OAuth認証', () => {
     })
 
     it('ログイン開始でフロー種別Cookieにloginを保存する', async () => {
-      const res = await get('/api/auth/oauth/github/login')
+      const res = await get('/api/oauth/github/login')
 
       expect(res.status).toBe(302)
       const flowCookie = getSetCookies(res).find((cookie) => cookie.startsWith('oauth_flow='))
@@ -32,7 +32,7 @@ describe('GitHub OAuth認証', () => {
     })
 
     it('redirectクエリが内部パスなら戻り先Cookieに保存する', async () => {
-      const res = await get('/api/auth/oauth/github/login?redirect=%2Fsettings')
+      const res = await get('/api/oauth/github/login?redirect=%2Fsettings')
 
       expect(res.status).toBe(302)
       const redirectCookie = getSetCookies(res).find((cookie) =>
@@ -43,7 +43,7 @@ describe('GitHub OAuth認証', () => {
     })
 
     it('redirectクエリが無ければ残存する戻り先Cookieを削除する', async () => {
-      const res = await get('/api/auth/oauth/github/login')
+      const res = await get('/api/oauth/github/login')
 
       expect(res.status).toBe(302)
       const redirectCookie = getSetCookies(res).find((cookie) =>
@@ -55,7 +55,7 @@ describe('GitHub OAuth認証', () => {
 
   describe('準正常系', () => {
     it('codeなしのcallbackはエラー種別を添えてログイン画面へ戻す', async () => {
-      const res = await get('/api/auth/oauth/github/callback?error=access_denied')
+      const res = await get('/api/oauth/github/callback?error=access_denied')
 
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe('/login?oauthError=github')
@@ -63,7 +63,7 @@ describe('GitHub OAuth認証', () => {
 
     it('連携フローの失敗はログイン状態を保ったまま設定画面へ戻す', async () => {
       const res = await get(
-        '/api/auth/oauth/github/callback?error=access_denied',
+        '/api/oauth/github/callback?error=access_denied',
         'oauth_flow=link; oauth_redirect_to=%2Fsettings',
       )
 
@@ -73,7 +73,7 @@ describe('GitHub OAuth認証', () => {
 
     it('戻り先が設定画面でもログインフローの失敗はログイン画面へ戻す', async () => {
       const res = await get(
-        '/api/auth/oauth/github/callback?error=access_denied',
+        '/api/oauth/github/callback?error=access_denied',
         'oauth_flow=login; oauth_redirect_to=%2Fsettings',
       )
 
@@ -82,16 +82,14 @@ describe('GitHub OAuth認証', () => {
     })
 
     it('検証情報のない不正なcodeのcallbackはログイン画面へ戻す', async () => {
-      const res = await get('/api/auth/oauth/github/callback?code=invalid-code')
+      const res = await get('/api/oauth/github/callback?code=invalid-code')
 
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe('/login?oauthError=github')
     })
 
     it('redirectクエリが外部URLなら戻り先Cookieに保存せず削除する', async () => {
-      const res = await get(
-        '/api/auth/oauth/github/login?redirect=https%3A%2F%2Fevil.example.com%2F',
-      )
+      const res = await get('/api/oauth/github/login?redirect=https%3A%2F%2Fevil.example.com%2F')
 
       expect(res.status).toBe(302)
       const redirectCookie = getSetCookies(res).find((cookie) =>
@@ -102,9 +100,9 @@ describe('GitHub OAuth認証', () => {
     })
 
     it.each([
-      { name: '連携開始', method: 'GET', path: '/api/auth/oauth/github/link' },
-      { name: '連携状態の取得', method: 'GET', path: '/api/auth/oauth/github' },
-      { name: '連携解除', method: 'DELETE', path: '/api/auth/oauth/github' },
+      { name: '連携開始', method: 'GET', path: '/api/oauth/github/link' },
+      { name: '連携状態の取得', method: 'GET', path: '/api/oauth/github' },
+      { name: '連携解除', method: 'DELETE', path: '/api/oauth/github' },
     ])('未ログインでの$nameは401を返す', async ({ method, path }) => {
       // Content-Type未指定だとcsrf()がtext/plain扱いでDELETEを403にするため、JSONを明示する
       const res = await apiRequest(path, { method, contentTypeJson: true })
@@ -134,7 +132,7 @@ describe('GitHub OAuth認証', () => {
     it('未連携の連携状態はlinked=falseを返す', async () => {
       const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
-      const res = await get('/api/auth/oauth/github', cookies)
+      const res = await get('/api/oauth/github', cookies)
 
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ linked: false })
@@ -143,7 +141,7 @@ describe('GitHub OAuth認証', () => {
     it('未連携での解除は何もせず204を返す', async () => {
       const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
-      const res = await apiRequest('/api/auth/oauth/github', {
+      const res = await apiRequest('/api/oauth/github', {
         method: 'DELETE',
         cookies,
         contentTypeJson: true,

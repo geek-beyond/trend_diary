@@ -6,11 +6,9 @@ import getApiClientForClient from '@/infrastructure/api'
 import useGithubLinkStatus from './use-github-link-status'
 
 const mockApiClient = {
-  auth: {
-    oauth: {
-      github: {
-        $get: vi.fn(),
-      },
+  oauth: {
+    github: {
+      $get: vi.fn(),
     },
   },
 }
@@ -34,8 +32,8 @@ describe('useGithubLinkStatus', () => {
   })
 
   describe('正常系', () => {
-    it('linked=trueが返るとlinkedがtrueになる', async () => {
-      mockApiClient.auth.oauth.github.$get.mockResolvedValue({
+    it('連携済みのレスポンスならlinkedがtrueになる', async () => {
+      mockApiClient.oauth.github.$get.mockResolvedValue({
         ok: true,
         json: async () => ({ linked: true }),
       })
@@ -47,8 +45,8 @@ describe('useGithubLinkStatus', () => {
       })
     })
 
-    it('linked=falseが返るとlinkedがfalseになる', async () => {
-      mockApiClient.auth.oauth.github.$get.mockResolvedValue({
+    it('未連携のレスポンスならlinkedはfalseになる', async () => {
+      mockApiClient.oauth.github.$get.mockResolvedValue({
         ok: true,
         json: async () => ({ linked: false }),
       })
@@ -56,20 +54,20 @@ describe('useGithubLinkStatus', () => {
       const { result } = renderHook(() => useGithubLinkStatus(), { wrapper })
 
       await waitFor(() => {
-        expect(mockApiClient.auth.oauth.github.$get).toHaveBeenCalled()
+        expect(mockApiClient.oauth.github.$get).toHaveBeenCalled()
       })
       expect(result.current.linked).toBe(false)
     })
   })
 
   describe('準正常系', () => {
-    it('レスポンスが非OKならlinkedはfalseのまま', async () => {
-      mockApiClient.auth.oauth.github.$get.mockResolvedValue({ ok: false, status: 401 })
+    it('取得に失敗したらlinkedはfalseのまま', async () => {
+      mockApiClient.oauth.github.$get.mockResolvedValue({ ok: false, status: 401 })
 
       const { result } = renderHook(() => useGithubLinkStatus(), { wrapper })
 
       await waitFor(() => {
-        expect(mockApiClient.auth.oauth.github.$get).toHaveBeenCalled()
+        expect(mockApiClient.oauth.github.$get).toHaveBeenCalled()
       })
       expect(result.current.linked).toBe(false)
     })

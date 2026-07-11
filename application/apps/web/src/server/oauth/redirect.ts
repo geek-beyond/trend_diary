@@ -14,7 +14,7 @@ export const OAUTH_FLOW = {
 
 // callbackにだけ送られれば十分なため、OAuthエンドポイント配下にスコープを絞る
 export const OAUTH_COOKIE_OPTIONS = {
-  path: '/api/auth/oauth',
+  path: '/api/oauth',
   httpOnly: true,
   secure: true,
   // 認可プロバイダからのcallbackはクロスサイトのトップレベル遷移のため、Strictでは送信されない
@@ -25,5 +25,5 @@ export const OAUTH_COOKIE_OPTIONS = {
 // Supabaseの認可完了後にブラウザを戻すアプリ側のcallback URL。
 // 配信オリジンが環境ごとに異なるため、リクエストのオリジンから組み立てる
 export function buildGithubCallbackUrl(c: Context): string {
-  return `${new URL(c.req.url).origin}/api/auth/oauth/github/callback`
+  return `${new URL(c.req.url).origin}/api/oauth/github/callback`
 }

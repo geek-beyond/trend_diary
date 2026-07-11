@@ -12,12 +12,16 @@ import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/commo
 import UnauthorizedError from '@trend-diary/common/errors/client-error/unauthorized-error'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { err, ok, type Result } from 'neverthrow'
-import type { AuthLoginResult, AuthRepository, AuthSignupResult } from '../repository'
 import type {
-  AuthenticationUser,
+  AuthLoginResult,
+  AuthRepository,
+  AuthSignupResult,
   LinkedIdentity,
   OAuthAuthorization,
   OAuthProvider,
+} from '../repository'
+import type {
+  AuthenticationUser,
   PasskeyChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
@@ -350,7 +354,7 @@ export class SupabaseAuthRepository implements AuthRepository {
 
   async exchangeOAuthCode(
     code: string,
-  ): Promise<Result<AuthLoginResult, ClientError | ServerError>> {
+  ): Promise<Result<AuthenticationUser, ClientError | ServerError>> {
     const result = await wrapAsyncCall(() => this.client.auth.exchangeCodeForSession(code))
     if (result.isErr()) {
       return err(new ServerError(result.error))
@@ -366,15 +370,7 @@ export class SupabaseAuthRepository implements AuthRepository {
       return err(new ServerError('OAuth authentication failed'))
     }
 
-    const userResult = this.toAuthenticationUser(data.user)
-    if (userResult.isErr()) {
-      return err(userResult.error)
-    }
-
-    return ok({
-      user: userResult.value,
-      session: this.toSessionObject(data.session, userResult.value),
-    })
+    return this.toAuthenticationUser(data.user)
   }
 
   async startOAuthLink(

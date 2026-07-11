@@ -12,9 +12,9 @@ import {
   OAUTH_FLOW,
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
-} from '@/server/auth/oauth-redirect'
+} from '@/server/oauth/redirect'
 
-export default async function oauthGithubLink(c: Context<Env>) {
+export default async function githubLink(c: Context<Env>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
 
   const client = createSupabaseAuthClient(c)

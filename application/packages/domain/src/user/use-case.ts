@@ -1,10 +1,16 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
-import type { AuthRepository, CaptchaVerifier, Command, Notifier, Query } from './repository'
+import type {
+  AuthRepository,
+  CaptchaVerifier,
+  Command,
+  Notifier,
+  OAuthAuthorization,
+  Query,
+} from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,
-  OAuthAuthorization,
   PasskeyChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
@@ -166,20 +172,17 @@ export class AuthUseCase {
   async loginWithGithubCallback(
     code: string,
     notifier: Notifier,
-  ): Promise<Result<LoginResult, ClientError | ServerError>> {
+  ): Promise<Result<CurrentUser, ClientError | ServerError>> {
     const authResult = await this.repository.exchangeOAuthCode(code)
     if (authResult.isErr()) return err(authResult.error)
 
-    const { user, session } = authResult.value
+    const user = authResult.value
 
     const foundResult = await this.userQuery.findActiveByAuthenticationId(user.id)
     if (foundResult.isErr()) return err(new ServerError(foundResult.error))
 
     if (foundResult.value) {
-      return ok({
-        session,
-        activeUser: foundResult.value,
-      })
+      return ok(foundResult.value)
     }
 
     // 初回のGitHubログインはアプリ側ユーザーが未作成のため、ここで作成して新規登録として扱う
@@ -190,10 +193,7 @@ export class AuthUseCase {
     )
     if (createdResult.isErr()) return err(createdResult.error)
 
-    return ok({
-      session,
-      activeUser: createdResult.value,
-    })
+    return ok(createdResult.value)
   }
 
   async startGithubLink(redirectTo: string): Promise<Result<OAuthAuthorization, ServerError>> {

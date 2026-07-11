@@ -675,27 +675,22 @@ describe('AuthUseCase', () => {
 
   describe('loginWithGithubCallback', () => {
     describe('正常系', () => {
-      it('既存ユーザーはsessionとactiveUserを返し、新規作成しないこと', async () => {
-        repositoryMock.exchangeOAuthCode.mockResolvedValue(
-          ok({ user: mockAuthUser, session: mockSession }),
-        )
+      it('既存ユーザーはactiveUserを返し、新規作成しないこと', async () => {
+        repositoryMock.exchangeOAuthCode.mockResolvedValue(ok(mockAuthUser))
         queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(mockActiveUser))
 
         const result = await useCase.loginWithGithubCallback('auth-code', notifierMock)
 
         expect(result.isOk()).toBe(true)
         if (result.isOk()) {
-          expect(result.value.session).toEqual(mockSession)
-          expect(result.value.activeUser).toEqual(mockActiveUser)
+          expect(result.value).toEqual(mockActiveUser)
         }
         expect(repositoryMock.exchangeOAuthCode).toHaveBeenCalledWith('auth-code')
         expect(commandMock.createActiveWithAuthenticationId).not.toHaveBeenCalled()
       })
 
       it('未登録ユーザーはactiveUserを作成して返すこと(GitHub経由の新規登録)', async () => {
-        repositoryMock.exchangeOAuthCode.mockResolvedValue(
-          ok({ user: mockAuthUser, session: mockSession }),
-        )
+        repositoryMock.exchangeOAuthCode.mockResolvedValue(ok(mockAuthUser))
         queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(null))
         commandMock.createActiveWithAuthenticationId.mockResolvedValue(ok(mockActiveUser))
 
@@ -703,7 +698,7 @@ describe('AuthUseCase', () => {
 
         expect(result.isOk()).toBe(true)
         if (result.isOk()) {
-          expect(result.value.activeUser).toEqual(mockActiveUser)
+          expect(result.value).toEqual(mockActiveUser)
         }
         expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
           mockAuthUser.email,
@@ -730,9 +725,7 @@ describe('AuthUseCase', () => {
 
     describe('異常系', () => {
       it('ユーザー検索が失敗した場合はServerErrorを返すこと', async () => {
-        repositoryMock.exchangeOAuthCode.mockResolvedValue(
-          ok({ user: mockAuthUser, session: mockSession }),
-        )
+        repositoryMock.exchangeOAuthCode.mockResolvedValue(ok(mockAuthUser))
         queryMock.findActiveByAuthenticationId.mockResolvedValue(err(new Error('db error')))
 
         const result = await useCase.loginWithGithubCallback('auth-code', notifierMock)
@@ -745,9 +738,7 @@ describe('AuthUseCase', () => {
 
       it('activeUser作成が失敗した場合はエラーを返すこと', async () => {
         const serverError = new ServerError('active user creation failed')
-        repositoryMock.exchangeOAuthCode.mockResolvedValue(
-          ok({ user: mockAuthUser, session: mockSession }),
-        )
+        repositoryMock.exchangeOAuthCode.mockResolvedValue(ok(mockAuthUser))
         queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(null))
         commandMock.createActiveWithAuthenticationId.mockResolvedValue(err(serverError))
 

@@ -11,6 +11,10 @@ export default function GithubLinkToggle() {
   const isBusy = isLoading || isSubmitting
 
   const handleToggle = async (checked: boolean) => {
+    // disabled属性はフォーカスを奪いスクリーンリーダーへ状態が伝わらないため使わず、
+    // 状態確定前・処理中の操作はハンドラ側で無視する
+    if (isBusy) return
+
     if (checked) {
       // 連携はGitHubの認可画面への遷移で始まるため、fetchではなくフルページ遷移で開始する
       navigateToGithubLink()
@@ -28,7 +32,7 @@ export default function GithubLinkToggle() {
       <Switch
         checked={linked}
         onCheckedChange={handleToggle}
-        disabled={isBusy}
+        aria-busy={isBusy}
         aria-label='GitHub連携を有効にする'
       />
     </div>

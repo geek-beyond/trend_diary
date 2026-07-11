@@ -3,11 +3,7 @@ import { GithubLinkToggle } from '@/client/features/github-auth'
 import { PasskeyToggle } from '@/client/features/passkey'
 import { ThemeToggle } from '@/client/features/theme'
 
-interface Props {
-  githubLinkError?: string
-}
-
-export default function SettingsPage({ githubLinkError }: Props) {
+export default function SettingsPage() {
   const pageTitle = '設定'
 
   return (
@@ -47,7 +43,6 @@ export default function SettingsPage({ githubLinkError }: Props) {
             <p className='mt-1 text-sm text-muted-foreground'>
               GitHubアカウントを連携すると、次回からGitHubでログインできます。
             </p>
-            {githubLinkError && <p className='mt-1 text-sm text-destructive'>{githubLinkError}</p>}
           </div>
           <GithubLinkToggle />
         </section>

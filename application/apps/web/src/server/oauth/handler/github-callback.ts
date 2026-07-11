@@ -12,9 +12,9 @@ import {
   OAUTH_FLOW,
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
-} from '@/server/auth/oauth-redirect'
+} from '@/server/oauth/redirect'
 
-export default async function oauthGithubCallback(c: ZodValidatedQueryContext<OAuthCallbackQuery>) {
+export default async function githubCallback(c: ZodValidatedQueryContext<OAuthCallbackQuery>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const { code, error, error_description } = c.req.valid('query')
 
@@ -54,8 +54,7 @@ export default async function oauthGithubCallback(c: ZodValidatedQueryContext<OA
     throw handleError(result.error, logger)
   }
 
-  const { activeUser } = result.value
-  logger.info('github oauth login success', { activeUserId: activeUser.activeUserId })
+  logger.info('github oauth login success', { activeUserId: result.value.activeUserId })
 
   return c.redirect(redirectTarget, 302)
 }

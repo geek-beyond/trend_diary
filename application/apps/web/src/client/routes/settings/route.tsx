@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { type MetaFunction, useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 import { GITHUB_AUTH_MESSAGES } from '@/client/features/github-auth'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import SettingsPage from './page'
@@ -14,10 +16,24 @@ export const meta: MetaFunction = ({ matches, location }) =>
   )
 
 export default function SettingsRoute() {
-  const [searchParams] = useSearchParams()
-  // OAuth連携のcallbackはリダイレクトで戻るため、失敗理由はクエリで受け取って表示する
-  const githubLinkError =
-    searchParams.get('oauthError') === 'github' ? GITHUB_AUTH_MESSAGES.linkFailed : undefined
+  const [searchParams, setSearchParams] = useSearchParams()
+  const hasOauthError = searchParams.get('oauthError') === 'github'
 
-  return <SettingsPage githubLinkError={githubLinkError} />
+  // OAuth連携のcallbackはリダイレクトで戻るため、失敗理由はクエリで受け取りトーストで通知する。
+  // リロードや共有で再表示されないよう、通知後にクエリを取り除く
+  useEffect(() => {
+    if (!hasOauthError) return
+
+    toast.error(GITHUB_AUTH_MESSAGES.linkFailed)
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('oauthError')
+        return next
+      },
+      { replace: true },
+    )
+  }, [hasOauthError, setSearchParams])
+
+  return <SettingsPage />
 }

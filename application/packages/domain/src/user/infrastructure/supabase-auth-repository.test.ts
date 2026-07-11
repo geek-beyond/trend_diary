@@ -760,10 +760,7 @@ describe('SupabaseAuthRepository', () => {
           'https://app.example.com/callback',
         )
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value.url).toBe('https://example.supabase.co/auth/v1/authorize')
-        }
+        expect(result._unsafeUnwrap().url).toBe('https://example.supabase.co/auth/v1/authorize')
         expect(client.auth.signInWithOAuth).toHaveBeenCalledWith({
           provider: 'github',
           options: { redirectTo: 'https://app.example.com/callback', skipBrowserRedirect: true },
@@ -780,10 +777,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.startOAuthAuthorization('github', 'https://a.example.com')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
 
@@ -793,17 +787,14 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.startOAuthAuthorization('github', 'https://a.example.com')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
   })
 
   describe('exchangeOAuthCode', () => {
     describe('正常系', () => {
-      it('認可コードをセッションに交換しユーザーを返すこと', async () => {
+      it('認可コードをセッションに交換し認証ユーザーを返すこと', async () => {
         const supabaseUser = buildSupabaseUser()
         const supabaseSession = buildSupabaseSession({ user: supabaseUser })
         resolveAuthMock(client.auth.exchangeCodeForSession, {
@@ -813,11 +804,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.exchangeOAuthCode('auth-code')
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value.user.id).toBe(supabaseUser.id)
-          expect(result.value.session.accessToken).toBe('access-token')
-        }
+        expect(result._unsafeUnwrap().id).toBe(supabaseUser.id)
         expect(client.auth.exchangeCodeForSession).toHaveBeenCalledWith('auth-code')
       })
     })
@@ -831,10 +818,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.exchangeOAuthCode('expired-code')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ClientError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ClientError)
       })
     })
 
@@ -847,10 +831,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.exchangeOAuthCode('auth-code')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
 
       it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
@@ -858,10 +839,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.exchangeOAuthCode('auth-code')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
   })
@@ -876,10 +854,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.startOAuthLink('github', 'https://app.example.com/callback')
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value.url).toBe('https://example.supabase.co/auth/v1/authorize')
-        }
+        expect(result._unsafeUnwrap().url).toBe('https://example.supabase.co/auth/v1/authorize')
         expect(client.auth.linkIdentity).toHaveBeenCalledWith({
           provider: 'github',
           options: { redirectTo: 'https://app.example.com/callback', skipBrowserRedirect: true },
@@ -896,10 +871,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.startOAuthLink('github', 'https://a.example.com')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
 
@@ -909,10 +881,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.startOAuthLink('github', 'https://a.example.com')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
   })
@@ -932,10 +901,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.listIdentities()
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toEqual([{ provider: 'email' }, { provider: 'github' }])
-        }
+        expect(result._unsafeUnwrap()).toEqual([{ provider: 'email' }, { provider: 'github' }])
       })
     })
 
@@ -948,10 +914,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.listIdentities()
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
 
@@ -961,10 +924,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.listIdentities()
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
   })
@@ -996,10 +956,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.unlinkIdentity('github')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ClientError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ClientError)
         expect(client.auth.unlinkIdentity).not.toHaveBeenCalled()
       })
 
@@ -1015,10 +972,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.unlinkIdentity('github')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
 
@@ -1028,10 +982,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.unlinkIdentity('github')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
   })

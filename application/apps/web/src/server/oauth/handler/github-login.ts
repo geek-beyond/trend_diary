@@ -12,9 +12,9 @@ import {
   OAUTH_FLOW,
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
-} from '@/server/auth/oauth-redirect'
+} from '@/server/oauth/redirect'
 
-export default async function oauthGithubLogin(c: ZodValidatedQueryContext<OAuthLoginQuery>) {
+export default async function githubLogin(c: ZodValidatedQueryContext<OAuthLoginQuery>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const { redirect } = c.req.valid('query')
 

@@ -111,8 +111,8 @@ site_url = "http://127.0.0.1:3000"
 # 本番はダッシュボードのRedirect URLsに本番オリジンのcallbackを登録する
 additional_redirect_urls = [
   "https://127.0.0.1:3000",
-  "http://127.0.0.1:3000/api/auth/oauth/github/callback",
-  "http://localhost:5173/api/auth/oauth/github/callback",
+  "http://127.0.0.1:3000/api/oauth/github/callback",
+  "http://localhost:5173/api/oauth/github/callback",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600

@@ -54,7 +54,7 @@ const TrendDiaryTopPage = () => {
               </AnchorLink>
               <AnchorLink
                 to='/login'
-                className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-border text-foreground rounded-lg text-base sm:text-lg font-semibold hover:border-border hover:bg-muted transition-all duration-200'
+                className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-border text-foreground rounded-lg text-base sm:text-lg font-semibold hover:bg-muted transition-all duration-200'
               >
                 ログイン
               </AnchorLink>
@@ -170,7 +170,7 @@ const TrendDiaryTopPage = () => {
           </p>
           <AnchorLink
             to='/signup'
-            className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-card text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
+            className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
           >
             <ClipText text='無料でアカウントを作成' />
           </AnchorLink>

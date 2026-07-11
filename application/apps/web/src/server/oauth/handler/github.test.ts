@@ -51,6 +51,46 @@ describe('GitHub OAuth認証', () => {
       )
       expect(redirectCookie).toContain('Max-Age=0')
     })
+
+    // ログイン済みユーザーが必要なケースだけユーザーを作成する
+    describe('ログイン済みユーザーの連携管理', () => {
+      const TEST_EMAIL = 'oauth-github-test@example.com'
+      const TEST_PASSWORD = 'Test@password123'
+      const createdIds: CleanUpIds = { userIds: [], authIds: [] }
+
+      beforeEach(async () => {
+        const { userId, authenticationId } = await userHelper.create(TEST_EMAIL, TEST_PASSWORD)
+        createdIds.userIds.push(userId)
+        createdIds.authIds.push(authenticationId)
+      })
+
+      afterEach(async () => {
+        await userHelper.cleanUp(createdIds)
+        createdIds.userIds.length = 0
+        createdIds.authIds.length = 0
+      })
+
+      it('未連携の連携状態はlinked=falseを返す', async () => {
+        const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+
+        const res = await get('/api/oauth/github', cookies)
+
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ linked: false })
+      })
+
+      it('未連携での解除は何もせず204を返す', async () => {
+        const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+
+        const res = await apiRequest('/api/oauth/github', {
+          method: 'DELETE',
+          cookies,
+          contentTypeJson: true,
+        })
+
+        expect(res.status).toBe(204)
+      })
+    })
   })
 
   describe('準正常系', () => {
@@ -108,46 +148,6 @@ describe('GitHub OAuth認証', () => {
       const res = await apiRequest(path, { method, contentTypeJson: true })
 
       expect(res.status).toBe(401)
-    })
-  })
-
-  // ログイン済みユーザーが必要なケースだけユーザーを作成する
-  describe('ログイン済みユーザーの連携管理', () => {
-    const TEST_EMAIL = 'oauth-github-test@example.com'
-    const TEST_PASSWORD = 'Test@password123'
-    const createdIds: CleanUpIds = { userIds: [], authIds: [] }
-
-    beforeEach(async () => {
-      const { userId, authenticationId } = await userHelper.create(TEST_EMAIL, TEST_PASSWORD)
-      createdIds.userIds.push(userId)
-      createdIds.authIds.push(authenticationId)
-    })
-
-    afterEach(async () => {
-      await userHelper.cleanUp(createdIds)
-      createdIds.userIds.length = 0
-      createdIds.authIds.length = 0
-    })
-
-    it('未連携の連携状態はlinked=falseを返す', async () => {
-      const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
-
-      const res = await get('/api/oauth/github', cookies)
-
-      expect(res.status).toBe(200)
-      expect(await res.json()).toEqual({ linked: false })
-    })
-
-    it('未連携での解除は何もせず204を返す', async () => {
-      const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
-
-      const res = await apiRequest('/api/oauth/github', {
-        method: 'DELETE',
-        cookies,
-        contentTypeJson: true,
-      })
-
-      expect(res.status).toBe(204)
     })
   })
 })

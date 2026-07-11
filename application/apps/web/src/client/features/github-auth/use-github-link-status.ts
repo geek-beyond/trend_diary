@@ -1,7 +1,7 @@
 import useSWR from 'swr'
 import getApiClientForClient from '@/client/infrastructure/api'
 
-export const GITHUB_LINK_STATUS_SWR_KEY = 'api/oauth/github'
+const GITHUB_LINK_STATUS_SWR_KEY = 'api/oauth/github'
 
 // 設定画面のトグルはログイン時のみ描画されるため、ここでは無条件に連携状態を取得する
 export default function useGithubLinkStatus() {

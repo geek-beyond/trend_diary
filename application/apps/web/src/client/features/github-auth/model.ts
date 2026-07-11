@@ -14,8 +14,8 @@ export const GITHUB_AUTH_MESSAGES = {
 }
 
 // OAuth認可はCookie設定を伴うトップレベル遷移で始める必要があるため、fetchではなくhrefで叩く
-export const GITHUB_LOGIN_PATH = '/api/oauth/github/login'
-export const GITHUB_LINK_PATH = '/api/oauth/github/link'
+const GITHUB_LOGIN_PATH = '/api/oauth/github/login'
+const GITHUB_LINK_PATH = '/api/oauth/github/link'
 
 // ログイン成功後に戻したい内部パスをクエリで引き継ぐ（検証はサーバー側で行う）
 export function buildGithubLoginUrl(redirectTo?: string): string {

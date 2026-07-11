@@ -34,11 +34,6 @@ export class InboxPage {
     await expect(this.laterButton).toBeVisible({ timeout: TIMEOUT })
   }
 
-  currentArticleTitle(): Locator {
-    // カード内の記事タイトル(h2)。消化ごとに切り替わることの確認に使う
-    return this.page.getByRole('heading', { level: 2 }).first()
-  }
-
   async remainingCount(): Promise<number> {
     const text = await this.remainingText.textContent()
     const matched = text?.match(/(\d+)/)

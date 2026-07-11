@@ -15,7 +15,7 @@ function delay(ms: number): Promise<void> {
 }
 
 // 指数バックオフの待機時間(2^attempt × base)を算出し、上限でクランプする。
-function backoffDelayMs(attempt: number): number {
+export function backoffDelayMs(attempt: number): number {
   return Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS)
 }
 

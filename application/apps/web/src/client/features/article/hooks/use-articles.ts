@@ -16,9 +16,7 @@ import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
 import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 
-// 未読消化（inbox）では単一媒体の絞り込みが残るため、単一・複数の両型を併存させる
-export type MediaType = ArticleMedia | undefined
-// トレンド一覧の媒体フィルタは複数選択に対応する（空配列＝すべて）
+// 媒体フィルタは複数選択に対応する（空配列＝すべて）
 export type SelectedMedia = ArticleMedia[]
 export type ReadStatusType = 'all' | 'unread'
 
@@ -62,13 +60,11 @@ const DATE_PRESET_MAP: Record<DatePresetType, number> = {
 
 const isValidDateString = (value: string | null) => !!value && DATE_STRING_REGEX.test(value)
 
-// media クエリは繰り返しパラメータ（例: ?media=qiita&media=zenn）を基本とする。
-// URL 共有等でカンマ区切り（?media=qiita,zenn）が渡ってもバックエンドと同様に解釈できるよう分割し、
+// media クエリは繰り返しパラメータ（例: ?media=qiita&media=zenn）に統一する。
 // 無効値を除いたうえで重複を除去して順序を保つ
-const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => {
-  const flattened = mediaParams.flatMap((param) => param.split(',').map((value) => value.trim()))
-  return [...new Set(flattened.filter(isArticleMedia))]
-}
+const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => [
+  ...new Set(mediaParams.filter(isArticleMedia)),
+]
 
 const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => {
   const fromDateResult = addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset])

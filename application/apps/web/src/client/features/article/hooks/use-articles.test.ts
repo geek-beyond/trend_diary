@@ -833,36 +833,6 @@ describe('useArticles', () => {
       expect(result.current.selectedMedia).toEqual(['qiita', 'zenn'])
     })
 
-    it('media がカンマ区切りで共有された場合も複数mediaとして解釈する', async () => {
-      const fakeResponse = generateFakeResponse({
-        articles: [generateFakeArticle()],
-        page: 1,
-        totalPages: 1,
-      })
-
-      mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
-
-      const { result } = setupHook(['/?media=qiita,zenn'])
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
-
-      expect(mockApiClient.articles.$get).toHaveBeenCalledWith(
-        {
-          query: {
-            to: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
-            from: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
-            page: 1,
-            limit: 20,
-            media: ['qiita', 'zenn'],
-          },
-        },
-        { init: { credentials: 'include' } },
-      )
-      expect(result.current.selectedMedia).toEqual(['qiita', 'zenn'])
-    })
-
     it('media に無効値が混在する場合、有効なmediaのみで絞り込む', async () => {
       const fakeResponse = generateFakeResponse({
         articles: [generateFakeArticle()],

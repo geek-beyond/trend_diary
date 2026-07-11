@@ -1,7 +1,7 @@
 import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
-import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
+import { mediaListSchema } from '@trend-diary/domain/article/schema/query-schema'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
@@ -12,10 +12,8 @@ interface UnreadDigestionArticlesResponse {
   total: number
 }
 
-const mediaEnum = z.enum(ARTICLE_MEDIA)
-
 export const unreadDigestionQuerySchema = z.object({
-  media: mediaEnum.optional(),
+  media: mediaListSchema,
 })
 
 type UnreadDigestionQuery = z.infer<typeof unreadDigestionQuerySchema>

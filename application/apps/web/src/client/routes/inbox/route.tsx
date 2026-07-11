@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { MetaFunction } from 'react-router'
-import { type MediaType } from '@/client/features/article'
+import { type SelectedMedia } from '@/client/features/article'
 import { useUnreadDigestion } from '@/client/features/inbox'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import InboxPage from './page'
@@ -16,7 +16,7 @@ export const meta: MetaFunction = ({ matches, location }) =>
   )
 
 export default function InboxRoute() {
-  const [selectedMedia, setSelectedMedia] = useState<MediaType>(undefined)
+  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>([])
   const {
     isLoading,
     hasError,

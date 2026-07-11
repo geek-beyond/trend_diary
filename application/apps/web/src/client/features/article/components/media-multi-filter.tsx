@@ -3,7 +3,7 @@ import {
   ARTICLE_MEDIA_LABELS,
   type ArticleMedia,
 } from '@trend-diary/domain/article/media'
-import { ToggleButton } from '@/client/components/ui/input/toggle-group'
+import { ToggleButton } from '@/client/components/ui/input/toggle-button'
 import type { SelectedMedia } from '@/client/features/article/hooks/use-articles'
 
 interface Props {

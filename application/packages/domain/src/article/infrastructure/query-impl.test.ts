@@ -272,19 +272,19 @@ describe('QueryImpl', () => {
         name: 'createdAtがCURRENT_TIMESTAMP形式(スペース区切りUTC)はTZ非依存でUTC解釈される',
         createdAt: '2025-01-01 00:00:00',
         expectedIso: '2025-01-01T00:00:00.000Z',
-        media: 'qiita' as const,
+        media: ['qiita'] as const,
       },
       {
         name: 'createdAtがnumber(epoch ms)',
         createdAt: 1_772_852_400_000,
         expectedIso: '2026-03-07T03:00:00.000Z',
-        media: 'hatena' as const,
+        media: ['hatena'] as const,
       },
       {
         name: 'createdAtがbigint(epoch ms)',
         createdAt: 1_772_852_400_000n,
         expectedIso: '2026-03-07T03:00:00.000Z',
-        media: 'zenn' as const,
+        media: ['zenn'] as const,
       },
     ])('$name をArticleへ変換できる', async ({ createdAt, expectedIso, media }) => {
       mockRdbExecutor.mockResolvedValue({
@@ -302,7 +302,11 @@ describe('QueryImpl', () => {
         ],
       })
 
-      const result = await queryImpl.getUnreadDigestionArticles(10n, '2026-03-07', media)
+      const result = await queryImpl.getUnreadDigestionArticles(
+        10n,
+        '2026-03-07',
+        media ? [...media] : undefined,
+      )
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {

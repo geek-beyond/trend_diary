@@ -2,7 +2,7 @@ import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-s
 import { useState } from 'react'
 import useSWR from 'swr'
 import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
-import { type MediaType, useReadArticle } from '@/client/features/article'
+import { type SelectedMedia, useReadArticle } from '@/client/features/article'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useCompletionCelebration from './use-completion-celebration'
 
@@ -17,7 +17,7 @@ interface UnreadDigestionResponse {
 
 const SkipErrorMessage = 'スキップに失敗しました'
 
-export default function useUnreadDigestion(selectedMedia: MediaType) {
+export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
   const { client, apiCall } = createSWRFetcher()
   const { markAsRead } = useReadArticle()
   const [queue, setQueue] = useState<Article[]>([])
@@ -34,7 +34,7 @@ export default function useUnreadDigestion(selectedMedia: MediaType) {
     isValidating,
     mutate,
   } = useSWR<UnreadDigestionResponse>(swrKey, async () => {
-    const query = selectedMedia ? { media: selectedMedia } : {}
+    const query = selectedMedia.length > 0 ? { media: selectedMedia } : {}
     const result = await apiCall<UnreadDigestionResponse>(() =>
       client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
     )

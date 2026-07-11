@@ -20,7 +20,7 @@ const buildProps = (overrides: Partial<InboxPageProps> = {}): InboxPageProps => 
   onRead: vi.fn().mockResolvedValue(undefined),
   onLater: vi.fn(),
   remainingCount: 0,
-  selectedMedia: undefined,
+  selectedMedia: [],
   onMediaChange: vi.fn(),
   ...overrides,
 })

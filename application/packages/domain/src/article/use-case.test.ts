@@ -417,7 +417,7 @@ describe('ArticleUseCase', () => {
       },
       {
         name: 'media指定あり',
-        media: 'qiita' as const,
+        media: ['qiita', 'zenn'] as const,
       },
     ])('$name で当日JST日付を使って取得できる', async ({ media }) => {
       queryMock.getUnreadDigestionArticles.mockResolvedValue(
@@ -425,14 +425,19 @@ describe('ArticleUseCase', () => {
       )
       const now = new Date('2026-03-07T00:00:00.000Z')
 
-      const result = await useCase.getUnreadDigestionArticles(100n, media, now)
+      const mediaArg = media ? [...media] : undefined
+      const result = await useCase.getUnreadDigestionArticles(100n, mediaArg, now)
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
         expect(result.value.total).toBe(1)
         expect(result.value.articles).toHaveLength(1)
       }
-      expect(queryMock.getUnreadDigestionArticles).toHaveBeenCalledWith(100n, '2026-03-07', media)
+      expect(queryMock.getUnreadDigestionArticles).toHaveBeenCalledWith(
+        100n,
+        '2026-03-07',
+        mediaArg,
+      )
     })
   })
 

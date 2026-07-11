@@ -79,18 +79,14 @@ describe('記事検索スキーマ', () => {
       expect(articleQuerySchema.parse({ media: 'hatena' }).media).toEqual(['hatena'])
     })
 
-    it('カンマ区切りの複数media値を配列へ正規化すること', () => {
-      expect(articleQuerySchema.parse({ media: 'qiita,zenn' }).media).toEqual(['qiita', 'zenn'])
-      expect(articleQuerySchema.parse({ media: 'qiita,zenn,hatena' }).media).toEqual([
-        'qiita',
-        'zenn',
-        'hatena',
-      ])
-    })
-
     it('配列形式の複数media値を受け入れること', () => {
       expect(articleQuerySchema.parse({ media: ['qiita', 'hatena'] }).media).toEqual([
         'qiita',
+        'hatena',
+      ])
+      expect(articleQuerySchema.parse({ media: ['qiita', 'zenn', 'hatena'] }).media).toEqual([
+        'qiita',
+        'zenn',
         'hatena',
       ])
     })
@@ -100,11 +96,17 @@ describe('記事検索スキーマ', () => {
     })
 
     it('重複したmedia値を除去すること', () => {
-      expect(articleQuerySchema.parse({ media: 'qiita,qiita' }).media).toEqual(['qiita'])
       expect(articleQuerySchema.parse({ media: ['qiita', 'zenn', 'qiita'] }).media).toEqual([
         'qiita',
         'zenn',
       ])
+    })
+
+    it('カンマ区切り文字列は分割せず単一値として扱い、無効なら拒否すること', () => {
+      // 繰り返しクエリに統一したため "qiita,zenn" は 1 つの値として enum 検証され弾かれる
+      expect(() => {
+        articleQuerySchema.parse({ media: 'qiita,zenn' })
+      }).toThrow()
     })
 
     it('無効なmedia値を拒否すること', () => {
@@ -122,7 +124,7 @@ describe('記事検索スキーマ', () => {
 
       expect(() => {
         articleQuerySchema.parse({
-          media: 'qiita,invalid',
+          media: ['qiita', 'invalid'],
         })
       }).toThrow()
     })

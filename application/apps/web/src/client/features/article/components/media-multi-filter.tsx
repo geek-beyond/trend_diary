@@ -16,7 +16,7 @@ export default function MediaMultiFilter({ selectedMedia, onMediaChange }: Props
     const next = selectedMedia.includes(media)
       ? selectedMedia.filter((item) => item !== media)
       : [...selectedMedia, media]
-    // 1件も選ばれていない状態は作らず、全解除は「すべて」（全メディア選択）に戻す
+    // 最後の1件を外すと空になるため、その場合は「すべて」に戻して空の選択を作らない
     onMediaChange(next.length > 0 ? next : ALL_MEDIA)
   }
 

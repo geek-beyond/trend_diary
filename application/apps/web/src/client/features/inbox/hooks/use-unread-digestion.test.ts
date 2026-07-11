@@ -12,7 +12,6 @@ vi.mock('@/client/infrastructure/create-swr-fetcher', () => ({
   default: vi.fn(),
 }))
 
-// useReadArticle だけを差し替え、ALL_MEDIA / isAllMediaSelected など実装は本物を使う
 vi.mock('@/client/features/article', async () => {
   const media = await vi.importActual<typeof UseArticlesModule>(
     '@/client/features/article/hooks/use-articles',

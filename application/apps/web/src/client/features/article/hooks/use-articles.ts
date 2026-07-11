@@ -17,7 +17,6 @@ import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../media-selection'
 
-// 媒体フィルタの選択状態は media-selection に切り出し、内部で使いつつここから再エクスポートする
 export { ALL_MEDIA, isAllMediaSelected, type SelectedMedia }
 export type ReadStatusType = 'all' | 'unread'
 
@@ -61,8 +60,6 @@ const DATE_PRESET_MAP: Record<DatePresetType, number> = {
 
 const isValidDateString = (value: string | null) => !!value && DATE_STRING_REGEX.test(value)
 
-// media クエリは繰り返しパラメータ（例: ?media=qiita&media=zenn）に統一する。
-// 無効値を除いたうえで重複を除去して順序を保ち、指定が無ければ「すべて」（全メディア）にする
 const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => {
   const selected = [...new Set(mediaParams.filter(isArticleMedia))]
   return selected.length > 0 ? selected : ALL_MEDIA

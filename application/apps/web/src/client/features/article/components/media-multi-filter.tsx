@@ -4,7 +4,7 @@ import {
   type ArticleMedia,
 } from '@trend-diary/domain/article/media'
 import { ToggleButton } from '@/client/components/ui/input/toggle-button'
-import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../media-selection'
+import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../model/media-selection'
 
 interface Props {
   selectedMedia: SelectedMedia
@@ -16,8 +16,8 @@ export default function MediaMultiFilter({ selectedMedia, onMediaChange }: Props
     const next = selectedMedia.includes(media)
       ? selectedMedia.filter((item) => item !== media)
       : [...selectedMedia, media]
-    // 最後の1件を外すと空になるため、その場合は「すべて」に戻して空の選択を作らない
-    onMediaChange(next.length > 0 ? next : ALL_MEDIA)
+    // 最後の1件は外せない（空選択を作らない）
+    if (next.length > 0) onMediaChange(next)
   }
 
   return (

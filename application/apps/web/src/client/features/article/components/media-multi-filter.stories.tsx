@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent } from 'storybook/test'
-import { ALL_MEDIA } from '../media-selection'
+import { ALL_MEDIA } from '../model/media-selection'
 import MediaMultiFilter from './media-multi-filter'
 
 const meta: Meta<typeof MediaMultiFilter> = {
@@ -82,15 +82,15 @@ export const SelectAll: Story = {
   },
 }
 
-export const DeselectLastReturnsToAll: Story = {
+export const CannotDeselectLast: Story = {
   args: {
     selectedMedia: ['qiita'],
     onMediaChange: fn(),
   },
   play: async ({ args, canvas, step }) => {
-    await step('最後の1件を外すと「すべて」（全メディア選択）に戻して通知する', async () => {
+    await step('選択が1件のときはその媒体を外せない（通知しない）', async () => {
       await userEvent.click(canvas.getByRole('button', { name: 'Qiita' }))
-      await expect(args.onMediaChange).toHaveBeenCalledWith(ALL_MEDIA)
+      await expect(args.onMediaChange).not.toHaveBeenCalled()
     })
   },
 }

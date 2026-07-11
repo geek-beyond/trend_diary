@@ -15,7 +15,7 @@ import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
 import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
-import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../media-selection'
+import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../model/media-selection'
 
 export { ALL_MEDIA, isAllMediaSelected, type SelectedMedia }
 export type ReadStatusType = 'all' | 'unread'

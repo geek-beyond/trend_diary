@@ -11,18 +11,15 @@ export default function GithubLinkToggle() {
   const isBusy = isLoading || isSubmitting
 
   const handleToggle = async (checked: boolean) => {
-    // disabled属性はフォーカスを奪いスクリーンリーダーへ状態が伝わらないため使わず、
-    // 状態確定前・処理中の操作はハンドラ側で無視する
+    // disabled属性はフォーカスを奪いスクリーンリーダーへ状態が伝わらないため使わず、処理中はここで弾く
     if (isBusy) return
 
     if (checked) {
-      // 連携はGitHubの認可画面への遷移で始まるため、fetchではなくフルページ遷移で開始する
       navigateToGithubLink()
       return
     }
 
     const succeeded = await unlink()
-    // 成功したら実際の連携状態を取り直し、トグルの表示をサーバーと一致させる
     if (succeeded) await mutate()
   }
 

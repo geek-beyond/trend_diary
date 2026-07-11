@@ -12,9 +12,8 @@ interface Props {
 export default function GithubLoginButton({ label = 'GitHubでログイン', redirectTo }: Props) {
   return (
     <Button asChild variant='outline' className='w-full'>
-      {/* OAuth開始はSPA遷移ではなくサーバーエンドポイントへのトップレベル遷移が必要なため、reloadDocumentでフルページ遷移させる */}
+      {/* Cookieを確立するOAuth開始はSPA内遷移では成立しないため、reloadDocumentでドキュメントごと遷移する */}
       <Link to={buildGithubLoginUrl(redirectTo)} reloadDocument>
-        {/* aria-hiddenでtitle要素をアクセシブル名から除外し、リンク名をラベルに保つ */}
         <SiGithub aria-hidden className='mr-2 size-4' />
         {label}
       </Link>

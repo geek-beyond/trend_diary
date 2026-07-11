@@ -13,17 +13,17 @@ export const GITHUB_AUTH_MESSAGES = {
   unlinkBlocked: GITHUB_UNLINK_BLOCKED_MESSAGE,
 }
 
-// OAuth認可はCookie設定を伴うトップレベル遷移で始める必要があるため、fetchではなくhrefで叩く
 const GITHUB_LOGIN_PATH = '/api/oauth/github/login'
 const GITHUB_LINK_PATH = '/api/oauth/github/link'
 
-// ログイン成功後に戻したい内部パスをクエリで引き継ぐ（検証はサーバー側で行う）
+// redirectはログイン成功後の戻り先で、オープンリダイレクト検証はサーバー側が担う
 export function buildGithubLoginUrl(redirectTo?: string): string {
   if (!redirectTo) return GITHUB_LOGIN_PATH
   return `${GITHUB_LOGIN_PATH}?redirect=${encodeURIComponent(redirectTo)}`
 }
 
-// window.locationの直参照はテストで差し替えられない(jsdomで再定義不可)ため、薄い関数に隔離する
+// 連携開始はCookieを伴うOAuthのトップレベル遷移が必要なため、fetchではなくフルページ遷移で叩く。
+// window.locationの直参照はjsdomで再定義できずテストで差し替えられないため、薄い関数に隔離する
 export function navigateToGithubLink(): void {
   window.location.assign(GITHUB_LINK_PATH)
 }

@@ -90,6 +90,23 @@ describe('GitHub OAuth認証', () => {
 
         expect(res.status).toBe(204)
       })
+
+      it('連携開始でGitHub認可URLへリダイレクトし、連携フロー種別と設定画面への戻り先Cookieを保存する', async () => {
+        const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+
+        const res = await get('/api/oauth/github/link', cookies)
+
+        expect(res.status).toBe(302)
+        expect(res.headers.get('Location') ?? '').toContain('/auth/v1/authorize')
+
+        const setCookies = getSetCookies(res)
+        expect(setCookies.find((cookie) => cookie.startsWith('oauth_flow='))).toContain(
+          'oauth_flow=link',
+        )
+        expect(setCookies.find((cookie) => cookie.startsWith('oauth_redirect_to='))).toContain(
+          'oauth_redirect_to=%2Fsettings',
+        )
+      })
     })
   })
 

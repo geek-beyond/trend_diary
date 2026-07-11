@@ -3,7 +3,8 @@ import { ClientError } from '@trend-diary/common/errors'
 import { createElement, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
-import { type MediaType, useReadArticle } from '@/client/features/article'
+import { ALL_MEDIA, type SelectedMedia, useReadArticle } from '@/client/features/article'
+import type * as UseArticlesModule from '@/client/features/article/hooks/use-articles'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useUnreadDigestion, { type Article } from './use-unread-digestion'
 
@@ -11,9 +12,16 @@ vi.mock('@/client/infrastructure/create-swr-fetcher', () => ({
   default: vi.fn(),
 }))
 
-vi.mock('@/client/features/article', () => ({
-  useReadArticle: vi.fn(),
-}))
+vi.mock('@/client/features/article', async () => {
+  const media = await vi.importActual<typeof UseArticlesModule>(
+    '@/client/features/article/hooks/use-articles',
+  )
+  return {
+    useReadArticle: vi.fn(),
+    ALL_MEDIA: media.ALL_MEDIA,
+    isAllMediaSelected: media.isAllMediaSelected,
+  }
+})
 
 const mockedCreateSWRFetcher = vi.mocked(createSWRFetcher)
 const mockedUseReadArticle = vi.mocked(useReadArticle)
@@ -83,7 +91,7 @@ describe('useUnreadDigestion', () => {
       total: 0,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
@@ -102,7 +110,7 @@ describe('useUnreadDigestion', () => {
       status: 201,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
     await waitFor(() => {
       expect(result.current.remainingCount).toBe(1)
@@ -136,9 +144,9 @@ describe('useUnreadDigestion', () => {
         total: 0,
       })
 
-    const initialProps: { selectedMedia: MediaType } = { selectedMedia: undefined }
+    const initialProps: { selectedMedia: SelectedMedia } = { selectedMedia: ALL_MEDIA }
     const { result, rerender } = renderHook(
-      ({ selectedMedia }: { selectedMedia: MediaType }) => useUnreadDigestion(selectedMedia),
+      ({ selectedMedia }: { selectedMedia: SelectedMedia }) => useUnreadDigestion(selectedMedia),
       {
         initialProps,
         wrapper,
@@ -149,7 +157,7 @@ describe('useUnreadDigestion', () => {
       expect(result.current.remainingCount).toBe(1)
     })
 
-    rerender({ selectedMedia: 'qiita' })
+    rerender({ selectedMedia: ['qiita', 'zenn'] })
 
     await waitFor(() => {
       expect(result.current.remainingCount).toBe(0)
@@ -169,7 +177,7 @@ describe('useUnreadDigestion', () => {
       total: 1,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
     await waitFor(() => {
       expect(result.current.remainingCount).toBe(1)
@@ -217,7 +225,7 @@ describe('useUnreadDigestion', () => {
       status: 201,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
     await waitFor(() => {
       expect(result.current.currentArticle?.articleId).toBe('article-1')
@@ -246,7 +254,7 @@ describe('useUnreadDigestion', () => {
       status: 201,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
     await waitFor(() => {
       expect(result.current.currentArticle?.articleId).toBe('article-1')
@@ -268,7 +276,7 @@ describe('useUnreadDigestion', () => {
       total: 1,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
     await waitFor(() => {
       expect(result.current.remainingCount).toBe(1)
@@ -286,7 +294,7 @@ describe('useUnreadDigestion', () => {
     it('未読一覧の取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
       mockUnreadDigestionGet.mockRejectedValueOnce(new Error('取得に失敗しました'))
 
-      const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+      const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
       await waitFor(() => {
         expect(result.current.hasError).toBe(true)
@@ -313,7 +321,7 @@ describe('useUnreadDigestion', () => {
       })
       mockSkipPost.mockRejectedValue(new ClientError('Unauthorized', 401))
 
-      const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
+      const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
       await waitFor(() => {
         expect(result.current.remainingCount).toBe(1)

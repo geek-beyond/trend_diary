@@ -134,6 +134,15 @@ describe('GET /api/articles', () => {
       expect(data.data[0].media).toBe('hatena')
     })
 
+    it('複数のmediaを指定して検索できる', async () => {
+      const res = await requestGetArticles('media=qiita&media=zenn')
+
+      expect(res.status).toBe(200)
+      const data: ArticleListResponse = await res.json()
+      expect(data.data).toHaveLength(2)
+      expect(data.data.map((article) => article.media).toSorted()).toEqual(['qiita', 'zenn'])
+    })
+
     it('read_statusパラメータを受け取る', async () => {
       const res = await requestGetArticles('read_status=1')
 

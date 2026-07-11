@@ -1,5 +1,5 @@
 import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
-import { MediaFilter, type MediaType as FilterMediaType } from '@/client/features/article'
+import { MediaMultiFilter, type SelectedMedia } from '@/client/features/article'
 import { InboxBody, InboxBodySkeleton, type InboxBodyProps } from '@/client/features/inbox'
 
 interface Props extends InboxBodyProps {
@@ -7,8 +7,8 @@ interface Props extends InboxBodyProps {
   hasError: boolean
   onRetry: () => void
   remainingCount: number
-  selectedMedia: FilterMediaType
-  onMediaChange: (media: FilterMediaType) => void
+  selectedMedia: SelectedMedia
+  onMediaChange: (media: SelectedMedia) => void
 }
 
 export default function InboxPage({
@@ -31,7 +31,7 @@ export default function InboxPage({
         <p className='mt-0.5 text-sm text-muted-foreground'>未読記事を1件ずつ確認できます。</p>
         <div className='mt-2'>
           <p className='mb-2 text-sm text-muted-foreground'>メディア</p>
-          <MediaFilter selectedMedia={selectedMedia} onMediaChange={onMediaChange} />
+          <MediaMultiFilter selectedMedia={selectedMedia} onMediaChange={onMediaChange} />
         </div>
         <p className='mt-1 text-sm text-muted-foreground'>残り {remainingCount} 件</p>
 

@@ -33,4 +33,10 @@ describe('SettingsPage', () => {
 
     expect(screen.getByRole('switch', { name: 'GitHub連携を有効にする' })).toBeInTheDocument()
   })
+
+  it('GitHub連携エラーが渡されたらメッセージを表示する', () => {
+    render(createElement(SettingsPage, { githubLinkError: 'GitHub連携に失敗しました。' }))
+
+    expect(screen.getByText('GitHub連携に失敗しました。')).toBeInTheDocument()
+  })
 })

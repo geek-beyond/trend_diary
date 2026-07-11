@@ -43,6 +43,16 @@ describe('GitHub OAuth認証', () => {
       expect(res.headers.get('Location')).toBe('/login?oauthError=github')
     })
 
+    it('連携フロー(戻り先が設定画面)の失敗はログイン状態を保ったまま設定画面へ戻す', async () => {
+      const res = await get(
+        '/api/auth/oauth/github/callback?error=access_denied',
+        'oauth_redirect_to=%2Fsettings',
+      )
+
+      expect(res.status).toBe(302)
+      expect(res.headers.get('Location')).toBe('/settings?oauthError=github')
+    })
+
     it('検証情報のない不正なcodeのcallbackはログイン画面へ戻す', async () => {
       const res = await get('/api/auth/oauth/github/callback?code=invalid-code')
 

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { type ComponentProps, createElement } from 'react'
 import { MemoryRouter } from 'react-router'
+import { ALL_MEDIA } from '@/client/features/article'
 import InboxPage from './page'
 
 type InboxPageProps = ComponentProps<typeof InboxPage>
@@ -20,7 +21,7 @@ const buildProps = (overrides: Partial<InboxPageProps> = {}): InboxPageProps => 
   onRead: vi.fn().mockResolvedValue(undefined),
   onLater: vi.fn(),
   remainingCount: 0,
-  selectedMedia: undefined,
+  selectedMedia: ALL_MEDIA,
   onMediaChange: vi.fn(),
   ...overrides,
 })

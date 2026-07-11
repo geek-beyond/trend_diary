@@ -2,7 +2,7 @@ import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-s
 import { useState } from 'react'
 import useSWR from 'swr'
 import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
-import { type SelectedMedia, useReadArticle } from '@/client/features/article'
+import { isAllMediaSelected, type SelectedMedia, useReadArticle } from '@/client/features/article'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useCompletionCelebration from './use-completion-celebration'
 
@@ -34,7 +34,7 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
     isValidating,
     mutate,
   } = useSWR<UnreadDigestionResponse>(swrKey, async () => {
-    const query = selectedMedia ? { media: selectedMedia } : {}
+    const query = isAllMediaSelected(selectedMedia) ? {} : { media: selectedMedia }
     const result = await apiCall<UnreadDigestionResponse>(() =>
       client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
     )

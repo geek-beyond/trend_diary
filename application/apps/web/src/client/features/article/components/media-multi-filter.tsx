@@ -4,7 +4,11 @@ import {
   type ArticleMedia,
 } from '@trend-diary/domain/article/media'
 import { ToggleButton } from '@/client/components/ui/input/toggle-button'
-import type { SelectedMedia } from '@/client/features/article/hooks/use-articles'
+import {
+  ALL_MEDIA,
+  isAllMediaSelected,
+  type SelectedMedia,
+} from '@/client/features/article/hooks/use-articles'
 
 interface Props {
   selectedMedia: SelectedMedia
@@ -12,14 +16,12 @@ interface Props {
 }
 
 export default function MediaMultiFilter({ selectedMedia, onMediaChange }: Props) {
-  const selected = selectedMedia ?? []
-
   const toggleMedia = (media: ArticleMedia) => {
-    const next = selected.includes(media)
-      ? selected.filter((item) => item !== media)
-      : [...selected, media]
-    // 未選択（すべて）は undefined で表す
-    onMediaChange(next.length > 0 ? next : undefined)
+    const next = selectedMedia.includes(media)
+      ? selectedMedia.filter((item) => item !== media)
+      : [...selectedMedia, media]
+    // 1件も選ばれていない状態は作らず、全解除は「すべて」（全メディア選択）に戻す
+    onMediaChange(next.length > 0 ? next : ALL_MEDIA)
   }
 
   return (
@@ -27,15 +29,15 @@ export default function MediaMultiFilter({ selectedMedia, onMediaChange }: Props
       <ToggleButton
         label='すべて'
         dataSlot='media-filter-all'
-        isSelected={selected.length === 0}
-        onClick={() => onMediaChange(undefined)}
+        isSelected={isAllMediaSelected(selectedMedia)}
+        onClick={() => onMediaChange(ALL_MEDIA)}
       />
       {ARTICLE_MEDIA.map((media) => (
         <ToggleButton
           key={media}
           label={ARTICLE_MEDIA_LABELS[media]}
           dataSlot={`media-filter-${media}`}
-          isSelected={selected.includes(media)}
+          isSelected={selectedMedia.includes(media)}
           onClick={() => toggleMedia(media)}
         />
       ))}

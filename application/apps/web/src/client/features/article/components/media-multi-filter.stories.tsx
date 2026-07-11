@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent } from 'storybook/test'
+import { ALL_MEDIA } from '../hooks/use-articles'
 import MediaMultiFilter from './media-multi-filter'
 
 const meta: Meta<typeof MediaMultiFilter> = {
@@ -14,14 +15,15 @@ type Story = StoryObj<typeof MediaMultiFilter>
 
 export const AllSelected: Story = {
   args: {
-    selectedMedia: undefined,
+    selectedMedia: ALL_MEDIA,
     onMediaChange: fn(),
   },
   play: async ({ canvas, step }) => {
-    await step('未選択時は「すべて」が選択状態で表示される', async () => {
+    await step('全メディア選択（すべて）時は「すべて」と各媒体が選択状態で表示される', async () => {
       await expect(canvas.getByRole('button', { name: 'すべて' })).toHaveClass(/bg-blue-50/)
-      await expect(canvas.getByRole('button', { name: 'Qiita' })).not.toHaveClass(/bg-blue-50/)
-      await expect(canvas.getByRole('button', { name: 'Zenn' })).not.toHaveClass(/bg-blue-50/)
+      await expect(canvas.getByRole('button', { name: 'Qiita' })).toHaveClass(/bg-blue-50/)
+      await expect(canvas.getByRole('button', { name: 'Zenn' })).toHaveClass(/bg-blue-50/)
+      await expect(canvas.getByRole('button', { name: 'はてブ' })).toHaveClass(/bg-blue-50/)
     })
   },
 }
@@ -67,15 +69,28 @@ export const RemoveMedia: Story = {
   },
 }
 
-export const ClearAll: Story = {
+export const SelectAll: Story = {
   args: {
-    selectedMedia: ['qiita', 'zenn'],
+    selectedMedia: ['qiita'],
     onMediaChange: fn(),
   },
   play: async ({ args, canvas, step }) => {
-    await step('「すべて」を押すと選択をすべて解除して通知する', async () => {
+    await step('「すべて」を押すと全メディアを選択して通知する', async () => {
       await userEvent.click(canvas.getByRole('button', { name: 'すべて' }))
-      await expect(args.onMediaChange).toHaveBeenCalledWith(undefined)
+      await expect(args.onMediaChange).toHaveBeenCalledWith(ALL_MEDIA)
+    })
+  },
+}
+
+export const DeselectLastReturnsToAll: Story = {
+  args: {
+    selectedMedia: ['qiita'],
+    onMediaChange: fn(),
+  },
+  play: async ({ args, canvas, step }) => {
+    await step('最後の1件を外すと「すべて」（全メディア選択）に戻して通知する', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Qiita' }))
+      await expect(args.onMediaChange).toHaveBeenCalledWith(ALL_MEDIA)
     })
   },
 }

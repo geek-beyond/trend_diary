@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import type { MockedFunction } from 'vitest'
 import getApiClientForClient from '@/infrastructure/api'
-import useArticles, { type Article } from './use-articles'
+import useArticles, { ALL_MEDIA, type Article } from './use-articles'
 
 // window.matchMediaのモック
 Object.defineProperty(window, 'matchMedia', {
@@ -492,7 +492,7 @@ describe('useArticles', () => {
 
       await act(async () => {
         result.current.handleFiltersApply({
-          media: undefined,
+          media: ALL_MEDIA,
           readStatus: 'all',
           datePreset: 'today',
         })
@@ -1101,7 +1101,7 @@ describe('useArticles', () => {
 
       await act(async () => {
         result.current.handleFiltersApply({
-          media: undefined,
+          media: ALL_MEDIA,
           readStatus: 'all',
           datePreset: 'today',
         })

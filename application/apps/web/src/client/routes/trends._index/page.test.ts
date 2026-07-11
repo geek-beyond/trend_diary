@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { type ComponentProps, createElement } from 'react'
-import type { Article } from '@/client/features/article'
+import { ALL_MEDIA, type Article } from '@/client/features/article'
 import TrendsPage from './page'
 
 // FilterPanel が参照する matchMedia を jsdom 向けに補う
@@ -40,7 +40,7 @@ const buildProps = (overrides: Partial<TrendsPageProps> = {}): TrendsPageProps =
   onRetry: vi.fn(),
   page: 1,
   totalPages: 1,
-  selectedMedia: undefined,
+  selectedMedia: ALL_MEDIA,
   selectedReadStatus: 'all',
   selectedDatePreset: 'today',
   toNextPage: vi.fn(),
@@ -94,7 +94,7 @@ describe('TrendsPage', () => {
     fireEvent.click(resetButton)
 
     expect(onApplyFilters).toHaveBeenCalledWith({
-      media: undefined,
+      media: ALL_MEDIA,
       readStatus: 'all',
       datePreset: 'today',
     })

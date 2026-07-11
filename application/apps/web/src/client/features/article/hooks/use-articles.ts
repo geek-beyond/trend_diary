@@ -62,10 +62,13 @@ const DATE_PRESET_MAP: Record<DatePresetType, number> = {
 
 const isValidDateString = (value: string | null) => !!value && DATE_STRING_REGEX.test(value)
 
-// media クエリは繰り返しパラメータ（例: ?media=qiita&media=zenn）。無効値を除き重複を除去して順序を保つ
-const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => [
-  ...new Set(mediaParams.filter(isArticleMedia)),
-]
+// media クエリは繰り返しパラメータ（例: ?media=qiita&media=zenn）を基本とする。
+// URL 共有等でカンマ区切り（?media=qiita,zenn）が渡ってもバックエンドと同様に解釈できるよう分割し、
+// 無効値を除いたうえで重複を除去して順序を保つ
+const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => {
+  const flattened = mediaParams.flatMap((param) => param.split(',').map((value) => value.trim()))
+  return [...new Set(flattened.filter(isArticleMedia))]
+}
 
 const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => {
   const fromDateResult = addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset])

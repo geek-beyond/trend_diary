@@ -99,6 +99,14 @@ describe('記事検索スキーマ', () => {
       expect(articleQuerySchema.parse({ media: '' }).media).toBeUndefined()
     })
 
+    it('重複したmedia値を除去すること', () => {
+      expect(articleQuerySchema.parse({ media: 'qiita,qiita' }).media).toEqual(['qiita'])
+      expect(articleQuerySchema.parse({ media: ['qiita', 'zenn', 'qiita'] }).media).toEqual([
+        'qiita',
+        'zenn',
+      ])
+    })
+
     it('無効なmedia値を拒否すること', () => {
       expect(() => {
         articleQuerySchema.parse({

@@ -5,6 +5,11 @@ import { SUPPORTED_ARTICLE_URL_PATTERN } from '../pom/constants'
 import { TrendsPage } from '../pom/trends-page'
 
 const ARTICLE_COUNT = 10
+// 同一シナリオをデバイス別に検証するため、デスクトップ(Desktop Chrome 既定)とモバイルを表で並べる
+const VIEWPORTS = {
+  デスクトップ: { width: 1280, height: 720 },
+  モバイル: { width: 375, height: 667 },
+}
 
 test.describe('記事閲覧シナリオ', () => {
   const createdArticleIds: bigint[] = []
@@ -23,39 +28,45 @@ test.describe('記事閲覧シナリオ', () => {
     await articleHelper.cleanUp(rdb, createdArticleIds)
   })
 
-  test.beforeEach(async ({ page }) => {
-    const trendsPage = new TrendsPage(page)
-    await trendsPage.goto()
-    await trendsPage.waitForArticleCards()
-  })
+  for (const [device, viewport] of Object.entries(VIEWPORTS)) {
+    test.describe(device, () => {
+      test.use({ viewport })
 
-  test('記事一覧から記事詳細を閲覧し、再び記事一覧に戻る', async ({ page }) => {
-    const trendsPage = new TrendsPage(page)
-    const articleCard = trendsPage.firstArticleCard()
-    await expect(articleCard).toBeVisible()
+      test.beforeEach(async ({ page }) => {
+        const trendsPage = new TrendsPage(page)
+        await trendsPage.goto()
+        await trendsPage.waitForArticleCards()
+      })
 
-    await trendsPage.openFirstArticle()
+      test('記事一覧から記事詳細を閲覧し、再び記事一覧に戻る', async ({ page }) => {
+        const trendsPage = new TrendsPage(page)
+        const articleCard = trendsPage.firstArticleCard()
+        await expect(articleCard).toBeVisible()
 
-    const drawer = new ArticleDrawer(page)
-    await drawer.waitOpen()
-    await drawer.close()
-    await drawer.expectClosed()
+        await trendsPage.openFirstArticle()
 
-    // 記事一覧に戻っていることを確認(記事カードが表示されていること)
-    await expect(articleCard).toBeVisible()
-  })
+        const drawer = new ArticleDrawer(page)
+        await drawer.waitOpen()
+        await drawer.close()
+        await drawer.expectClosed()
 
-  test('記事一覧から記事詳細を閲覧し、その実際の記事を閲覧する', async ({ page }) => {
-    const drawer = new ArticleDrawer(page)
-    await drawer.mockWindowOpen()
+        // 記事一覧に戻っていることを確認(記事カードが表示されていること)
+        await expect(articleCard).toBeVisible()
+      })
 
-    const trendsPage = new TrendsPage(page)
-    await trendsPage.openFirstArticle()
-    await drawer.waitOpen()
-    await drawer.clickReadArticle()
-    const openedUrl = await drawer.getLastOpenedUrl()
+      test('記事一覧から記事詳細を閲覧し、その実際の記事を閲覧する', async ({ page }) => {
+        const drawer = new ArticleDrawer(page)
+        await drawer.mockWindowOpen()
 
-    // 記事URLが開かれることを確認
-    expect(openedUrl).toMatch(SUPPORTED_ARTICLE_URL_PATTERN)
-  })
+        const trendsPage = new TrendsPage(page)
+        await trendsPage.openFirstArticle()
+        await drawer.waitOpen()
+        await drawer.clickReadArticle()
+        const openedUrl = await drawer.getLastOpenedUrl()
+
+        // 記事URLが開かれることを確認
+        expect(openedUrl).toMatch(SUPPORTED_ARTICLE_URL_PATTERN)
+      })
+    })
+  }
 })

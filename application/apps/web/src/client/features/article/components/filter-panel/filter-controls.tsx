@@ -5,7 +5,7 @@ import {
   type FilterParams,
   type ReadStatusType,
 } from '../../hooks/use-articles'
-import MediaFilter from '../media-filter'
+import MediaMultiFilter from '../media-multi-filter'
 import { FilterField, type FilterVariant } from './filter-field'
 
 const DATE_PRESET_LABEL_MAP: Record<DatePresetType, string> = {
@@ -35,7 +35,10 @@ export function FilterControls({ variant, filters, isLoggedIn, onChange }: Filte
   return (
     <>
       <FilterField label='媒体' variant={variant}>
-        <MediaFilter selectedMedia={filters.media} onMediaChange={(media) => onChange({ media })} />
+        <MediaMultiFilter
+          selectedMedia={filters.media}
+          onMediaChange={(media) => onChange({ media })}
+        />
       </FilterField>
       <FilterField label='日付' variant={variant}>
         <ToggleGroup

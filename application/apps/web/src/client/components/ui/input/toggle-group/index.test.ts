@@ -52,7 +52,7 @@ describe('ToggleGroup', () => {
       expect(onSelect).toHaveBeenCalledWith('unread')
     })
 
-    it('iconはそれを指定したoptionにのみ描画され、未指定のoptionには描画されない', () => {
+    it('iconは指定したoptionにのみ描画され、未指定のoptionには描画されない', () => {
       render(
         createElement(ToggleGroup<string>, {
           options: mixedIconOptions,

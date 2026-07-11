@@ -7,7 +7,7 @@ import {
   offsetPaginationSchema,
 } from '@trend-diary/common/pagination/schema'
 import { wrapAsyncCall } from '@trend-diary/common/result'
-import { type ArticleMedia, isArticleMedia } from '@trend-diary/domain/article/media'
+import { isArticleMedia } from '@trend-diary/domain/article/media'
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -15,8 +15,9 @@ import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
 import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
+import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../model/media-selection'
 
-export type MediaType = ArticleMedia | undefined
+export { ALL_MEDIA, isAllMediaSelected, type SelectedMedia }
 export type ReadStatusType = 'all' | 'unread'
 
 // isRead を含む記事型(フロントエンドではarticleIdをstringに統一)
@@ -31,13 +32,13 @@ export type DatePresetType = (typeof DATE_PRESETS)[number]
 interface Params {
   page: number
   limit: number
-  media: MediaType
+  media: SelectedMedia
   readStatus: ReadStatusType
   datePreset: DatePresetType
 }
 
 export interface FilterParams {
-  media: MediaType
+  media: SelectedMedia
   readStatus: ReadStatusType
   datePreset: DatePresetType
 }
@@ -58,6 +59,11 @@ const DATE_PRESET_MAP: Record<DatePresetType, number> = {
 }
 
 const isValidDateString = (value: string | null) => !!value && DATE_STRING_REGEX.test(value)
+
+const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => {
+  const selected = [...new Set(mediaParams.filter(isArticleMedia))]
+  return selected.length > 0 ? selected : ALL_MEDIA
+}
 
 const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => {
   const fromDateResult = addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset])
@@ -121,7 +127,7 @@ export default function useArticles(isLoggedIn = false) {
 
   const pageParam = searchParams.get('page')
   const limitParam = searchParams.get('limit')
-  const mediaParam = searchParams.get('media')
+  const mediaParams = searchParams.getAll('media')
   const readStatusParam = searchParams.get('read_status')
   const fromParam = searchParams.get('from')
   const toParam = searchParams.get('to')
@@ -139,7 +145,7 @@ export default function useArticles(isLoggedIn = false) {
   const params: Params = {
     page: validPage,
     limit: validLimit,
-    media: mediaParam && isArticleMedia(mediaParam) ? mediaParam : undefined,
+    media: parseSelectedMedia(mediaParams),
     readStatus: readStatusParam === '0' ? 'unread' : 'all',
     datePreset: parseDatePreset(fromParam, toParam, todayJstDateString),
   }
@@ -150,7 +156,7 @@ export default function useArticles(isLoggedIn = false) {
     from: dateRange.from,
     page: params.page,
     limit: params.limit,
-    ...(params.media && { media: params.media }),
+    ...(!isAllMediaSelected(params.media) && { media: params.media }),
     ...(params.readStatus === 'unread' && isLoggedIn && { read_status: '0' as const }),
   }
 
@@ -267,18 +273,6 @@ export default function useArticles(isLoggedIn = false) {
     handlePageChange(newPage)
   }
 
-  const handleMediaChange = (media: MediaType) => {
-    const newParams = new URLSearchParams(searchParams)
-    if (media) {
-      newParams.set('media', media)
-    } else {
-      newParams.delete('media')
-    }
-    clearPageParam(newParams)
-
-    setSearchParams(newParams)
-  }
-
   const handleReadStatusChange = (readStatus: ReadStatusType) => {
     const newParams = new URLSearchParams(searchParams)
     if (readStatus === 'unread') {
@@ -293,10 +287,9 @@ export default function useArticles(isLoggedIn = false) {
 
   const handleFiltersApply = ({ media, readStatus, datePreset }: FilterParams) => {
     const newParams = new URLSearchParams(searchParams)
-    if (media) {
-      newParams.set('media', media)
-    } else {
-      newParams.delete('media')
+    newParams.delete('media')
+    if (!isAllMediaSelected(media)) {
+      media.forEach((value) => newParams.append('media', value))
     }
 
     if (readStatus === 'unread') {
@@ -324,7 +317,6 @@ export default function useArticles(isLoggedIn = false) {
     setSearchParams,
     toNextPage,
     toPreviousPage,
-    handleMediaChange,
     handleReadStatusChange,
     handleFiltersApply,
     selectedMedia: params.media,

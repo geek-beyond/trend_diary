@@ -27,7 +27,7 @@ export interface Query {
   getUnreadDigestionArticles(
     activeUserId: bigint,
     targetDateJst: string,
-    media?: ArticleMedia,
+    media?: ArticleMedia[],
   ): Promise<Result<UnreadDigestionResult, ServerError>>
 
   getDailyDiary(

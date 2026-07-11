@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Button } from '@/client/components/shadcn/button'
 import { cn } from '@/client/components/shadcn/lib/utils'
 
@@ -5,6 +6,7 @@ export interface ToggleOption<T> {
   value: T
   label: string
   dataSlot: string
+  icon?: ReactNode
 }
 
 interface Props<T> {
@@ -44,6 +46,7 @@ export function ToggleGroup<T>({
             onClick={() => onSelect(option.value)}
             data-slot={option.dataSlot}
           >
+            {option.icon}
             {option.label}
           </Button>
         )

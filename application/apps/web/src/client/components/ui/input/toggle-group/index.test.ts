@@ -8,6 +8,15 @@ const options: ToggleOption<string>[] = [
   { value: 'unread', label: '未読', dataSlot: 'toggle-unread' },
 ]
 
+const optionsWithIcon: ToggleOption<string>[] = [
+  {
+    value: 'all',
+    label: 'すべて',
+    dataSlot: 'toggle-all',
+    icon: createElement('svg', { 'data-testid': 'all-icon' }),
+  },
+]
+
 describe('ToggleGroup', () => {
   describe('正常系', () => {
     it('選択中の値のボタンにのみ選択スタイルとaria-pressedが当たる', () => {
@@ -42,6 +51,20 @@ describe('ToggleGroup', () => {
       fireEvent.click(screen.getByRole('button', { name: '未読' }))
 
       expect(onSelect).toHaveBeenCalledWith('unread')
+    })
+
+    it('iconが指定されたoptionはlabelと共にiconも描画する', () => {
+      render(
+        createElement(ToggleGroup<string>, {
+          options: optionsWithIcon,
+          selectedValue: 'all',
+          onSelect: vi.fn(),
+          dataSlot: 'toggle-group',
+        }),
+      )
+
+      const button = screen.getByRole('button', { name: 'すべて' })
+      expect(button).toContainElement(screen.getByTestId('all-icon'))
     })
   })
 })

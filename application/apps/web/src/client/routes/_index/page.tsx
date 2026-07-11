@@ -1,26 +1,17 @@
 import { BookOpen, Calendar, Monitor, Smartphone, TrendingUp, Users } from 'lucide-react'
-import type { MetaFunction } from 'react-router'
-import { mergeMeta, pageMeta } from '@/client/lib/meta'
-import Footer from '../components/ui/layout/footer'
-import LandingHeader from '../components/ui/layout/landing-header'
-import { AnchorLink } from '../components/ui/navigation/link'
-import { ClipText } from '../components/ui/typography/clip-text'
+import Footer from '@/client/components/ui/layout/footer'
+import LandingHeader from '@/client/components/ui/layout/landing-header'
+import { AnchorLink } from '@/client/components/ui/navigation/link'
+import { ClipText } from '@/client/components/ui/typography/clip-text'
 
-export const meta: MetaFunction = ({ matches, location }) =>
-  mergeMeta(
-    matches,
-    pageMeta({
-      title: 'TrendDiary | 技術トレンドを効率的に管理',
-      description:
-        'QiitaやZennの記事を日記のように管理し、技術トレンドを見逃さない。技術者向けのトレンド管理ブラウザアプリです。',
-      path: location.pathname,
-    }),
-  )
+interface Props {
+  isLoggedIn: boolean
+}
 
-const TrendDiaryTopPage = () => {
+export default function TrendDiaryTopPage({ isLoggedIn }: Props) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-muted to-background'>
-      <LandingHeader />
+      <LandingHeader isLoggedIn={isLoggedIn} />
 
       {/* Hero Section */}
       <section className='relative overflow-hidden'>
@@ -52,12 +43,21 @@ const TrendDiaryTopPage = () => {
               >
                 今すぐ始める
               </AnchorLink>
-              <AnchorLink
-                to='/login'
-                className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-border text-foreground rounded-lg text-base sm:text-lg font-semibold hover:bg-muted transition-all duration-200'
-              >
-                ログイン
-              </AnchorLink>
+              {isLoggedIn ? (
+                <AnchorLink
+                  to='/trends'
+                  className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-border text-foreground rounded-lg text-base sm:text-lg font-semibold hover:bg-muted transition-all duration-200'
+                >
+                  トレンド一覧へ
+                </AnchorLink>
+              ) : (
+                <AnchorLink
+                  to='/login'
+                  className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-border text-foreground rounded-lg text-base sm:text-lg font-semibold hover:bg-muted transition-all duration-200'
+                >
+                  ログイン
+                </AnchorLink>
+              )}
             </div>
           </div>
         </div>
@@ -168,12 +168,21 @@ const TrendDiaryTopPage = () => {
           <p className='text-xl text-blue-100 mb-8 max-w-2xl mx-auto'>
             効率的な技術トレンドのキャッチアップを体験してください
           </p>
-          <AnchorLink
-            to='/signup'
-            className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
-          >
-            <ClipText text='無料でアカウントを作成' />
-          </AnchorLink>
+          {isLoggedIn ? (
+            <AnchorLink
+              to='/trends'
+              className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
+            >
+              <ClipText text='トレンド一覧へ' />
+            </AnchorLink>
+          ) : (
+            <AnchorLink
+              to='/signup'
+              className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
+            >
+              <ClipText text='無料でアカウントを作成' />
+            </AnchorLink>
+          )}
         </div>
       </section>
 
@@ -181,5 +190,3 @@ const TrendDiaryTopPage = () => {
     </div>
   )
 }
-
-export default TrendDiaryTopPage

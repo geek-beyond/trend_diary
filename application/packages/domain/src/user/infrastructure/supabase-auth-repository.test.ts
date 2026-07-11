@@ -1,5 +1,6 @@
 import {
   AuthInvalidCredentialsError,
+  type OAuthResponse,
   type Session,
   type SupabaseClient,
   type User,
@@ -46,6 +47,13 @@ const buildSupabaseSession = (overrides: Partial<Session> = {}): Session => ({
 describe('SupabaseAuthRepository', () => {
   const client = mockDeep<SupabaseClient>()
   const repository = new SupabaseAuthRepository(client)
+
+  // linkIdentityはOAuthとIDトークンのoverloadを持ち、モックの解決値は後者の型に推論されるため、
+  // OAuth側の戻り値でモックする際はここで型を橋渡しする
+  const resolveLinkIdentityMock = (value: DeepPartial<OAuthResponse>): void => {
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- overloadの一方(OAuth)の戻り値型でモックする手段が他にないためです
+    client.auth.linkIdentity.mockResolvedValue(value as never)
+  }
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -730,6 +738,295 @@ describe('SupabaseAuthRepository', () => {
         client.auth.passkey.delete.mockRejectedValue(new Error('network down'))
 
         const result = await repository.deletePasskey('passkey-1')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('startOAuthAuthorization', () => {
+    describe('正常系', () => {
+      it('ブラウザ遷移させずに認可URLを返すこと', async () => {
+        resolveAuthMock(client.auth.signInWithOAuth, {
+          data: { provider: 'github', url: 'https://example.supabase.co/auth/v1/authorize' },
+          error: null,
+        })
+
+        const result = await repository.startOAuthAuthorization(
+          'github',
+          'https://app.example.com/callback',
+        )
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.url).toBe('https://example.supabase.co/auth/v1/authorize')
+        }
+        expect(client.auth.signInWithOAuth).toHaveBeenCalledWith({
+          provider: 'github',
+          options: { redirectTo: 'https://app.example.com/callback', skipBrowserRedirect: true },
+        })
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.signInWithOAuth, {
+          data: { provider: 'github', url: null },
+          error: { message: 'provider is not enabled', name: 'AuthError', status: 400 },
+        })
+
+        const result = await repository.startOAuthAuthorization('github', 'https://a.example.com')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.signInWithOAuth.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.startOAuthAuthorization('github', 'https://a.example.com')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('exchangeOAuthCode', () => {
+    describe('正常系', () => {
+      it('認可コードをセッションに交換しユーザーを返すこと', async () => {
+        const supabaseUser = buildSupabaseUser()
+        const supabaseSession = buildSupabaseSession({ user: supabaseUser })
+        resolveAuthMock(client.auth.exchangeCodeForSession, {
+          data: { user: supabaseUser, session: supabaseSession },
+          error: null,
+        })
+
+        const result = await repository.exchangeOAuthCode('auth-code')
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.user.id).toBe(supabaseUser.id)
+          expect(result.value.session.accessToken).toBe('access-token')
+        }
+        expect(client.auth.exchangeCodeForSession).toHaveBeenCalledWith('auth-code')
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合401のClientErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.exchangeCodeForSession, {
+          data: { user: null, session: null },
+          error: { message: 'invalid flow state', name: 'AuthError', status: 400 },
+        })
+
+        const result = await repository.exchangeOAuthCode('expired-code')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ClientError)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('userが欠落している場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.exchangeCodeForSession, {
+          data: { user: null, session: null },
+          error: null,
+        })
+
+        const result = await repository.exchangeOAuthCode('auth-code')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+
+      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.exchangeCodeForSession.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.exchangeOAuthCode('auth-code')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('startOAuthLink', () => {
+    describe('正常系', () => {
+      it('ブラウザ遷移させずに連携用の認可URLを返すこと', async () => {
+        resolveLinkIdentityMock({
+          data: { provider: 'github', url: 'https://example.supabase.co/auth/v1/authorize' },
+          error: null,
+        })
+
+        const result = await repository.startOAuthLink('github', 'https://app.example.com/callback')
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.url).toBe('https://example.supabase.co/auth/v1/authorize')
+        }
+        expect(client.auth.linkIdentity).toHaveBeenCalledWith({
+          provider: 'github',
+          options: { redirectTo: 'https://app.example.com/callback', skipBrowserRedirect: true },
+        })
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合ServerErrorを返すこと', async () => {
+        resolveLinkIdentityMock({
+          data: { provider: 'github', url: null },
+          error: { message: 'manual linking is disabled', name: 'AuthError', status: 400 },
+        })
+
+        const result = await repository.startOAuthLink('github', 'https://a.example.com')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.linkIdentity.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.startOAuthLink('github', 'https://a.example.com')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('listIdentities', () => {
+    describe('正常系', () => {
+      it('プロバイダ名の一覧に変換して返すこと', async () => {
+        resolveAuthMock(client.auth.getUserIdentities, {
+          data: {
+            identities: [
+              { identity_id: 'identity-1', provider: 'email' },
+              { identity_id: 'identity-2', provider: 'github' },
+            ],
+          },
+          error: null,
+        })
+
+        const result = await repository.listIdentities()
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toEqual([{ provider: 'email' }, { provider: 'github' }])
+        }
+      })
+    })
+
+    describe('準正常系', () => {
+      it('errorが存在する場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.getUserIdentities, {
+          data: null,
+          error: { message: 'not authenticated', name: 'AuthError', status: 401 },
+        })
+
+        const result = await repository.listIdentities()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.getUserIdentities.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.listIdentities()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
+
+  describe('unlinkIdentity', () => {
+    const githubIdentity = { identity_id: 'identity-2', provider: 'github' }
+
+    describe('正常系', () => {
+      it('対象プロバイダのidentityを解除すること', async () => {
+        resolveAuthMock(client.auth.getUserIdentities, {
+          data: { identities: [{ identity_id: 'identity-1', provider: 'email' }, githubIdentity] },
+          error: null,
+        })
+        resolveAuthMock(client.auth.unlinkIdentity, { data: null, error: null })
+
+        const result = await repository.unlinkIdentity('github')
+
+        expect(result.isOk()).toBe(true)
+        expect(client.auth.unlinkIdentity).toHaveBeenCalledWith(githubIdentity)
+      })
+    })
+
+    describe('準正常系', () => {
+      it('対象プロバイダのidentityが無い場合404のClientErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.getUserIdentities, {
+          data: { identities: [{ identity_id: 'identity-1', provider: 'email' }] },
+          error: null,
+        })
+
+        const result = await repository.unlinkIdentity('github')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ClientError)
+        }
+        expect(client.auth.unlinkIdentity).not.toHaveBeenCalled()
+      })
+
+      it('解除がerrorを返す場合ServerErrorを返すこと', async () => {
+        resolveAuthMock(client.auth.getUserIdentities, {
+          data: { identities: [githubIdentity] },
+          error: null,
+        })
+        resolveAuthMock(client.auth.unlinkIdentity, {
+          data: null,
+          error: { message: 'unlink failed', name: 'AuthError', status: 400 },
+        })
+
+        const result = await repository.unlinkIdentity('github')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('一覧取得が例外を投げる場合ServerErrorを返すこと', async () => {
+        client.auth.getUserIdentities.mockRejectedValue(new Error('network down'))
+
+        const result = await repository.unlinkIdentity('github')
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {

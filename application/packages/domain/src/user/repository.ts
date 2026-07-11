@@ -5,6 +5,9 @@ import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,
   AuthenticationUser,
+  LinkedIdentity,
+  OAuthAuthorization,
+  OAuthProvider,
   PasskeyChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
@@ -120,4 +123,35 @@ export interface AuthRepository {
    * ログイン中ユーザーのpasskeyを1件削除する（要認証セッション）
    */
   deletePasskey(passkeyId: string): Promise<Result<void, ServerError>>
+
+  /**
+   * OAuthログインの認可URLを発行する（未認証で可）。redirectToは認可後に戻るコールバックURL
+   */
+  startOAuthAuthorization(
+    provider: OAuthProvider,
+    redirectTo: string,
+  ): Promise<Result<OAuthAuthorization, ServerError>>
+
+  /**
+   * OAuthコールバックの認可コードをセッションに交換する（未認証で可）
+   */
+  exchangeOAuthCode(code: string): Promise<Result<AuthLoginResult, ClientError | ServerError>>
+
+  /**
+   * ログイン中ユーザーへOAuthアカウントを連携する認可URLを発行する（要認証セッション）
+   */
+  startOAuthLink(
+    provider: OAuthProvider,
+    redirectTo: string,
+  ): Promise<Result<OAuthAuthorization, ServerError>>
+
+  /**
+   * ログイン中ユーザーのログイン手段一覧を取得する（要認証セッション）
+   */
+  listIdentities(): Promise<Result<LinkedIdentity[], ServerError>>
+
+  /**
+   * ログイン中ユーザーからOAuth連携を解除する（要認証セッション）
+   */
+  unlinkIdentity(provider: OAuthProvider): Promise<Result<void, ClientError | ServerError>>
 }

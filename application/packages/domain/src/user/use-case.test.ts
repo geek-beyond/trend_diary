@@ -637,4 +637,252 @@ describe('AuthUseCase', () => {
       })
     })
   })
+
+  describe('startGithubLogin', () => {
+    describe('正常系', () => {
+      it('githubプロバイダで認可URLを発行すること', async () => {
+        repositoryMock.startOAuthAuthorization.mockResolvedValue(
+          ok({ url: 'https://github.com/login/oauth/authorize?state=xxx' }),
+        )
+
+        const result = await useCase.startGithubLogin('https://app.example.com/callback')
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.url).toBe('https://github.com/login/oauth/authorize?state=xxx')
+        }
+        expect(repositoryMock.startOAuthAuthorization).toHaveBeenCalledWith(
+          'github',
+          'https://app.example.com/callback',
+        )
+      })
+    })
+
+    describe('異常系', () => {
+      it('認可URLの発行が失敗した場合はエラーを返すこと', async () => {
+        const serverError = new ServerError('OAuth authorization start failed')
+        repositoryMock.startOAuthAuthorization.mockResolvedValue(err(serverError))
+
+        const result = await useCase.startGithubLogin('https://app.example.com/callback')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+      })
+    })
+  })
+
+  describe('loginWithGithubCallback', () => {
+    describe('正常系', () => {
+      it('既存ユーザーはsessionとactiveUserを返し、新規作成しないこと', async () => {
+        repositoryMock.exchangeOAuthCode.mockResolvedValue(
+          ok({ user: mockAuthUser, session: mockSession }),
+        )
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(mockActiveUser))
+
+        const result = await useCase.loginWithGithubCallback('auth-code', notifierMock)
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.session).toEqual(mockSession)
+          expect(result.value.activeUser).toEqual(mockActiveUser)
+        }
+        expect(repositoryMock.exchangeOAuthCode).toHaveBeenCalledWith('auth-code')
+        expect(commandMock.createActiveWithAuthenticationId).not.toHaveBeenCalled()
+      })
+
+      it('未登録ユーザーはactiveUserを作成して返すこと(GitHub経由の新規登録)', async () => {
+        repositoryMock.exchangeOAuthCode.mockResolvedValue(
+          ok({ user: mockAuthUser, session: mockSession }),
+        )
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(null))
+        commandMock.createActiveWithAuthenticationId.mockResolvedValue(ok(mockActiveUser))
+
+        const result = await useCase.loginWithGithubCallback('auth-code', notifierMock)
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.activeUser).toEqual(mockActiveUser)
+        }
+        expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
+          mockAuthUser.email,
+          mockAuthUser.id,
+          notifierMock,
+        )
+      })
+    })
+
+    describe('準正常系', () => {
+      it('コード交換が失敗した場合はエラーを返し、ユーザー検索しないこと', async () => {
+        const clientError = new ClientError('OAuth code exchange failed', 401)
+        repositoryMock.exchangeOAuthCode.mockResolvedValue(err(clientError))
+
+        const result = await useCase.loginWithGithubCallback('expired-code', notifierMock)
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(clientError)
+        }
+        expect(queryMock.findActiveByAuthenticationId).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('異常系', () => {
+      it('ユーザー検索が失敗した場合はServerErrorを返すこと', async () => {
+        repositoryMock.exchangeOAuthCode.mockResolvedValue(
+          ok({ user: mockAuthUser, session: mockSession }),
+        )
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(err(new Error('db error')))
+
+        const result = await useCase.loginWithGithubCallback('auth-code', notifierMock)
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+
+      it('activeUser作成が失敗した場合はエラーを返すこと', async () => {
+        const serverError = new ServerError('active user creation failed')
+        repositoryMock.exchangeOAuthCode.mockResolvedValue(
+          ok({ user: mockAuthUser, session: mockSession }),
+        )
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(null))
+        commandMock.createActiveWithAuthenticationId.mockResolvedValue(err(serverError))
+
+        const result = await useCase.loginWithGithubCallback('auth-code', notifierMock)
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+      })
+    })
+  })
+
+  describe('startGithubLink', () => {
+    describe('正常系', () => {
+      it('githubプロバイダで連携用の認可URLを発行すること', async () => {
+        repositoryMock.startOAuthLink.mockResolvedValue(
+          ok({ url: 'https://github.com/login/oauth/authorize?state=yyy' }),
+        )
+
+        const result = await useCase.startGithubLink('https://app.example.com/callback')
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.url).toBe('https://github.com/login/oauth/authorize?state=yyy')
+        }
+        expect(repositoryMock.startOAuthLink).toHaveBeenCalledWith(
+          'github',
+          'https://app.example.com/callback',
+        )
+      })
+    })
+
+    describe('異常系', () => {
+      it('連携開始が失敗した場合はエラーを返すこと', async () => {
+        const serverError = new ServerError('OAuth link start failed')
+        repositoryMock.startOAuthLink.mockResolvedValue(err(serverError))
+
+        const result = await useCase.startGithubLink('https://app.example.com/callback')
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+      })
+    })
+  })
+
+  describe('hasLinkedGithub', () => {
+    describe('正常系', () => {
+      it.each([
+        {
+          name: 'github連携済みならtrue',
+          identities: [{ provider: 'email' }, { provider: 'github' }],
+          expected: true,
+        },
+        { name: 'github未連携ならfalse', identities: [{ provider: 'email' }], expected: false },
+      ])('$name を返すこと', async ({ identities, expected }) => {
+        repositoryMock.listIdentities.mockResolvedValue(ok(identities))
+
+        const result = await useCase.hasLinkedGithub()
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toBe(expected)
+        }
+      })
+    })
+
+    describe('異常系', () => {
+      it('一覧取得が失敗した場合はエラーを返すこと', async () => {
+        const serverError = new ServerError('Identity list failed')
+        repositoryMock.listIdentities.mockResolvedValue(err(serverError))
+
+        const result = await useCase.hasLinkedGithub()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+      })
+    })
+  })
+
+  describe('unlinkGithub', () => {
+    describe('正常系', () => {
+      it('他のログイン手段があればgithub連携を解除すること', async () => {
+        repositoryMock.listIdentities.mockResolvedValue(
+          ok([{ provider: 'email' }, { provider: 'github' }]),
+        )
+        repositoryMock.unlinkIdentity.mockResolvedValue(ok(undefined))
+
+        const result = await useCase.unlinkGithub()
+
+        expect(result.isOk()).toBe(true)
+        expect(repositoryMock.unlinkIdentity).toHaveBeenCalledWith('github')
+      })
+
+      it('未連携なら解除を呼ばず成功すること', async () => {
+        repositoryMock.listIdentities.mockResolvedValue(ok([{ provider: 'email' }]))
+
+        const result = await useCase.unlinkGithub()
+
+        expect(result.isOk()).toBe(true)
+        expect(repositoryMock.unlinkIdentity).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('準正常系', () => {
+      it('githubが唯一のログイン手段の場合は解除せずエラーを返すこと', async () => {
+        repositoryMock.listIdentities.mockResolvedValue(ok([{ provider: 'github' }]))
+
+        const result = await useCase.unlinkGithub()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ClientError)
+        }
+        expect(repositoryMock.unlinkIdentity).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('異常系', () => {
+      it('一覧取得が失敗した場合はエラーを返すこと', async () => {
+        const serverError = new ServerError('Identity list failed')
+        repositoryMock.listIdentities.mockResolvedValue(err(serverError))
+
+        const result = await useCase.unlinkGithub()
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(serverError)
+        }
+        expect(repositoryMock.unlinkIdentity).not.toHaveBeenCalled()
+      })
+    })
+  })
 })

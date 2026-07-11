@@ -13,6 +13,9 @@ import { err, ok, type Result } from 'neverthrow'
 import type { AuthLoginResult, AuthRepository, AuthSignupResult } from '../repository'
 import type {
   AuthenticationUser,
+  LinkedIdentity,
+  OAuthAuthorization,
+  OAuthProvider,
   PasskeyChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
@@ -305,6 +308,122 @@ export class SupabaseAuthRepository implements AuthRepository {
       user: userResult.value,
       session: this.toSessionObject(data.session, userResult.value),
     })
+  }
+
+  async startOAuthAuthorization(
+    provider: OAuthProvider,
+    redirectTo: string,
+  ): Promise<Result<OAuthAuthorization, ServerError>> {
+    const result = await wrapAsyncCall(() =>
+      this.client.auth.signInWithOAuth({
+        provider,
+        // サーバー側で認可URLを組み立てるだけなので、SDKによるブラウザ遷移は行わせない
+        options: { redirectTo, skipBrowserRedirect: true },
+      }),
+    )
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { data, error } = result.value
+    if (error || !data.url) {
+      return err(new ServerError(`OAuth authorization start failed: ${error?.message}`))
+    }
+
+    return ok({ url: data.url })
+  }
+
+  async exchangeOAuthCode(
+    code: string,
+  ): Promise<Result<AuthLoginResult, ClientError | ServerError>> {
+    const result = await wrapAsyncCall(() => this.client.auth.exchangeCodeForSession(code))
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { data, error } = result.value
+    if (error) {
+      // コードの期限切れ・使い回しなど、認可のやり直しで解消しうる失敗として401で返す
+      return err(new ClientError('OAuth code exchange failed', 401))
+    }
+
+    if (!data.user || !data.session) {
+      return err(new ServerError('OAuth authentication failed'))
+    }
+
+    const userResult = this.toAuthenticationUser(data.user)
+    if (userResult.isErr()) {
+      return err(userResult.error)
+    }
+
+    return ok({
+      user: userResult.value,
+      session: this.toSessionObject(data.session, userResult.value),
+    })
+  }
+
+  async startOAuthLink(
+    provider: OAuthProvider,
+    redirectTo: string,
+  ): Promise<Result<OAuthAuthorization, ServerError>> {
+    const result = await wrapAsyncCall(() =>
+      this.client.auth.linkIdentity({
+        provider,
+        options: { redirectTo, skipBrowserRedirect: true },
+      }),
+    )
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { data, error } = result.value
+    if (error || !data.url) {
+      return err(new ServerError(`OAuth link start failed: ${error?.message}`))
+    }
+
+    return ok({ url: data.url })
+  }
+
+  async listIdentities(): Promise<Result<LinkedIdentity[], ServerError>> {
+    const result = await wrapAsyncCall(() => this.client.auth.getUserIdentities())
+    if (result.isErr()) {
+      return err(new ServerError(result.error))
+    }
+
+    const { data, error } = result.value
+    if (error || !data) {
+      return err(new ServerError(`Identity list failed: ${error?.message}`))
+    }
+
+    return ok(data.identities.map((identity) => ({ provider: identity.provider })))
+  }
+
+  async unlinkIdentity(provider: OAuthProvider): Promise<Result<void, ClientError | ServerError>> {
+    const identitiesResult = await wrapAsyncCall(() => this.client.auth.getUserIdentities())
+    if (identitiesResult.isErr()) {
+      return err(new ServerError(identitiesResult.error))
+    }
+
+    const { data, error } = identitiesResult.value
+    if (error || !data) {
+      return err(new ServerError(`Identity list failed: ${error?.message}`))
+    }
+
+    const target = data.identities.find((identity) => identity.provider === provider)
+    if (!target) {
+      return err(new ClientError(`${provider} identity not found`, 404))
+    }
+
+    const unlinkResult = await wrapAsyncCall(() => this.client.auth.unlinkIdentity(target))
+    if (unlinkResult.isErr()) {
+      return err(new ServerError(unlinkResult.error))
+    }
+
+    if (unlinkResult.value.error) {
+      return err(new ServerError(`Identity unlink failed: ${unlinkResult.value.error.message}`))
+    }
+
+    return ok(undefined)
   }
 
   async listPasskeys(): Promise<Result<RegisteredPasskey[], ServerError>> {

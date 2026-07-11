@@ -4,6 +4,7 @@ import type { AuthRepository, CaptchaVerifier, Command, Notifier, Query } from '
 import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,
+  OAuthAuthorization,
   PasskeyChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
@@ -156,6 +157,72 @@ export class AuthUseCase {
       session,
       activeUser: activeUserResult.value,
     })
+  }
+
+  async startGithubLogin(redirectTo: string): Promise<Result<OAuthAuthorization, ServerError>> {
+    return this.repository.startOAuthAuthorization('github', redirectTo)
+  }
+
+  async loginWithGithubCallback(
+    code: string,
+    notifier: Notifier,
+  ): Promise<Result<LoginResult, ClientError | ServerError>> {
+    const authResult = await this.repository.exchangeOAuthCode(code)
+    if (authResult.isErr()) return err(authResult.error)
+
+    const { user, session } = authResult.value
+
+    const foundResult = await this.userQuery.findActiveByAuthenticationId(user.id)
+    if (foundResult.isErr()) return err(new ServerError(foundResult.error))
+
+    if (foundResult.value) {
+      return ok({
+        session,
+        activeUser: foundResult.value,
+      })
+    }
+
+    // 初回のGitHubログインはアプリ側ユーザーが未作成のため、ここで作成して新規登録として扱う
+    const createdResult = await this.userCommand.createActiveWithAuthenticationId(
+      user.email,
+      user.id,
+      notifier,
+    )
+    if (createdResult.isErr()) return err(createdResult.error)
+
+    return ok({
+      session,
+      activeUser: createdResult.value,
+    })
+  }
+
+  async startGithubLink(redirectTo: string): Promise<Result<OAuthAuthorization, ServerError>> {
+    return this.repository.startOAuthLink('github', redirectTo)
+  }
+
+  async hasLinkedGithub(): Promise<Result<boolean, ServerError>> {
+    const result = await this.repository.listIdentities()
+    if (result.isErr()) return err(result.error)
+
+    return ok(result.value.some((identity) => identity.provider === 'github'))
+  }
+
+  async unlinkGithub(): Promise<Result<void, ClientError | ServerError>> {
+    const listResult = await this.repository.listIdentities()
+    if (listResult.isErr()) return err(listResult.error)
+
+    const identities = listResult.value
+    // トグルOFFの冪等性を保つため、未連携なら成功として何もしない
+    if (!identities.some((identity) => identity.provider === 'github')) {
+      return ok(undefined)
+    }
+
+    // 唯一のログイン手段を解除するとアカウントへ二度と入れなくなるため拒否する
+    if (identities.length <= 1) {
+      return err(new ClientError('Cannot unlink the only login method', 400))
+    }
+
+    return this.repository.unlinkIdentity('github')
   }
 
   private async findActiveUserByAuthenticationId(

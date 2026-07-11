@@ -4,8 +4,18 @@ import { describe, expect, it, vi } from 'vitest'
 import { ToggleGroup, type ToggleOption } from './index'
 
 const options: ToggleOption<string>[] = [
-  { value: 'all', label: 'すべて', dataSlot: 'toggle-all' },
-  { value: 'unread', label: '未読', dataSlot: 'toggle-unread' },
+  { value: 'all', label: 'すべて' },
+  { value: 'unread', label: '未読' },
+]
+
+// iconは任意のため、指定したoptionにのみ描画されることを確かめる
+const mixedIconOptions: ToggleOption<string>[] = [
+  {
+    value: 'with-icon',
+    label: 'アイコンあり',
+    icon: createElement('svg', { 'data-testid': 'option-icon' }),
+  },
+  { value: 'without-icon', label: 'アイコンなし' },
 ]
 
 describe('ToggleGroup', () => {
@@ -16,7 +26,6 @@ describe('ToggleGroup', () => {
           options,
           selectedValue: 'unread',
           onSelect: vi.fn(),
-          dataSlot: 'toggle-group',
         }),
       )
 
@@ -35,13 +44,29 @@ describe('ToggleGroup', () => {
           options,
           selectedValue: 'all',
           onSelect,
-          dataSlot: 'toggle-group',
         }),
       )
 
       fireEvent.click(screen.getByRole('button', { name: '未読' }))
 
       expect(onSelect).toHaveBeenCalledWith('unread')
+    })
+
+    it('iconは指定したoptionにのみ描画され、未指定のoptionには描画されない', () => {
+      render(
+        createElement(ToggleGroup<string>, {
+          options: mixedIconOptions,
+          selectedValue: 'with-icon',
+          onSelect: vi.fn(),
+        }),
+      )
+
+      expect(screen.getByRole('button', { name: 'アイコンあり' })).toContainElement(
+        screen.getByTestId('option-icon'),
+      )
+      expect(screen.getByRole('button', { name: 'アイコンなし' })).not.toContainElement(
+        screen.queryByTestId('option-icon'),
+      )
     })
   })
 })

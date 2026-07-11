@@ -1,38 +1,28 @@
+import type { ReactNode } from 'react'
 import { cn } from '@/client/components/shadcn/lib/utils'
 import { ToggleButton } from '@/client/components/ui/input/toggle-button'
 
 export interface ToggleOption<T> {
   value: T
   label: string
-  dataSlot: string
+  icon?: ReactNode
 }
 
 interface Props<T> {
   options: readonly ToggleOption<T>[]
   selectedValue: T
   onSelect: (value: T) => void
-  dataSlot: string
   className?: string
 }
 
-export function ToggleGroup<T>({
-  options,
-  selectedValue,
-  onSelect,
-  dataSlot,
-  className,
-}: Props<T>) {
+export function ToggleGroup<T>({ options, selectedValue, onSelect, className }: Props<T>) {
   return (
-    <div
-      className={cn('flex flex-wrap items-center gap-2', className)}
-      data-slot={dataSlot}
-      role='group'
-    >
+    <div className={cn('flex flex-wrap items-center gap-2', className)} role='group'>
       {options.map((option) => (
         <ToggleButton
-          key={option.dataSlot}
+          key={String(option.value)}
           label={option.label}
-          dataSlot={option.dataSlot}
+          icon={option.icon}
           isSelected={selectedValue === option.value}
           onClick={() => onSelect(option.value)}
         />

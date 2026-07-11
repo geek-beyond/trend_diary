@@ -21,12 +21,11 @@ export default function MediaMultiFilter({ selectedMedia, onMediaChange }: Props
   }
 
   return (
-    <div className='flex flex-wrap items-center gap-2' data-slot='media-filter' role='group'>
+    <div className='flex flex-wrap items-center gap-2' role='group'>
       {ARTICLE_MEDIA.map((media) => (
         <ToggleButton
           key={media}
           label={ARTICLE_MEDIA_LABELS[media]}
-          dataSlot={`media-filter-${media}`}
           isSelected={selectedMedia.includes(media)}
           onClick={() => toggleMedia(media)}
         />

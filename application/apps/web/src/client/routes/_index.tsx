@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, Monitor, TrendingUp, Users } from 'lucide-react'
+import { BookOpen, Calendar, Monitor, Smartphone, TrendingUp, Users } from 'lucide-react'
 import type { MetaFunction } from 'react-router'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import Footer from '../components/ui/layout/footer'
@@ -121,40 +121,40 @@ const TrendDiaryTopPage = () => {
       <section className='py-20 bg-muted'>
         <div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='text-center mb-12'>
-            <h2 className='text-3xl font-bold text-foreground mb-4'>推奨環境</h2>
+            <h2 className='text-3xl font-bold text-foreground mb-4'>対応環境</h2>
             <p className='text-lg text-muted-foreground'>
-              TrendDiaryを快適にご利用いただくための推奨環境
+              スマートフォンとデスクトップの両方に対応しています
             </p>
           </div>
 
-          <div className='bg-card rounded-2xl shadow-sm border border-border p-8'>
-            <div className='flex justify-center'>
-              <div className='text-center max-w-md'>
-                <div className='w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6'>
-                  <Monitor className='h-10 w-10 text-blue-600' />
-                </div>
-                <h3 className='text-2xl font-semibold text-foreground mb-4'>推奨環境</h3>
-                <div className='space-y-3 text-muted-foreground'>
-                  <div className='flex items-center space-x-3'>
-                    <span className='w-2 h-2 bg-blue-500 rounded-full flex-shrink-0'></span>
-                    <span className='text-lg'>Mac</span>
-                  </div>
-                  <div className='flex items-center space-x-3'>
-                    <span className='w-2 h-2 bg-blue-500 rounded-full flex-shrink-0'></span>
-                    <span className='text-lg'>Google Chrome 最新版</span>
-                  </div>
-                  <div className='flex items-center space-x-3'>
-                    <span className='w-2 h-2 bg-blue-500 rounded-full flex-shrink-0'></span>
-                    <span className='text-lg'>画面幅 1024px 以上</span>
-                  </div>
-                </div>
-                <div className='mt-6 p-4 bg-blue-50 rounded-lg'>
-                  <p className='text-sm text-blue-800'>
-                    ※記事一覧をサイドバー形式で表示するため、十分な画面幅を推奨しています
-                  </p>
-                </div>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <div className='bg-card rounded-2xl shadow-sm border border-border p-8 text-center'>
+              <div className='w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6'>
+                <Smartphone className='size-10 text-blue-600' />
               </div>
+              <h3 className='text-2xl font-semibold text-foreground mb-4'>スマートフォン</h3>
+              <p className='text-muted-foreground'>
+                移動中や隙間時間に、未読の記事を1件ずつ手軽に消化できます。
+                主要な操作はモバイル向けに最適化しています。
+              </p>
             </div>
+
+            <div className='bg-card rounded-2xl shadow-sm border border-border p-8 text-center'>
+              <div className='w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6'>
+                <Monitor className='size-10 text-blue-600' />
+              </div>
+              <h3 className='text-2xl font-semibold text-foreground mb-4'>デスクトップ</h3>
+              <p className='text-muted-foreground'>
+                記事一覧をサイドバー形式で表示するため、
+                広い画面ではより多くの情報を一度に確認できます。
+              </p>
+            </div>
+          </div>
+
+          <div className='mt-6 p-4 bg-blue-50 rounded-lg'>
+            <p className='text-center text-sm text-blue-800'>
+              ※ 最新版の Google Chrome / Safari でのご利用を推奨しています
+            </p>
           </div>
         </div>
       </section>

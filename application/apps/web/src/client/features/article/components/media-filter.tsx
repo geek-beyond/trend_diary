@@ -8,19 +8,14 @@ interface Props {
 }
 
 const mediaOptions: ToggleOption<MediaType>[] = [
-  { value: undefined, label: 'すべて', dataSlot: 'media-filter-all' },
-  { value: 'qiita', label: ARTICLE_MEDIA_LABELS.qiita, dataSlot: 'media-filter-qiita' },
-  { value: 'zenn', label: ARTICLE_MEDIA_LABELS.zenn, dataSlot: 'media-filter-zenn' },
-  { value: 'hatena', label: ARTICLE_MEDIA_LABELS.hatena, dataSlot: 'media-filter-hatena' },
+  { value: undefined, label: 'すべて' },
+  { value: 'qiita', label: ARTICLE_MEDIA_LABELS.qiita },
+  { value: 'zenn', label: ARTICLE_MEDIA_LABELS.zenn },
+  { value: 'hatena', label: ARTICLE_MEDIA_LABELS.hatena },
 ]
 
 export default function MediaFilter({ selectedMedia, onMediaChange }: Props) {
   return (
-    <ToggleGroup
-      options={mediaOptions}
-      selectedValue={selectedMedia}
-      onSelect={onMediaChange}
-      dataSlot='media-filter'
-    />
+    <ToggleGroup options={mediaOptions} selectedValue={selectedMedia} onSelect={onMediaChange} />
   )
 }

@@ -4,17 +4,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { ToggleGroup, type ToggleOption } from './index'
 
 const options: ToggleOption<string>[] = [
-  { value: 'all', label: 'すべて', dataSlot: 'toggle-all' },
-  { value: 'unread', label: '未読', dataSlot: 'toggle-unread' },
+  { value: 'all', label: 'すべて' },
+  { value: 'unread', label: '未読' },
 ]
 
-const optionsWithIcon: ToggleOption<string>[] = [
-  {
-    value: 'all',
-    label: 'すべて',
-    dataSlot: 'toggle-all',
-    icon: createElement('svg', { 'data-testid': 'all-icon' }),
-  },
+// iconは任意のため、指定したoptionにのみ描画されることを確かめる
+const mixedIconOptions: ToggleOption<string>[] = [
+  { value: 'all', label: 'すべて', icon: createElement('svg', { 'data-testid': 'all-icon' }) },
+  { value: 'unread', label: '未読' },
 ]
 
 describe('ToggleGroup', () => {
@@ -25,7 +22,6 @@ describe('ToggleGroup', () => {
           options,
           selectedValue: 'unread',
           onSelect: vi.fn(),
-          dataSlot: 'toggle-group',
         }),
       )
 
@@ -44,7 +40,6 @@ describe('ToggleGroup', () => {
           options,
           selectedValue: 'all',
           onSelect,
-          dataSlot: 'toggle-group',
         }),
       )
 
@@ -53,18 +48,21 @@ describe('ToggleGroup', () => {
       expect(onSelect).toHaveBeenCalledWith('unread')
     })
 
-    it('iconが指定されたoptionはlabelと共にiconも描画する', () => {
+    it('iconはそれを指定したoptionにのみ描画され、未指定のoptionには描画されない', () => {
       render(
         createElement(ToggleGroup<string>, {
-          options: optionsWithIcon,
+          options: mixedIconOptions,
           selectedValue: 'all',
           onSelect: vi.fn(),
-          dataSlot: 'toggle-group',
         }),
       )
 
-      const button = screen.getByRole('button', { name: 'すべて' })
-      expect(button).toContainElement(screen.getByTestId('all-icon'))
+      expect(screen.getByRole('button', { name: 'すべて' })).toContainElement(
+        screen.getByTestId('all-icon'),
+      )
+      expect(screen.getByRole('button', { name: '未読' })).not.toContainElement(
+        screen.queryByTestId('all-icon'),
+      )
     })
   })
 })

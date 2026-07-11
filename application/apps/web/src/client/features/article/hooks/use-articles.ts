@@ -16,8 +16,8 @@ import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
 import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 
-// 媒体フィルタは複数選択に対応する（空配列＝すべて）
-export type SelectedMedia = ArticleMedia[]
+// 媒体フィルタは複数選択に対応する。未選択（すべて）は undefined で表す
+export type SelectedMedia = ArticleMedia[] | undefined
 export type ReadStatusType = 'all' | 'unread'
 
 // isRead を含む記事型(フロントエンドではarticleIdをstringに統一)
@@ -61,10 +61,11 @@ const DATE_PRESET_MAP: Record<DatePresetType, number> = {
 const isValidDateString = (value: string | null) => !!value && DATE_STRING_REGEX.test(value)
 
 // media クエリは繰り返しパラメータ（例: ?media=qiita&media=zenn）に統一する。
-// 無効値を除いたうえで重複を除去して順序を保つ
-const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => [
-  ...new Set(mediaParams.filter(isArticleMedia)),
-]
+// 無効値を除いたうえで重複を除去して順序を保ち、選択が無ければ undefined（すべて）にする
+const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => {
+  const selected = [...new Set(mediaParams.filter(isArticleMedia))]
+  return selected.length > 0 ? selected : undefined
+}
 
 const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => {
   const fromDateResult = addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset])
@@ -157,7 +158,7 @@ export default function useArticles(isLoggedIn = false) {
     from: dateRange.from,
     page: params.page,
     limit: params.limit,
-    ...(params.media.length > 0 && { media: params.media }),
+    ...(params.media && { media: params.media }),
     ...(params.readStatus === 'unread' && isLoggedIn && { read_status: '0' as const }),
   }
 
@@ -289,7 +290,7 @@ export default function useArticles(isLoggedIn = false) {
   const handleFiltersApply = ({ media, readStatus, datePreset }: FilterParams) => {
     const newParams = new URLSearchParams(searchParams)
     newParams.delete('media')
-    media.forEach((value) => newParams.append('media', value))
+    media?.forEach((value) => newParams.append('media', value))
 
     if (readStatus === 'unread') {
       newParams.set('read_status', '0')

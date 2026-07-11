@@ -7,14 +7,14 @@ import { type FilterParams } from '../../hooks/use-articles'
 import { FilterControls } from './filter-controls'
 import { type FilterPanelProps } from './types'
 
-const DEFAULT_FILTERS: FilterParams = { media: [], readStatus: 'all', datePreset: 'today' }
+const DEFAULT_FILTERS: FilterParams = { media: undefined, readStatus: 'all', datePreset: 'today' }
 
 export function MobileFilterPanel({ applied, isLoggedIn, onApplyFilters }: FilterPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [draft, setDraft] = useState<FilterParams>(applied)
 
   const appliedFilterCount = [
-    applied.media.length > 0,
+    applied.media !== undefined,
     isLoggedIn && applied.readStatus === 'unread',
     applied.datePreset !== 'today',
   ].filter(Boolean).length

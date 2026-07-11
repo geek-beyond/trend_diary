@@ -40,7 +40,7 @@ const buildProps = (overrides: Partial<TrendsPageProps> = {}): TrendsPageProps =
   onRetry: vi.fn(),
   page: 1,
   totalPages: 1,
-  selectedMedia: [],
+  selectedMedia: undefined,
   selectedReadStatus: 'all',
   selectedDatePreset: 'today',
   toNextPage: vi.fn(),
@@ -94,7 +94,7 @@ describe('TrendsPage', () => {
     fireEvent.click(resetButton)
 
     expect(onApplyFilters).toHaveBeenCalledWith({
-      media: [],
+      media: undefined,
       readStatus: 'all',
       datePreset: 'today',
     })

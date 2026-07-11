@@ -16,7 +16,7 @@ export const meta: MetaFunction = ({ matches, location }) =>
   )
 
 export default function InboxRoute() {
-  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>([])
+  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>(undefined)
   const {
     isLoading,
     hasError,

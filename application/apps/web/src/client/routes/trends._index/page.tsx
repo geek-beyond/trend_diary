@@ -31,7 +31,7 @@ const getPaginationClass = (isDisabled: boolean) =>
   )
 
 const DEFAULT_FILTERS: FilterParams = {
-  media: [],
+  media: undefined,
   readStatus: 'all',
   datePreset: 'today',
 }
@@ -83,7 +83,7 @@ export default function TrendsPage({
   }
 
   const hasActiveFilters =
-    selectedMedia.length > 0 || selectedReadStatus !== 'all' || selectedDatePreset !== 'today'
+    selectedMedia !== undefined || selectedReadStatus !== 'all' || selectedDatePreset !== 'today'
 
   const handleCardClick = (article: Article) => {
     openDrawer(article)

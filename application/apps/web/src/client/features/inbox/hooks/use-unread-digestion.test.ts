@@ -83,7 +83,7 @@ describe('useUnreadDigestion', () => {
       total: 0,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion([]), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
@@ -102,7 +102,7 @@ describe('useUnreadDigestion', () => {
       status: 201,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion([]), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
 
     await waitFor(() => {
       expect(result.current.remainingCount).toBe(1)
@@ -136,7 +136,7 @@ describe('useUnreadDigestion', () => {
         total: 0,
       })
 
-    const initialProps: { selectedMedia: SelectedMedia } = { selectedMedia: [] }
+    const initialProps: { selectedMedia: SelectedMedia } = { selectedMedia: undefined }
     const { result, rerender } = renderHook(
       ({ selectedMedia }: { selectedMedia: SelectedMedia }) => useUnreadDigestion(selectedMedia),
       {
@@ -169,7 +169,7 @@ describe('useUnreadDigestion', () => {
       total: 1,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion([]), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
 
     await waitFor(() => {
       expect(result.current.remainingCount).toBe(1)
@@ -217,7 +217,7 @@ describe('useUnreadDigestion', () => {
       status: 201,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion([]), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
 
     await waitFor(() => {
       expect(result.current.currentArticle?.articleId).toBe('article-1')
@@ -246,7 +246,7 @@ describe('useUnreadDigestion', () => {
       status: 201,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion([]), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
 
     await waitFor(() => {
       expect(result.current.currentArticle?.articleId).toBe('article-1')
@@ -268,7 +268,7 @@ describe('useUnreadDigestion', () => {
       total: 1,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion([]), { wrapper })
+    const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
 
     await waitFor(() => {
       expect(result.current.remainingCount).toBe(1)
@@ -286,7 +286,7 @@ describe('useUnreadDigestion', () => {
     it('未読一覧の取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
       mockUnreadDigestionGet.mockRejectedValueOnce(new Error('取得に失敗しました'))
 
-      const { result } = renderHook(() => useUnreadDigestion([]), { wrapper })
+      const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
 
       await waitFor(() => {
         expect(result.current.hasError).toBe(true)
@@ -313,7 +313,7 @@ describe('useUnreadDigestion', () => {
       })
       mockSkipPost.mockRejectedValue(new ClientError('Unauthorized', 401))
 
-      const { result } = renderHook(() => useUnreadDigestion([]), { wrapper })
+      const { result } = renderHook(() => useUnreadDigestion(undefined), { wrapper })
 
       await waitFor(() => {
         expect(result.current.remainingCount).toBe(1)

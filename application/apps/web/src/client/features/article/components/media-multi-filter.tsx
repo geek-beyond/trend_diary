@@ -12,11 +12,14 @@ interface Props {
 }
 
 export default function MediaMultiFilter({ selectedMedia, onMediaChange }: Props) {
+  const selected = selectedMedia ?? []
+
   const toggleMedia = (media: ArticleMedia) => {
-    const next = selectedMedia.includes(media)
-      ? selectedMedia.filter((item) => item !== media)
-      : [...selectedMedia, media]
-    onMediaChange(next)
+    const next = selected.includes(media)
+      ? selected.filter((item) => item !== media)
+      : [...selected, media]
+    // 未選択（すべて）は undefined で表す
+    onMediaChange(next.length > 0 ? next : undefined)
   }
 
   return (
@@ -24,15 +27,15 @@ export default function MediaMultiFilter({ selectedMedia, onMediaChange }: Props
       <ToggleButton
         label='すべて'
         dataSlot='media-filter-all'
-        isSelected={selectedMedia.length === 0}
-        onClick={() => onMediaChange([])}
+        isSelected={selected.length === 0}
+        onClick={() => onMediaChange(undefined)}
       />
       {ARTICLE_MEDIA.map((media) => (
         <ToggleButton
           key={media}
           label={ARTICLE_MEDIA_LABELS[media]}
           dataSlot={`media-filter-${media}`}
-          isSelected={selectedMedia.includes(media)}
+          isSelected={selected.includes(media)}
           onClick={() => toggleMedia(media)}
         />
       ))}

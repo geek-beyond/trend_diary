@@ -420,7 +420,7 @@ describe('useArticles', () => {
       )
     })
 
-    it('handleFiltersApplyで7日を適用するとfrom/to付きでAPIが呼ばれる', async () => {
+    it('7日プリセットを適用するとfrom/to付きでAPIが呼ばれる', async () => {
       const initialResponse = generateFakeResponse({
         page: 2,
         totalPages: 3,
@@ -467,7 +467,7 @@ describe('useArticles', () => {
       })
     })
 
-    it('handleFiltersApplyでtodayを適用するとselectedDatePresetがtodayになる', async () => {
+    it('todayプリセットを適用するとselectedDatePresetがtodayになる', async () => {
       const today = resolveJstDateString(new Date())
       const last7daysFrom = resolveJstDateWithOffset(today, -6)
       const initialResponse = generateFakeResponse({
@@ -492,7 +492,7 @@ describe('useArticles', () => {
 
       await act(async () => {
         result.current.handleFiltersApply({
-          media: [],
+          media: undefined,
           readStatus: 'all',
           datePreset: 'today',
         })
@@ -930,7 +930,7 @@ describe('useArticles', () => {
   })
 
   describe('既読状態フィルタ', () => {
-    it('handleReadStatusChangeで未読を選ぶとread_status=0でAPIが呼ばれる', async () => {
+    it('未読を選ぶとread_status=0でAPIが呼ばれる', async () => {
       const initialResponse = generateFakeResponse({
         page: 2,
         totalPages: 3,
@@ -992,7 +992,7 @@ describe('useArticles', () => {
       })
     })
 
-    it('handleFiltersApplyで媒体と未読を一括適用できる', async () => {
+    it('媒体と未読を一括適用できる', async () => {
       const initialResponse = generateFakeResponse({
         page: 2,
         totalPages: 3,
@@ -1036,7 +1036,7 @@ describe('useArticles', () => {
       })
     })
 
-    it('handleFiltersApplyで複数媒体を一括適用できる', async () => {
+    it('複数媒体を一括適用できる', async () => {
       const initialResponse = generateFakeResponse({
         page: 2,
         totalPages: 3,
@@ -1080,7 +1080,7 @@ describe('useArticles', () => {
       expect(result.current.selectedMedia).toEqual(['qiita', 'hatena'])
     })
 
-    it('handleFiltersApplyですべてを適用するとmedia/read_status/pageが除去される', async () => {
+    it('すべてを適用するとmedia/read_status/pageが除去される', async () => {
       const initialResponse = generateFakeResponse({
         page: 2,
         totalPages: 3,
@@ -1101,7 +1101,7 @@ describe('useArticles', () => {
 
       await act(async () => {
         result.current.handleFiltersApply({
-          media: [],
+          media: undefined,
           readStatus: 'all',
           datePreset: 'today',
         })

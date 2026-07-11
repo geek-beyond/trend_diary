@@ -34,7 +34,7 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
     isValidating,
     mutate,
   } = useSWR<UnreadDigestionResponse>(swrKey, async () => {
-    const query = selectedMedia.length > 0 ? { media: selectedMedia } : {}
+    const query = selectedMedia ? { media: selectedMedia } : {}
     const result = await apiCall<UnreadDigestionResponse>(() =>
       client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
     )

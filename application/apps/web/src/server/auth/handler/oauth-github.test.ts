@@ -23,6 +23,14 @@ describe('GitHub OAuth認証', () => {
       expect(location).toContain('provider=github')
     })
 
+    it('ログイン開始でフロー種別Cookieにloginを保存する', async () => {
+      const res = await get('/api/auth/oauth/github/login')
+
+      expect(res.status).toBe(302)
+      const flowCookie = getSetCookies(res).find((cookie) => cookie.startsWith('oauth_flow='))
+      expect(flowCookie).toContain('oauth_flow=login')
+    })
+
     it('redirectクエリが内部パスなら戻り先Cookieに保存する', async () => {
       const res = await get('/api/auth/oauth/github/login?redirect=%2Fsettings')
 
@@ -32,6 +40,16 @@ describe('GitHub OAuth認証', () => {
       )
       expect(redirectCookie).toContain('oauth_redirect_to=%2Fsettings')
       expect(redirectCookie).toContain('HttpOnly')
+    })
+
+    it('redirectクエリが無ければ残存する戻り先Cookieを削除する', async () => {
+      const res = await get('/api/auth/oauth/github/login')
+
+      expect(res.status).toBe(302)
+      const redirectCookie = getSetCookies(res).find((cookie) =>
+        cookie.startsWith('oauth_redirect_to='),
+      )
+      expect(redirectCookie).toContain('Max-Age=0')
     })
   })
 
@@ -43,14 +61,24 @@ describe('GitHub OAuth認証', () => {
       expect(res.headers.get('Location')).toBe('/login?oauthError=github')
     })
 
-    it('連携フロー(戻り先が設定画面)の失敗はログイン状態を保ったまま設定画面へ戻す', async () => {
+    it('連携フローの失敗はログイン状態を保ったまま設定画面へ戻す', async () => {
       const res = await get(
         '/api/auth/oauth/github/callback?error=access_denied',
-        'oauth_redirect_to=%2Fsettings',
+        'oauth_flow=link; oauth_redirect_to=%2Fsettings',
       )
 
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe('/settings?oauthError=github')
+    })
+
+    it('戻り先が設定画面でもログインフローの失敗はログイン画面へ戻す', async () => {
+      const res = await get(
+        '/api/auth/oauth/github/callback?error=access_denied',
+        'oauth_flow=login; oauth_redirect_to=%2Fsettings',
+      )
+
+      expect(res.status).toBe(302)
+      expect(res.headers.get('Location')).toBe('/login?oauthError=github')
     })
 
     it('検証情報のない不正なcodeのcallbackはログイン画面へ戻す', async () => {
@@ -60,7 +88,7 @@ describe('GitHub OAuth認証', () => {
       expect(res.headers.get('Location')).toBe('/login?oauthError=github')
     })
 
-    it('redirectクエリが外部URLなら戻り先Cookieに保存しない', async () => {
+    it('redirectクエリが外部URLなら戻り先Cookieに保存せず削除する', async () => {
       const res = await get(
         '/api/auth/oauth/github/login?redirect=https%3A%2F%2Fevil.example.com%2F',
       )
@@ -69,7 +97,8 @@ describe('GitHub OAuth認証', () => {
       const redirectCookie = getSetCookies(res).find((cookie) =>
         cookie.startsWith('oauth_redirect_to='),
       )
-      expect(redirectCookie).toBeUndefined()
+      expect(redirectCookie).toContain('oauth_redirect_to=;')
+      expect(redirectCookie).toContain('Max-Age=0')
     })
 
     it.each([

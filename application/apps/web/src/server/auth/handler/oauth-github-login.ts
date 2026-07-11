@@ -1,16 +1,18 @@
 import { handleError } from '@trend-diary/common/errors'
+import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAuthUseCase, type OAuthLoginQuery } from '@trend-diary/domain/user'
-import { setCookie } from 'hono/cookie'
+import { deleteCookie, setCookie } from 'hono/cookie'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
 import {
   buildGithubCallbackUrl,
+  OAUTH_COOKIE_OPTIONS,
+  OAUTH_FLOW,
+  OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
-  OAUTH_REDIRECT_COOKIE_OPTIONS,
-  resolveOAuthRedirectTarget,
-} from '../oauth-redirect'
+} from '@/server/auth/oauth-redirect'
 
 export default async function oauthGithubLogin(c: ZodValidatedQueryContext<OAuthLoginQuery>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
@@ -23,9 +25,14 @@ export default async function oauthGithubLogin(c: ZodValidatedQueryContext<OAuth
   const result = await useCase.startGithubLogin(buildGithubCallbackUrl(c))
   if (result.isErr()) throw handleError(result.error, logger)
 
-  const redirectTarget = resolveOAuthRedirectTarget(redirect)
+  setCookie(c, OAUTH_FLOW_COOKIE, OAUTH_FLOW.login, OAUTH_COOKIE_OPTIONS)
+
+  const redirectTarget = resolveLoginRedirectTarget(redirect)
   if (redirectTarget) {
-    setCookie(c, OAUTH_REDIRECT_COOKIE, redirectTarget, OAUTH_REDIRECT_COOKIE_OPTIONS)
+    setCookie(c, OAUTH_REDIRECT_COOKIE, redirectTarget, OAUTH_COOKIE_OPTIONS)
+  } else {
+    // 直前の未完了フローの戻り先が残っていると誤った画面へ戻すため、必ずクリアする
+    deleteCookie(c, OAUTH_REDIRECT_COOKIE, { path: OAUTH_COOKIE_OPTIONS.path })
   }
 
   return c.redirect(result.value.url, 302)

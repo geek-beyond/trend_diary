@@ -1,8 +1,10 @@
 import {
   AuthInvalidCredentialsError,
+  type OAuthResponse,
   type Session,
   type SupabaseClient,
   type User,
+  type UserIdentity,
   type VerifyPasskeyAuthenticationParams,
   type VerifyPasskeyRegistrationParams,
 } from '@supabase/supabase-js'
@@ -310,27 +312,40 @@ export class SupabaseAuthRepository implements AuthRepository {
     })
   }
 
-  async startOAuthAuthorization(
-    provider: OAuthProvider,
-    redirectTo: string,
+  /**
+   * 認可URLの発行とエラー判定の共通ヘルパ。ログイン用(signInWithOAuth)と連携用(linkIdentity)で
+   * SDKメソッドだけが異なる
+   */
+  private async startAuthorization(
+    request: () => Promise<OAuthResponse>,
+    failureLabel: string,
   ): Promise<Result<OAuthAuthorization, ServerError>> {
-    const result = await wrapAsyncCall(() =>
-      this.client.auth.signInWithOAuth({
-        provider,
-        // サーバー側で認可URLを組み立てるだけなので、SDKによるブラウザ遷移は行わせない
-        options: { redirectTo, skipBrowserRedirect: true },
-      }),
-    )
+    const result = await wrapAsyncCall(request)
     if (result.isErr()) {
       return err(new ServerError(result.error))
     }
 
     const { data, error } = result.value
     if (error || !data.url) {
-      return err(new ServerError(`OAuth authorization start failed: ${error?.message}`))
+      return err(new ServerError(`${failureLabel}: ${error?.message}`))
     }
 
     return ok({ url: data.url })
+  }
+
+  async startOAuthAuthorization(
+    provider: OAuthProvider,
+    redirectTo: string,
+  ): Promise<Result<OAuthAuthorization, ServerError>> {
+    return this.startAuthorization(
+      () =>
+        this.client.auth.signInWithOAuth({
+          provider,
+          // サーバー側で認可URLを組み立てるだけなので、SDKによるブラウザ遷移は行わせない
+          options: { redirectTo, skipBrowserRedirect: true },
+        }),
+      'OAuth authorization start failed',
+    )
   }
 
   async exchangeOAuthCode(
@@ -366,25 +381,21 @@ export class SupabaseAuthRepository implements AuthRepository {
     provider: OAuthProvider,
     redirectTo: string,
   ): Promise<Result<OAuthAuthorization, ServerError>> {
-    const result = await wrapAsyncCall(() =>
-      this.client.auth.linkIdentity({
-        provider,
-        options: { redirectTo, skipBrowserRedirect: true },
-      }),
+    return this.startAuthorization(
+      () =>
+        this.client.auth.linkIdentity({
+          provider,
+          options: { redirectTo, skipBrowserRedirect: true },
+        }),
+      'OAuth link start failed',
     )
-    if (result.isErr()) {
-      return err(new ServerError(result.error))
-    }
-
-    const { data, error } = result.value
-    if (error || !data.url) {
-      return err(new ServerError(`OAuth link start failed: ${error?.message}`))
-    }
-
-    return ok({ url: data.url })
   }
 
-  async listIdentities(): Promise<Result<LinkedIdentity[], ServerError>> {
+  /**
+   * SDKのidentity生オブジェクトを取得する共通ヘルパ。ドメイン型へ変換するlistと、
+   * 生オブジェクトをunlink APIへ渡す必要があるunlinkの双方から使う
+   */
+  private async fetchIdentities(): Promise<Result<UserIdentity[], ServerError>> {
     const result = await wrapAsyncCall(() => this.client.auth.getUserIdentities())
     if (result.isErr()) {
       return err(new ServerError(result.error))
@@ -395,21 +406,23 @@ export class SupabaseAuthRepository implements AuthRepository {
       return err(new ServerError(`Identity list failed: ${error?.message}`))
     }
 
-    return ok(data.identities.map((identity) => ({ provider: identity.provider })))
+    return ok(data.identities)
+  }
+
+  async listIdentities(): Promise<Result<LinkedIdentity[], ServerError>> {
+    const result = await this.fetchIdentities()
+    if (result.isErr()) return err(result.error)
+
+    return ok(result.value.map((identity) => ({ provider: identity.provider })))
   }
 
   async unlinkIdentity(provider: OAuthProvider): Promise<Result<void, ClientError | ServerError>> {
-    const identitiesResult = await wrapAsyncCall(() => this.client.auth.getUserIdentities())
+    const identitiesResult = await this.fetchIdentities()
     if (identitiesResult.isErr()) {
-      return err(new ServerError(identitiesResult.error))
+      return err(identitiesResult.error)
     }
 
-    const { data, error } = identitiesResult.value
-    if (error || !data) {
-      return err(new ServerError(`Identity list failed: ${error?.message}`))
-    }
-
-    const target = data.identities.find((identity) => identity.provider === provider)
+    const target = identitiesResult.value.find((identity) => identity.provider === provider)
     if (!target) {
       return err(new ClientError(`${provider} identity not found`, 404))
     }

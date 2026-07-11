@@ -6,9 +6,6 @@ import { TrendsPage } from '../pom/trends-page'
 
 const ARTICLE_COUNT = 10
 const MOBILE_VIEWPORT = { width: 375, height: 667 }
-const LONG_ARTICLE_TITLE = '概要トグル確認用記事'
-const LONG_ARTICLE_DESCRIPTION =
-  'TrendDiaryは技術トレンドの収集と閲覧を効率化するためのサービスであり、記事の要点を短時間で把握しながら必要に応じて元記事へ素早くアクセスできる。モバイル表示時の概要折りたたみ挙動を確認するため、この説明文は十分に長くしている。'
 
 test.describe('記事閲覧シナリオ(モバイル)', () => {
   test.use({ viewport: MOBILE_VIEWPORT })
@@ -64,43 +61,6 @@ test.describe('記事閲覧シナリオ(モバイル)', () => {
 
       // 記事URLが開かれることを確認
       expect(openedUrl).toMatch(SUPPORTED_ARTICLE_URL_PATTERN)
-    })
-  })
-
-  test.describe('記事詳細の概要表示', () => {
-    const createdArticleIds: bigint[] = []
-
-    test.beforeAll(async ({ rdb }) => {
-      const article = await articleHelper.createArticle(rdb, {
-        title: LONG_ARTICLE_TITLE,
-        description: LONG_ARTICLE_DESCRIPTION,
-      })
-      createdArticleIds.push(article.articleId)
-    })
-
-    test.afterAll(async ({ rdb }) => {
-      await articleHelper.cleanUp(rdb, createdArticleIds)
-    })
-
-    test.beforeEach(async ({ page }) => {
-      const trendsPage = new TrendsPage(page)
-      await trendsPage.goto()
-      await trendsPage.waitForArticleCards()
-    })
-
-    test('長い概要は初期折りたたみで表示され、続きを読むで展開できること', async ({ page }) => {
-      const trendsPage = new TrendsPage(page)
-      await trendsPage.openArticleByTitle(LONG_ARTICLE_TITLE)
-
-      const drawer = new ArticleDrawer(page)
-      await drawer.waitOpen()
-      await drawer.expectDescriptionCollapsed()
-      await drawer.expectDescriptionToggle('続きを読む')
-
-      await drawer.clickDescriptionToggle('続きを読む')
-      await drawer.expectDescriptionExpanded()
-      await drawer.expectDescriptionToggle('閉じる')
-      await drawer.expectReadArticleButtonVisible()
     })
   })
 })

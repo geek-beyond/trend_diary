@@ -28,7 +28,7 @@ export default function ArticleCard({
       data-slot='card'
       data-testid='article-card'
       className={cn(
-        'relative h-32 w-full sm:w-64 rounded-3xl border border-white/40 bg-white/30 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:shadow-xl',
+        'relative h-32 w-full sm:w-64 rounded-3xl border border-border bg-card/30 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:shadow-xl',
         isRead && 'opacity-60',
       )}
     >
@@ -42,7 +42,7 @@ export default function ArticleCard({
       />
 
       <CardContent className='flex h-full flex-col p-0'>
-        <CardTitle className='line-clamp-2 flex-1 text-sm leading-relaxed font-bold text-gray-700'>
+        <CardTitle className='line-clamp-2 flex-1 text-sm leading-relaxed font-bold text-foreground'>
           <MediaIcon media={toMediaType(article.media)} size='sm' />
           <span className='ml-1'>{article.title}</span>
           {isRead && (
@@ -56,12 +56,12 @@ export default function ArticleCard({
         </CardTitle>
 
         <CardDescription className='mt-3 flex items-end justify-between'>
-          <span className='text-sm text-gray-600'>{article.author}</span>
+          <span className='text-sm text-muted-foreground'>{article.author}</span>
           {isLoggedIn && (
             <button
               type='button'
               onClick={handleToggleRead}
-              className='relative z-10 text-xs text-gray-500 hover:text-gray-700 underline'
+              className='relative z-10 text-xs text-muted-foreground hover:text-foreground underline'
             >
               {isRead ? '未読にする' : '既読にする'}
             </button>

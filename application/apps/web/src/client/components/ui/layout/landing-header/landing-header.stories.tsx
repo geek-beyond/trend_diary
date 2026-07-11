@@ -52,7 +52,7 @@ export const HoverInteraction: Story = {
     // ログインボタンにホバーした時の動作を確認
     const loginLink = canvas.getByRole('link', { name: 'ログイン' })
     await userEvent.hover(loginLink)
-    await expect(loginLink).toHaveClass('hover:bg-slate-50')
+    await expect(loginLink).toHaveClass('hover:bg-accent')
 
     // アカウント作成ボタンにホバーした時の動作を確認
     const signupLink = canvas.getByRole('link', { name: 'アカウント作成' })

@@ -44,7 +44,7 @@ export function MobileFilterPanel({ applied, isLoggedIn, onApplyFilters }: Filte
   }
 
   return (
-    <div className='mb-4 rounded-lg border border-gray-300 bg-white/50 p-4'>
+    <div className='mb-4 rounded-lg border border-border bg-card/50 p-4'>
       <button
         type='button'
         className='flex w-full items-center justify-between'
@@ -52,8 +52,8 @@ export function MobileFilterPanel({ applied, isLoggedIn, onApplyFilters }: Filte
         data-slot='mobile-filter-trigger'
       >
         <span className='inline-flex items-center gap-2'>
-          <Funnel className='h-4 w-4 text-gray-600' />
-          <span className='text-sm font-semibold text-gray-700'>絞り込み</span>
+          <Funnel className='h-4 w-4 text-muted-foreground' />
+          <span className='text-sm font-semibold text-foreground'>絞り込み</span>
           {appliedFilterCount > 0 && (
             <span
               className='rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700'
@@ -65,7 +65,7 @@ export function MobileFilterPanel({ applied, isLoggedIn, onApplyFilters }: Filte
         </span>
         <ChevronDown
           className={twMerge(
-            'h-4 w-4 text-gray-600 transition-transform',
+            'h-4 w-4 text-muted-foreground transition-transform',
             isOpen ? 'rotate-180' : '',
           )}
         />

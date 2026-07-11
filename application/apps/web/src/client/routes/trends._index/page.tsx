@@ -26,7 +26,7 @@ const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`)
 
 const getPaginationClass = (isDisabled: boolean) =>
   twMerge(
-    'border-solid border border-b-slate-400 cursor-pointer',
+    'border-solid border border-b-border cursor-pointer',
     isDisabled ? 'opacity-50 cursor-not-allowed' : '',
   )
 
@@ -108,7 +108,7 @@ export default function TrendsPage({
   }
 
   return (
-    <div className='relative min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-6'>
+    <div className='relative min-h-screen bg-gradient-to-br from-muted to-background p-6'>
       <h1 className='pb-4 text-xl italic'>- {toJaDateString(date)} -</h1>
       {/* 適用済みフィルタが外部（URL 等）で変わったら draft を初期化したいので key で再マウントする。
           key はフィールド追加時の付け忘れを防ぐため applied の値から導出する */}
@@ -132,7 +132,7 @@ export default function TrendsPage({
       ) : hasError ? (
         <FetchErrorAlert onRetry={onRetry} />
       ) : articles.length === 0 ? (
-        <div className='text-gray-500'>
+        <div className='text-muted-foreground'>
           <p>記事がありません</p>
           {hasActiveFilters && (
             <Button

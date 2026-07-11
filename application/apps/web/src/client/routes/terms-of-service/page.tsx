@@ -4,10 +4,10 @@ import { Heading1, Heading2, Paragraph } from '../../components/ui/typography/le
 
 export default function TermsOfServicePage() {
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
+    <div className='min-h-screen bg-gradient-to-br from-muted to-background'>
       <LandingHeader />
       <main className='mx-auto max-w-3xl px-4 py-12'>
-        <article className='text-slate-700'>
+        <article className='text-foreground'>
           <Heading1>利用規約</Heading1>
           <Paragraph>
             本利用規約（以下「本規約」）は、TrendDiary（以下「本サービス」）の利用条件を定めるものです。ユーザーは本サービスを利用することにより、本規約に同意したものとみなされます。
@@ -168,9 +168,9 @@ export default function TermsOfServicePage() {
             本サービスに関して紛争が生じた場合、当事者間で誠実に協議するものとします。
           </Paragraph>
 
-          <hr className='my-8 border-slate-200' />
+          <hr className='my-8 border-border' />
 
-          <p className='text-sm text-slate-600'>
+          <p className='text-sm text-muted-foreground'>
             <strong>制定日：</strong> 2025年1月16日
             <br />
             <strong>最終更新日：</strong> 2025年1月16日

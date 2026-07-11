@@ -11,6 +11,7 @@ import {
 } from 'react-router'
 import './styles.css'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
+import { ThemeProvider } from '@/client/features/theme'
 import { SITE_URL } from '@/client/lib/meta'
 import { Toaster } from './components/shadcn/sonner'
 
@@ -45,7 +46,8 @@ export const meta: MetaFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang='ja'>
+    // next-themesがハイドレーション前にhtmlへdarkクラスを付与するため、SSRとの差分警告を抑止する
+    <html lang='ja' suppressHydrationWarning={true}>
       <head>
         <Meta />
         <Links />
@@ -53,16 +55,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name='viewport' content='width=device-width, initial-scale=1.0' />
       </head>
       <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-        <Toaster
-          position='top-left'
-          visibleToasts={3}
-          theme='system'
-          richColors={true}
-          expand={true}
-        />
+        <ThemeProvider>
+          {children}
+          <ScrollRestoration />
+          <Scripts />
+          <Toaster position='top-left' visibleToasts={3} richColors={true} expand={true} />
+        </ThemeProvider>
       </body>
     </html>
   )

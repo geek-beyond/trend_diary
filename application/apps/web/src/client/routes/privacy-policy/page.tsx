@@ -4,10 +4,10 @@ import { Heading1, Heading2, Heading3, Paragraph } from '../../components/ui/typ
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
+    <div className='min-h-screen bg-gradient-to-br from-muted to-background'>
       <LandingHeader />
       <main className='mx-auto max-w-3xl px-4 py-12'>
-        <article className='text-slate-700'>
+        <article className='text-foreground'>
           <Heading1>プライバシーポリシー</Heading1>
           <Paragraph>
             TrendDiary（以下「当サービス」）は、ユーザーの個人情報の保護を重要視し、個人情報保護法をはじめとする関連法令を遵守し、適切に取り扱います。
@@ -128,9 +128,9 @@ export default function PrivacyPolicyPage() {
             当プライバシーポリシーは、法令の変更やサービス内容の変更に伴い、予告なく変更することがあります。重要な変更については、サービス内でお知らせいたします。
           </Paragraph>
 
-          <hr className='my-8 border-slate-200' />
+          <hr className='my-8 border-border' />
 
-          <p className='text-sm text-slate-600'>
+          <p className='text-sm text-muted-foreground'>
             <strong>制定日：</strong> 2025年1月16日
             <br />
             <strong>最終更新日：</strong> 2025年1月16日

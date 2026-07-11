@@ -22,17 +22,17 @@ export default function DiaryReadPagination({
     <div className='mt-4 flex items-center justify-start gap-3'>
       <button
         type='button'
-        className='rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50'
+        className='rounded border border-border px-3 py-1 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-50'
         onClick={onPrevPage}
         disabled={!shouldShowDailyDetails || !readPagination.hasPrev}
         data-slot='diary-read-prev'
       >
         前へ
       </button>
-      <span className='text-sm text-gray-600'>{paginationLabel}</span>
+      <span className='text-sm text-muted-foreground'>{paginationLabel}</span>
       <button
         type='button'
-        className='rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50'
+        className='rounded border border-border px-3 py-1 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-50'
         onClick={onNextPage}
         disabled={!shouldShowDailyDetails || !readPagination.hasNext}
         data-slot='diary-read-next'

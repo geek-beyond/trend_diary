@@ -4,10 +4,7 @@ export default function InboxBodySkeleton() {
   return (
     <div role='status' aria-label='読み込み中' className='mt-2'>
       {/* 視覚的なプレースホルダーは支援技術から隠す。InboxArticleCard と同じ高さ（タイトル 2lh / 著者 1lh / 本文 h-24 md:h-56）で組み、レイアウトシフトを避ける */}
-      <div
-        aria-hidden='true'
-        className='flex flex-col rounded-xl border border-gray-200 bg-white p-5'
-      >
+      <div aria-hidden='true' className='flex flex-col rounded-xl border border-border bg-card p-5'>
         <div className='flex h-[2lh] flex-col gap-2'>
           <Skeleton className='h-5 w-3/4' />
           <Skeleton className='h-5 w-1/2' />

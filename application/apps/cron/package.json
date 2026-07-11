@@ -26,6 +26,7 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
+    "@vitest/coverage-istanbul": "^4.1.9",
     "vitest": "catalog:",
     "wrangler": "catalog:"
   }

@@ -18,7 +18,7 @@ export default function LoginPage({
   redirectTo,
 }: Props) {
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-50 to-white'>
+    <div className='min-h-screen bg-gradient-to-br from-muted to-background'>
       <LandingHeader />
       <div className='flex min-h-[calc(100vh-180px)] items-center justify-center p-4'>
         <Card className='flex w-full max-w-md flex-col'>

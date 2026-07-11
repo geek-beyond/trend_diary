@@ -19,8 +19,7 @@ export const AllSelected: Story = {
     onMediaChange: fn(),
   },
   play: async ({ canvas, step }) => {
-    await step('全メディア選択（すべて）時は「すべて」と各媒体が選択状態で表示される', async () => {
-      await expect(canvas.getByRole('button', { name: 'すべて' })).toHaveClass(/bg-blue-50/)
+    await step('全メディア選択時は各媒体が選択状態で表示される', async () => {
       await expect(canvas.getByRole('button', { name: 'Qiita' })).toHaveClass(/bg-blue-50/)
       await expect(canvas.getByRole('button', { name: 'Zenn' })).toHaveClass(/bg-blue-50/)
       await expect(canvas.getByRole('button', { name: 'はてブ' })).toHaveClass(/bg-blue-50/)
@@ -34,10 +33,9 @@ export const MultipleSelected: Story = {
     onMediaChange: fn(),
   },
   play: async ({ canvas, step }) => {
-    await step('選択中の媒体が複数同時に選択状態で表示される', async () => {
+    await step('選択中の媒体だけが選択状態で表示される', async () => {
       await expect(canvas.getByRole('button', { name: 'Qiita' })).toHaveClass(/bg-blue-50/)
       await expect(canvas.getByRole('button', { name: 'Zenn' })).toHaveClass(/bg-blue-50/)
-      await expect(canvas.getByRole('button', { name: 'すべて' })).not.toHaveClass(/bg-blue-50/)
       await expect(canvas.getByRole('button', { name: 'はてブ' })).not.toHaveClass(/bg-blue-50/)
     })
   },
@@ -65,19 +63,6 @@ export const RemoveMedia: Story = {
     await step('選択中の媒体を押すと選択から外して通知する', async () => {
       await userEvent.click(canvas.getByRole('button', { name: 'Qiita' }))
       await expect(args.onMediaChange).toHaveBeenCalledWith(['zenn'])
-    })
-  },
-}
-
-export const SelectAll: Story = {
-  args: {
-    selectedMedia: ['qiita'],
-    onMediaChange: fn(),
-  },
-  play: async ({ args, canvas, step }) => {
-    await step('「すべて」を押すと全メディアを選択して通知する', async () => {
-      await userEvent.click(canvas.getByRole('button', { name: 'すべて' }))
-      await expect(args.onMediaChange).toHaveBeenCalledWith(ALL_MEDIA)
     })
   },
 }

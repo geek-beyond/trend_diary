@@ -4,7 +4,7 @@ import {
   type ArticleMedia,
 } from '@trend-diary/domain/article/media'
 import { ToggleButton } from '@/client/components/ui/input/toggle-button'
-import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../model/media-selection'
+import { type SelectedMedia } from '../model/media-selection'
 
 interface Props {
   selectedMedia: SelectedMedia
@@ -22,12 +22,6 @@ export default function MediaMultiFilter({ selectedMedia, onMediaChange }: Props
 
   return (
     <div className='flex flex-wrap items-center gap-2' data-slot='media-filter' role='group'>
-      <ToggleButton
-        label='すべて'
-        dataSlot='media-filter-all'
-        isSelected={isAllMediaSelected(selectedMedia)}
-        onClick={() => onMediaChange(ALL_MEDIA)}
-      />
       {ARTICLE_MEDIA.map((media) => (
         <ToggleButton
           key={media}

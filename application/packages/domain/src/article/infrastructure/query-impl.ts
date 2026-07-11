@@ -186,7 +186,7 @@ export default class QueryImpl implements Query {
   async getUnreadDigestionArticles(
     activeUserId: bigint,
     targetDateJst: string,
-    media?: ArticleMedia,
+    media?: ArticleMedia[],
   ): Promise<Result<UnreadDigestionResult, ServerError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(targetDateJst, targetDateJst)
@@ -196,7 +196,13 @@ export default class QueryImpl implements Query {
       toDateExclusive,
     )
 
-    const mediaCondition = media ? sql`AND articles.media = ${media}` : sql.empty()
+    const mediaCondition =
+      media && media.length > 0
+        ? sql`AND articles.media IN (${sql.join(
+            media.map((value) => sql`${value}`),
+            sql.raw(', '),
+          )})`
+        : sql.empty()
 
     // D1のdb.batchは生SQLを扱えないため、総数はウィンドウ関数で一覧と同時に取得する
     const result = await wrapDbCall(() =>
@@ -519,7 +525,7 @@ export default class QueryImpl implements Query {
   private static buildSqlWhereClause(params: {
     title?: string
     author?: string
-    media?: string
+    media?: readonly string[]
     from?: string
     to?: string
     readStatus?: boolean
@@ -534,8 +540,12 @@ export default class QueryImpl implements Query {
     if (author) {
       conditions.push(QueryImpl.buildLikeConditionSql('author', author))
     }
-    if (media) {
-      conditions.push(sql`media = ${media}`)
+    if (media && media.length > 0) {
+      const mediaValues = sql.join(
+        media.map((value) => sql`${value}`),
+        sql.raw(', '),
+      )
+      conditions.push(sql`media IN (${mediaValues})`)
     }
 
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(from, to)

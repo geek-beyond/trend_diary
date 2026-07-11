@@ -5,7 +5,7 @@ import {
   type FilterParams,
   type ReadStatusType,
 } from '../../hooks/use-articles'
-import MediaFilter from '../media-filter'
+import MediaMultiFilter from '../media-multi-filter'
 import { FilterField, type FilterVariant } from './filter-field'
 
 const DATE_PRESET_LABEL_MAP: Record<DatePresetType, string> = {
@@ -17,12 +17,11 @@ const DATE_PRESET_LABEL_MAP: Record<DatePresetType, string> = {
 const DATE_PRESET_OPTIONS: ToggleOption<DatePresetType>[] = DATE_PRESETS.map((preset) => ({
   value: preset,
   label: DATE_PRESET_LABEL_MAP[preset],
-  dataSlot: `date-preset-filter-${preset}`,
 }))
 
 const READ_STATUS_OPTIONS: ToggleOption<ReadStatusType>[] = [
-  { value: 'all', label: 'すべて', dataSlot: 'read-status-filter-all' },
-  { value: 'unread', label: '未読のみ', dataSlot: 'read-status-filter-unread' },
+  { value: 'all', label: 'すべて' },
+  { value: 'unread', label: '未読のみ' },
 ]
 
 interface FilterControlsProps {
@@ -36,14 +35,16 @@ export function FilterControls({ variant, filters, isLoggedIn, onChange }: Filte
   return (
     <>
       <FilterField label='媒体' variant={variant}>
-        <MediaFilter selectedMedia={filters.media} onMediaChange={(media) => onChange({ media })} />
+        <MediaMultiFilter
+          selectedMedia={filters.media}
+          onMediaChange={(media) => onChange({ media })}
+        />
       </FilterField>
       <FilterField label='日付' variant={variant}>
         <ToggleGroup
           options={DATE_PRESET_OPTIONS}
           selectedValue={filters.datePreset}
           onSelect={(datePreset) => onChange({ datePreset })}
-          dataSlot='date-preset-filter'
         />
       </FilterField>
       {isLoggedIn && (
@@ -52,7 +53,6 @@ export function FilterControls({ variant, filters, isLoggedIn, onChange }: Filte
             options={READ_STATUS_OPTIONS}
             selectedValue={filters.readStatus}
             onSelect={(readStatus) => onChange({ readStatus })}
-            dataSlot='read-status-filter'
           />
         </FilterField>
       )}

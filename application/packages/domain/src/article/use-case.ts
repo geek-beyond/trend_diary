@@ -52,7 +52,7 @@ export class UseCase {
 
   async getUnreadDigestionArticles(
     activeUserId: bigint,
-    media?: ArticleMedia,
+    media?: ArticleMedia[],
     now: Date = new Date(),
   ): Promise<Result<UnreadDigestionResult, Error>> {
     const targetDateJstResult = toJstDateString(now)

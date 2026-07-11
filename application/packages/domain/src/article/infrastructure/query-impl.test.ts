@@ -120,6 +120,18 @@ describe('QueryImpl', () => {
       expect(rawSql).toContain('skipped_articles')
     })
 
+    it.each([
+      { name: '複数media', media: ['qiita', 'zenn'] as const },
+      { name: '単一media', media: ['hatena'] as const },
+    ])('$name 指定時は IN 句で絞り込む', async ({ media }) => {
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
+
+      await queryImpl.searchArticles({ page: 1, limit: 20, media: [...media] })
+
+      const rawSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
+      expect(rawSql).toContain('media IN (')
+    })
+
     it('日時式ではなくarticle_idの降順でソートする', async () => {
       mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
 
@@ -260,19 +272,19 @@ describe('QueryImpl', () => {
         name: 'createdAtがCURRENT_TIMESTAMP形式(スペース区切りUTC)はTZ非依存でUTC解釈される',
         createdAt: '2025-01-01 00:00:00',
         expectedIso: '2025-01-01T00:00:00.000Z',
-        media: 'qiita' as const,
+        media: ['qiita'] as const,
       },
       {
         name: 'createdAtがnumber(epoch ms)',
         createdAt: 1_772_852_400_000,
         expectedIso: '2026-03-07T03:00:00.000Z',
-        media: 'hatena' as const,
+        media: ['hatena'] as const,
       },
       {
         name: 'createdAtがbigint(epoch ms)',
         createdAt: 1_772_852_400_000n,
         expectedIso: '2026-03-07T03:00:00.000Z',
-        media: 'zenn' as const,
+        media: ['zenn'] as const,
       },
     ])('$name をArticleへ変換できる', async ({ createdAt, expectedIso, media }) => {
       mockRdbExecutor.mockResolvedValue({
@@ -290,7 +302,11 @@ describe('QueryImpl', () => {
         ],
       })
 
-      const result = await queryImpl.getUnreadDigestionArticles(10n, '2026-03-07', media)
+      const result = await queryImpl.getUnreadDigestionArticles(
+        10n,
+        '2026-03-07',
+        media ? [...media] : undefined,
+      )
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {

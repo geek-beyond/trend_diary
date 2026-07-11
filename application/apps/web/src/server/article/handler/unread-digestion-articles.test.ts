@@ -95,6 +95,11 @@ describe('GET /api/articles/unread-digestion', () => {
         query: 'media=qiita',
         expectedTitles: ['未読消化対象'],
       },
+      {
+        name: '複数media指定時は該当するすべての媒体を返す',
+        query: 'media=qiita&media=zenn',
+        expectedTitles: ['未読消化対象', '未読消化対象Zenn'],
+      },
     ])('$name', async ({ query, expectedTitles }) => {
       const response = await requestUnreadDigestion(query, authCookies)
       expect(response.status).toBe(200)

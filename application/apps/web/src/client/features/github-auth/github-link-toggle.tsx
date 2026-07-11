@@ -1,5 +1,5 @@
+import { SiGithub } from '@icons-pack/react-simple-icons'
 import { Switch } from '@/client/components/shadcn/switch'
-import GithubIcon from '@/client/features/github-auth/github-icon'
 import { navigateToGithubLink } from '@/client/features/github-auth/model'
 import useGithubLinkStatus from '@/client/features/github-auth/use-github-link-status'
 import useGithubUnlink from '@/client/features/github-auth/use-github-unlink'
@@ -24,7 +24,7 @@ export default function GithubLinkToggle() {
 
   return (
     <div className='flex items-center gap-3'>
-      <GithubIcon className='size-4 text-muted-foreground' />
+      <SiGithub aria-hidden className='size-4 text-muted-foreground' />
       <Switch
         checked={linked}
         onCheckedChange={handleToggle}

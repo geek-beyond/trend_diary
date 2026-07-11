@@ -120,19 +120,13 @@ describe('QueryImpl', () => {
       expect(rawSql).toContain('skipped_articles')
     })
 
-    it('複数media指定時は IN 句で絞り込む', async () => {
+    it.each([
+      { name: '複数media', media: ['qiita', 'zenn'] as const },
+      { name: '単一media', media: ['hatena'] as const },
+    ])('$name 指定時は IN 句で絞り込む', async ({ media }) => {
       mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
 
-      await queryImpl.searchArticles({ page: 1, limit: 20, media: ['qiita', 'zenn'] })
-
-      const rawSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
-      expect(rawSql).toContain('media IN (')
-    })
-
-    it('単一media指定時も IN 句で絞り込む', async () => {
-      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
-
-      await queryImpl.searchArticles({ page: 1, limit: 20, media: ['hatena'] })
+      await queryImpl.searchArticles({ page: 1, limit: 20, media: [...media] })
 
       const rawSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
       expect(rawSql).toContain('media IN (')

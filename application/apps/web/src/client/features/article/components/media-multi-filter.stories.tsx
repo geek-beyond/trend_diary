@@ -14,7 +14,7 @@ type Story = StoryObj<typeof MediaMultiFilter>
 
 export const AllSelected: Story = {
   args: {
-    selectedMedia: [],
+    selectedMedia: undefined,
     onMediaChange: fn(),
   },
   play: async ({ canvas, step }) => {
@@ -75,7 +75,7 @@ export const ClearAll: Story = {
   play: async ({ args, canvas, step }) => {
     await step('「すべて」を押すと選択をすべて解除して通知する', async () => {
       await userEvent.click(canvas.getByRole('button', { name: 'すべて' }))
-      await expect(args.onMediaChange).toHaveBeenCalledWith([])
+      await expect(args.onMediaChange).toHaveBeenCalledWith(undefined)
     })
   },
 }

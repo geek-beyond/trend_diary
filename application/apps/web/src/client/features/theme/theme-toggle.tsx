@@ -29,7 +29,7 @@ export default function ThemeToggle() {
       selectedValue={mounted ? (theme ?? 'system') : ''}
       onSelect={setTheme}
       dataSlot='theme-toggle'
-      className='shrink-0'
+      className='sm:shrink-0'
     />
   )
 }

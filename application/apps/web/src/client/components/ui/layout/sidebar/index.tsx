@@ -1,4 +1,4 @@
-import { BarChart3, BookOpenCheck, Inbox, Settings, TrendingUp } from 'lucide-react'
+import { TrendingUp } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -10,49 +10,8 @@ import {
 } from '@/client/components/shadcn/sidebar'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 import NavMenu from '@/client/components/ui/navigation/nav-menu'
+import { getVisibleMenuItems } from '@/client/entities/navigation'
 import { SidebarLogoutButton } from '@/client/features/authenticate/logout'
-import type { InternalPath } from '@/client/routes'
-
-export interface MenuItem {
-  title: string
-  url: InternalPath
-  icon: React.ElementType
-}
-
-export const menuItems: MenuItem[] = [
-  {
-    title: 'トレンド記事',
-    url: '/trends',
-    icon: TrendingUp,
-  },
-]
-
-const loggedInMenuItems: MenuItem[] = [
-  {
-    title: '未読消化',
-    url: '/inbox',
-    icon: Inbox,
-  },
-  {
-    title: 'ダイアリー',
-    url: '/diary',
-    icon: BookOpenCheck,
-  },
-  {
-    title: '統計',
-    url: '/analytics',
-    icon: BarChart3,
-  },
-  {
-    title: '設定',
-    url: '/settings',
-    icon: Settings,
-  },
-]
-
-export function getVisibleMenuItems(isLoggedIn: boolean): MenuItem[] {
-  return isLoggedIn ? [...menuItems, ...loggedInMenuItems] : menuItems
-}
 
 interface Props {
   isLoggedIn: boolean

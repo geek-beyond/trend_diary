@@ -25,7 +25,7 @@ type RouteNode = Route | LayoutNode
 const baseGroup = {
   prefix: '',
   routes: [
-    { path: PATH_INDEX, file: './routes/_index.tsx' },
+    { path: PATH_INDEX, file: './routes/_index/route.tsx' },
     { path: '/login', file: './routes/login/route.tsx' },
     { path: '/signup', file: './routes/signup/route.tsx' },
     { path: '/privacy-policy', file: './routes/privacy-policy/route.tsx' },

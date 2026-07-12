@@ -86,10 +86,7 @@ export default class CommandImpl implements Command {
     return ok(mapToActiveUser(activeUser))
   }
 
-  async updateTheme(
-    activeUserId: bigint,
-    theme: Theme,
-  ): Promise<Result<CurrentUser, ServerError>> {
+  async updateTheme(activeUserId: bigint, theme: Theme): Promise<Result<CurrentUser, ServerError>> {
     const dbId = toDbId(activeUserId)
     // INFO: updated_atはトリガーで自動更新されるが、createActiveと揃えて明示的にも設定する
     const now = new Date()

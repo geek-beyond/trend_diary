@@ -11,7 +11,6 @@ import zodValidator from '@/middleware/zod-validator'
 import login from './handler/login'
 import logout from './handler/logout'
 import me from './handler/me'
-import updateTheme from './handler/update-theme'
 import passkeyDisable from './handler/passkey-disable'
 import passkeyLoginStart from './handler/passkey-login-start'
 import passkeyLoginVerify from './handler/passkey-login-verify'
@@ -19,6 +18,7 @@ import passkeyRegisterStart from './handler/passkey-register-start'
 import passkeyRegisterVerify from './handler/passkey-register-verify'
 import passkeyStatus from './handler/passkey-status'
 import signup from './handler/signup'
+import updateTheme from './handler/update-theme'
 
 const app = new Hono<Env>()
   .post('/signup', rateLimiter, zodValidator('json', authInputSchema), signup)

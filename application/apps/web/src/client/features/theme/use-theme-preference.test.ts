@@ -1,8 +1,8 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
+import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import type { MockedFunction } from 'vitest'
-import { toast } from 'sonner'
 import getApiClientForClient from '@/infrastructure/api'
 import useThemePreference from './use-theme-preference'
 

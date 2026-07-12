@@ -8,6 +8,7 @@ export function mapToActiveUser(activeUser: RdbActiveUser): CurrentUser {
     userId: fromDbId(activeUser.userId),
     email: activeUser.email,
     displayName: activeUser.displayName,
+    theme: activeUser.theme,
     authenticationId: activeUser.authenticationId,
     createdAt: activeUser.createdAt,
     updatedAt: activeUser.updatedAt,

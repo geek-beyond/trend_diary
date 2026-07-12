@@ -3,6 +3,8 @@ import type { ActiveUser, ActiveUserInput, CurrentUser } from './schema/active-u
 import { activeUserInputSchema, activeUserSchema } from './schema/active-user-schema'
 import type { AuthenticationSession, AuthInput, PasskeyVerifyInput } from './schema/auth-schema'
 import { authInputSchema, passkeyVerifyInputSchema } from './schema/auth-schema'
+import type { Theme, ThemeUpdate } from './schema/theme-schema'
+import { themeSchema, themeUpdateSchema } from './schema/theme-schema'
 
 // 型
 export type {
@@ -12,6 +14,8 @@ export type {
   AuthInput,
   CurrentUser,
   PasskeyVerifyInput,
+  Theme,
+  ThemeUpdate,
 }
 // スキーマ
 // ファクトリ
@@ -21,4 +25,6 @@ export {
   authInputSchema,
   createAuthUseCase,
   passkeyVerifyInputSchema,
+  themeSchema,
+  themeUpdateSchema,
 }

@@ -3,11 +3,13 @@ import Logger from '@trend-diary/common/logger'
 import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { wrapDbCall } from '@trend-diary/datastore/rdb'
+import { toDbId } from '@trend-diary/datastore/rdb/id'
 import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import type { Command } from '../repository'
 import { type Notifier } from '../repository'
 import type { CurrentUser } from '../schema/active-user-schema'
+import type { Theme } from '../schema/theme-schema'
 import { mapToActiveUser } from './mapper'
 
 // 補償失敗は手動対応が必要なため、デフォルトのログレベルをerrorに設定する
@@ -82,5 +84,31 @@ export default class CommandImpl implements Command {
     }
 
     return ok(mapToActiveUser(activeUser))
+  }
+
+  async updateTheme(
+    activeUserId: bigint,
+    theme: Theme,
+  ): Promise<Result<CurrentUser, ServerError>> {
+    const dbId = toDbId(activeUserId)
+    // INFO: updated_atはトリガーで自動更新されるが、createActiveと揃えて明示的にも設定する
+    const now = new Date()
+    const updateResult = await wrapDbCall(() =>
+      this.db
+        .update(activeUsers)
+        .set({ theme, updatedAt: now })
+        .where(eq(activeUsers.activeUserId, dbId))
+        .returning(),
+    )
+    if (updateResult.isErr()) {
+      return err(new ServerError('Failed to update theme'))
+    }
+
+    const updated = updateResult.value[0]
+    if (!updated) {
+      return err(new ServerError('Failed to update theme'))
+    }
+
+    return ok(mapToActiveUser(updated))
   }
 }

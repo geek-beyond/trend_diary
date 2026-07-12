@@ -43,6 +43,7 @@ const mockActiveUser: CurrentUser = {
   userId: 2n,
   email: 'test@example.com',
   displayName: 'テストユーザー',
+  theme: 'system',
   createdAt: new Date(),
   updatedAt: new Date(),
 }
@@ -378,6 +379,45 @@ describe('AuthUseCase', () => {
             expect(result.error).toBeInstanceOf(ServerError)
           }
         })
+      })
+    })
+  })
+
+  describe('updateTheme', () => {
+    describe('正常系', () => {
+      it('activeUserIdとテーマをcommandに渡し、更新後のユーザーを返す', async () => {
+        // Arrange
+        const updatedUser: CurrentUser = { ...mockActiveUser, theme: 'dark' }
+        commandMock.updateTheme.mockResolvedValue(ok(updatedUser))
+
+        // Act
+        const result = await useCase.updateTheme(mockActiveUser.activeUserId, 'dark')
+
+        // Assert
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value.theme).toBe('dark')
+        }
+        expect(commandMock.updateTheme).toHaveBeenCalledWith(mockActiveUser.activeUserId, 'dark')
+        // 呼び出し側で検証済みのため、ここではセッションを再検証しない
+        expect(repositoryMock.verifySession).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('異常系', () => {
+      it('command失敗時、エラーを返す', async () => {
+        // Arrange
+        const dbError = new ServerError('Failed to update theme')
+        commandMock.updateTheme.mockResolvedValue(err(dbError))
+
+        // Act
+        const result = await useCase.updateTheme(mockActiveUser.activeUserId, 'light')
+
+        // Assert
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBe(dbError)
+        }
       })
     })
   })

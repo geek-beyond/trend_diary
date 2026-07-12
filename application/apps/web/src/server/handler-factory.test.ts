@@ -176,6 +176,7 @@ describe('createAuthenticatedApiHandler', () => {
     activeUserId: 42n,
     displayName: 'テスト太郎',
     email: 'user@example.com',
+    theme: 'system',
   }
 
   describe('正常系', () => {

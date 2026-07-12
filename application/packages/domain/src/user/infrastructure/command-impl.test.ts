@@ -12,18 +12,20 @@ describe('CommandImpl', () => {
 
   // INFO: Drizzleのinsert returningは「カラム順の配列」で行を返す
   // users:        user_id, created_at
-  // active_users: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
+  // active_users: active_user_id, email, display_name, theme, authentication_id, created_at, updated_at, user_id
   const buildUserRow = (userId: number): unknown[] => [userId, '2024-01-15T09:30:00.000Z']
   const buildActiveUserRow = (data: {
     activeUserId: number
     email: string
     displayName: string | null
+    theme?: string
     authenticationId: string | null
     userId: number
   }): unknown[] => [
     data.activeUserId,
     data.email,
     data.displayName,
+    data.theme ?? 'system',
     data.authenticationId,
     '2024-01-15T09:30:00.000Z',
     '2024-01-15T09:30:00.000Z',
@@ -263,6 +265,73 @@ describe('CommandImpl', () => {
       // Assert: 補償が成功した場合はログも通知も出さないこと
       expect(errorSpy).not.toHaveBeenCalled()
       expect(notifier.sendMessage).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('updateTheme', () => {
+    it('テーマを更新し、更新後のActiveUserを返す', async () => {
+      // Arrange: active_users update returning
+      mockRdbExecutor.mockResolvedValueOnce({
+        rows: [
+          buildActiveUserRow({
+            activeUserId: 1,
+            email: 'test@example.com',
+            displayName: '表示名',
+            theme: 'dark',
+            authenticationId: 'auth-id-123',
+            userId: 2,
+          }),
+        ],
+      })
+
+      // Act
+      const result = await useCase.updateTheme(1n, 'dark')
+
+      // Assert
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        expect(result.value.theme).toBe('dark')
+        expect(result.value.activeUserId).toBe(1n)
+      }
+
+      // active_usersへのupdateに新しいテーマと対象activeUserId(=1)が渡されること
+      const updateCall = mockRdbExecutor.mock.calls.find(([sql]) =>
+        sql.includes('update "active_users"'),
+      )
+      expect(updateCall).toBeDefined()
+      const [, updateParams] = updateCall ?? []
+      expect(updateParams).toContain('dark')
+      expect(updateParams).toContain(1)
+    })
+
+    it('更新対象が存在せず行が返らない場合はServerErrorを返す', async () => {
+      // Arrange: returningが空
+      mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
+
+      // Act
+      const result = await useCase.updateTheme(999n, 'light')
+
+      // Assert
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error.message).toBe('Failed to update theme')
+      }
+    })
+
+    it('DB更新に失敗した場合はServerErrorを返す', async () => {
+      // Arrange
+      mockRdbExecutor.mockRejectedValueOnce(new Error('update failed'))
+
+      // Act
+      const result = await useCase.updateTheme(1n, 'light')
+
+      // Assert
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error.message).toBe('Failed to update theme')
+      }
     })
   })
 })

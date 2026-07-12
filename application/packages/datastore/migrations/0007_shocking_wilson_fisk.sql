@@ -1,0 +1,1 @@
+ALTER TABLE `active_users` ADD `theme` text DEFAULT 'system' NOT NULL;

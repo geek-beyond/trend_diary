@@ -31,9 +31,11 @@ describe('GET /api/auth/me', () => {
     const meRes = await requestMe(cookies)
     expect(meRes.status).toBe(200)
 
-    const body: { user: { displayName: string | null } } = await meRes.json()
+    const body: { user: { displayName: string | null; theme: string } } = await meRes.json()
     expect(body).toHaveProperty('user')
     expect(body.user).toHaveProperty('displayName')
+    // 端末間共有のため既定テーマ'system'を含めて返す
+    expect(body.user.theme).toBe('system')
   })
 
   it('準正常系: ログインしていない場合は401を返す', async () => {

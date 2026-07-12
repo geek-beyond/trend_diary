@@ -58,6 +58,7 @@ export async function validateSession(
       activeUserId: result.value.activeUserId,
       displayName: result.value.displayName,
       email: result.value.email,
+      theme: result.value.theme,
     }
 
     return ok({ sessionUser })

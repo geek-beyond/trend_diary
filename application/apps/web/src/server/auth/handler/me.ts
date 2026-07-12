@@ -14,6 +14,7 @@ export default function me(c: Context<Env>) {
   return c.json({
     user: {
       displayName: user.displayName,
+      theme: user.theme,
     },
   })
 }

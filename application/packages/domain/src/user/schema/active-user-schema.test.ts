@@ -9,6 +9,7 @@ describe('ActiveUserスキーマ', () => {
         userId: 2n,
         email: 'test@example.com',
         displayName: 'テストユーザー',
+        theme: 'dark',
         authenticationId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -45,6 +46,7 @@ describe('ActiveUserスキーマ', () => {
         activeUserId: 1n,
         userId: 2n,
         email: 'test@example.com',
+        theme: 'system',
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -61,6 +63,20 @@ describe('ActiveUserスキーマ', () => {
       }
 
       const result = activeUserInputSchema.safeParse(invalidData)
+      expect(result.success).toBe(false)
+    })
+
+    it('themeが許可値以外では検証に失敗する', () => {
+      const invalidData = {
+        activeUserId: 1n,
+        userId: 2n,
+        email: 'test@example.com',
+        theme: 'blue',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const result = activeUserSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
     })
 

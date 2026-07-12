@@ -1,12 +1,14 @@
 import type { WorkerBindings } from '@trend-diary/common/env'
 import type { LoggerType } from '@trend-diary/common/logger'
 import type { Nullable } from '@trend-diary/common/types/utility'
+import type { Theme } from '@trend-diary/domain/user'
 import type CONTEXT_KEY from './middleware/context'
 
 export interface SessionUser {
   activeUserId: bigint
   displayName?: Nullable<string>
   email: string
+  theme: Theme
 }
 
 // Cloudflare Workers の Rate Limiting バインディングの型（workers-typesに含まれないため定義する）

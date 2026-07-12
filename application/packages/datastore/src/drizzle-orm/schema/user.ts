@@ -16,6 +16,10 @@ export const activeUsers = sqliteTable(
     activeUserId: integer('active_user_id').primaryKey({ autoIncrement: true }),
     email: text('email').notNull(),
     displayName: text('display_name'),
+    // 端末間で共有する画面テーマ。既定はOS設定に追従する'system'
+    theme: text('theme', { enum: ['system', 'light', 'dark'] })
+      .notNull()
+      .default('system'),
     authenticationId: text('authentication_id').notNull(),
     createdAt: dateTime('created_at')
       .notNull()

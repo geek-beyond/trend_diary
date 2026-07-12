@@ -69,6 +69,7 @@ async function createActiveUser(email: string, authenticationId: string): Promis
     userId: fromDbId(user.userId),
     email: activeUser.email,
     displayName: activeUser.displayName,
+    theme: activeUser.theme,
     authenticationId: activeUser.authenticationId,
     createdAt: activeUser.createdAt,
     updatedAt: activeUser.updatedAt,

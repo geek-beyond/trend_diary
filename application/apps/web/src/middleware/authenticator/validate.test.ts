@@ -56,7 +56,7 @@ describe('validateSession', () => {
   })
 
   describe('正常系', () => {
-    it('アクティブユーザーを認可に必要な3項目へ絞り込んで返すこと', async () => {
+    it('アクティブユーザーをSESSION_USERに必要な項目へ絞り込んで返すこと', async () => {
       // getCurrentActiveUser は authenticationId 等の内部項目も返すが、SESSION_USER には漏らさない
       const currentUser = {
         activeUserId: 123n,
@@ -64,6 +64,7 @@ describe('validateSession', () => {
         authenticationId: 'auth-abc',
         email: 'active@example.com',
         displayName: 'テスト太郎',
+        theme: 'dark' as const,
       }
       mockGetCurrentActiveUser(() => Promise.resolve(ok(currentUser)))
 
@@ -74,6 +75,7 @@ describe('validateSession', () => {
         activeUserId: 123n,
         displayName: 'テスト太郎',
         email: 'active@example.com',
+        theme: 'dark',
       })
     })
   })

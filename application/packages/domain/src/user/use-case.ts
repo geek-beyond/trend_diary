@@ -8,6 +8,7 @@ import type {
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
 } from './schema/auth-schema'
+import type { Theme } from './schema/theme-schema'
 
 /**
  * サインアップ結果
@@ -104,6 +105,15 @@ export class AuthUseCase {
     }
 
     return this.findActiveUserByAuthenticationId(sessionResult.value.authenticationId)
+  }
+
+  // 呼び出し側(authenticatorミドルウェア)でセッション検証済みのactiveUserIdを受け取る。
+  // ここで再度セッション検証すると、トークン期限切れ時にリフレッシュが二重に走り得るため行わない
+  async updateTheme(
+    activeUserId: bigint,
+    theme: Theme,
+  ): Promise<Result<CurrentUser, ClientError | ServerError>> {
+    return this.userCommand.updateTheme(activeUserId, theme)
   }
 
   async startPasskeyRegistration(): Promise<Result<PasskeyChallenge, ServerError>> {

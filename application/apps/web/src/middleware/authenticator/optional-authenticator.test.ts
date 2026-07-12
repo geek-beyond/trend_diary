@@ -34,6 +34,7 @@ describe('optionalAuthenticator ミドルウェア', () => {
         activeUserId: 1n,
         displayName: 'テスト太郎',
         email: 'user@example.com',
+        theme: 'system',
       }
       vi.mocked(validateSession).mockResolvedValue(ok({ sessionUser }))
 

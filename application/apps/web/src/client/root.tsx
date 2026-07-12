@@ -11,7 +11,7 @@ import {
 } from 'react-router'
 import './styles.css'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
-import { ThemeProvider } from '@/client/features/theme'
+import { ThemeProvider, ThemeSync } from '@/client/features/theme'
 import { SITE_URL } from '@/client/lib/meta'
 import { Toaster } from './components/shadcn/sonner'
 
@@ -56,6 +56,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ThemeProvider>
+          <ThemeSync />
           {children}
           <ScrollRestoration />
           <Scripts />

@@ -7,12 +7,13 @@ describe('QueryImpl', () => {
   let useCase: QueryImpl
 
   // INFO: Drizzleのselectは「カラム順の配列」で行を返す
-  // 並び順: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
+  // 並び順: active_user_id, email, display_name, theme, authentication_id, created_at, updated_at, user_id
   const buildActiveUserRow = (
     overrides: Partial<{
       activeUserId: number
       email: string
       displayName: string | null
+      theme: string
       authenticationId: string | null
       createdAt: string
       updatedAt: string
@@ -23,6 +24,7 @@ describe('QueryImpl', () => {
       activeUserId: 1,
       email: 'test@example.com',
       displayName: 'テストユーザー',
+      theme: 'system',
       authenticationId: null,
       createdAt: '2024-01-15T09:30:00.000Z',
       updatedAt: '2024-01-15T09:30:00.000Z',
@@ -33,6 +35,7 @@ describe('QueryImpl', () => {
       data.activeUserId,
       data.email,
       data.displayName,
+      data.theme,
       data.authenticationId,
       data.createdAt,
       data.updatedAt,

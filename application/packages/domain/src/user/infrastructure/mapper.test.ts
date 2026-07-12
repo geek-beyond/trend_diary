@@ -16,6 +16,7 @@ describe('mapToActiveUser', () => {
       userId: 67890n,
       email: 'john.doe@example.com',
       displayName: '田中太郎',
+      theme: 'system',
       authenticationId: '550e8400-e29b-41d4-a716-446655440000',
       createdAt: new Date('2023-11-20T10:15:30Z'),
       updatedAt: now,
@@ -36,6 +37,7 @@ describe('mapToActiveUser', () => {
       expect(result.userId).toBe(rdbActiveUser.userId)
       expect(result.email).toBe(rdbActiveUser.email)
       expect(result.displayName).toBe(rdbActiveUser.displayName)
+      expect(result.theme).toBe(rdbActiveUser.theme)
       expect(result.createdAt).toEqual(rdbActiveUser.createdAt)
       expect(result.updatedAt).toEqual(rdbActiveUser.updatedAt)
     })

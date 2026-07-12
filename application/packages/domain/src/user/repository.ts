@@ -11,6 +11,7 @@ import type {
   RegisteredPasskey,
   VerifiedSession,
 } from './schema/auth-schema'
+import type { Theme } from './schema/theme-schema'
 
 export interface Query {
   findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, Error>>
@@ -42,6 +43,7 @@ export interface Command {
     notifier: Notifier,
     displayName?: string | null,
   ): Promise<Result<CurrentUser, ServerError>>
+  updateTheme(activeUserId: bigint, theme: Theme): Promise<Result<CurrentUser, ServerError>>
 }
 
 /**

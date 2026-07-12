@@ -1,4 +1,5 @@
 import { toJaDateString } from '@trend-diary/common/locale'
+import type { ReactNode } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
 import {
@@ -80,16 +81,18 @@ export default function TrendsPage({
     onApplyFilters(DEFAULT_FILTERS)
   }
 
-  const renderContent = () => {
-    if (isLoading) return <ArticleListSkeleton />
-    // 取得エラー時は誤解を招く空表示（0件表示）を避けるため一覧を出さない。案内と再試行はトーストに集約する
-    if (hasError) return null
-    if (articles.length === 0) {
-      return (
-        <EmptyArticleList hasActiveFilters={hasActiveFilters} onResetFilters={handleResetFilters} />
-      )
-    }
-    return (
+  // 取得エラー時は誤解を招く空表示（0件表示）を避けるため一覧を出さない。案内と再試行はトーストに集約する
+  let content: ReactNode
+  if (isLoading) {
+    content = <ArticleListSkeleton />
+  } else if (hasError) {
+    content = null
+  } else if (articles.length === 0) {
+    content = (
+      <EmptyArticleList hasActiveFilters={hasActiveFilters} onResetFilters={handleResetFilters} />
+    )
+  } else {
+    content = (
       <ArticleList
         articles={articles}
         onCardClick={openDrawer}
@@ -114,7 +117,7 @@ export default function TrendsPage({
         onApplyFilters={onApplyFilters}
         isLoggedIn={isLoggedIn}
       />
-      {renderContent()}
+      {content}
     </div>
   )
 }

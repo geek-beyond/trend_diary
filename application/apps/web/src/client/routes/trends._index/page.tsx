@@ -104,6 +104,42 @@ function TrendsPageBody({
     )
   }
 
+  return (
+    <ArticleList
+      articles={articles}
+      onCardClick={onCardClick}
+      onToggleRead={onToggleRead}
+      isLoggedIn={isLoggedIn}
+      page={page}
+      totalPages={totalPages}
+      toNextPage={toNextPage}
+      toPreviousPage={toPreviousPage}
+    />
+  )
+}
+
+interface ArticleListProps {
+  articles: Article[]
+  onCardClick: (article: Article) => void
+  onToggleRead: (articleId: string, isRead: boolean) => void
+  isLoggedIn: boolean
+  page: number
+  totalPages: number
+  toNextPage: (currentPage: number) => void
+  toPreviousPage: (currentPage: number) => void
+}
+
+// 記事一覧とページャ。ページャの活性判定・遷移はこの表示に閉じた関心事なのでここに置く
+function ArticleList({
+  articles,
+  onCardClick,
+  onToggleRead,
+  isLoggedIn,
+  page,
+  totalPages,
+  toNextPage,
+  toPreviousPage,
+}: ArticleListProps) {
   const isPrevDisabled = page <= 1
   const isNextDisabled = page >= totalPages
 

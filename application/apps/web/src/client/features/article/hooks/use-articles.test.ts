@@ -614,6 +614,7 @@ describe('useArticles', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
+          expect.objectContaining({ id: 'articles-error' }),
         )
         expect(result.current.isLoading).toBe(false)
       })
@@ -629,6 +630,7 @@ describe('useArticles', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
+          expect.objectContaining({ id: 'articles-error' }),
         )
         expect(result.current.isLoading).toBe(false)
       })
@@ -643,6 +645,7 @@ describe('useArticles', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
+          expect.objectContaining({ id: 'articles-error' }),
         )
         expect(result.current.isLoading).toBe(false)
       })
@@ -684,6 +687,7 @@ describe('useArticles', () => {
       })
       expect(toast.error).not.toHaveBeenCalledWith(
         'エラーが発生しました。時間をおいて再度お試しください。',
+        expect.objectContaining({ id: 'articles-error' }),
       )
     })
   })

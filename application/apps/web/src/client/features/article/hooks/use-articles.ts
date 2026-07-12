@@ -50,6 +50,9 @@ interface ArticlesResponse {
   totalPages: number
 }
 
+const FETCH_ERROR_MESSAGE = 'エラーが発生しました。時間をおいて再度お試しください。'
+const ARTICLES_ERROR_TOAST_ID = 'articles-error'
+
 const DATE_STRING_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
 const DATE_PRESET_MAP: Record<DatePresetType, number> = {
@@ -181,20 +184,29 @@ export default function useArticles(isLoggedIn = false) {
       }
     },
     {
+      // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する。
+      // 再試行はトースト内のアクションに集約し、成功時にトーストを閉じる
       onError: (swrError) => {
+        const errorToastOptions = {
+          id: ARTICLES_ERROR_TOAST_ID,
+          duration: Infinity,
+          action: { label: '再試行', onClick: () => retry() },
+        }
         if (swrError instanceof Error) {
-          notifyErrorUnlessSessionExpired(
-            swrError,
-            'エラーが発生しました。時間をおいて再度お試しください。',
-          )
+          notifyErrorUnlessSessionExpired(swrError, FETCH_ERROR_MESSAGE, errorToastOptions)
         } else {
-          toast.error('不明なエラーが発生しました')
+          toast.error('不明なエラーが発生しました', errorToastOptions)
           // oxlint-disable-next-line no-console -- 未知のエラーのため
           console.error(swrError)
         }
       },
+      onSuccess: () => toast.dismiss(ARTICLES_ERROR_TOAST_ID),
     },
   )
+
+  const retry = () => {
+    void mutate()
+  }
 
   // 表示中の一覧が「未読のみ」という条件と矛盾したまま残ると、フィルタが効いていないように見えるため
   const applyReadStateToCache =
@@ -313,7 +325,7 @@ export default function useArticles(isLoggedIn = false) {
     totalPages: data?.totalPages || 1,
     isLoading,
     hasError: !!error,
-    retry: () => mutate(),
+    retry,
     setSearchParams,
     toNextPage,
     toPreviousPage,

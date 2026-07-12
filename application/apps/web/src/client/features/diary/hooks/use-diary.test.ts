@@ -148,7 +148,7 @@ describe('useDiary', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
-          { id: 'diary-error' },
+          expect.objectContaining({ id: 'diary-error' }),
         )
       })
     })
@@ -183,7 +183,10 @@ describe('useDiary', () => {
       await waitFor(() => {
         expect(fetchDiary).toHaveBeenCalled()
       })
-      expect(toast.error).not.toHaveBeenCalledWith(expect.anything(), { id: 'diary-error' })
+      expect(toast.error).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ id: 'diary-error' }),
+      )
     })
   })
 })

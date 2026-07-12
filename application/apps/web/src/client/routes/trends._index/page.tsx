@@ -8,7 +8,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/client/components/shadcn/pagination'
-import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
 import {
   type Article,
   ArticleCard,
@@ -44,7 +43,6 @@ interface Props {
   openDrawer: (article: Article) => void
   isLoading: boolean
   hasError: boolean
-  onRetry: () => void
   page: number
   totalPages: number
   selectedMedia: SelectedMedia
@@ -63,7 +61,6 @@ export default function TrendsPage({
   openDrawer,
   isLoading,
   hasError,
-  onRetry,
   page,
   totalPages,
   selectedMedia,
@@ -122,6 +119,7 @@ export default function TrendsPage({
         onApplyFilters={onApplyFilters}
         isLoggedIn={isLoggedIn}
       />
+      {/* 取得エラー時は誤解を招く空表示を避けるため一覧を出さない。エラーの案内と再試行はトーストに集約する */}
       {isLoading ? (
         <div
           role='status'
@@ -133,9 +131,7 @@ export default function TrendsPage({
             <ArticleCardSkeleton key={key} />
           ))}
         </div>
-      ) : hasError ? (
-        <FetchErrorAlert onRetry={onRetry} />
-      ) : articles.length === 0 ? (
+      ) : hasError ? null : articles.length === 0 ? (
         <div className='text-muted-foreground'>
           <p>記事がありません</p>
           {hasActiveFilters && (

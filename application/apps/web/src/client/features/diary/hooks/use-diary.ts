@@ -2,10 +2,14 @@ import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagina
 import { DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 import useSWR from 'swr'
 import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi from './use-diary-api'
+
+const FETCH_ERROR_MESSAGE = 'エラーが発生しました。時間をおいて再度お試しください。'
+const DIARY_ERROR_TOAST_ID = 'diary-error'
 
 interface DiaryReadItem {
   readHistoryId: string
@@ -37,16 +41,22 @@ export default function useDiary() {
     ([, targetDate, targetPage]: readonly ['api/articles/diary', string, number]) =>
       fetchDiary(targetDate, targetPage),
     {
-      // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する
+      // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する。
+      // 再試行はトースト内のアクションに集約し、成功時にトーストを閉じる
       onError: (swrError) => {
-        notifyErrorUnlessSessionExpired(
-          swrError,
-          'エラーが発生しました。時間をおいて再度お試しください。',
-          { id: 'diary-error' },
-        )
+        notifyErrorUnlessSessionExpired(swrError, FETCH_ERROR_MESSAGE, {
+          id: DIARY_ERROR_TOAST_ID,
+          duration: Infinity,
+          action: { label: '再試行', onClick: () => retry() },
+        })
       },
+      onSuccess: () => toast.dismiss(DIARY_ERROR_TOAST_ID),
     },
   )
+
+  const retry = () => {
+    void mutate()
+  }
 
   const reads: DiaryReadItem[] =
     data?.reads.data.map((read) => ({ ...read, readAt: new Date(read.readAt) })) ?? []
@@ -77,7 +87,7 @@ export default function useDiary() {
     },
     isLoading,
     hasError: !!error,
-    retry: () => mutate(),
+    retry,
     toNextPage: () => updatePage(page + 1),
     toPrevPage: () => updatePage(page - 1),
   }

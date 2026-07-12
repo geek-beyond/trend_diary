@@ -3,6 +3,7 @@ import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagina
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 import useSWR from 'swr'
 import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
@@ -11,6 +12,9 @@ import useDiaryApi, {
   type DiaryResponse,
   type DiarySource,
 } from './use-diary-api'
+
+const FETCH_ERROR_MESSAGE = 'エラーが発生しました。時間をおいて再度お試しください。'
+const ANALYTICS_ERROR_TOAST_ID = 'diary-analytics-error'
 
 interface DiaryPoint {
   date: string
@@ -23,10 +27,13 @@ interface SummaryRangeData {
   weeklySources: DiarySource[]
 }
 
-// 週次・日次の2つの取得が同時に失敗しても通知を1つに集約するため、固定 id でトーストを重複させない
-const notifyFetchError = (error: unknown) => {
-  notifyErrorUnlessSessionExpired(error, 'エラーが発生しました。時間をおいて再度お試しください。', {
-    id: 'diary-analytics-error',
+// 週次・日次の2つの取得が同時に失敗しても通知を1つに集約するため、固定 id でトーストを重複させない。
+// 再試行はトースト内のアクションに集約し、成功時にトーストを閉じる
+const notifyFetchError = (error: unknown, retry: () => void) => {
+  notifyErrorUnlessSessionExpired(error, FETCH_ERROR_MESSAGE, {
+    id: ANALYTICS_ERROR_TOAST_ID,
+    duration: Infinity,
+    action: { label: '再試行', onClick: retry },
   })
 }
 
@@ -101,7 +108,11 @@ export default function useAnalytics() {
       }
     },
     {
-      onError: notifyFetchError,
+      onError: (error) => notifyFetchError(error, retry),
+      // 片方が復旧しても、もう片方が失敗中ならトーストは残す
+      onSuccess: () => {
+        if (!dailyError) toast.dismiss(ANALYTICS_ERROR_TOAST_ID)
+      },
     },
   )
 
@@ -118,9 +129,17 @@ export default function useAnalytics() {
     ([, date, currentPage]: ['api/articles/diary', string, number]) =>
       fetchDiary(date, currentPage),
     {
-      onError: notifyFetchError,
+      onError: (error) => notifyFetchError(error, retry),
+      onSuccess: () => {
+        if (!summaryError) toast.dismiss(ANALYTICS_ERROR_TOAST_ID)
+      },
     },
   )
+
+  const retry = () => {
+    void mutateSummary()
+    void mutateDaily()
+  }
 
   const reads = data?.reads.data.map((read) => ({ ...read, readAt: new Date(read.readAt) })) ?? []
   const normalizedSummaryRange =
@@ -171,10 +190,7 @@ export default function useAnalytics() {
     dateResolveError: hasDateResolveError,
     isLoading: isLoading || isSummaryLoading,
     hasError: !!summaryError || !!dailyError,
-    retry: () => {
-      void mutateSummary()
-      void mutateDaily()
-    },
+    retry,
     selectDate,
     clearSelectedDate,
     toNextPage: () => updatePage(page + 1),

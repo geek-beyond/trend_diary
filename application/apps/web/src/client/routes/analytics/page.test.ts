@@ -67,7 +67,6 @@ describe('AnalyticsPage', () => {
         readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
         isLoading: false,
         hasError: false,
-        onRetry: vi.fn(),
         onSelectDate: vi.fn(),
         onClearSelectedDate: vi.fn(),
         onNextPage: vi.fn(),
@@ -104,7 +103,6 @@ describe('AnalyticsPage', () => {
         readPagination: { page: 2, totalPages: 3, hasNext: true, hasPrev: true },
         isLoading: false,
         hasError: false,
-        onRetry: vi.fn(),
         onSelectDate,
         onClearSelectedDate,
         onNextPage: vi.fn(),
@@ -135,7 +133,6 @@ describe('AnalyticsPage', () => {
         readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
         isLoading: false,
         hasError: false,
-        onRetry: vi.fn(),
         onSelectDate: vi.fn(),
         onClearSelectedDate: vi.fn(),
         onNextPage: vi.fn(),
@@ -148,8 +145,7 @@ describe('AnalyticsPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('取得エラー時は再試行ボタン付きのエラー表示をしグラフや一覧を表示しない', () => {
-    const onRetry = vi.fn()
+  it('取得エラー時はグラフや一覧を表示しない（エラーの案内と再試行はトーストに集約する）', () => {
     render(
       createElement(AnalyticsPage, {
         selectedDate: '2026-03-08',
@@ -162,7 +158,6 @@ describe('AnalyticsPage', () => {
         readPagination: { page: 2, totalPages: 3, hasNext: true, hasPrev: true },
         isLoading: false,
         hasError: true,
-        onRetry,
         onSelectDate: vi.fn(),
         onClearSelectedDate: vi.fn(),
         onNextPage: vi.fn(),
@@ -170,14 +165,9 @@ describe('AnalyticsPage', () => {
       }),
     )
 
-    expect(
-      screen.getByText('エラーが発生しました。時間をおいて再度お試しください。'),
-    ).toBeInTheDocument()
     expect(screen.queryByTestId('analytics-chart')).not.toBeInTheDocument()
     expect(screen.queryByText('記事タイトル')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: '再試行' }))
-    expect(onRetry).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: '再試行' })).not.toBeInTheDocument()
   })
 
   it('取得エラー時でも再取得中はエラー表示ではなく通常のグラフ・一覧表示にする', () => {
@@ -193,7 +183,6 @@ describe('AnalyticsPage', () => {
         readPagination: { page: 2, totalPages: 3, hasNext: true, hasPrev: true },
         isLoading: true,
         hasError: true,
-        onRetry: vi.fn(),
         onSelectDate: vi.fn(),
         onClearSelectedDate: vi.fn(),
         onNextPage: vi.fn(),

@@ -1,4 +1,3 @@
-import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
 import {
   DiaryPageLayout,
   DiaryReadListSection,
@@ -19,7 +18,6 @@ interface Props {
   readPagination: ReadPagination
   isLoading: boolean
   hasError: boolean
-  onRetry: () => void
   onNextPage: () => void
   onPrevPage: () => void
 }
@@ -33,17 +31,15 @@ export default function DiaryPage({
   readPagination,
   isLoading,
   hasError,
-  onRetry,
   onNextPage,
   onPrevPage,
 }: Props) {
   const pageTitle = 'ダイアリー'
 
+  // 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する
   return (
     <DiaryPageLayout pageTitle={pageTitle} dateResolveError={dateResolveError}>
-      {hasError && !isLoading ? (
-        <FetchErrorAlert onRetry={onRetry} />
-      ) : (
+      {hasError && !isLoading ? null : (
         <>
           <DiarySummarySection
             sources={sources}

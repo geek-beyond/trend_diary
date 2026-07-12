@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { type ComponentProps, createElement } from 'react'
 import { MemoryRouter } from 'react-router'
 import DiaryPage from './page'
@@ -41,7 +41,6 @@ describe('DiaryPage', () => {
       readPagination: { page: 1, totalPages: 2, hasNext: true, hasPrev: false },
       isLoading: false,
       hasError: false,
-      onRetry: vi.fn(),
       onNextPage: vi.fn(),
       onPrevPage: vi.fn(),
     })
@@ -76,7 +75,6 @@ describe('DiaryPage', () => {
       readPagination: { page: 1, totalPages: 1, hasNext: false, hasPrev: false },
       isLoading: false,
       hasError: false,
-      onRetry: vi.fn(),
       onNextPage: vi.fn(),
       onPrevPage: vi.fn(),
     })
@@ -95,7 +93,6 @@ describe('DiaryPage', () => {
       readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
       isLoading: false,
       hasError: false,
-      onRetry: vi.fn(),
       onNextPage: vi.fn(),
       onPrevPage: vi.fn(),
     })
@@ -105,8 +102,7 @@ describe('DiaryPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('取得エラー時は再試行ボタン付きのエラー表示をし読了一覧を表示しない', () => {
-    const onRetry = vi.fn()
+  it('取得エラー時は読了一覧を表示しない（エラーの案内と再試行はトーストに集約する）', () => {
     renderDiaryPage({
       targetDate: '2026-03-08',
       dateResolveError: false,
@@ -116,18 +112,12 @@ describe('DiaryPage', () => {
       readPagination: { page: 1, totalPages: 2, hasNext: true, hasPrev: false },
       isLoading: false,
       hasError: true,
-      onRetry,
       onNextPage: vi.fn(),
       onPrevPage: vi.fn(),
     })
 
-    expect(
-      screen.getByText('エラーが発生しました。時間をおいて再度お試しください。'),
-    ).toBeInTheDocument()
     expect(screen.queryByText('記事タイトル')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: '再試行' }))
-    expect(onRetry).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: '再試行' })).not.toBeInTheDocument()
   })
 
   it('取得エラー時でも再取得中はエラー表示ではなく読み込み中の表示にする', () => {
@@ -140,7 +130,6 @@ describe('DiaryPage', () => {
       readPagination: { page: 1, totalPages: 2, hasNext: true, hasPrev: false },
       isLoading: true,
       hasError: true,
-      onRetry: vi.fn(),
       onNextPage: vi.fn(),
       onPrevPage: vi.fn(),
     })

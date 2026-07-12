@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { type ComponentProps, createElement } from 'react'
 import { MemoryRouter } from 'react-router'
 import { ALL_MEDIA } from '@/client/features/article'
@@ -15,7 +15,6 @@ const buildProps = (overrides: Partial<InboxPageProps> = {}): InboxPageProps => 
   article: null,
   isLoading: false,
   hasError: false,
-  onRetry: vi.fn(),
   isJustCompleted: false,
   onSkip: vi.fn().mockResolvedValue(undefined),
   onRead: vi.fn().mockResolvedValue(undefined),
@@ -84,26 +83,18 @@ describe('InboxPage', () => {
     expect(screen.getByText('未知メディアの記事')).toBeInTheDocument()
   })
 
-  it('取得エラー時は再試行ボタン付きのエラー表示をし本文を表示しない', () => {
-    const onRetry = vi.fn()
-    renderInboxPage(buildProps({ hasError: true, onRetry, remainingCount: 3 }))
+  it('取得エラー時は本文を表示しない（エラーの案内と再試行はトーストに集約する）', () => {
+    renderInboxPage(buildProps({ hasError: true, remainingCount: 3 }))
 
-    expect(
-      screen.getByText('エラーが発生しました。時間をおいて再度お試しください。'),
-    ).toBeInTheDocument()
     expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: '再試行' }))
-    expect(onRetry).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: '再試行' })).not.toBeInTheDocument()
   })
 
-  it('取得エラー時でも再取得中はエラー表示ではなくスケルトンを表示する', () => {
+  it('取得エラー時でも再取得中はスケルトンを表示する', () => {
     renderInboxPage(buildProps({ hasError: true, isLoading: true, remainingCount: 3 }))
 
     expect(screen.getByRole('status', { name: '読み込み中' })).toBeInTheDocument()
-    expect(
-      screen.queryByText('エラーが発生しました。時間をおいて再度お試しください。'),
-    ).not.toBeInTheDocument()
+    expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
   })
 
   it('通常の0件状態ではトレンド一覧への導線を表示する', () => {

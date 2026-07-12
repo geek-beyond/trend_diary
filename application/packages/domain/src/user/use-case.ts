@@ -171,29 +171,13 @@ export class AuthUseCase {
 
   async loginWithGithubCallback(
     code: string,
-    notifier: Notifier,
   ): Promise<Result<CurrentUser, ClientError | ServerError>> {
     const authResult = await this.repository.exchangeOAuthCode(code)
     if (authResult.isErr()) return err(authResult.error)
 
-    const user = authResult.value
-
-    const foundResult = await this.userQuery.findActiveByAuthenticationId(user.id)
-    if (foundResult.isErr()) return err(new ServerError(foundResult.error))
-
-    if (foundResult.value) {
-      return ok(foundResult.value)
-    }
-
-    // 初回のGitHubログインはアプリ側ユーザーが未作成のため、ここで作成して新規登録として扱う
-    const createdResult = await this.userCommand.createActiveWithAuthenticationId(
-      user.email,
-      user.id,
-      notifier,
-    )
-    if (createdResult.isErr()) return err(createdResult.error)
-
-    return ok(createdResult.value)
+    // GitHubログインは既存ユーザーの認証手段としてのみ許可する。連携済みのアプリユーザーが
+    // 見つからなければ新規登録はさせず、認証失敗(404)として扱う
+    return this.findActiveUserByAuthenticationId(authResult.value.id)
   }
 
   async startGithubLink(redirectTo: string): Promise<Result<OAuthAuthorization, ServerError>> {

@@ -2,7 +2,6 @@ import { ClientError, handleError } from '@trend-diary/common/errors'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAuthUseCase, type OAuthCallbackQuery } from '@trend-diary/domain/user'
-import { DiscordWebhookClient } from '@trend-diary/notification'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
@@ -42,8 +41,7 @@ export default async function githubCallback(c: ZodValidatedQueryContext<OAuthCa
   const rdb = getRdbClient(c.env.DB)
   const useCase = createAuthUseCase(client, rdb)
 
-  const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
-  const result = await useCase.loginWithGithubCallback(code, notifier)
+  const result = await useCase.loginWithGithubCallback(code)
   if (result.isErr()) {
     // コードの期限切れ等はユーザーの再試行で解消するため、エラー画面にせず元の画面へ戻す
     if (result.error instanceof ClientError) {

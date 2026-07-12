@@ -70,6 +70,25 @@ describe('GitHub OAuth認証', () => {
         createdIds.authIds.length = 0
       })
 
+      it('連携開始でSupabaseのGitHub認可URLへリダイレクトし、フロー種別と戻り先Cookieを保存する', async () => {
+        const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+
+        const res = await get('/api/oauth/github/link', cookies)
+
+        expect(res.status).toBe(302)
+        const location = res.headers.get('Location') ?? ''
+        expect(location).toContain('/auth/v1/authorize')
+        expect(location).toContain('provider=github')
+
+        const setCookies = getSetCookies(res)
+        expect(setCookies.find((cookie) => cookie.startsWith('oauth_flow='))).toContain(
+          'oauth_flow=link',
+        )
+        expect(setCookies.find((cookie) => cookie.startsWith('oauth_redirect_to='))).toContain(
+          'oauth_redirect_to=%2Fsettings',
+        )
+      })
+
       it('未連携の連携状態はlinked=falseを返す', async () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
@@ -79,6 +98,8 @@ describe('GitHub OAuth認証', () => {
         expect(await res.json()).toEqual({ linked: false })
       })
 
+      // 未連携ユーザーは早期returnで204を返すno-opパス。連携済みを前提とする実DELETE解除は
+      // OAuthフル往復が必要なため、ドメインのユニットテストで担保する
       it('未連携での解除は何もせず204を返す', async () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 

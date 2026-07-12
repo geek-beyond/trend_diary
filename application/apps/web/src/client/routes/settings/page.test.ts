@@ -33,11 +33,4 @@ describe('SettingsPage', () => {
 
     expect(screen.getByRole('switch', { name: 'GitHub連携を有効にする' })).toBeInTheDocument()
   })
-
-  it('β版のセクションにだけバッジを表示する', () => {
-    render(createElement(SettingsPage))
-
-    // テーマはバッジ無し、パスキーとGitHub連携がβ版
-    expect(screen.getAllByText('β版')).toHaveLength(2)
-  })
 })

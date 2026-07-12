@@ -107,8 +107,6 @@ enabled = true
 # in emails.
 site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-# OAuthのcallbackはアプリ(Worker)側のエンドポイントで受けるため、開発時の各オリジンを列挙する。
-# 本番はダッシュボードのRedirect URLsに本番オリジンのcallbackを登録する
 additional_redirect_urls = [
   "https://127.0.0.1:3000",
   "http://127.0.0.1:3000/api/oauth/github/callback",
@@ -126,7 +124,7 @@ enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
-# 設定画面からのGitHub連携(linkIdentity)に必要。本番はダッシュボードでも有効化する
+# 設定画面からのGitHub連携(linkIdentity)に必要
 enable_manual_linking = true
 
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
@@ -260,9 +258,6 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `slack`, `spotify`, `workos`, `zoom`.
-# GitHubログイン/新規登録用。ローカルで実際に認可を通すにはGitHub OAuth Appを作成し、
-# 環境変数(SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID / SECRET)を設定してsupabase startする。
-# 未設定でも起動は可能で、GitHubログインを使わない開発には影響しない
 [auth.external.github]
 enabled = true
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID)"

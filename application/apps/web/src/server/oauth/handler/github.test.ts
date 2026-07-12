@@ -94,38 +94,36 @@ describe('GitHub OAuth認証', () => {
   })
 
   describe('準正常系', () => {
-    it('codeなしのcallbackはエラー種別を添えてログイン画面へ戻す', async () => {
-      const res = await get('/api/oauth/github/callback?error=access_denied')
+    it.each([
+      {
+        name: 'codeなしの失敗はエラー種別を添えてログイン画面へ戻す',
+        path: '/api/oauth/github/callback?error=access_denied',
+        cookies: undefined,
+        location: '/login?oauthError=github',
+      },
+      {
+        name: '連携フローの失敗はログイン状態を保ったまま設定画面へ戻す',
+        path: '/api/oauth/github/callback?error=access_denied',
+        cookies: 'oauth_flow=link; oauth_redirect_to=%2Fsettings',
+        location: '/settings?oauthError=github',
+      },
+      {
+        name: '戻り先が設定画面でもログインフローの失敗はログイン画面へ戻す',
+        path: '/api/oauth/github/callback?error=access_denied',
+        cookies: 'oauth_flow=login; oauth_redirect_to=%2Fsettings',
+        location: '/login?oauthError=github',
+      },
+      {
+        name: '検証情報のない不正なcodeはログイン画面へ戻す',
+        path: '/api/oauth/github/callback?code=invalid-code',
+        cookies: undefined,
+        location: '/login?oauthError=github',
+      },
+    ])('$name', async ({ path, cookies, location }) => {
+      const res = await get(path, cookies)
 
       expect(res.status).toBe(302)
-      expect(res.headers.get('Location')).toBe('/login?oauthError=github')
-    })
-
-    it('連携フローの失敗はログイン状態を保ったまま設定画面へ戻す', async () => {
-      const res = await get(
-        '/api/oauth/github/callback?error=access_denied',
-        'oauth_flow=link; oauth_redirect_to=%2Fsettings',
-      )
-
-      expect(res.status).toBe(302)
-      expect(res.headers.get('Location')).toBe('/settings?oauthError=github')
-    })
-
-    it('戻り先が設定画面でもログインフローの失敗はログイン画面へ戻す', async () => {
-      const res = await get(
-        '/api/oauth/github/callback?error=access_denied',
-        'oauth_flow=login; oauth_redirect_to=%2Fsettings',
-      )
-
-      expect(res.status).toBe(302)
-      expect(res.headers.get('Location')).toBe('/login?oauthError=github')
-    })
-
-    it('検証情報のない不正なcodeのcallbackはログイン画面へ戻す', async () => {
-      const res = await get('/api/oauth/github/callback?code=invalid-code')
-
-      expect(res.status).toBe(302)
-      expect(res.headers.get('Location')).toBe('/login?oauthError=github')
+      expect(res.headers.get('Location')).toBe(location)
     })
 
     it('redirectクエリが外部URLなら戻り先Cookieに保存せず削除する', async () => {

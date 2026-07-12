@@ -647,10 +647,9 @@ describe('AuthUseCase', () => {
 
         const result = await useCase.startGithubLogin('https://app.example.com/callback')
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value.url).toBe('https://github.com/login/oauth/authorize?state=xxx')
-        }
+        expect(result._unsafeUnwrap().url).toBe(
+          'https://github.com/login/oauth/authorize?state=xxx',
+        )
         expect(repositoryMock.startOAuthAuthorization).toHaveBeenCalledWith(
           'github',
           'https://app.example.com/callback',
@@ -665,10 +664,7 @@ describe('AuthUseCase', () => {
 
         const result = await useCase.startGithubLogin('https://app.example.com/callback')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBe(serverError)
-        }
+        expect(result._unsafeUnwrapErr()).toBe(serverError)
       })
     })
   })
@@ -732,10 +728,9 @@ describe('AuthUseCase', () => {
 
         const result = await useCase.startGithubLink('https://app.example.com/callback')
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value.url).toBe('https://github.com/login/oauth/authorize?state=yyy')
-        }
+        expect(result._unsafeUnwrap().url).toBe(
+          'https://github.com/login/oauth/authorize?state=yyy',
+        )
         expect(repositoryMock.startOAuthLink).toHaveBeenCalledWith(
           'github',
           'https://app.example.com/callback',
@@ -750,10 +745,7 @@ describe('AuthUseCase', () => {
 
         const result = await useCase.startGithubLink('https://app.example.com/callback')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBe(serverError)
-        }
+        expect(result._unsafeUnwrapErr()).toBe(serverError)
       })
     })
   })
@@ -772,10 +764,7 @@ describe('AuthUseCase', () => {
 
         const result = await useCase.hasLinkedGithub()
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toBe(expected)
-        }
+        expect(result._unsafeUnwrap()).toBe(expected)
       })
     })
 
@@ -786,10 +775,7 @@ describe('AuthUseCase', () => {
 
         const result = await useCase.hasLinkedGithub()
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBe(serverError)
-        }
+        expect(result._unsafeUnwrapErr()).toBe(serverError)
       })
     })
   })
@@ -824,10 +810,7 @@ describe('AuthUseCase', () => {
 
         const result = await useCase.unlinkGithub()
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ClientError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ClientError)
         expect(repositoryMock.unlinkIdentity).not.toHaveBeenCalled()
       })
     })
@@ -839,10 +822,7 @@ describe('AuthUseCase', () => {
 
         const result = await useCase.unlinkGithub()
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBe(serverError)
-        }
+        expect(result._unsafeUnwrapErr()).toBe(serverError)
         expect(repositoryMock.unlinkIdentity).not.toHaveBeenCalled()
       })
     })

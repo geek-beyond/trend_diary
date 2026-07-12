@@ -20,7 +20,6 @@ const app = new Hono<Env>()
     zodValidator('query', oauthCallbackQuerySchema),
     githubCallback,
   )
-  // GitHub連携管理(要認証)。設定画面のトグルが連携状態の取得・連携開始・解除に使う
   .get('/github/link', authenticator, githubLink)
   .get('/github', authenticator, githubStatus)
   .delete('/github', authenticator, githubUnlink)

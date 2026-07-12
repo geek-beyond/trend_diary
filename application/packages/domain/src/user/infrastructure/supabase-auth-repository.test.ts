@@ -768,7 +768,7 @@ describe('SupabaseAuthRepository', () => {
       })
     })
 
-    describe('準正常系', () => {
+    describe('異常系', () => {
       it('errorが存在する場合ServerErrorを返すこと', async () => {
         resolveAuthMock(client.auth.signInWithOAuth, {
           data: { provider: 'github', url: null },
@@ -779,9 +779,7 @@ describe('SupabaseAuthRepository', () => {
 
         expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
-    })
 
-    describe('異常系', () => {
       it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
         client.auth.signInWithOAuth.mockRejectedValue(new Error('network down'))
 
@@ -862,7 +860,7 @@ describe('SupabaseAuthRepository', () => {
       })
     })
 
-    describe('準正常系', () => {
+    describe('異常系', () => {
       it('errorが存在する場合ServerErrorを返すこと', async () => {
         resolveLinkIdentityMock({
           data: { provider: 'github', url: null },
@@ -873,9 +871,7 @@ describe('SupabaseAuthRepository', () => {
 
         expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
-    })
 
-    describe('異常系', () => {
       it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
         client.auth.linkIdentity.mockRejectedValue(new Error('network down'))
 
@@ -905,7 +901,7 @@ describe('SupabaseAuthRepository', () => {
       })
     })
 
-    describe('準正常系', () => {
+    describe('異常系', () => {
       it('errorが存在する場合ServerErrorを返すこと', async () => {
         resolveAuthMock(client.auth.getUserIdentities, {
           data: null,
@@ -916,9 +912,7 @@ describe('SupabaseAuthRepository', () => {
 
         expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
-    })
 
-    describe('異常系', () => {
       it('Supabase呼び出しが例外を投げる場合ServerErrorを返すこと', async () => {
         client.auth.getUserIdentities.mockRejectedValue(new Error('network down'))
 
@@ -959,7 +953,9 @@ describe('SupabaseAuthRepository', () => {
         expect(result._unsafeUnwrapErr()).toBeInstanceOf(ClientError)
         expect(client.auth.unlinkIdentity).not.toHaveBeenCalled()
       })
+    })
 
+    describe('異常系', () => {
       it('解除がerrorを返す場合ServerErrorを返すこと', async () => {
         resolveAuthMock(client.auth.getUserIdentities, {
           data: { identities: [githubIdentity] },
@@ -974,9 +970,7 @@ describe('SupabaseAuthRepository', () => {
 
         expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
-    })
 
-    describe('異常系', () => {
       it('一覧取得が例外を投げる場合ServerErrorを返すこと', async () => {
         client.auth.getUserIdentities.mockRejectedValue(new Error('network down'))
 

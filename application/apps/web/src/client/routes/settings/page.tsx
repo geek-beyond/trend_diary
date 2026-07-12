@@ -20,8 +20,8 @@ export default function SettingsPage() {
 
         <SettingsSection
           title='パスキー'
-          badge='β版'
-          withDivider
+          badgeLabel='β版'
+          withTopDivider
           description='パスキーを有効にすると、次回から生体認証やデバイスのロックだけでログインできます。'
         >
           <PasskeyToggle />
@@ -29,8 +29,7 @@ export default function SettingsPage() {
 
         <SettingsSection
           title='GitHub連携'
-          badge='β版'
-          withDivider
+          withTopDivider
           description='GitHubアカウントを連携すると、次回からGitHubでログインできます。'
         >
           <GithubLinkToggle />

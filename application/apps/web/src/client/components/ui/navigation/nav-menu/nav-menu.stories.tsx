@@ -3,8 +3,8 @@ import { Inbox, TrendingUp } from 'lucide-react'
 import { expect } from 'storybook/test'
 import { Sheet } from '@/client/components/shadcn/sheet'
 import { SidebarProvider } from '@/client/components/shadcn/sidebar'
-import type { MenuItem } from '@/client/components/ui/layout/sidebar'
 import NavMenu from './index'
+import type { MenuItem } from './menu-items'
 
 const menuItems: MenuItem[] = [
   { title: 'トレンド記事', url: '/trends', icon: TrendingUp },

@@ -1,7 +1,7 @@
 import type { MetaFunction } from 'react-router'
 import { useSession } from '@/client/entities/auth'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
-import TrendDiaryTopPage from './page'
+import TopPage from './page'
 
 export const meta: MetaFunction = ({ matches, location }) =>
   mergeMeta(
@@ -17,5 +17,5 @@ export const meta: MetaFunction = ({ matches, location }) =>
 export default function Index() {
   const { isLoggedIn } = useSession()
 
-  return <TrendDiaryTopPage isLoggedIn={isLoggedIn} />
+  return <TopPage isLoggedIn={isLoggedIn} />
 }

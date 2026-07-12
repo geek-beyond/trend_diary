@@ -8,7 +8,7 @@ interface Props {
   isLoggedIn: boolean
 }
 
-export default function TrendDiaryTopPage({ isLoggedIn }: Props) {
+export default function TopPage({ isLoggedIn }: Props) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-muted to-background'>
       <LandingHeader isLoggedIn={isLoggedIn} />

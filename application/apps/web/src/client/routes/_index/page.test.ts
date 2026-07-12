@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import { createElement } from 'react'
 import { MemoryRouter } from 'react-router'
-import TrendDiaryTopPage from './page'
+import TopPage from './page'
 
 function renderTopPage(isLoggedIn: boolean) {
-  return render(createElement(MemoryRouter, null, createElement(TrendDiaryTopPage, { isLoggedIn })))
+  return render(createElement(MemoryRouter, null, createElement(TopPage, { isLoggedIn })))
 }
 
-describe('TrendDiaryTopPage', () => {
+describe('TopPage', () => {
   describe('未ログイン時', () => {
     it('ヘッダーにログイン・アカウント作成の導線を表示しメニューは表示しない', () => {
       renderTopPage(false)

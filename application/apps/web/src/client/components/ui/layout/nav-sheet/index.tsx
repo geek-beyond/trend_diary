@@ -8,8 +8,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/client/components/shadcn/sheet'
-import { getVisibleMenuItems } from '@/client/components/ui/layout/sidebar'
 import NavMenu from '@/client/components/ui/navigation/nav-menu'
+import { getVisibleMenuItems } from '@/client/components/ui/navigation/nav-menu/menu-items'
 import { LogoutButton } from '@/client/features/authenticate/logout'
 
 interface Props {

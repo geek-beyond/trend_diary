@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 import { Children, isValidElement } from 'react'
 import { describe, expect, it } from 'vitest'
 import { SheetClose } from '@/client/components/shadcn/sheet'
-import type { MenuItem } from '@/client/components/ui/layout/sidebar'
 import NavMenu from './index'
+import type { MenuItem } from './menu-items'
 
 const menuItems: MenuItem[] = [
   {

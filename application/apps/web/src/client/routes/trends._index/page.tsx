@@ -37,84 +37,36 @@ const DEFAULT_FILTERS: FilterParams = {
   datePreset: 'today',
 }
 
-interface TrendsPageBodyProps {
-  isLoading: boolean
-  hasError: boolean
-  articles: Article[]
-  hasActiveFilters: boolean
-  onResetFilters: () => void
-  onCardClick: (article: Article) => void
-  onToggleRead: (articleId: string, isRead: boolean) => void
-  isLoggedIn: boolean
-  page: number
-  totalPages: number
-  toNextPage: (currentPage: number) => void
-  toPreviousPage: (currentPage: number) => void
+function ArticleListSkeleton() {
+  return (
+    <div
+      role='status'
+      aria-label='記事を読み込み中'
+      className='flex flex-wrap gap-6'
+      data-slot='page-skeleton'
+    >
+      {SKELETON_KEYS.map((key) => (
+        <ArticleCardSkeleton key={key} />
+      ))}
+    </div>
+  )
 }
 
-// 表示状態ごとに early return で出し分ける。取得エラー時は誤解を招く空表示（0件表示）を
-// 避けるため一覧を出さず、エラーの案内と再試行はトーストに集約する
-function TrendsPageBody({
-  isLoading,
-  hasError,
-  articles,
-  hasActiveFilters,
-  onResetFilters,
-  onCardClick,
-  onToggleRead,
-  isLoggedIn,
-  page,
-  totalPages,
-  toNextPage,
-  toPreviousPage,
-}: TrendsPageBodyProps) {
-  if (isLoading) {
-    return (
-      <div
-        role='status'
-        aria-label='記事を読み込み中'
-        className='flex flex-wrap gap-6'
-        data-slot='page-skeleton'
-      >
-        {SKELETON_KEYS.map((key) => (
-          <ArticleCardSkeleton key={key} />
-        ))}
-      </div>
-    )
-  }
+interface EmptyArticleListProps {
+  hasActiveFilters: boolean
+  onResetFilters: () => void
+}
 
-  if (hasError) return null
-
-  if (articles.length === 0) {
-    return (
-      <div className='text-muted-foreground'>
-        <p>記事がありません</p>
-        {hasActiveFilters && (
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            className='mt-2'
-            onClick={onResetFilters}
-          >
-            フィルタを解除する
-          </Button>
-        )}
-      </div>
-    )
-  }
-
+function EmptyArticleList({ hasActiveFilters, onResetFilters }: EmptyArticleListProps) {
   return (
-    <ArticleList
-      articles={articles}
-      onCardClick={onCardClick}
-      onToggleRead={onToggleRead}
-      isLoggedIn={isLoggedIn}
-      page={page}
-      totalPages={totalPages}
-      toNextPage={toNextPage}
-      toPreviousPage={toPreviousPage}
-    />
+    <div className='text-muted-foreground'>
+      <p>記事がありません</p>
+      {hasActiveFilters && (
+        <Button type='button' variant='outline' size='sm' className='mt-2' onClick={onResetFilters}>
+          フィルタを解除する
+        </Button>
+      )}
+    </div>
   )
 }
 
@@ -197,22 +149,17 @@ function ArticleList({
   )
 }
 
-interface Props {
+// 直接描画する子（ArticleList）の props はこのページの構成要素なので、再宣言せず取り込む。
+// onCardClick は openDrawer として受けるため差し替える
+interface Props extends Omit<ArticleListProps, 'onCardClick'> {
   date: Date
-  articles: Article[]
-  openDrawer: (article: Article) => void
+  openDrawer: ArticleListProps['onCardClick']
   isLoading: boolean
   hasError: boolean
-  page: number
-  totalPages: number
   selectedMedia: SelectedMedia
   selectedReadStatus: ReadStatusType
   selectedDatePreset: DatePresetType
-  toNextPage: (currentPage: number) => void
-  toPreviousPage: (currentPage: number) => void
   onApplyFilters: (filters: FilterParams) => void
-  onToggleRead: (articleId: string, isRead: boolean) => void
-  isLoggedIn: boolean
 }
 
 export default function TrendsPage({
@@ -258,20 +205,24 @@ export default function TrendsPage({
         onApplyFilters={onApplyFilters}
         isLoggedIn={isLoggedIn}
       />
-      <TrendsPageBody
-        isLoading={isLoading}
-        hasError={hasError}
-        articles={articles}
-        hasActiveFilters={hasActiveFilters}
-        onResetFilters={handleResetFilters}
-        onCardClick={openDrawer}
-        onToggleRead={onToggleRead}
-        isLoggedIn={isLoggedIn}
-        page={page}
-        totalPages={totalPages}
-        toNextPage={toNextPage}
-        toPreviousPage={toPreviousPage}
-      />
+      {/* ローディング・エラー・0件は一覧の外側で出し分ける。取得エラー時は誤解を招く
+          空表示（0件表示）を避けるため一覧を出さず、案内と再試行はトーストに集約する */}
+      {isLoading ? (
+        <ArticleListSkeleton />
+      ) : hasError ? null : articles.length === 0 ? (
+        <EmptyArticleList hasActiveFilters={hasActiveFilters} onResetFilters={handleResetFilters} />
+      ) : (
+        <ArticleList
+          articles={articles}
+          onCardClick={openDrawer}
+          onToggleRead={onToggleRead}
+          isLoggedIn={isLoggedIn}
+          page={page}
+          totalPages={totalPages}
+          toNextPage={toNextPage}
+          toPreviousPage={toPreviousPage}
+        />
+      )}
     </div>
   )
 }

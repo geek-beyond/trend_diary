@@ -2,8 +2,8 @@ import { apiRequest, findSetCookie } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
-// GitHub本体の認可画面は通せないため、連携開始のリダイレクト先・フロー種別/戻り先Cookieと
-// 認証ガードまでを検証する
+// 連携開始は認可URLの発行までアプリ側で完結するため、リダイレクト先・フロー種別/戻り先Cookieと
+// 認証ガードを検証する
 describe('GitHub連携開始', () => {
   describe('正常系', () => {
     const TEST_EMAIL = 'oauth-github-link-test@example.com'

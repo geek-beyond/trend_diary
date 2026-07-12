@@ -1,7 +1,7 @@
 import { apiRequest, findSetCookie } from '@/test/helper/request'
 
-// GitHub本体の認可画面〜コード発行は外部サービスのため通せない。ここではSupabase認可URLの発行と
-// 戻り先/フロー種別Cookieの制御など、アプリ側で完結する境界のみを検証する
+// ログイン開始は認可URLの発行と戻り先/フロー種別Cookieの制御までアプリ側で完結するため、
+// 外部サービスを通さずにこれらの境界を検証する
 describe('GitHubログイン開始', () => {
   describe('正常系', () => {
     it('SupabaseのGitHub認可URLへリダイレクトする', async () => {

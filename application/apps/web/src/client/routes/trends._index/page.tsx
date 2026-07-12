@@ -37,6 +37,130 @@ const DEFAULT_FILTERS: FilterParams = {
   datePreset: 'today',
 }
 
+interface TrendsPageBodyProps {
+  isLoading: boolean
+  hasError: boolean
+  articles: Article[]
+  hasActiveFilters: boolean
+  onResetFilters: () => void
+  onCardClick: (article: Article) => void
+  onToggleRead: (articleId: string, isRead: boolean) => void
+  isLoggedIn: boolean
+  page: number
+  totalPages: number
+  toNextPage: (currentPage: number) => void
+  toPreviousPage: (currentPage: number) => void
+}
+
+// 表示状態ごとに early return で出し分ける。取得エラー時は誤解を招く空表示（0件表示）を
+// 避けるため一覧を出さず、エラーの案内と再試行はトーストに集約する
+function TrendsPageBody({
+  isLoading,
+  hasError,
+  articles,
+  hasActiveFilters,
+  onResetFilters,
+  onCardClick,
+  onToggleRead,
+  isLoggedIn,
+  page,
+  totalPages,
+  toNextPage,
+  toPreviousPage,
+}: TrendsPageBodyProps) {
+  if (isLoading) {
+    return (
+      <div
+        role='status'
+        aria-label='記事を読み込み中'
+        className='flex flex-wrap gap-6'
+        data-slot='page-skeleton'
+      >
+        {SKELETON_KEYS.map((key) => (
+          <ArticleCardSkeleton key={key} />
+        ))}
+      </div>
+    )
+  }
+
+  if (hasError) return null
+
+  if (articles.length === 0) {
+    return (
+      <div className='text-muted-foreground'>
+        <p>記事がありません</p>
+        {hasActiveFilters && (
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='mt-2'
+            onClick={onResetFilters}
+          >
+            フィルタを解除する
+          </Button>
+        )}
+      </div>
+    )
+  }
+
+  const isPrevDisabled = page <= 1
+  const isNextDisabled = page >= totalPages
+
+  const handlePrevPageClick = () => {
+    if (!isPrevDisabled) {
+      toPreviousPage(page)
+      scrollToTop()
+    }
+  }
+
+  const handleNextPageClick = () => {
+    if (!isNextDisabled) {
+      toNextPage(page)
+      scrollToTop()
+    }
+  }
+
+  return (
+    <div data-slot='page-content'>
+      <div className='flex flex-wrap gap-6'>
+        {articles.map((article) => (
+          <ArticleCard
+            key={article.articleId}
+            article={article}
+            onCardClick={onCardClick}
+            onToggleRead={onToggleRead}
+            isLoggedIn={isLoggedIn}
+          />
+        ))}
+      </div>
+      <Pagination className='mt-6'>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              aria-disabled={isPrevDisabled}
+              className={getPaginationClass(isPrevDisabled)}
+              onClick={handlePrevPageClick}
+            />
+          </PaginationItem>
+          <PaginationItem>
+            <span className='mx-4 text-sm'>
+              ページ {page} / {totalPages}
+            </span>
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationNext
+              aria-disabled={isNextDisabled}
+              className={getPaginationClass(isNextDisabled)}
+              onClick={handleNextPageClick}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    </div>
+  )
+}
+
 interface Props {
   date: Date
   articles: Article[]
@@ -72,9 +196,6 @@ export default function TrendsPage({
   onToggleRead,
   isLoggedIn,
 }: Props) {
-  const isPrevDisabled = page <= 1
-  const isNextDisabled = page >= totalPages
-
   const appliedFilters: FilterParams = {
     media: selectedMedia,
     readStatus: selectedReadStatus,
@@ -86,26 +207,8 @@ export default function TrendsPage({
     selectedReadStatus !== 'all' ||
     selectedDatePreset !== 'today'
 
-  const handleCardClick = (article: Article) => {
-    openDrawer(article)
-  }
-
   const handleResetFilters = () => {
     onApplyFilters(DEFAULT_FILTERS)
-  }
-
-  const handlePrevPageClick = () => {
-    if (!isPrevDisabled) {
-      toPreviousPage(page)
-      scrollToTop()
-    }
-  }
-
-  const handleNextPageClick = () => {
-    if (!isNextDisabled) {
-      toNextPage(page)
-      scrollToTop()
-    }
   }
 
   return (
@@ -119,71 +222,20 @@ export default function TrendsPage({
         onApplyFilters={onApplyFilters}
         isLoggedIn={isLoggedIn}
       />
-      {/* 取得エラー時は誤解を招く空表示を避けるため一覧を出さない。エラーの案内と再試行はトーストに集約する */}
-      {isLoading ? (
-        <div
-          role='status'
-          aria-label='記事を読み込み中'
-          className='flex flex-wrap gap-6'
-          data-slot='page-skeleton'
-        >
-          {SKELETON_KEYS.map((key) => (
-            <ArticleCardSkeleton key={key} />
-          ))}
-        </div>
-      ) : hasError ? null : articles.length === 0 ? (
-        <div className='text-muted-foreground'>
-          <p>記事がありません</p>
-          {hasActiveFilters && (
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              className='mt-2'
-              onClick={handleResetFilters}
-            >
-              フィルタを解除する
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div data-slot='page-content'>
-          <div className='flex flex-wrap gap-6'>
-            {articles.map((article) => (
-              <ArticleCard
-                key={article.articleId}
-                article={article}
-                onCardClick={handleCardClick}
-                onToggleRead={onToggleRead}
-                isLoggedIn={isLoggedIn}
-              />
-            ))}
-          </div>
-          <Pagination className='mt-6'>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  aria-disabled={isPrevDisabled}
-                  className={getPaginationClass(isPrevDisabled)}
-                  onClick={handlePrevPageClick}
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <span className='mx-4 text-sm'>
-                  ページ {page} / {totalPages}
-                </span>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  aria-disabled={isNextDisabled}
-                  className={getPaginationClass(isNextDisabled)}
-                  onClick={handleNextPageClick}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
+      <TrendsPageBody
+        isLoading={isLoading}
+        hasError={hasError}
+        articles={articles}
+        hasActiveFilters={hasActiveFilters}
+        onResetFilters={handleResetFilters}
+        onCardClick={openDrawer}
+        onToggleRead={onToggleRead}
+        isLoggedIn={isLoggedIn}
+        page={page}
+        totalPages={totalPages}
+        toNextPage={toNextPage}
+        toPreviousPage={toPreviousPage}
+      />
     </div>
   )
 }

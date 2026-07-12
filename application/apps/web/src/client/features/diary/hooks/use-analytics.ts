@@ -3,18 +3,14 @@ import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagina
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
 import useSWR from 'swr'
-import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
+import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi, {
   type DiaryRangeItemResponse,
   type DiaryResponse,
   type DiarySource,
 } from './use-diary-api'
-
-const FETCH_ERROR_MESSAGE = 'エラーが発生しました。時間をおいて再度お試しください。'
-const ANALYTICS_ERROR_TOAST_ID = 'diary-analytics-error'
 
 interface DiaryPoint {
   date: string
@@ -25,16 +21,6 @@ interface DiaryPoint {
 interface SummaryRangeData {
   points: DiaryPoint[]
   weeklySources: DiarySource[]
-}
-
-// 週次・日次の2つの取得が同時に失敗しても通知を1つに集約するため、固定 id でトーストを重複させない。
-// 再試行はトースト内のアクションに集約し、成功時にトーストを閉じる
-const notifyFetchError = (error: unknown, retry: () => void) => {
-  notifyErrorUnlessSessionExpired(error, FETCH_ERROR_MESSAGE, {
-    id: ANALYTICS_ERROR_TOAST_ID,
-    duration: Infinity,
-    action: { label: '再試行', onClick: retry },
-  })
 }
 
 const buildAvailableDates = (todayJst: string) =>
@@ -108,8 +94,8 @@ export default function useAnalytics() {
       }
     },
     {
-      onError: (error) => notifyFetchError(error, () => retry()),
-      onSuccess: () => toast.dismiss(ANALYTICS_ERROR_TOAST_ID),
+      onError: (error) => notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
+      onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ANALYTICS_ERROR),
     },
   )
 
@@ -126,10 +112,10 @@ export default function useAnalytics() {
     ([, date, currentPage]: ['api/articles/diary', string, number]) =>
       fetchDiary(date, currentPage),
     {
-      onError: (error) => notifyFetchError(error, () => retry()),
+      onError: (error) => notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
       // 週次・日次のどちらかが成功したらトーストを閉じる。まだ失敗中の側があれば
       // SWR のエラーリトライで再度 onError が発火し、同一 id のトーストが出直る
-      onSuccess: () => toast.dismiss(ANALYTICS_ERROR_TOAST_ID),
+      onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ANALYTICS_ERROR),
     },
   )
 

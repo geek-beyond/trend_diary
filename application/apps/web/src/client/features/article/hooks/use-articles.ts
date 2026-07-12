@@ -13,7 +13,7 @@ import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
-import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
+import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../model/media-selection'
 
@@ -49,9 +49,6 @@ interface ArticlesResponse {
   limit: number
   totalPages: number
 }
-
-const FETCH_ERROR_MESSAGE = 'エラーが発生しました。時間をおいて再度お試しください。'
-const ARTICLES_ERROR_TOAST_ID = 'articles-error'
 
 const DATE_STRING_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
@@ -184,23 +181,21 @@ export default function useArticles(isLoggedIn = false) {
       }
     },
     {
-      // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する。
-      // 再試行はトースト内のアクションに集約し、成功時にトーストを閉じる
       onError: (swrError) => {
-        const errorToastOptions = {
-          id: ARTICLES_ERROR_TOAST_ID,
-          duration: Infinity,
-          action: { label: '再試行', onClick: () => retry() },
-        }
         if (swrError instanceof Error) {
-          notifyErrorUnlessSessionExpired(swrError, FETCH_ERROR_MESSAGE, errorToastOptions)
+          notifyFetchError(swrError, TOAST_ID.ARTICLES_ERROR, () => retry())
         } else {
-          toast.error('不明なエラーが発生しました', errorToastOptions)
+          // fetcher は Error 系を throw するため通常到達しないが、想定外の値に備えたフォールバック
+          toast.error('不明なエラーが発生しました', {
+            id: TOAST_ID.ARTICLES_ERROR,
+            duration: Infinity,
+            action: { label: '再試行', onClick: () => retry() },
+          })
           // oxlint-disable-next-line no-console -- 未知のエラーのため
           console.error(swrError)
         }
       },
-      onSuccess: () => toast.dismiss(ARTICLES_ERROR_TOAST_ID),
+      onSuccess: () => dismissFetchError(TOAST_ID.ARTICLES_ERROR),
     },
   )
 

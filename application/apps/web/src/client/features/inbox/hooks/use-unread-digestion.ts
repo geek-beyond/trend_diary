@@ -1,14 +1,15 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { useState } from 'react'
-import { toast } from 'sonner'
 import useSWR from 'swr'
-import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
+import {
+  dismissFetchError,
+  notifyErrorUnlessSessionExpired,
+  notifyFetchError,
+  TOAST_ID,
+} from '@/client/entities/auth'
 import { isAllMediaSelected, type SelectedMedia, useReadArticle } from '@/client/features/article'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useCompletionCelebration from './use-completion-celebration'
-
-const FETCH_ERROR_MESSAGE = 'エラーが発生しました。時間をおいて再度お試しください。'
-const UNREAD_DIGESTION_ERROR_TOAST_ID = 'unread-digestion-error'
 
 export type Article = Omit<ArticleOutput, 'articleId'> & {
   articleId: string
@@ -58,16 +59,9 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
       }
     },
     {
-      // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する。
-      // 再試行はトースト内のアクションに集約し、成功時にトーストを閉じる
-      onError: (swrError) => {
-        notifyErrorUnlessSessionExpired(swrError, FETCH_ERROR_MESSAGE, {
-          id: UNREAD_DIGESTION_ERROR_TOAST_ID,
-          duration: Infinity,
-          action: { label: '再試行', onClick: () => retry() },
-        })
-      },
-      onSuccess: () => toast.dismiss(UNREAD_DIGESTION_ERROR_TOAST_ID),
+      onError: (swrError) =>
+        notifyFetchError(swrError, TOAST_ID.UNREAD_DIGESTION_ERROR, () => retry()),
+      onSuccess: () => dismissFetchError(TOAST_ID.UNREAD_DIGESTION_ERROR),
     },
   )
 

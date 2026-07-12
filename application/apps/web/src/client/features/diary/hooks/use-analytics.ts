@@ -108,11 +108,8 @@ export default function useAnalytics() {
       }
     },
     {
-      onError: (error) => notifyFetchError(error, retry),
-      // 片方が復旧しても、もう片方が失敗中ならトーストは残す
-      onSuccess: () => {
-        if (!dailyError) toast.dismiss(ANALYTICS_ERROR_TOAST_ID)
-      },
+      onError: (error) => notifyFetchError(error, () => retry()),
+      onSuccess: () => toast.dismiss(ANALYTICS_ERROR_TOAST_ID),
     },
   )
 
@@ -129,10 +126,10 @@ export default function useAnalytics() {
     ([, date, currentPage]: ['api/articles/diary', string, number]) =>
       fetchDiary(date, currentPage),
     {
-      onError: (error) => notifyFetchError(error, retry),
-      onSuccess: () => {
-        if (!summaryError) toast.dismiss(ANALYTICS_ERROR_TOAST_ID)
-      },
+      onError: (error) => notifyFetchError(error, () => retry()),
+      // 週次・日次のどちらかが成功したらトーストを閉じる。まだ失敗中の側があれば
+      // SWR のエラーリトライで再度 onError が発火し、同一 id のトーストが出直る
+      onSuccess: () => toast.dismiss(ANALYTICS_ERROR_TOAST_ID),
     },
   )
 

@@ -23,7 +23,7 @@ export default function NavSheet({ isLoggedIn }: Props) {
     <Sheet>
       <SheetTrigger asChild={true}>
         <Button variant='ghost' size='icon'>
-          <Menu className='h-6 w-6' />
+          <Menu className='size-6' />
           <span className='sr-only'>メニューを開く</span>
         </Button>
       </SheetTrigger>

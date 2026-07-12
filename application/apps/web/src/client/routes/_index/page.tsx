@@ -43,21 +43,12 @@ export default function TrendDiaryTopPage({ isLoggedIn }: Props) {
               >
                 今すぐ始める
               </AnchorLink>
-              {isLoggedIn ? (
-                <AnchorLink
-                  to='/trends'
-                  className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-border text-foreground rounded-lg text-base sm:text-lg font-semibold hover:bg-muted transition-all duration-200'
-                >
-                  トレンド一覧へ
-                </AnchorLink>
-              ) : (
-                <AnchorLink
-                  to='/login'
-                  className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-border text-foreground rounded-lg text-base sm:text-lg font-semibold hover:bg-muted transition-all duration-200'
-                >
-                  ログイン
-                </AnchorLink>
-              )}
+              <AnchorLink
+                to={isLoggedIn ? '/trends' : '/login'}
+                className='inline-flex w-44 sm:w-auto items-center justify-center px-4 py-2.5 sm:px-8 sm:py-4 border-2 border-border text-foreground rounded-lg text-base sm:text-lg font-semibold hover:bg-muted transition-all duration-200'
+              >
+                {isLoggedIn ? 'トレンド一覧へ' : 'ログイン'}
+              </AnchorLink>
             </div>
           </div>
         </div>
@@ -168,21 +159,12 @@ export default function TrendDiaryTopPage({ isLoggedIn }: Props) {
           <p className='text-xl text-blue-100 mb-8 max-w-2xl mx-auto'>
             効率的な技術トレンドのキャッチアップを体験してください
           </p>
-          {isLoggedIn ? (
-            <AnchorLink
-              to='/trends'
-              className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
-            >
-              <ClipText text='トレンド一覧へ' />
-            </AnchorLink>
-          ) : (
-            <AnchorLink
-              to='/signup'
-              className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
-            >
-              <ClipText text='無料でアカウントを作成' />
-            </AnchorLink>
-          )}
+          <AnchorLink
+            to={isLoggedIn ? '/trends' : '/signup'}
+            className='inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 bg-white text-blue-600 rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl'
+          >
+            <ClipText text={isLoggedIn ? 'トレンド一覧へ' : '無料でアカウントを作成'} />
+          </AnchorLink>
         </div>
       </section>
 

@@ -36,5 +36,5 @@ export default function useThemePreference() {
     }
   }
 
-  return { serverTheme: data ?? null, saveTheme, mutate }
+  return { serverTheme: data ?? null, saveTheme }
 }

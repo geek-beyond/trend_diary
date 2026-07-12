@@ -1,5 +1,4 @@
 import { toJaDateString } from '@trend-diary/common/locale'
-import type { ReactNode } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
 import {
@@ -38,11 +37,13 @@ const DEFAULT_FILTERS: FilterParams = {
   datePreset: 'today',
 }
 
-interface Props extends Omit<ArticleListProps, 'onCardClick'> {
+// hasActiveFilters / onResetFilters は 0 件表示用にこのページで算出して渡すため取り込まない
+interface Props extends Omit<
+  ArticleListProps,
+  'onCardClick' | 'hasActiveFilters' | 'onResetFilters'
+> {
   date: Date
   openDrawer: ArticleListProps['onCardClick']
-  isLoading: boolean
-  hasError: boolean
   selectedMedia: SelectedMedia
   selectedReadStatus: ReadStatusType
   selectedDatePreset: DatePresetType
@@ -81,31 +82,6 @@ export default function TrendsPage({
     onApplyFilters(DEFAULT_FILTERS)
   }
 
-  // 取得エラー時は誤解を招く空表示（0件表示）を避けるため一覧を出さない。案内と再試行はトーストに集約する
-  let content: ReactNode
-  if (isLoading) {
-    content = <ArticleListSkeleton />
-  } else if (hasError) {
-    content = null
-  } else if (articles.length === 0) {
-    content = (
-      <EmptyArticleList hasActiveFilters={hasActiveFilters} onResetFilters={handleResetFilters} />
-    )
-  } else {
-    content = (
-      <ArticleList
-        articles={articles}
-        onCardClick={openDrawer}
-        onToggleRead={onToggleRead}
-        isLoggedIn={isLoggedIn}
-        page={page}
-        totalPages={totalPages}
-        toNextPage={toNextPage}
-        toPreviousPage={toPreviousPage}
-      />
-    )
-  }
-
   return (
     <div className='relative min-h-screen bg-gradient-to-br from-muted to-background p-6'>
       <h1 className='pb-4 text-xl italic'>- {toJaDateString(date)} -</h1>
@@ -117,13 +93,30 @@ export default function TrendsPage({
         onApplyFilters={onApplyFilters}
         isLoggedIn={isLoggedIn}
       />
-      {content}
+      <ArticleList
+        isLoading={isLoading}
+        hasError={hasError}
+        articles={articles}
+        hasActiveFilters={hasActiveFilters}
+        onResetFilters={handleResetFilters}
+        onCardClick={openDrawer}
+        onToggleRead={onToggleRead}
+        isLoggedIn={isLoggedIn}
+        page={page}
+        totalPages={totalPages}
+        toNextPage={toNextPage}
+        toPreviousPage={toPreviousPage}
+      />
     </div>
   )
 }
 
 interface ArticleListProps {
+  isLoading: boolean
+  hasError: boolean
   articles: Article[]
+  hasActiveFilters: boolean
+  onResetFilters: () => void
   onCardClick: (article: Article) => void
   onToggleRead: (articleId: string, isRead: boolean) => void
   isLoggedIn: boolean
@@ -134,7 +127,11 @@ interface ArticleListProps {
 }
 
 function ArticleList({
+  isLoading,
+  hasError,
   articles,
+  hasActiveFilters,
+  onResetFilters,
   onCardClick,
   onToggleRead,
   isLoggedIn,
@@ -143,6 +140,13 @@ function ArticleList({
   toNextPage,
   toPreviousPage,
 }: ArticleListProps) {
+  if (isLoading) return <ArticleListSkeleton />
+  // 取得エラー時は誤解を招く空表示（0件表示）を避けるため一覧を出さない。案内と再試行はトーストに集約する
+  if (hasError) return null
+  if (articles.length === 0) {
+    return <EmptyArticleList hasActiveFilters={hasActiveFilters} onResetFilters={onResetFilters} />
+  }
+
   const isPrevDisabled = page <= 1
   const isNextDisabled = page >= totalPages
 

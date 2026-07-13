@@ -15,6 +15,13 @@ function hasSessionCookie(cookieHeader: string | undefined): boolean {
     .some((cookie) => cookie.trimStart().startsWith(SESSION_COOKIE_PREFIX))
 }
 
+// wrangler dev / E2E は localhost で動く。コロローカルの共有キャッシュはテスト間の分離を壊し、
+// シード直後のデータが見えない等の不整合を招くため、本番以外ではキャッシュを無効化する
+function isLocalHost(rawUrl: string): boolean {
+  const { hostname } = new URL(rawUrl)
+  return hostname === 'localhost' || hostname === '127.0.0.1'
+}
+
 /**
  * 未ログインの記事一覧レスポンスをエッジキャッシュする。
  * - ユーザー依存になり得るセッション Cookie 付きリクエストは素通しする
@@ -22,8 +29,13 @@ function hasSessionCookie(cookieHeader: string | undefined): boolean {
  */
 const articleCache = createMiddleware<Env>(async (c, next) => {
   const cache = getEdgeCache()
-  // ランタイム外や非対象リクエストは素通しする
-  if (!cache || c.req.method !== 'GET' || hasSessionCookie(c.req.header('Cookie'))) {
+  // ランタイム外・本番以外・非対象リクエストは素通しする
+  if (
+    !cache ||
+    c.req.method !== 'GET' ||
+    isLocalHost(c.req.url) ||
+    hasSessionCookie(c.req.header('Cookie'))
+  ) {
     return next()
   }
 

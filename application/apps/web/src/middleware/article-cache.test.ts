@@ -144,6 +144,18 @@ describe('articleCache ミドルウェア', () => {
       expect(put).not.toHaveBeenCalled()
     })
 
+    it('localhost(本番以外)へのリクエストはキャッシュせず素通しすること', async () => {
+      const { cache, match, put } = buildFakeCache()
+      vi.mocked(getEdgeCache).mockReturnValue(cache)
+      const { c, next } = buildContext({ url: 'http://localhost:5173/api/articles?page=1' })
+
+      await articleCache(c, next)
+
+      expect(next).toHaveBeenCalledOnce()
+      expect(match).not.toHaveBeenCalled()
+      expect(put).not.toHaveBeenCalled()
+    })
+
     it('GET 以外は素通しすること', async () => {
       const { cache, match, put } = buildFakeCache()
       vi.mocked(getEdgeCache).mockReturnValue(cache)

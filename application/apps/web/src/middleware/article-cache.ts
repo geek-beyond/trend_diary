@@ -1,6 +1,5 @@
 import { createMiddleware } from 'hono/factory'
 import type { Env } from '../env'
-import { getEdgeCache } from './edge-cache'
 
 // cron が毎時更新のため、数分の鮮度遅延は実害が小さい。D1 負荷とレイテンシの削減を優先して 5 分とする
 export const ARTICLE_CACHE_TTL_SECONDS = 300
@@ -28,7 +27,7 @@ const articleCache = createMiddleware<Env>(async (c, next) => {
     return next()
   }
 
-  const cache = getEdgeCache()
+  const cache = caches.default
   // Cookie の有無で応答が変わるため、キャッシュキーは URL のみで構成し Cookie 等のヘッダは含めない
   const cacheKey = new Request(c.req.url, { method: 'GET' })
 

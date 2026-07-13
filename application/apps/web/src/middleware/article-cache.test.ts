@@ -2,17 +2,12 @@ import type { Context, Next } from 'hono'
 import type { Mock } from 'vitest'
 import type { Env } from '@/env'
 import articleCache, { ARTICLE_CACHE_TTL_SECONDS } from './article-cache'
-import { getEdgeCache } from './edge-cache'
 
-vi.mock('./edge-cache', () => ({ getEdgeCache: vi.fn() }))
+// oxlint-disable-next-line typescript/consistent-type-assertions -- グローバルの caches をテストで差し替えるため
+const globalWithCaches = globalThis as { caches?: unknown }
 
-// Cache API を模した最小のインメモリ実装
-function buildFakeCache(): {
-  cache: Cache
-  match: Mock
-  put: Mock
-  store: Map<string, Response>
-} {
+// Cache API を模した最小のインメモリ実装を caches.default に差し込む
+function installFakeCache(): { match: Mock; put: Mock; store: Map<string, Response> } {
   const store = new Map<string, Response>()
   const match = vi.fn(async (request: Request) => {
     const cached = store.get(request.url)
@@ -21,9 +16,8 @@ function buildFakeCache(): {
   const put = vi.fn(async (request: Request, response: Response) => {
     store.set(request.url, response)
   })
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Cache を組み立てるため
-  const cache = { match, put } as unknown as Cache
-  return { cache, match, put, store }
+  globalWithCaches.caches = { default: { match, put } }
+  return { match, put, store }
 }
 
 interface ContextOverrides {
@@ -70,10 +64,13 @@ describe('articleCache ミドルウェア', () => {
     vi.clearAllMocks()
   })
 
+  afterEach(() => {
+    delete globalWithCaches.caches
+  })
+
   describe('正常系', () => {
     it('未ログインの GET はキャッシュミス時に next を実行し、200 応答を保存すること', async () => {
-      const { cache, put, store } = buildFakeCache()
-      vi.mocked(getEdgeCache).mockReturnValue(cache)
+      const { put, store } = installFakeCache()
       const { c, next, waitUntil } = buildContext()
 
       await articleCache(c, next)
@@ -85,8 +82,7 @@ describe('articleCache ミドルウェア', () => {
     })
 
     it('保存する応答に Cache-Control(s-maxage) を付与すること', async () => {
-      const { cache, store } = buildFakeCache()
-      vi.mocked(getEdgeCache).mockReturnValue(cache)
+      const { store } = installFakeCache()
       const { c, next } = buildContext()
 
       await articleCache(c, next)
@@ -98,12 +94,11 @@ describe('articleCache ミドルウェア', () => {
     })
 
     it('キャッシュヒット時は next を実行せずキャッシュ応答を返すこと', async () => {
-      const { cache, store, match } = buildFakeCache()
+      const { store, match } = installFakeCache()
       store.set(
         'https://example.com/api/articles?page=1',
         new Response('cached-body', { status: 200 }),
       )
-      vi.mocked(getEdgeCache).mockReturnValue(cache)
       const { c, next } = buildContext()
 
       const result = await articleCache(c, next)
@@ -125,8 +120,7 @@ describe('articleCache ミドルウェア', () => {
       { name: 'EDGE_CACHE_ENABLED が無効', overrides: { cacheEnabled: 'false' } },
       { name: 'GET 以外', overrides: { method: 'POST' } },
     ])('$name はキャッシュせず素通しすること', async ({ overrides }) => {
-      const { cache, match, put } = buildFakeCache()
-      vi.mocked(getEdgeCache).mockReturnValue(cache)
+      const { match, put } = installFakeCache()
       const { c, next } = buildContext(overrides)
 
       await articleCache(c, next)
@@ -137,8 +131,7 @@ describe('articleCache ミドルウェア', () => {
     })
 
     it('200 以外の応答はキャッシュしないこと', async () => {
-      const { cache, put } = buildFakeCache()
-      vi.mocked(getEdgeCache).mockReturnValue(cache)
+      const { put } = installFakeCache()
       const res = new Response('error', { status: 500 })
       const { c, next } = buildContext({ res })
 

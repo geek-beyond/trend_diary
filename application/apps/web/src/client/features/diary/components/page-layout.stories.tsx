@@ -18,7 +18,7 @@ export const Default: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByRole('heading', { name: 'ダイアリー' })).toBeInTheDocument()
     await expect(canvas.getByText('本文コンテンツ')).toBeInTheDocument()
-    await expect(canvas.queryByText(/JST日付の解決に失敗した/)).not.toBeInTheDocument()
+    await expect(canvas.queryByText(/JST日付の解決に失敗しました/)).not.toBeInTheDocument()
   },
 }
 
@@ -27,7 +27,7 @@ export const DateResolveError: Story = {
     dateResolveError: true,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByText(/JST日付の解決に失敗した/)).toBeInTheDocument()
+    await expect(canvas.getByText(/JST日付の解決に失敗しました/)).toBeInTheDocument()
     await expect(canvas.getByText('本文コンテンツ')).toBeInTheDocument()
   },
 }

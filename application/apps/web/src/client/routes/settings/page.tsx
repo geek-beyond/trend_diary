@@ -1,4 +1,3 @@
-import { Badge } from '@/client/components/shadcn/badge'
 import PageCard from '@/client/components/ui/layout/page-card'
 import { PasskeyToggle } from '@/client/features/passkey'
 import { SettingsSection } from '@/client/features/settings'
@@ -17,13 +16,9 @@ export default function SettingsPage() {
       </SettingsSection>
 
       <SettingsSection
-        title={
-          <span className='flex items-center gap-2'>
-            パスキー
-            <Badge variant='secondary'>β版</Badge>
-          </span>
-        }
+        title='パスキー'
         description='パスキーを有効にすると、次回から生体認証やデバイスのロックだけでログインできます。'
+        badge={{ label: 'β版', variant: 'secondary' }}
         withDivider
       >
         <PasskeyToggle />

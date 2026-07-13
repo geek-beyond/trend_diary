@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect } from 'storybook/test'
-import { Badge } from '@/client/components/shadcn/badge'
 import SettingsSection from './settings-section'
 
 const meta: Meta<typeof SettingsSection> = {
@@ -28,18 +27,14 @@ export const Default: Story = {
 
 export const WithBadgeAndDivider: Story = {
   args: {
-    title: (
-      <span className='flex items-center gap-2'>
-        パスキー
-        <Badge variant='secondary'>β版</Badge>
-      </span>
-    ),
+    title: 'パスキー',
     description:
       'パスキーを有効にすると、次回から生体認証やデバイスのロックだけでログインできます。',
+    badge: { label: 'β版', variant: 'secondary' },
     withDivider: true,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole('heading', { name: /パスキー/ })).toBeInTheDocument()
+    await expect(canvas.getByRole('heading', { name: 'パスキー' })).toBeInTheDocument()
     await expect(canvas.getByText('β版')).toBeInTheDocument()
   },
 }

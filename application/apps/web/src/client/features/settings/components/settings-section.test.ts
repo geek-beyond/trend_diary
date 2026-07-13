@@ -21,15 +21,16 @@ describe('SettingsSection', () => {
     expect(screen.getByTestId('control')).toBeInTheDocument()
   })
 
-  it('titleにReactNodeを渡すと見出し内に描画する', () => {
+  it('badgeを渡すと見出し横にバッジを表示する', () => {
     render(
       createElement(SettingsSection, {
-        title: createElement('span', {}, 'パスキー', createElement('span', {}, 'β版')),
+        title: 'パスキー',
         description: 'パスキーを有効にできます。',
+        badge: { label: 'β版' },
       }),
     )
 
-    expect(screen.getByRole('heading', { name: /パスキー/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'パスキー' })).toBeInTheDocument()
     expect(screen.getByText('β版')).toBeInTheDocument()
   })
 

@@ -141,7 +141,7 @@ describe('AnalyticsPage', () => {
     )
 
     expect(
-      screen.getByText('JST日付の解決に失敗した。時間をおいて再読み込みして。'),
+      screen.getByText('JST日付の解決に失敗しました。時間をおいて再読み込みしてください。'),
     ).toBeInTheDocument()
   })
 

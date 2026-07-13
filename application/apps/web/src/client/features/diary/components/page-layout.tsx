@@ -11,7 +11,7 @@ export default function DiaryPageLayout({ pageTitle, dateResolveError, children 
     <PageCard title={pageTitle}>
       {dateResolveError && (
         <p className='mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700'>
-          JST日付の解決に失敗した。時間をおいて再読み込みして。
+          JST日付の解決に失敗しました。時間をおいて再読み込みしてください。
         </p>
       )}
       {children}

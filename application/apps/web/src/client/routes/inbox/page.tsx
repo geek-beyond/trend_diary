@@ -31,18 +31,44 @@ export default function InboxPage({
       </div>
       <p className='mt-1 text-sm text-muted-foreground'>残り {remainingCount} 件</p>
 
-      {/* 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する */}
-      {isLoading ? (
-        <InboxBodySkeleton />
-      ) : hasError ? null : (
-        <InboxBody
-          article={article}
-          isJustCompleted={isJustCompleted}
-          onSkip={onSkip}
-          onRead={onRead}
-          onLater={onLater}
-        />
-      )}
+      <InboxContent
+        isLoading={isLoading}
+        hasError={hasError}
+        article={article}
+        isJustCompleted={isJustCompleted}
+        onSkip={onSkip}
+        onRead={onRead}
+        onLater={onLater}
+      />
     </PageCard>
+  )
+}
+
+interface InboxContentProps extends InboxBodyProps {
+  isLoading: boolean
+  hasError: boolean
+}
+
+function InboxContent({
+  isLoading,
+  hasError,
+  article,
+  isJustCompleted,
+  onSkip,
+  onRead,
+  onLater,
+}: InboxContentProps) {
+  if (isLoading) return <InboxBodySkeleton />
+  // 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する
+  if (hasError) return null
+
+  return (
+    <InboxBody
+      article={article}
+      isJustCompleted={isJustCompleted}
+      onSkip={onSkip}
+      onRead={onRead}
+      onLater={onLater}
+    />
   )
 }

@@ -21,17 +21,16 @@ function hasSessionCookie(cookieHeader: string | undefined): boolean {
  * - GET かつ 200 応答のみを対象とする
  */
 const articleCache = createMiddleware<Env>(async (c, next) => {
-  const cache = getEdgeCache()
   // 共有エッジキャッシュはテスト間の分離を壊すため、E2E 等では EDGE_CACHE_ENABLED で無効化できるようにする
   if (
     c.env.EDGE_CACHE_ENABLED !== 'true' ||
-    !cache ||
     c.req.method !== 'GET' ||
     hasSessionCookie(c.req.header('Cookie'))
   ) {
     return next()
   }
 
+  const cache = getEdgeCache()
   // Cookie の有無で応答が変わるため、キャッシュキーは URL のみで構成し Cookie 等のヘッダは含めない
   const cacheKey = new Request(c.req.url, { method: 'GET' })
 

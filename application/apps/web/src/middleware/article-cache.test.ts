@@ -117,34 +117,18 @@ describe('articleCache ミドルウェア', () => {
   })
 
   describe('準正常系', () => {
-    it('セッション Cookie 付きリクエストはキャッシュせず素通しすること', async () => {
+    // キャッシュ対象外のリクエストは match も put も呼ばずに素通しする
+    it.each([
+      {
+        name: 'セッション Cookie 付き',
+        overrides: { cookie: 'sb-abcd-auth-token=xyz; theme=dark' },
+      },
+      { name: 'EDGE_CACHE_ENABLED が無効', overrides: { cacheEnabled: 'false' } },
+      { name: 'GET 以外', overrides: { method: 'POST' } },
+    ])('$name はキャッシュせず素通しすること', async ({ overrides }) => {
       const { cache, match, put } = buildFakeCache()
       vi.mocked(getEdgeCache).mockReturnValue(cache)
-      const { c, next } = buildContext({ cookie: 'sb-abcd-auth-token=xyz; theme=dark' })
-
-      await articleCache(c, next)
-
-      expect(next).toHaveBeenCalledOnce()
-      expect(match).not.toHaveBeenCalled()
-      expect(put).not.toHaveBeenCalled()
-    })
-
-    it('EDGE_CACHE_ENABLED が有効でない場合はキャッシュせず素通しすること', async () => {
-      const { cache, match, put } = buildFakeCache()
-      vi.mocked(getEdgeCache).mockReturnValue(cache)
-      const { c, next } = buildContext({ cacheEnabled: 'false' })
-
-      await articleCache(c, next)
-
-      expect(next).toHaveBeenCalledOnce()
-      expect(match).not.toHaveBeenCalled()
-      expect(put).not.toHaveBeenCalled()
-    })
-
-    it('GET 以外は素通しすること', async () => {
-      const { cache, match, put } = buildFakeCache()
-      vi.mocked(getEdgeCache).mockReturnValue(cache)
-      const { c, next } = buildContext({ method: 'POST' })
+      const { c, next } = buildContext(overrides)
 
       await articleCache(c, next)
 
@@ -163,15 +147,6 @@ describe('articleCache ミドルウェア', () => {
 
       expect(next).toHaveBeenCalledOnce()
       expect(put).not.toHaveBeenCalled()
-    })
-
-    it('エッジキャッシュが利用できない環境では素通しすること', async () => {
-      vi.mocked(getEdgeCache).mockReturnValue(undefined)
-      const { c, next } = buildContext()
-
-      await articleCache(c, next)
-
-      expect(next).toHaveBeenCalledOnce()
     })
   })
 })

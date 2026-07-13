@@ -81,6 +81,24 @@ describe('articleCache ミドルウェア', () => {
       expect(store.size).toBe(1)
     })
 
+    it('キャッシュ実体と返却応答の双方が完全な body を持つこと', async () => {
+      const { cache, store } = buildFakeCache()
+      vi.mocked(getEdgeCache).mockReturnValue(cache)
+      const payload = JSON.stringify({ data: [{ articleId: '1' }], total: 1 })
+      const res = new Response(payload, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const { c, next } = buildContext({ res })
+
+      await articleCache(c, next)
+
+      // 保存側・返却側のどちらも tee 由来の切り詰めが無く、元の body 全体を保持していること
+      const stored = store.get('https://example.com/api/articles?page=1')
+      expect(await stored?.text()).toBe(payload)
+      expect(await c.res.text()).toBe(payload)
+    })
+
     it('保存する応答に Cache-Control(s-maxage) を付与すること', async () => {
       const { cache, store } = buildFakeCache()
       vi.mocked(getEdgeCache).mockReturnValue(cache)

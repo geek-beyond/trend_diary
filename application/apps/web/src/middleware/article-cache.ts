@@ -38,12 +38,17 @@ const articleCache = createMiddleware<Env>(async (c, next) => {
 
   if (c.res.status !== 200) return
 
-  // Hono の c.res のヘッダは可変。Set-Cookie が混ざると共有キャッシュに載せられず Cookie 漏洩の恐れもあるため除去し、TTL を付与する
-  c.res.headers.set('Cache-Control', `public, s-maxage=${ARTICLE_CACHE_TTL_SECONDS}`)
-  c.res.headers.delete('Set-Cookie')
+  // 生ストリームを tee して保存すると保存側 body が切り詰められる実装（miniflare 等）があるため、一度バッファへ読み切る
+  const body = await c.res.arrayBuffer()
+  // Set-Cookie が混ざると共有キャッシュに載せられず Cookie 漏洩の恐れもあるため除去し、TTL を付与する
+  const headers = new Headers(c.res.headers)
+  headers.set('Cache-Control', `public, s-maxage=${ARTICLE_CACHE_TTL_SECONDS}`)
+  headers.delete('Set-Cookie')
 
-  // body は一度しか読めないため clone し、応答返却後も put が中断されないよう waitUntil で完了を保証する
-  c.executionCtx.waitUntil(cache.put(cacheKey, c.res.clone()))
+  const response = new Response(body, { status: c.res.status, headers })
+  // バッファ由来なら clone しても双方が完全な body を持つ。応答返却後も put が中断されないよう waitUntil で完了を保証する
+  c.executionCtx.waitUntil(cache.put(cacheKey, response.clone()))
+  c.res = response
 })
 
 export default articleCache

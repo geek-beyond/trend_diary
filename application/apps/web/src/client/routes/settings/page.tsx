@@ -1,7 +1,7 @@
 import { Badge } from '@/client/components/shadcn/badge'
 import PageCard from '@/client/components/ui/layout/page-card'
-import SettingsSection from '@/client/components/ui/layout/settings-section'
 import { PasskeyToggle } from '@/client/features/passkey'
+import { SettingsSection } from '@/client/features/settings'
 import { ThemeToggle } from '@/client/features/theme'
 
 export default function SettingsPage() {

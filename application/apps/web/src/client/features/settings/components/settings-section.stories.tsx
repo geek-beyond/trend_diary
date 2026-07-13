@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect } from 'storybook/test'
 import { Badge } from '@/client/components/shadcn/badge'
-import SettingsSection from './index'
+import SettingsSection from './settings-section'
 
 const meta: Meta<typeof SettingsSection> = {
   component: SettingsSection,

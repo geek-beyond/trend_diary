@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { createElement } from 'react'
 import { describe, expect, it } from 'vitest'
-import SettingsSection from './index'
+import SettingsSection from './settings-section'
 
 describe('SettingsSection', () => {
   it('見出し・説明文・右側コントロールを表示する', () => {

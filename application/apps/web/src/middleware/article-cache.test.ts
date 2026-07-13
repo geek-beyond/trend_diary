@@ -158,20 +158,5 @@ describe('articleCache ミドルウェア', () => {
 
       expect(next).toHaveBeenCalledOnce()
     })
-
-    it('ExecutionContext 未提供時は保存完了を待ってから応答すること', async () => {
-      const { cache, put, store } = buildFakeCache()
-      vi.mocked(getEdgeCache).mockReturnValue(cache)
-      const { c, next, waitUntil } = buildContext()
-      // ExecutionContext が無い環境を模し、waitUntil を失敗させてフォールバックへ倒す
-      waitUntil.mockImplementation(() => {
-        throw new Error('no ExecutionContext')
-      })
-
-      await articleCache(c, next)
-
-      expect(put).toHaveBeenCalledOnce()
-      expect(store.size).toBe(1)
-    })
   })
 })

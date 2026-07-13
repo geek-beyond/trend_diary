@@ -15,14 +15,6 @@ function hasSessionCookie(cookieHeader: string | undefined): boolean {
     .some((cookie) => cookie.trimStart().startsWith(SESSION_COOKIE_PREFIX))
 }
 
-// Hono が生成する c.res のヘッダは可変のため、新たな Response を生成せず直接書き換える。
-// Set-Cookie が混ざると共有キャッシュに載せられず、他ユーザーへ Cookie が漏れる恐れもあるため除去する
-function toCacheableResponse(res: Response): Response {
-  res.headers.set('Cache-Control', `public, s-maxage=${ARTICLE_CACHE_TTL_SECONDS}`)
-  res.headers.delete('Set-Cookie')
-  return res
-}
-
 /**
  * 未ログインの記事一覧レスポンスをエッジキャッシュする。
  * - ユーザー依存になり得るセッション Cookie 付きリクエストは素通しする
@@ -46,15 +38,12 @@ const articleCache = createMiddleware<Env>(async (c, next) => {
 
   if (c.res.status !== 200) return
 
-  const response = toCacheableResponse(c.res)
-  // body は一度しか読めないため、clone して保存用と応答用に分ける
-  const putPromise = cache.put(cacheKey, response.clone())
-  try {
-    c.executionCtx.waitUntil(putPromise)
-  } catch {
-    // ExecutionContext が提供されない環境では保存完了を待ってから応答する
-    await putPromise
-  }
+  // Hono の c.res のヘッダは可変。Set-Cookie が混ざると共有キャッシュに載せられず Cookie 漏洩の恐れもあるため除去し、TTL を付与する
+  c.res.headers.set('Cache-Control', `public, s-maxage=${ARTICLE_CACHE_TTL_SECONDS}`)
+  c.res.headers.delete('Set-Cookie')
+
+  // body は一度しか読めないため clone し、応答返却後も put が中断されないよう waitUntil で完了を保証する
+  c.executionCtx.waitUntil(cache.put(cacheKey, c.res.clone()))
 })
 
 export default articleCache

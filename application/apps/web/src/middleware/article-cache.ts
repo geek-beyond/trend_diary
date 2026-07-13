@@ -15,12 +15,12 @@ function hasSessionCookie(cookieHeader: string | undefined): boolean {
     .some((cookie) => cookie.trimStart().startsWith(SESSION_COOKIE_PREFIX))
 }
 
-// キャッシュ後に Set-Cookie が混ざると共有キャッシュに載せられず、他ユーザーへ Cookie が漏れる恐れもあるため除去する
+// Hono が生成する c.res のヘッダは可変のため、新たな Response を生成せず直接書き換える。
+// Set-Cookie が混ざると共有キャッシュに載せられず、他ユーザーへ Cookie が漏れる恐れもあるため除去する
 function toCacheableResponse(res: Response): Response {
-  const response = new Response(res.body, res)
-  response.headers.set('Cache-Control', `public, s-maxage=${ARTICLE_CACHE_TTL_SECONDS}`)
-  response.headers.delete('Set-Cookie')
-  return response
+  res.headers.set('Cache-Control', `public, s-maxage=${ARTICLE_CACHE_TTL_SECONDS}`)
+  res.headers.delete('Set-Cookie')
+  return res
 }
 
 /**
@@ -35,8 +35,9 @@ const articleCache = createMiddleware<Env>(async (c, next) => {
     return next()
   }
 
-  // Cookie の有無で応答が変わるため、キャッシュキーは URL のみで構成し Cookie 等のヘッダは含めない
-  const cacheKey = new Request(new URL(c.req.url).toString(), { method: 'GET' })
+  // Cookie の有無で応答が変わるため、キャッシュキーは URL のみで構成し Cookie 等のヘッダは含めない。
+  // c.req.url は既に絶対 URL 文字列のため再パースは不要
+  const cacheKey = new Request(c.req.url, { method: 'GET' })
 
   const hit = await cache.match(cacheKey)
   if (hit) return hit
@@ -46,7 +47,7 @@ const articleCache = createMiddleware<Env>(async (c, next) => {
   if (c.res.status !== 200) return
 
   const response = toCacheableResponse(c.res)
-  // body は一度しか読めないため、保存用と応答用に分ける
+  // body は一度しか読めないため、clone して保存用と応答用に分ける
   const putPromise = cache.put(cacheKey, response.clone())
   try {
     c.executionCtx.waitUntil(putPromise)
@@ -54,7 +55,6 @@ const articleCache = createMiddleware<Env>(async (c, next) => {
     // ExecutionContext が提供されない環境では保存完了を待ってから応答する
     await putPromise
   }
-  c.res = response
 })
 
 export default articleCache

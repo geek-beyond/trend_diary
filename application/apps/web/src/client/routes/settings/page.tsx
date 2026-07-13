@@ -17,9 +17,13 @@ export default function SettingsPage() {
       </SettingsSection>
 
       <SettingsSection
-        title='パスキー'
+        title={
+          <span className='flex items-center gap-2'>
+            パスキー
+            <Badge variant='secondary'>β版</Badge>
+          </span>
+        }
         description='パスキーを有効にすると、次回から生体認証やデバイスのロックだけでログインできます。'
-        badge={<Badge variant='secondary'>β版</Badge>}
         withDivider
       >
         <PasskeyToggle />

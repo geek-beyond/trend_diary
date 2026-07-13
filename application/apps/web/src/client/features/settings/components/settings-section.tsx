@@ -2,16 +2,14 @@ import type { PropsWithChildren, ReactNode } from 'react'
 import { cn } from '@/client/components/shadcn/lib/utils'
 
 type Props = PropsWithChildren<{
-  title: string
+  title: ReactNode
   description: string
-  badge?: ReactNode
   withDivider?: boolean
 }>
 
 export default function SettingsSection({
   title,
   description,
-  badge,
   withDivider = false,
   children,
 }: Props) {
@@ -23,10 +21,7 @@ export default function SettingsSection({
       )}
     >
       <div>
-        <div className='flex items-center gap-2'>
-          <h2 className='text-sm font-semibold text-foreground'>{title}</h2>
-          {badge}
-        </div>
+        <h2 className='text-sm font-semibold text-foreground'>{title}</h2>
         <p className='mt-1 text-sm text-muted-foreground'>{description}</p>
       </div>
       {children}

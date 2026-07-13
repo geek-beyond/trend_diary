@@ -28,14 +28,18 @@ export const Default: Story = {
 
 export const WithBadgeAndDivider: Story = {
   args: {
-    title: 'パスキー',
+    title: (
+      <span className='flex items-center gap-2'>
+        パスキー
+        <Badge variant='secondary'>β版</Badge>
+      </span>
+    ),
     description:
       'パスキーを有効にすると、次回から生体認証やデバイスのロックだけでログインできます。',
-    badge: <Badge variant='secondary'>β版</Badge>,
     withDivider: true,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole('heading', { name: 'パスキー' })).toBeInTheDocument()
+    await expect(canvas.getByRole('heading', { name: /パスキー/ })).toBeInTheDocument()
     await expect(canvas.getByText('β版')).toBeInTheDocument()
   },
 }

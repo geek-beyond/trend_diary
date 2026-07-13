@@ -5,10 +5,6 @@ import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
 import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
-import {
-  DateResolveError,
-  notifyDateResolveError,
-} from '@/client/features/diary/model/notify-date-resolve-error'
 import useDiaryApi from './use-diary-api'
 
 interface DiaryReadItem {
@@ -37,16 +33,10 @@ export default function useDiary() {
   const swrKey = ['api/articles/diary', todayJst, page] as const
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
-    ([, targetDate, targetPage]: readonly ['api/articles/diary', string | null, number]) => {
-      // 今日の JST 日付を組み立てられない場合はフェッチ前に失敗させ、通知を onError に集約する
-      if (targetDate === null) throw new DateResolveError()
-      return fetchDiary(targetDate, targetPage)
-    },
+    ([, targetDate, targetPage]: readonly ['api/articles/diary', string, number]) =>
+      fetchDiary(targetDate, targetPage),
     {
-      onError: (swrError) =>
-        swrError instanceof DateResolveError
-          ? notifyDateResolveError()
-          : notifyFetchError(swrError, TOAST_ID.DIARY_ERROR, () => retry()),
+      onError: (swrError) => notifyFetchError(swrError, TOAST_ID.DIARY_ERROR, () => retry()),
       onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ERROR),
     },
   )

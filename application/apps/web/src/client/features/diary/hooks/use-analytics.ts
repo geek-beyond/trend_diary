@@ -6,10 +6,6 @@ import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
 import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
-import {
-  DateResolveError,
-  notifyDateResolveError,
-} from '@/client/features/diary/model/notify-date-resolve-error'
 import useDiaryApi, {
   type DiaryRangeItemResponse,
   type DiaryResponse,
@@ -40,7 +36,7 @@ export default function useAnalytics() {
 
   const todayJst = getTodayJst()
 
-  const availableDates = todayJst ? buildAvailableDates(todayJst) : []
+  const availableDates = buildAvailableDates(todayJst)
   const dateParam = searchParams.get('date')
   const pageParam = searchParams.get('page')
 
@@ -52,7 +48,7 @@ export default function useAnalytics() {
   })
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
-  const summaryKey = ['api/articles/diary-summary', todayJst] as const
+  const summaryKey = ['api/articles/diary-summary', ...availableDates]
   const {
     data: summaryRangeData,
     error: summaryError,
@@ -60,15 +56,12 @@ export default function useAnalytics() {
     mutate: mutateSummary,
   } = useSWR<SummaryRangeData>(
     summaryKey,
-    async ([, today]: readonly ['api/articles/diary-summary', string | null]) => {
-      // 今日の JST 日付を組み立てられない場合はフェッチ前に失敗させ、通知を onError に集約する
-      if (today === null) throw new DateResolveError()
-      const dates = buildAvailableDates(today)
-      const from = dates[0]
-      const to = dates[dates.length - 1]
+    async () => {
+      const from = availableDates[0]
+      const to = availableDates[availableDates.length - 1]
       const responses = await fetchDiaryRange(from, to)
       const responseMap = new Map(responses.map((response) => [response.date, response] as const))
-      const normalizedResponses = dates.map(
+      const normalizedResponses = availableDates.map(
         (date): DiaryRangeItemResponse => responseMap.get(date) ?? buildEmptyRangeItem(date),
       )
       const points = normalizedResponses.map((response) => ({
@@ -100,10 +93,7 @@ export default function useAnalytics() {
       }
     },
     {
-      onError: (error) =>
-        error instanceof DateResolveError
-          ? notifyDateResolveError()
-          : notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
+      onError: (error) => notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
       onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ANALYTICS_ERROR),
     },
   )

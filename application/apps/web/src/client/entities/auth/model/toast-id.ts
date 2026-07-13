@@ -5,7 +5,6 @@ export const TOAST_ID = {
   ARTICLES_ERROR: 'articles-error',
   DIARY_ERROR: 'diary-error',
   DIARY_ANALYTICS_ERROR: 'diary-analytics-error',
-  DATE_RESOLVE_ERROR: 'date-resolve-error',
   UNREAD_DIGESTION_ERROR: 'unread-digestion-error',
 } as const
 

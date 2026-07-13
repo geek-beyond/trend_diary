@@ -15,12 +15,12 @@ describe('daily-summary', () => {
       expect(getTodayJst()).toBe('2026-03-08')
     })
 
-    it('JST解決に失敗したらnullを返す', () => {
+    it('JST解決に失敗したら例外を投げる', () => {
       vi.spyOn(dateModule, 'toTodayJstDateString').mockReturnValue(
         err(new Error('JST日付の取得に失敗しました')),
       )
 
-      expect(getTodayJst()).toBeNull()
+      expect(() => getTodayJst()).toThrow('JST日付の取得に失敗しました')
     })
   })
 

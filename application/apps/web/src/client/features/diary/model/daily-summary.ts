@@ -5,10 +5,11 @@ interface SourceSummary {
   skip: number
 }
 
-export function getTodayJst(): string | null {
+export function getTodayJst(): string {
   const result = toTodayJstDateString()
+  // 失敗するのは Intl が壊れた異常環境のみで通常は起きないため、握りつぶさずエラーバウンダリに委ねる
   if (result.isErr()) {
-    return null
+    throw result.error
   }
   return result.value
 }

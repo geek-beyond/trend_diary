@@ -4,8 +4,7 @@ import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import * as dailySummary from '@/client/features/diary/model/daily-summary'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import useDiary from './use-diary'
 import useDiaryApi from './use-diary-api'
 
@@ -45,10 +44,6 @@ const buildDiaryResponse = (page: number) => ({
 describe('useDiary', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
   })
 
   it('今日の日付とページ番号で日次APIを取得する', async () => {
@@ -144,23 +139,6 @@ describe('useDiary', () => {
   })
 
   describe('異常系', () => {
-    it('今日の日付を解決できないときはエラートーストを表示しフェッチしない', async () => {
-      vi.spyOn(dailySummary, 'getTodayJst').mockReturnValue(null)
-      const fetchDiary = vi.fn()
-      mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange: vi.fn() })
-
-      const { result } = setupHook(['/diary'])
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith(
-          'JST日付の解決に失敗しました。時間をおいて再読み込みしてください。',
-          expect.objectContaining({ id: 'date-resolve-error' }),
-        )
-      })
-      expect(fetchDiary).not.toHaveBeenCalled()
-      expect(result.current.hasError).toBe(true)
-    })
-
     it('日次APIの取得に失敗するとエラーのトーストを表示する', async () => {
       const fetchDiary = vi.fn().mockRejectedValue(new Error('取得に失敗しました'))
       mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange: vi.fn() })

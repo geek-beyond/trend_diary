@@ -34,7 +34,6 @@ describe('DiaryPage', () => {
   it('対象日と読了一覧を表示する', () => {
     renderDiaryPage({
       targetDate: '2026-03-08',
-      dateResolveError: false,
       dailySummary: { read: 6, skip: 3 },
       sources,
       reads,
@@ -59,7 +58,6 @@ describe('DiaryPage', () => {
   it('読了記事URLがhttp/https以外ならリンク表示しない', () => {
     renderDiaryPage({
       targetDate: '2026-03-08',
-      dateResolveError: false,
       dailySummary: { read: 1, skip: 0 },
       sources,
       reads: [
@@ -83,28 +81,9 @@ describe('DiaryPage', () => {
     expect(screen.queryByRole('link', { name: '危険なURL記事' })).not.toBeInTheDocument()
   })
 
-  it('日付解決エラー時は読了一覧を表示しない（案内はトーストに集約する）', () => {
-    renderDiaryPage({
-      targetDate: null,
-      dateResolveError: true,
-      dailySummary: { read: 0, skip: 0 },
-      sources,
-      reads,
-      readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
-      isLoading: false,
-      hasError: false,
-      onNextPage: vi.fn(),
-      onPrevPage: vi.fn(),
-    })
-
-    expect(screen.getByRole('heading', { name: 'ダイアリー' })).toBeInTheDocument()
-    expect(screen.queryByText('記事タイトル')).not.toBeInTheDocument()
-  })
-
   it('取得エラー時は読了一覧を表示しない（エラーの案内と再試行はトーストに集約する）', () => {
     renderDiaryPage({
       targetDate: '2026-03-08',
-      dateResolveError: false,
       dailySummary: { read: 6, skip: 3 },
       sources,
       reads,
@@ -122,7 +101,6 @@ describe('DiaryPage', () => {
   it('取得エラー時でも再取得中はエラー表示ではなく読み込み中の表示にする', () => {
     renderDiaryPage({
       targetDate: '2026-03-08',
-      dateResolveError: false,
       dailySummary: { read: 6, skip: 3 },
       sources,
       reads,

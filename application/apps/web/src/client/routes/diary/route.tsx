@@ -16,7 +16,6 @@ export const meta: MetaFunction = ({ matches, location }) =>
 export default function DiaryRoute() {
   const {
     todayJst,
-    dateResolveError,
     dailySummary,
     sources,
     reads,
@@ -30,7 +29,6 @@ export default function DiaryRoute() {
   return (
     <DiaryPage
       targetDate={todayJst}
-      dateResolveError={dateResolveError}
       dailySummary={dailySummary}
       sources={sources}
       reads={reads}

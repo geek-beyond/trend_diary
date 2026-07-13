@@ -32,7 +32,6 @@ type ChartClickState = {
 
 interface Props {
   selectedDate: string | null
-  dateResolveError: boolean
   summaryRange: SummaryRangePoint[]
   weeklySummary: Summary
   dailySummary: Summary
@@ -60,7 +59,6 @@ const chartConfig = {
 
 export default function AnalyticsPage({
   selectedDate,
-  dateResolveError,
   summaryRange,
   weeklySummary,
   dailySummary,
@@ -86,8 +84,8 @@ export default function AnalyticsPage({
 
   return (
     <PageCard title={pageTitle}>
-      {/* 取得エラー・日付解決エラー時は誤解を招く空表示を避けるため本文を出さない。案内はトーストに集約する */}
-      {(hasError || dateResolveError) && !isLoading ? null : (
+      {/* 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する */}
+      {hasError && !isLoading ? null : (
         <>
           <div className='mt-5'>
             <h2 className='text-sm font-semibold text-foreground'>グラフ</h2>

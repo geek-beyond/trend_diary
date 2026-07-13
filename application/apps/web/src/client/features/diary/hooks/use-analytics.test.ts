@@ -5,8 +5,8 @@ import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getTodayJst as mockableGetTodayJst } from '@/client/features/diary/model/daily-summary'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as dailySummary from '@/client/features/diary/model/daily-summary'
 import useAnalytics from './use-analytics'
 import useDiaryApi, { type DiaryRangeItemResponse, type DiaryResponse } from './use-diary-api'
 
@@ -14,14 +14,7 @@ vi.mock('./use-diary-api', () => ({
   default: vi.fn(),
 }))
 
-// getTodayJst の失敗（日付解決エラー）を検証したいため、実装は温存しつつ差し替え可能にする
-vi.mock('@/client/features/diary/model/daily-summary', async (importOriginal) => {
-  const actual = await importOriginal<{ getTodayJst: typeof mockableGetTodayJst }>()
-  return { ...actual, getTodayJst: vi.fn(actual.getTodayJst) }
-})
-
 const mockedUseDiaryApi = vi.mocked(useDiaryApi)
-const mockedGetTodayJst = vi.mocked(mockableGetTodayJst)
 
 function setupHook(initialEntries: string[] = ['/analytics']) {
   return renderHook(() => useAnalytics(), {
@@ -90,17 +83,12 @@ const buildDates = (baseDate: string) =>
   })
 
 describe('useAnalytics', () => {
-  let realGetTodayJst: typeof mockableGetTodayJst
-  beforeAll(async () => {
-    const actual = await vi.importActual<{ getTodayJst: typeof mockableGetTodayJst }>(
-      '@/client/features/diary/model/daily-summary',
-    )
-    realGetTodayJst = actual.getTodayJst
-  })
-
   beforeEach(() => {
     vi.clearAllMocks()
-    mockedGetTodayJst.mockImplementation(realGetTodayJst)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('日付未選択時は過去1週間の集計を表示する', async () => {
@@ -274,7 +262,7 @@ describe('useAnalytics', () => {
 
   describe('異常系', () => {
     it('今日の日付を解決できないときはエラートーストを表示しフェッチしない', async () => {
-      mockedGetTodayJst.mockReturnValue(null)
+      vi.spyOn(dailySummary, 'getTodayJst').mockReturnValue(null)
       const fetchDiary = vi.fn()
       const fetchDiaryRange = vi.fn()
       mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange })
@@ -289,7 +277,7 @@ describe('useAnalytics', () => {
       })
       expect(fetchDiary).not.toHaveBeenCalled()
       expect(fetchDiaryRange).not.toHaveBeenCalled()
-      expect(result.current.dateResolveError).toBe(true)
+      expect(result.current.hasError).toBe(true)
     })
 
     it('週次集計の取得に失敗するとエラーのトーストを表示する', async () => {

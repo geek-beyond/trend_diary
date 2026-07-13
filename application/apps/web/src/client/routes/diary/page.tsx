@@ -11,7 +11,6 @@ import {
 
 interface Props {
   targetDate: string | null
-  dateResolveError: boolean
   dailySummary: Summary
   sources: Source[]
   reads: ReadItem[]
@@ -24,7 +23,6 @@ interface Props {
 
 export default function DiaryPage({
   targetDate,
-  dateResolveError,
   dailySummary,
   sources,
   reads,
@@ -36,10 +34,10 @@ export default function DiaryPage({
 }: Props) {
   const pageTitle = 'ダイアリー'
 
-  // 取得エラー・日付解決エラー時は誤解を招く空表示を避けるため本文を出さない。案内はトーストに集約する
+  // 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する
   return (
     <PageCard title={pageTitle}>
-      {(hasError || dateResolveError) && !isLoading ? null : (
+      {hasError && !isLoading ? null : (
         <>
           <DiarySummarySection
             sources={sources}

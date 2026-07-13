@@ -2,13 +2,12 @@ import { addJstDays } from '@trend-diary/common/locale/date'
 import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagination/schema'
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
-import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
 import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import {
-  dismissDateResolveError,
+  DateResolveError,
   notifyDateResolveError,
 } from '@/client/features/diary/model/notify-date-resolve-error'
 import useDiaryApi, {
@@ -40,15 +39,6 @@ export default function useAnalytics() {
   const { fetchDiary, fetchDiaryRange } = useDiaryApi()
 
   const todayJst = getTodayJst()
-  const hasDateResolveError = todayJst === null
-
-  // 日付解決の失敗は SWR を起動しない前段の失敗でイベント経由の通知点を持たないため、
-  // 派生状態の変化をトーストという外部システムへ同期する用途で Effect を使う
-  useEffect(() => {
-    if (!hasDateResolveError) return
-    notifyDateResolveError()
-    return () => dismissDateResolveError()
-  }, [hasDateResolveError])
 
   const availableDates = todayJst ? buildAvailableDates(todayJst) : []
   const dateParam = searchParams.get('date')
@@ -62,8 +52,7 @@ export default function useAnalytics() {
   })
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
-  const summaryKey =
-    availableDates.length > 0 ? ['api/articles/diary-summary', ...availableDates] : null
+  const summaryKey = ['api/articles/diary-summary', todayJst] as const
   const {
     data: summaryRangeData,
     error: summaryError,
@@ -71,12 +60,15 @@ export default function useAnalytics() {
     mutate: mutateSummary,
   } = useSWR<SummaryRangeData>(
     summaryKey,
-    async () => {
-      const from = availableDates[0]
-      const to = availableDates[availableDates.length - 1]
+    async ([, today]: readonly ['api/articles/diary-summary', string | null]) => {
+      // 今日の JST 日付を組み立てられない場合はフェッチ前に失敗させ、通知を onError に集約する
+      if (today === null) throw new DateResolveError()
+      const dates = buildAvailableDates(today)
+      const from = dates[0]
+      const to = dates[dates.length - 1]
       const responses = await fetchDiaryRange(from, to)
       const responseMap = new Map(responses.map((response) => [response.date, response] as const))
-      const normalizedResponses = availableDates.map(
+      const normalizedResponses = dates.map(
         (date): DiaryRangeItemResponse => responseMap.get(date) ?? buildEmptyRangeItem(date),
       )
       const points = normalizedResponses.map((response) => ({
@@ -108,7 +100,10 @@ export default function useAnalytics() {
       }
     },
     {
-      onError: (error) => notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
+      onError: (error) =>
+        error instanceof DateResolveError
+          ? notifyDateResolveError()
+          : notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
       onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ANALYTICS_ERROR),
     },
   )
@@ -184,7 +179,6 @@ export default function useAnalytics() {
       hasNext: false,
       hasPrev: false,
     },
-    dateResolveError: hasDateResolveError,
     isLoading: isLoading || isSummaryLoading,
     hasError: !!summaryError || !!dailyError,
     retry,

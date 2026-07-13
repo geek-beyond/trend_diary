@@ -1,13 +1,12 @@
 import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagination/schema'
 import { DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
-import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
 import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import {
-  dismissDateResolveError,
+  DateResolveError,
   notifyDateResolveError,
 } from '@/client/features/diary/model/notify-date-resolve-error'
 import useDiaryApi from './use-diary-api'
@@ -27,15 +26,6 @@ export default function useDiary() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { fetchDiary } = useDiaryApi()
   const todayJst = getTodayJst()
-  const hasDateResolveError = todayJst === null
-
-  // 日付解決の失敗は SWR を起動しない前段の失敗でイベント経由の通知点を持たないため、
-  // 派生状態の変化をトーストという外部システムへ同期する用途で Effect を使う
-  useEffect(() => {
-    if (!hasDateResolveError) return
-    notifyDateResolveError()
-    return () => dismissDateResolveError()
-  }, [hasDateResolveError])
 
   const pageParam = searchParams.get('page')
   const parseResult = offsetPaginationSchema.safeParse({
@@ -44,13 +34,19 @@ export default function useDiary() {
   })
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
-  const swrKey = todayJst ? (['api/articles/diary', todayJst, page] as const) : null
+  const swrKey = ['api/articles/diary', todayJst, page] as const
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
-    ([, targetDate, targetPage]: readonly ['api/articles/diary', string, number]) =>
-      fetchDiary(targetDate, targetPage),
+    ([, targetDate, targetPage]: readonly ['api/articles/diary', string | null, number]) => {
+      // 今日の JST 日付を組み立てられない場合はフェッチ前に失敗させ、通知を onError に集約する
+      if (targetDate === null) throw new DateResolveError()
+      return fetchDiary(targetDate, targetPage)
+    },
     {
-      onError: (swrError) => notifyFetchError(swrError, TOAST_ID.DIARY_ERROR, () => retry()),
+      onError: (swrError) =>
+        swrError instanceof DateResolveError
+          ? notifyDateResolveError()
+          : notifyFetchError(swrError, TOAST_ID.DIARY_ERROR, () => retry()),
       onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ERROR),
     },
   )
@@ -75,7 +71,6 @@ export default function useDiary() {
 
   return {
     todayJst,
-    dateResolveError: hasDateResolveError,
     dailySummary,
     sources: data?.sources ?? emptySources,
     reads,

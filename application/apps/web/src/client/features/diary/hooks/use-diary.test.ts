@@ -4,8 +4,8 @@ import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getTodayJst } from '@/client/features/diary/model/daily-summary'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as dailySummary from '@/client/features/diary/model/daily-summary'
 import useDiary from './use-diary'
 import useDiaryApi from './use-diary-api'
 
@@ -13,14 +13,7 @@ vi.mock('./use-diary-api', () => ({
   default: vi.fn(),
 }))
 
-// getTodayJst の失敗（日付解決エラー）を検証したいため、実装は温存しつつ差し替え可能にする
-vi.mock('@/client/features/diary/model/daily-summary', async (importOriginal) => {
-  const actual = await importOriginal<{ getTodayJst: typeof getTodayJst }>()
-  return { ...actual, getTodayJst: vi.fn(actual.getTodayJst) }
-})
-
 const mockedUseDiaryApi = vi.mocked(useDiaryApi)
-const mockedGetTodayJst = vi.mocked(getTodayJst)
 
 function setupHook(initialEntries: string[] = ['/diary']) {
   return renderHook(() => useDiary(), {
@@ -50,17 +43,12 @@ const buildDiaryResponse = (page: number) => ({
 })
 
 describe('useDiary', () => {
-  let realGetTodayJst: typeof getTodayJst
-  beforeAll(async () => {
-    const actual = await vi.importActual<{ getTodayJst: typeof getTodayJst }>(
-      '@/client/features/diary/model/daily-summary',
-    )
-    realGetTodayJst = actual.getTodayJst
-  })
-
   beforeEach(() => {
     vi.clearAllMocks()
-    mockedGetTodayJst.mockImplementation(realGetTodayJst)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('今日の日付とページ番号で日次APIを取得する', async () => {
@@ -157,7 +145,7 @@ describe('useDiary', () => {
 
   describe('異常系', () => {
     it('今日の日付を解決できないときはエラートーストを表示しフェッチしない', async () => {
-      mockedGetTodayJst.mockReturnValue(null)
+      vi.spyOn(dailySummary, 'getTodayJst').mockReturnValue(null)
       const fetchDiary = vi.fn()
       mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange: vi.fn() })
 
@@ -170,7 +158,7 @@ describe('useDiary', () => {
         )
       })
       expect(fetchDiary).not.toHaveBeenCalled()
-      expect(result.current.dateResolveError).toBe(true)
+      expect(result.current.hasError).toBe(true)
     })
 
     it('日次APIの取得に失敗するとエラーのトーストを表示する', async () => {

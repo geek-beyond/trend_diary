@@ -25,6 +25,8 @@ export interface Env {
     TURNSTILE_SECRET_KEY?: string
     // ローカル開発などバインディング未設定の環境ではフェイルオープンするためoptional
     AUTH_RATE_LIMITER?: RateLimiter
+    // エッジキャッシュの有効/無効フラグ。"true" のときのみ有効。E2E など分離が必要な環境は .dev.vars で上書きして無効化する
+    EDGE_CACHE_ENABLED?: string
   }
   Variables: {
     [CONTEXT_KEY.APP_LOG]: LoggerType

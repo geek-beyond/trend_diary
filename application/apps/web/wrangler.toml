@@ -9,6 +9,8 @@ assets = { directory = "./build/client" }
 LOG_LEVEL = "info"
 # Cloudflare TurnstileのサイトキーはHTMLに埋め込まれる公開値のため[vars]で管理する
 TURNSTILE_SITE_KEY = "0x4AAAAAADiD2o4io1Au9fnq"
+# 未ログインの記事一覧をエッジキャッシュする。E2E は .dev.vars で false に上書きしてテスト間分離を保つ
+EDGE_CACHE_ENABLED = "true"
 
 [observability]
 enabled = true

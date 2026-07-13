@@ -17,7 +17,6 @@ export const meta: MetaFunction = ({ matches, location }) =>
 export default function AnalyticsRoute() {
   const {
     selectedDate,
-    dateResolveError,
     summaryRange,
     weeklySummary,
     dailySummary,
@@ -35,7 +34,6 @@ export default function AnalyticsRoute() {
   return (
     <AnalyticsPage
       selectedDate={selectedDate}
-      dateResolveError={dateResolveError}
       summaryRange={summaryRange}
       weeklySummary={weeklySummary}
       dailySummary={dailySummary}

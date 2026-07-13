@@ -55,7 +55,6 @@ describe('AnalyticsPage', () => {
     render(
       createElement(AnalyticsPage, {
         selectedDate: null,
-        dateResolveError: false,
         summaryRange: [
           { date: '2026-03-07', read: 1, skip: 0 },
           { date: '2026-03-08', read: 2, skip: 1 },
@@ -91,7 +90,6 @@ describe('AnalyticsPage', () => {
     render(
       createElement(AnalyticsPage, {
         selectedDate: '2026-03-08',
-        dateResolveError: false,
         summaryRange: [
           { date: '2026-03-07', read: 1, skip: 0 },
           { date: '2026-03-08', read: 2, skip: 1 },
@@ -120,36 +118,10 @@ describe('AnalyticsPage', () => {
     expect(screen.getAllByText('3件').length).toBeGreaterThanOrEqual(1)
   })
 
-  it('日付解決に失敗したときはエラーメッセージを表示する', () => {
-    render(
-      createElement(AnalyticsPage, {
-        selectedDate: null,
-        dateResolveError: true,
-        summaryRange: [],
-        weeklySummary: { read: 0, skip: 0 },
-        dailySummary: { read: 0, skip: 0 },
-        sources,
-        reads: [],
-        readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
-        isLoading: false,
-        hasError: false,
-        onSelectDate: vi.fn(),
-        onClearSelectedDate: vi.fn(),
-        onNextPage: vi.fn(),
-        onPrevPage: vi.fn(),
-      }),
-    )
-
-    expect(
-      screen.getByText('JST日付の解決に失敗した。時間をおいて再読み込みして。'),
-    ).toBeInTheDocument()
-  })
-
   it('取得エラー時はグラフや一覧を表示しない（エラーの案内と再試行はトーストに集約する）', () => {
     render(
       createElement(AnalyticsPage, {
         selectedDate: '2026-03-08',
-        dateResolveError: false,
         summaryRange: [{ date: '2026-03-08', read: 2, skip: 1 }],
         weeklySummary: { read: 20, skip: 7 },
         dailySummary: { read: 3, skip: 1 },
@@ -174,7 +146,6 @@ describe('AnalyticsPage', () => {
     render(
       createElement(AnalyticsPage, {
         selectedDate: '2026-03-08',
-        dateResolveError: false,
         summaryRange: [{ date: '2026-03-08', read: 2, skip: 1 }],
         weeklySummary: { read: 20, skip: 7 },
         dailySummary: { read: 3, skip: 1 },

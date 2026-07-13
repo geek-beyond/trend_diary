@@ -7,7 +7,7 @@ type Props = PropsWithChildren<{
 
 export default function DiaryPageLayout({ pageTitle, dateResolveError, children }: Props) {
   return (
-    <div className='min-h-screen bg-gradient-to-br from-muted to-background p-6'>
+    <div className='flex-1 bg-gradient-to-br from-muted to-background p-6'>
       <div className='mx-auto w-full max-w-3xl rounded-2xl border border-border bg-card/60 p-6 shadow-xl backdrop-blur-sm'>
         <h1 className='text-xl font-semibold text-foreground'>{pageTitle}</h1>
         {dateResolveError && (

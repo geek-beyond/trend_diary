@@ -6,7 +6,7 @@ export default function SettingsPage() {
   const pageTitle = '設定'
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-muted to-background p-6'>
+    <div className='flex-1 bg-gradient-to-br from-muted to-background p-6'>
       <div className='mx-auto w-full max-w-3xl rounded-2xl border border-border bg-card/50 p-6 shadow-xl backdrop-blur-sm'>
         <h1 className='text-xl font-semibold text-foreground'>{pageTitle}</h1>
 

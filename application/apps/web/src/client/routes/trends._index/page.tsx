@@ -8,6 +8,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/client/components/shadcn/pagination'
+import PageContainer from '@/client/components/ui/layout/page-container'
 import {
   type Article,
   ArticleCard,
@@ -83,7 +84,7 @@ export default function TrendsPage({
   }
 
   return (
-    <div className='relative min-h-screen bg-gradient-to-br from-muted to-background p-6'>
+    <PageContainer className='relative'>
       <h1 className='pb-4 text-xl italic'>- {toJaDateString(date)} -</h1>
       {/* 適用済みフィルタが外部（URL 等）で変わったら draft を初期化したいので key で再マウントする。
           key はフィールド追加時の付け忘れを防ぐため applied の値から導出する */}
@@ -107,7 +108,7 @@ export default function TrendsPage({
         toNextPage={toNextPage}
         toPreviousPage={toPreviousPage}
       />
-    </div>
+    </PageContainer>
   )
 }
 

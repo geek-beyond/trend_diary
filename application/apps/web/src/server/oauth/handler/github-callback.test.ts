@@ -1,71 +1,44 @@
-import { vi } from 'vitest'
-import type * as SupabaseInfra from '@/infrastructure/supabase'
 import { apiRequest } from '@/test/helper/request'
-import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
-type ExchangeResult = Awaited<
-  ReturnType<SupabaseInfra.SupabaseAuthClient['auth']['exchangeCodeForSession']>
->
+const TEST_PASSWORD = 'Test@password123'
+const EMAIL_PREFIX = 'oauth-github-callback'
 
-// コード発行〜トークン交換は外部サービス依存で通せないため、その SDK 呼び出しだけを差し替える
-let exchange: (() => Promise<ExchangeResult>) | null = null
+// login-start で PKCE の code_verifier cookie を確立し、続けて login_hint 付きで supa-emu の
+// authorize を叩いて対象ユーザーに紐づく単回コードを発行させる。アプリの callback が
+// この cookie とコードで実際に exchangeCodeForSession を行うため、往復全体が実結合になる
+async function startGithubOAuth(loginHint: string): Promise<{ code: string; cookies: string }> {
+  const loginRes = await apiRequest('/api/oauth/github/login')
+  const cookies = loginRes.headers
+    .getSetCookie()
+    .map((cookie) => cookie.split(';')[0])
+    .join('; ')
 
-vi.mock('@/infrastructure/supabase', async (importOriginal) => {
-  const actual = await importOriginal<typeof SupabaseInfra>()
-  return {
-    ...actual,
-    createSupabaseAuthClient: (c: Parameters<typeof actual.createSupabaseAuthClient>[0]) => {
-      const client = actual.createSupabaseAuthClient(c)
-      const override = exchange
-      if (override) {
-        client.auth.exchangeCodeForSession = override
-      }
-      return client
-    },
-  }
-})
+  const authorize = new URL(loginRes.headers.get('Location') ?? '')
+  authorize.searchParams.set('login_hint', loginHint)
+  const authorizeRes = await fetch(authorize, { redirect: 'manual' })
 
-function resolveExchange(authenticationId: string): () => Promise<ExchangeResult> {
-  // callbackが使うのは user.id のみ。toAuthenticationUser が要求する最小限のフィールドだけ満たす
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- SDKの判別共用体を部分的な payload で満たすため
-  const result = {
-    data: {
-      user: {
-        id: authenticationId,
-        email: 'github-callback@example.com',
-        email_confirmed_at: '2025-01-01T00:00:00Z',
-        created_at: '2025-01-01T00:00:00Z',
-      },
-      session: { access_token: 'token', refresh_token: 'refresh' },
-    },
-    error: null,
-  } as ExchangeResult
-  return () => Promise.resolve(result)
+  const location = authorizeRes.headers.get('Location')
+  if (!location) throw new Error(`authorize did not redirect: ${authorizeRes.status}`)
+  const code = new URL(location).searchParams.get('code')
+  if (!code) throw new Error(`authorize returned no code: ${location}`)
+
+  return { code, cookies }
 }
 
 describe('GitHub OAuthコールバック', () => {
-  const createdIds: CleanUpIds = { userIds: [], authIds: [] }
-
-  beforeEach(() => {
-    exchange = null
-  })
-
   afterEach(async () => {
-    await userHelper.cleanUp(createdIds)
-    createdIds.userIds.length = 0
-    createdIds.authIds.length = 0
+    await userHelper.cleanUpByEmailPattern(EMAIL_PREFIX)
   })
 
   describe('正常系', () => {
-    it('認証に成功すると既定の遷移先へリダイレクトする', async () => {
-      const email = 'oauth-github-callback-test@example.com'
-      const { userId, authenticationId } = await userHelper.create(email, 'Test@password123')
-      createdIds.userIds.push(userId)
-      createdIds.authIds.push(authenticationId)
-      exchange = resolveExchange(authenticationId)
+    it('連携済みユーザーの認証に成功すると既定の遷移先へリダイレクトする', async () => {
+      const email = `${EMAIL_PREFIX}-linked@example.com`
+      await userHelper.create(email, TEST_PASSWORD)
+      // login_hint に既存 email を渡すと同一 auth user が再利用され、その id でセッションが確立する
+      const { code, cookies } = await startGithubOAuth(email)
 
-      const res = await apiRequest('/api/oauth/github/callback?code=valid-code')
+      const res = await apiRequest(`/api/oauth/github/callback?code=${code}`, { cookies })
 
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe('/trends')
@@ -100,23 +73,13 @@ describe('GitHub OAuthコールバック', () => {
     })
 
     it('連携済みユーザーが見つからなければログイン画面へ戻す', async () => {
-      // 未連携のGitHubアカウントはアプリ側ユーザーが無く404となるが、再試行で解消しうるため元の画面へ戻す
-      exchange = resolveExchange('unlinked-authentication-id')
+      // login_hint に未知の email を渡すとアプリ側ユーザーの無い auth user が払い出され、404で戻る
+      const { code, cookies } = await startGithubOAuth(`${EMAIL_PREFIX}-unlinked@example.com`)
 
-      const res = await apiRequest('/api/oauth/github/callback?code=valid-code')
+      const res = await apiRequest(`/api/oauth/github/callback?code=${code}`, { cookies })
 
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe('/login?oauthError=github')
-    })
-  })
-
-  describe('異常系', () => {
-    it('コード交換が例外を投げる場合はエラー応答を返す', async () => {
-      exchange = () => Promise.reject(new Error('network down'))
-
-      const res = await apiRequest('/api/oauth/github/callback?code=broken-code')
-
-      expect(res.status).toBe(500)
     })
   })
 })

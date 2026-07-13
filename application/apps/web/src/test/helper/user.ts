@@ -136,6 +136,29 @@ export async function create(email: string, password: string): Promise<CreateRes
   }
 }
 
+// supa-emu の seed API で github identity 付きのユーザーを作る。email identity は seed 側で
+// 必ず付くため、生成されるのは [email, github] の連携済みユーザー。password ログインも可能
+export async function createWithGithub(email: string, password: string): Promise<CreateResult> {
+  const res = await fetch(`${TEST_ENV.SUPABASE_URL}/__emulator/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, identities: [{ provider: 'github' }] }),
+  })
+  if (res.status !== 201) {
+    throw new Error(`Failed to seed github user: ${res.status} ${await res.text()}`)
+  }
+
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- emulatorのseed応答から必要なidのみ取り出すため
+  const { id: authenticationId } = (await res.json()) as { id: string }
+  const activeUser = await createActiveUser(email, authenticationId)
+
+  return {
+    activeUserId: activeUser.activeUserId,
+    userId: activeUser.userId,
+    authenticationId,
+  }
+}
+
 // Set-Cookie ヘッダーも返すので後続リクエストに使用できる。
 export async function login(email: string, password: string): Promise<LoginResult> {
   // Hono経由でログイン

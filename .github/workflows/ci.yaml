@@ -135,9 +135,9 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: Supabase Emulator のセットアップ
-        uses: rin2yh/supa-emu@ede5e539ca5f8f53f50444cf3ce66dbeeafffd7d # v0.1.5
+        uses: rin2yh/supa-emu@f4a713ecf15090604d3f95e15f5edef3be5cec59 # v0.1.6
         with:
-          version: v0.1.5
+          version: v0.1.6
           addr: 127.0.0.1:54321
           webauthn-rp-id: 127.0.0.1
 

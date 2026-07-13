@@ -8,9 +8,8 @@ type ExchangeResult = Awaited<
   ReturnType<SupabaseInfra.SupabaseAuthClient['auth']['exchangeCodeForSession']>
 >
 
-// コード発行〜トークン交換は外部サービス依存で通せないため、その SDK 呼び出し
-// (exchangeCodeForSession)だけを差し替える。use-case・repository・DB は実のまま通す
-let exchangeResult: ExchangeResult | null = null
+// コード発行〜トークン交換は外部サービス依存で通せないため、その SDK 呼び出しだけを差し替える
+let exchange: (() => Promise<ExchangeResult>) | null = null
 
 vi.mock('@/infrastructure/supabase', async (importOriginal) => {
   const actual = await importOriginal<typeof SupabaseInfra>()
@@ -18,19 +17,19 @@ vi.mock('@/infrastructure/supabase', async (importOriginal) => {
     ...actual,
     createSupabaseAuthClient: (c: Parameters<typeof actual.createSupabaseAuthClient>[0]) => {
       const client = actual.createSupabaseAuthClient(c)
-      const result = exchangeResult
-      if (result) {
-        client.auth.exchangeCodeForSession = () => Promise.resolve(result)
+      const override = exchange
+      if (override) {
+        client.auth.exchangeCodeForSession = override
       }
       return client
     },
   }
 })
 
-function buildExchangeResult(authenticationId: string): ExchangeResult {
+function resolveExchange(authenticationId: string): () => Promise<ExchangeResult> {
   // callbackが使うのは user.id のみ。toAuthenticationUser が要求する最小限のフィールドだけ満たす
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- SDKのUser/Session全フィールドは不要で、必要な項目のみ満たすため
-  return {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SDKの判別共用体を部分的な payload で満たすため
+  const result = {
     data: {
       user: {
         id: authenticationId,
@@ -41,14 +40,15 @@ function buildExchangeResult(authenticationId: string): ExchangeResult {
       session: { access_token: 'token', refresh_token: 'refresh' },
     },
     error: null,
-  } as unknown as ExchangeResult
+  } as ExchangeResult
+  return () => Promise.resolve(result)
 }
 
 describe('GitHub OAuthコールバック', () => {
   const createdIds: CleanUpIds = { userIds: [], authIds: [] }
 
   beforeEach(() => {
-    exchangeResult = null
+    exchange = null
   })
 
   afterEach(async () => {
@@ -63,7 +63,7 @@ describe('GitHub OAuthコールバック', () => {
       const { userId, authenticationId } = await userHelper.create(email, 'Test@password123')
       createdIds.userIds.push(userId)
       createdIds.authIds.push(authenticationId)
-      exchangeResult = buildExchangeResult(authenticationId)
+      exchange = resolveExchange(authenticationId)
 
       const res = await apiRequest('/api/oauth/github/callback?code=valid-code')
 
@@ -101,7 +101,7 @@ describe('GitHub OAuthコールバック', () => {
 
     it('連携済みユーザーが見つからなければログイン画面へ戻す', async () => {
       // 未連携のGitHubアカウントはアプリ側ユーザーが無く404となるが、再試行で解消しうるため元の画面へ戻す
-      exchangeResult = buildExchangeResult('unlinked-authentication-id')
+      exchange = resolveExchange('unlinked-authentication-id')
 
       const res = await apiRequest('/api/oauth/github/callback?code=valid-code')
 
@@ -111,12 +111,8 @@ describe('GitHub OAuthコールバック', () => {
   })
 
   describe('異常系', () => {
-    it('コード交換のセッションが欠落している場合はエラー応答を返す', async () => {
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- session欠落の異常系を最小限のSDK戻り値で再現するため
-      exchangeResult = {
-        data: { user: null, session: null },
-        error: null,
-      } as unknown as ExchangeResult
+    it('コード交換が例外を投げる場合はエラー応答を返す', async () => {
+      exchange = () => Promise.reject(new Error('network down'))
 
       const res = await apiRequest('/api/oauth/github/callback?code=broken-code')
 

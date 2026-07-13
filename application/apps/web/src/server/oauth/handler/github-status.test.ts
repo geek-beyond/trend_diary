@@ -32,7 +32,7 @@ function buildIdentities(providers: string[]): IdentitiesResult {
   return {
     data: { identities: providers.map((provider) => ({ provider })) },
     error: null,
-  } as unknown as IdentitiesResult
+  } as IdentitiesResult
 }
 
 describe('GitHub連携状態の取得', () => {

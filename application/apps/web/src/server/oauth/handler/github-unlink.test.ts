@@ -37,12 +37,7 @@ function buildIdentities(providers: string[]): IdentitiesResult {
   return {
     data: { identities: providers.map((provider) => ({ provider })) },
     error: null,
-  } as unknown as IdentitiesResult
-}
-
-function buildUnlinkSuccess(): UnlinkResult {
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- 解除成功のSDK戻り値は最小限で満たすため
-  return { data: {}, error: null } as unknown as UnlinkResult
+  } as IdentitiesResult
 }
 
 function deleteUnlink(cookies: string) {
@@ -73,7 +68,7 @@ describe('GitHub連携解除', () => {
     it('他のログイン手段があれば連携を解除できる', async () => {
       const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
       identitiesResult = buildIdentities(['email', 'github'])
-      unlinkResult = buildUnlinkSuccess()
+      unlinkResult = { data: {}, error: null }
 
       const res = await deleteUnlink(cookies)
 

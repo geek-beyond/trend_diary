@@ -1,4 +1,6 @@
-# 型アサーション規約
+# TypeScript規約
+
+## 型アサーション
 
 - 型アサーション（`as`）は oxlint（`typescript/consistent-type-assertions: "never"`）で全面禁止しており、使うときは `// oxlint-disable-next-line typescript/consistent-type-assertions -- <理由>` で理由を明示する
   - 理由: アサーションは型検査の抜け穴になるため無条件には許さず、なぜ必要かをコードに残してレビューで妥当性を判断できるようにする

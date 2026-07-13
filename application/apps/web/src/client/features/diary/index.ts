@@ -1,4 +1,3 @@
-export { default as DiaryPageLayout } from './components/page-layout'
 export { default as DiaryReadListSection } from './components/read-list-section'
 export { default as DiaryReadPagination } from './components/read-pagination'
 export { default as DiarySummarySection } from './components/summary-section'

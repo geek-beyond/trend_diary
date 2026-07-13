@@ -35,8 +35,8 @@ export default function useAnalytics() {
   const { fetchDiary, fetchDiaryRange } = useDiaryApi()
 
   const todayJst = getTodayJst()
-  const hasDateResolveError = todayJst === null
-  const availableDates = todayJst ? buildAvailableDates(todayJst) : []
+
+  const availableDates = buildAvailableDates(todayJst)
   const dateParam = searchParams.get('date')
   const pageParam = searchParams.get('page')
 
@@ -48,8 +48,7 @@ export default function useAnalytics() {
   })
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
-  const summaryKey =
-    availableDates.length > 0 ? ['api/articles/diary-summary', ...availableDates] : null
+  const summaryKey = ['api/articles/diary-summary', ...availableDates]
   const {
     data: summaryRangeData,
     error: summaryError,
@@ -170,7 +169,6 @@ export default function useAnalytics() {
       hasNext: false,
       hasPrev: false,
     },
-    dateResolveError: hasDateResolveError,
     isLoading: isLoading || isSummaryLoading,
     hasError: !!summaryError || !!dailyError,
     retry,

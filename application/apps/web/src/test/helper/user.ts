@@ -136,8 +136,6 @@ export async function create(email: string, password: string): Promise<CreateRes
   }
 }
 
-// supa-emu の seed API で github identity 付きのユーザーを作る。email identity は seed 側で
-// 必ず付くため、生成されるのは [email, github] の連携済みユーザー。password ログインも可能
 export async function createWithGithub(email: string, password: string): Promise<CreateResult> {
   const res = await fetch(`${TEST_ENV.SUPABASE_URL}/__emulator/users`, {
     method: 'POST',

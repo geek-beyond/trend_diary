@@ -4,9 +4,6 @@ import * as userHelper from '@/test/helper/user'
 const TEST_PASSWORD = 'Test@password123'
 const EMAIL_PREFIX = 'oauth-github-callback'
 
-// login-start で PKCE の code_verifier cookie を確立し、続けて login_hint 付きで supa-emu の
-// authorize を叩いて対象ユーザーに紐づく単回コードを発行させる。アプリの callback が
-// この cookie とコードで実際に exchangeCodeForSession を行うため、往復全体が実結合になる
 async function startGithubOAuth(loginHint: string): Promise<{ code: string; cookies: string }> {
   const loginRes = await apiRequest('/api/oauth/github/login')
   const cookies = loginRes.headers
@@ -35,7 +32,6 @@ describe('GitHub OAuthコールバック', () => {
     it('連携済みユーザーの認証に成功すると既定の遷移先へリダイレクトする', async () => {
       const email = `${EMAIL_PREFIX}-linked@example.com`
       await userHelper.create(email, TEST_PASSWORD)
-      // login_hint に既存 email を渡すと同一 auth user が再利用され、その id でセッションが確立する
       const { code, cookies } = await startGithubOAuth(email)
 
       const res = await apiRequest(`/api/oauth/github/callback?code=${code}`, { cookies })
@@ -73,7 +69,6 @@ describe('GitHub OAuthコールバック', () => {
     })
 
     it('連携済みユーザーが見つからなければログイン画面へ戻す', async () => {
-      // login_hint に未知の email を渡すとアプリ側ユーザーの無い auth user が払い出され、404で戻る
       const { code, cookies } = await startGithubOAuth(`${EMAIL_PREFIX}-unlinked@example.com`)
 
       const res = await apiRequest(`/api/oauth/github/callback?code=${code}`, { cookies })

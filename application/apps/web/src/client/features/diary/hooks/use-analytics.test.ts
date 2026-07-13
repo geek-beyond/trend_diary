@@ -267,7 +267,7 @@ describe('useAnalytics', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
-          { id: 'diary-analytics-error' },
+          expect.objectContaining({ id: 'diary-analytics-error' }),
         )
       })
     })
@@ -287,7 +287,7 @@ describe('useAnalytics', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
-          { id: 'diary-analytics-error' },
+          expect.objectContaining({ id: 'diary-analytics-error' }),
         )
       })
     })
@@ -329,9 +329,10 @@ describe('useAnalytics', () => {
       await waitFor(() => {
         expect(fetchDiaryRange).toHaveBeenCalled()
       })
-      expect(toast.error).not.toHaveBeenCalledWith(expect.anything(), {
-        id: 'diary-analytics-error',
-      })
+      expect(toast.error).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ id: 'diary-analytics-error' }),
+      )
     })
   })
 })

@@ -1,11 +1,9 @@
-import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
 import { MediaMultiFilter, type SelectedMedia } from '@/client/features/article'
 import { InboxBody, InboxBodySkeleton, type InboxBodyProps } from '@/client/features/inbox'
 
 interface Props extends InboxBodyProps {
   isLoading: boolean
   hasError: boolean
-  onRetry: () => void
   remainingCount: number
   selectedMedia: SelectedMedia
   onMediaChange: (media: SelectedMedia) => void
@@ -15,7 +13,6 @@ export default function InboxPage({
   article,
   isLoading,
   hasError,
-  onRetry,
   isJustCompleted,
   onSkip,
   onRead,
@@ -35,13 +32,10 @@ export default function InboxPage({
         </div>
         <p className='mt-1 text-sm text-muted-foreground'>残り {remainingCount} 件</p>
 
+        {/* 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する */}
         {isLoading ? (
           <InboxBodySkeleton />
-        ) : hasError ? (
-          <div className='mt-4'>
-            <FetchErrorAlert onRetry={onRetry} />
-          </div>
-        ) : (
+        ) : hasError ? null : (
           <InboxBody
             article={article}
             isJustCompleted={isJustCompleted}

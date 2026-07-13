@@ -8,8 +8,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/client/components/shadcn/chart'
+import PageCard from '@/client/components/ui/layout/page-card'
 import {
-  DiaryPageLayout,
   DiaryReadListSection,
   DiaryReadPagination,
   DiarySummarySection,
@@ -85,9 +85,9 @@ export default function AnalyticsPage({
   }
 
   return (
-    <DiaryPageLayout pageTitle={pageTitle} dateResolveError={dateResolveError}>
-      {/* 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する */}
-      {hasError && !isLoading ? null : (
+    <PageCard title={pageTitle}>
+      {/* 取得エラー・日付解決エラー時は誤解を招く空表示を避けるため本文を出さない。案内はトーストに集約する */}
+      {(hasError || dateResolveError) && !isLoading ? null : (
         <>
           <div className='mt-5'>
             <h2 className='text-sm font-semibold text-foreground'>グラフ</h2>
@@ -152,6 +152,6 @@ export default function AnalyticsPage({
           />
         </>
       )}
-    </DiaryPageLayout>
+    </PageCard>
   )
 }

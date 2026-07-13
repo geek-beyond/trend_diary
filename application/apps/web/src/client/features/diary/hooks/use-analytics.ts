@@ -2,10 +2,15 @@ import { addJstDays } from '@trend-diary/common/locale/date'
 import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagination/schema'
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
+import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
 import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
+import {
+  dismissDateResolveError,
+  notifyDateResolveError,
+} from '@/client/features/diary/model/notify-date-resolve-error'
 import useDiaryApi, {
   type DiaryRangeItemResponse,
   type DiaryResponse,
@@ -36,6 +41,15 @@ export default function useAnalytics() {
 
   const todayJst = getTodayJst()
   const hasDateResolveError = todayJst === null
+
+  // 日付解決の失敗は SWR を起動しない前段の失敗でイベント経由の通知点を持たないため、
+  // 派生状態の変化をトーストという外部システムへ同期する用途で Effect を使う
+  useEffect(() => {
+    if (!hasDateResolveError) return
+    notifyDateResolveError()
+    return () => dismissDateResolveError()
+  }, [hasDateResolveError])
+
   const availableDates = todayJst ? buildAvailableDates(todayJst) : []
   const dateParam = searchParams.get('date')
   const pageParam = searchParams.get('page')

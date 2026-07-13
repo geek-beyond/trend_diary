@@ -1,5 +1,5 @@
+import PageCard from '@/client/components/ui/layout/page-card'
 import {
-  DiaryPageLayout,
   DiaryReadListSection,
   DiaryReadPagination,
   DiarySummarySection,
@@ -36,10 +36,10 @@ export default function DiaryPage({
 }: Props) {
   const pageTitle = 'ダイアリー'
 
-  // 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する
+  // 取得エラー・日付解決エラー時は誤解を招く空表示を避けるため本文を出さない。案内はトーストに集約する
   return (
-    <DiaryPageLayout pageTitle={pageTitle} dateResolveError={dateResolveError}>
-      {hasError && !isLoading ? null : (
+    <PageCard title={pageTitle}>
+      {(hasError || dateResolveError) && !isLoading ? null : (
         <>
           <DiarySummarySection
             sources={sources}
@@ -55,6 +55,6 @@ export default function DiaryPage({
           />
         </>
       )}
-    </DiaryPageLayout>
+    </PageCard>
   )
 }

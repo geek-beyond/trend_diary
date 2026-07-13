@@ -83,13 +83,13 @@ describe('DiaryPage', () => {
     expect(screen.queryByRole('link', { name: '危険なURL記事' })).not.toBeInTheDocument()
   })
 
-  it('日付解決に失敗したときはエラーメッセージを表示する', () => {
+  it('日付解決エラー時は読了一覧を表示しない（案内はトーストに集約する）', () => {
     renderDiaryPage({
       targetDate: null,
       dateResolveError: true,
       dailySummary: { read: 0, skip: 0 },
       sources,
-      reads: [],
+      reads,
       readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
       isLoading: false,
       hasError: false,
@@ -97,9 +97,8 @@ describe('DiaryPage', () => {
       onPrevPage: vi.fn(),
     })
 
-    expect(
-      screen.getByText('JST日付の解決に失敗しました。時間をおいて再読み込みしてください。'),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'ダイアリー' })).toBeInTheDocument()
+    expect(screen.queryByText('記事タイトル')).not.toBeInTheDocument()
   })
 
   it('取得エラー時は読了一覧を表示しない（エラーの案内と再試行はトーストに集約する）', () => {

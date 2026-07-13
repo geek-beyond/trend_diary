@@ -120,7 +120,7 @@ describe('AnalyticsPage', () => {
     expect(screen.getAllByText('3件').length).toBeGreaterThanOrEqual(1)
   })
 
-  it('日付解決に失敗したときはエラーメッセージを表示する', () => {
+  it('日付解決エラー時はグラフや一覧を表示しない（案内はトーストに集約する）', () => {
     render(
       createElement(AnalyticsPage, {
         selectedDate: null,
@@ -129,7 +129,7 @@ describe('AnalyticsPage', () => {
         weeklySummary: { read: 0, skip: 0 },
         dailySummary: { read: 0, skip: 0 },
         sources,
-        reads: [],
+        reads,
         readPagination: { page: 1, totalPages: 0, hasNext: false, hasPrev: false },
         isLoading: false,
         hasError: false,
@@ -140,9 +140,9 @@ describe('AnalyticsPage', () => {
       }),
     )
 
-    expect(
-      screen.getByText('JST日付の解決に失敗しました。時間をおいて再読み込みしてください。'),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '統計' })).toBeInTheDocument()
+    expect(screen.queryByText('グラフ')).not.toBeInTheDocument()
+    expect(screen.queryByText('記事タイトル')).not.toBeInTheDocument()
   })
 
   it('取得エラー時はグラフや一覧を表示しない（エラーの案内と再試行はトーストに集約する）', () => {

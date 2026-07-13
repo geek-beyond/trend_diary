@@ -1,18 +1,39 @@
-import type * as UserDomain from '@trend-diary/domain/user'
-import { createAuthUseCase } from '@trend-diary/domain/user'
-import { ok } from 'neverthrow'
 import { vi } from 'vitest'
+import type * as SupabaseInfra from '@/infrastructure/supabase'
 import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
-// GitHub連携の有無を持つのは外部の認可プロバイダのため、その境界であるドメインの use-case
-// (createAuthUseCase)の hasLinkedGithub だけを差し替える。authenticator も同じ use-case を使うため、
-// スタブに置き換えず実装へ委譲したうえで対象メソッドのみ差し替え、認証ガードは素通しにする
-vi.mock('@trend-diary/domain/user', async (importOriginal) => {
-  const actual = await importOriginal<typeof UserDomain>()
-  return { ...actual, createAuthUseCase: vi.fn(actual.createAuthUseCase) }
+type IdentitiesResult = Awaited<
+  ReturnType<SupabaseInfra.SupabaseAuthClient['auth']['getUserIdentities']>
+>
+
+// 連携の有無は外部プロバイダ依存で通せないため、その SDK 呼び出し(getUserIdentities)だけを
+// 差し替える。session検証は触らないため authenticator は実のまま通る
+let identitiesResult: IdentitiesResult | null = null
+
+vi.mock('@/infrastructure/supabase', async (importOriginal) => {
+  const actual = await importOriginal<typeof SupabaseInfra>()
+  return {
+    ...actual,
+    createSupabaseAuthClient: (c: Parameters<typeof actual.createSupabaseAuthClient>[0]) => {
+      const client = actual.createSupabaseAuthClient(c)
+      const identities = identitiesResult
+      if (identities) {
+        client.auth.getUserIdentities = () => Promise.resolve(identities)
+      }
+      return client
+    },
+  }
 })
+
+function buildIdentities(providers: string[]): IdentitiesResult {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SDKのUserIdentity全フィールドは不要でproviderのみ満たすため
+  return {
+    data: { identities: providers.map((provider) => ({ provider })) },
+    error: null,
+  } as unknown as IdentitiesResult
+}
 
 describe('GitHub連携状態の取得', () => {
   const TEST_EMAIL = 'oauth-github-status-test@example.com'
@@ -20,9 +41,7 @@ describe('GitHub連携状態の取得', () => {
   const createdIds: CleanUpIds = { userIds: [], authIds: [] }
 
   beforeEach(async () => {
-    const actual = await vi.importActual<typeof UserDomain>('@trend-diary/domain/user')
-    vi.mocked(createAuthUseCase).mockImplementation(actual.createAuthUseCase)
-
+    identitiesResult = null
     const { userId, authenticationId } = await userHelper.create(TEST_EMAIL, TEST_PASSWORD)
     createdIds.userIds.push(userId)
     createdIds.authIds.push(authenticationId)
@@ -36,17 +55,11 @@ describe('GitHub連携状態の取得', () => {
 
   describe('正常系', () => {
     it.each([
-      { name: '連携済みなら連携ありとして返す', linked: true },
-      { name: '未連携なら連携なしとして返す', linked: false },
-    ])('$name', async ({ linked }) => {
+      { name: '連携済みなら連携ありとして返す', providers: ['email', 'github'], linked: true },
+      { name: '未連携なら連携なしとして返す', providers: ['email'], linked: false },
+    ])('$name', async ({ providers, linked }) => {
       const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
-
-      const actual = await vi.importActual<typeof UserDomain>('@trend-diary/domain/user')
-      vi.mocked(createAuthUseCase).mockImplementation((client, rdb) => {
-        const useCase = actual.createAuthUseCase(client, rdb)
-        useCase.hasLinkedGithub = () => Promise.resolve(ok(linked))
-        return useCase
-      })
+      identitiesResult = buildIdentities(providers)
 
       const res = await apiRequest('/api/oauth/github', { cookies })
 

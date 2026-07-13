@@ -1,43 +1,69 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
-import type * as UserDomain from '@trend-diary/domain/user'
-import { createAuthUseCase } from '@trend-diary/domain/user'
-import { err, ok } from 'neverthrow'
 import { vi } from 'vitest'
+import type * as SupabaseInfra from '@/infrastructure/supabase'
 import { apiRequest } from '@/test/helper/request'
+import type { CleanUpIds } from '@/test/helper/user'
+import * as userHelper from '@/test/helper/user'
 
-// GitHub本体のコード発行〜トークン交換は外部サービスのため通せない。その境界であるドメインの
-// use-case(createAuthUseCase)だけを差し替え、callbackハンドラのリダイレクト振り分けを検証する。
-// callbackは未認証エンドポイントのため authenticator を経由せず、use-caseは本ハンドラからのみ呼ばれる
-vi.mock('@trend-diary/domain/user', async (importOriginal) => {
-  const actual = await importOriginal<typeof UserDomain>()
-  return { ...actual, createAuthUseCase: vi.fn(actual.createAuthUseCase) }
+type ExchangeResult = Awaited<
+  ReturnType<SupabaseInfra.SupabaseAuthClient['auth']['exchangeCodeForSession']>
+>
+
+// コード発行〜トークン交換は外部サービス依存で通せないため、その SDK 呼び出し
+// (exchangeCodeForSession)だけを差し替える。use-case・repository・DB は実のまま通す
+let exchangeResult: ExchangeResult | null = null
+
+vi.mock('@/infrastructure/supabase', async (importOriginal) => {
+  const actual = await importOriginal<typeof SupabaseInfra>()
+  return {
+    ...actual,
+    createSupabaseAuthClient: (c: Parameters<typeof actual.createSupabaseAuthClient>[0]) => {
+      const client = actual.createSupabaseAuthClient(c)
+      const result = exchangeResult
+      if (result) {
+        client.auth.exchangeCodeForSession = () => Promise.resolve(result)
+      }
+      return client
+    },
+  }
 })
 
-const currentUser = {
-  activeUserId: 123n,
-  userId: 456n,
-  email: 'github-callback@example.com',
-  displayName: null,
-  authenticationId: 'auth-github-callback',
-  createdAt: new Date('2025-01-01T00:00:00Z'),
-  updatedAt: new Date('2025-01-01T00:00:00Z'),
-}
-
-function stubLoginWithGithubCallback(
-  result: Awaited<ReturnType<ReturnType<typeof createAuthUseCase>['loginWithGithubCallback']>>,
-) {
-  vi.mocked(createAuthUseCase).mockReturnValueOnce(
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- callbackが呼ぶ loginWithGithubCallback のみを差し替えるため
-    { loginWithGithubCallback: () => Promise.resolve(result) } as unknown as ReturnType<
-      typeof createAuthUseCase
-    >,
-  )
+function buildExchangeResult(authenticationId: string): ExchangeResult {
+  // callbackが使うのは user.id のみ。toAuthenticationUser が要求する最小限のフィールドだけ満たす
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SDKのUser/Session全フィールドは不要で、必要な項目のみ満たすため
+  return {
+    data: {
+      user: {
+        id: authenticationId,
+        email: 'github-callback@example.com',
+        email_confirmed_at: '2025-01-01T00:00:00Z',
+        created_at: '2025-01-01T00:00:00Z',
+      },
+      session: { access_token: 'token', refresh_token: 'refresh' },
+    },
+    error: null,
+  } as unknown as ExchangeResult
 }
 
 describe('GitHub OAuthコールバック', () => {
+  const createdIds: CleanUpIds = { userIds: [], authIds: [] }
+
+  beforeEach(() => {
+    exchangeResult = null
+  })
+
+  afterEach(async () => {
+    await userHelper.cleanUp(createdIds)
+    createdIds.userIds.length = 0
+    createdIds.authIds.length = 0
+  })
+
   describe('正常系', () => {
     it('認証に成功すると既定の遷移先へリダイレクトする', async () => {
-      stubLoginWithGithubCallback(ok(currentUser))
+      const email = 'oauth-github-callback-test@example.com'
+      const { userId, authenticationId } = await userHelper.create(email, 'Test@password123')
+      createdIds.userIds.push(userId)
+      createdIds.authIds.push(authenticationId)
+      exchangeResult = buildExchangeResult(authenticationId)
 
       const res = await apiRequest('/api/oauth/github/callback?code=valid-code')
 
@@ -73,11 +99,11 @@ describe('GitHub OAuthコールバック', () => {
       expect(res.headers.get('Location')).toBe(location)
     })
 
-    it('認証に失敗した場合はエラー種別を添えてログイン画面へ戻す', async () => {
-      // コードの期限切れや連携済みユーザー不在(404)などの業務エラーはエラー画面にせず元の画面へ戻す
-      stubLoginWithGithubCallback(err(new ClientError('User not found', 404)))
+    it('連携済みユーザーが見つからなければログイン画面へ戻す', async () => {
+      // 未連携のGitHubアカウントはアプリ側ユーザーが無く404となるが、再試行で解消しうるため元の画面へ戻す
+      exchangeResult = buildExchangeResult('unlinked-authentication-id')
 
-      const res = await apiRequest('/api/oauth/github/callback?code=expired-code')
+      const res = await apiRequest('/api/oauth/github/callback?code=valid-code')
 
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe('/login?oauthError=github')
@@ -85,10 +111,14 @@ describe('GitHub OAuthコールバック', () => {
   })
 
   describe('異常系', () => {
-    it('想定外のエラーが発生した場合はエラー応答を返す', async () => {
-      stubLoginWithGithubCallback(err(new ServerError(new Error('unexpected'))))
+    it('コード交換のセッションが欠落している場合はエラー応答を返す', async () => {
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- session欠落の異常系を最小限のSDK戻り値で再現するため
+      exchangeResult = {
+        data: { user: null, session: null },
+        error: null,
+      } as unknown as ExchangeResult
 
-      const res = await apiRequest('/api/oauth/github/callback?code=any-code')
+      const res = await apiRequest('/api/oauth/github/callback?code=broken-code')
 
       expect(res.status).toBe(500)
     })

@@ -1,5 +1,5 @@
-// caches.default は Cloudflare 拡張だが、クライアントと共有する tsconfig が DOM lib を含むため型に現れない。実行時に存在する Workers 固有プロパティを補って参照する
+// クライアントと共有する tsconfig の DOM lib が caches.default（Cloudflare 拡張）の型を隠すため
 export function getEdgeCache(): Cache {
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- Workers ランタイム固有の caches.default へアクセスするため
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- caches.default は Workers ランタイム固有
   return (caches as CacheStorage & { default: Cache }).default
 }

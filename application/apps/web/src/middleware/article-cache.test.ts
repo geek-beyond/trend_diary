@@ -117,7 +117,6 @@ describe('articleCache ミドルウェア', () => {
   })
 
   describe('準正常系', () => {
-    // キャッシュ対象外のリクエストは match も put も呼ばずに素通しする
     it.each([
       {
         name: 'セッション Cookie 付き',

@@ -1,4 +1,4 @@
-import { authInputSchema } from '@trend-diary/domain/user'
+import { authInputSchema } from '@trend-diary/domain/account'
 
 export interface AuthenticateErrors {
   email?: string[]

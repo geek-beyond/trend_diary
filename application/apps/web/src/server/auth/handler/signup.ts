@@ -1,6 +1,6 @@
 import { AlreadyExistsError, handleError, ServerError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/user'
+import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import { err, ok } from 'neverthrow'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'

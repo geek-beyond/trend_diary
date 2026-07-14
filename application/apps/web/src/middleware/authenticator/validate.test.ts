@@ -1,5 +1,5 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
-import { createAccountUseCase } from '@trend-diary/domain/user'
+import { createAccountUseCase } from '@trend-diary/domain/account'
 import type { Context } from 'hono'
 import { err, ok, type Result } from 'neverthrow'
 import type { Env } from '@/env'
@@ -7,7 +7,7 @@ import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '../context'
 import { validateSession } from './validate'
 
-vi.mock('@trend-diary/domain/user', () => ({ createAccountUseCase: vi.fn() }))
+vi.mock('@trend-diary/domain/account', () => ({ createAccountUseCase: vi.fn() }))
 vi.mock('@/infrastructure/supabase', () => ({ createSupabaseAuthClient: vi.fn() }))
 vi.mock('@trend-diary/datastore/rdb', () => ({ default: vi.fn(() => ({})) }))
 

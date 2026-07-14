@@ -1,10 +1,10 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { TurnstileCaptchaVerifier } from './turnstile-captcha-verifier'
+import { verifyTurnstile } from './captcha'
 
 const fetchMock = vi.fn()
 
-describe('TurnstileCaptchaVerifier', () => {
+describe('verifyTurnstile', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', fetchMock)
   })
@@ -15,20 +15,10 @@ describe('TurnstileCaptchaVerifier', () => {
   })
 
   describe('正常系', () => {
-    it('secret未設定の場合は検証をスキップして許可する', async () => {
-      const verifier = new TurnstileCaptchaVerifier(undefined)
-
-      const result = await verifier.verify('any-token')
-
-      expect(result.isOk()).toBe(true)
-      expect(fetchMock).not.toHaveBeenCalled()
-    })
-
     it('siteverifyがsuccess:trueを返す場合は許可する', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: true })))
-      const verifier = new TurnstileCaptchaVerifier('secret')
 
-      const result = await verifier.verify('valid-token')
+      const result = await verifyTurnstile('secret', 'valid-token')
 
       expect(result.isOk()).toBe(true)
       expect(fetchMock).toHaveBeenCalledWith(
@@ -40,9 +30,7 @@ describe('TurnstileCaptchaVerifier', () => {
 
   describe('異常系', () => {
     it('secret設定済みでtokenが無い場合はClientError(403)を返す', async () => {
-      const verifier = new TurnstileCaptchaVerifier('secret')
-
-      const result = await verifier.verify(undefined)
+      const result = await verifyTurnstile('secret', undefined)
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
@@ -56,9 +44,8 @@ describe('TurnstileCaptchaVerifier', () => {
 
     it('siteverifyがsuccess:falseを返す場合はClientError(403)を返す', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: false })))
-      const verifier = new TurnstileCaptchaVerifier('secret')
 
-      const result = await verifier.verify('invalid-token')
+      const result = await verifyTurnstile('secret', 'invalid-token')
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
@@ -68,9 +55,8 @@ describe('TurnstileCaptchaVerifier', () => {
 
     it('fetchが例外を投げる場合はServerErrorを返す', async () => {
       fetchMock.mockRejectedValue(new Error('network down'))
-      const verifier = new TurnstileCaptchaVerifier('secret')
 
-      const result = await verifier.verify('token')
+      const result = await verifyTurnstile('secret', 'token')
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
@@ -80,9 +66,8 @@ describe('TurnstileCaptchaVerifier', () => {
 
     it('レスポンスのJSON解析に失敗する場合はServerErrorを返す', async () => {
       fetchMock.mockResolvedValue(new Response('not-json'))
-      const verifier = new TurnstileCaptchaVerifier('secret')
 
-      const result = await verifier.verify('token')
+      const result = await verifyTurnstile('secret', 'token')
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {

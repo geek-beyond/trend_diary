@@ -1,7 +1,11 @@
 import type { User } from '@supabase/supabase-js'
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
-import type { SupabaseAuthClient } from './supabase-client'
+import {
+  type AuthClientConfig,
+  createBackendClient,
+  type SupabaseAuthClient,
+} from './supabase-client'
 import { callSupabase } from './supabase-result'
 
 type PasskeyApi = SupabaseAuthClient['auth']['passkey']
@@ -10,7 +14,11 @@ type VerifyAuthenticationParams = Parameters<PasskeyApi['verifyAuthentication']>
 type DeleteParams = Parameters<PasskeyApi['delete']>[0]
 
 export class PasskeyClient {
-  constructor(private readonly client: SupabaseAuthClient) {}
+  private readonly client: SupabaseAuthClient
+
+  constructor(config: AuthClientConfig) {
+    this.client = createBackendClient(config)
+  }
 
   async startRegistration() {
     return callSupabase(

@@ -7,7 +7,7 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.ts'],
     watch: false,
-    // supabase-client は SDK 生成のみの薄いラッパで、実 Supabase を要する web 統合テストで担保する
+    // supabase-client は SDK 生成とリクエスト→設定の組み立てで、実 Supabase を要する web 統合テストで担保する
     coverage: coverageConfig({ exclude: ['src/supabase-client.ts'] }),
   },
 })

@@ -1,8 +1,7 @@
-import { PasswordAuthClient } from '@trend-diary/authentication'
+import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
 import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import { verifyTurnstile } from '../captcha'
@@ -18,11 +17,11 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
     if (captchaResult.isErr()) throw handleError(captchaResult.error, logger)
   }
 
-  const authClient = new PasswordAuthClient(createSupabaseAuthClient(c))
+  const authClient = new PasswordAuthClient(authClientConfig(c))
   const loginResult = await authClient.signIn({ email: valid.email, password: valid.password })
   if (loginResult.isErr()) throw handleError(loginResult.error, logger)
 
-  const { user } = loginResult.value
+  const user = loginResult.value
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)

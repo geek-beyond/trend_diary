@@ -1,27 +1,40 @@
 import { AuthError } from '@supabase/supabase-js'
 import { ClientError, ServerError } from '@trend-diary/common/errors'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PasskeyClient } from './passkey-client'
-import type { SupabaseAuthClient } from './supabase-client'
+import type { AuthClientConfig, SupabaseAuthClient } from './supabase-client'
 
-// PasskeyClient が触る passkey メソッドだけを備えたモッククライアントを組み立てる
-function createClientMock(passkey: Record<string, ReturnType<typeof vi.fn>>): SupabaseAuthClient {
-  // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- SupabaseAuthClientは膨大な構造を持ち、テストで使う一部メソッドのみ差し込むため二重アサーションが避けられないため
-  return { auth: { passkey } } as unknown as SupabaseAuthClient
-}
+// バックエンド生成はクライアント内へ隠蔽されているため、生成関数をモックして passkey を差し替える
+vi.mock('./supabase-client', () => ({ createBackendClient: vi.fn() }))
+import { createBackendClient } from './supabase-client'
 
+const buildMock = vi.mocked(createBackendClient)
+
+// oxlint-disable-next-line typescript/consistent-type-assertions -- 設定値は生成関数のモックにより実際には参照されないため、ダミーで足りるため
+const FAKE_CONFIG = {} as AuthClientConfig
 // credential はモック済みメソッドへ素通しされるだけなので、SDKの厳密な型は満たさなくてよい
 // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- SDKのcredential型は複雑だがモックでは値を使わないため二重アサーションで空値を渡すため
 const verifyParams = { challengeId: 'challenge-1', credential: {} as unknown as never }
+
+// PasskeyClient が触る passkey メソッドだけを備えた auth を用意し、生成関数のモックから返す
+function buildClient(passkey: Record<string, ReturnType<typeof vi.fn>>): PasskeyClient {
+  // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- SupabaseAuthClientは膨大な構造を持ち、テストで使う一部メソッドのみ差し込むため二重アサーションが避けられないため
+  buildMock.mockReturnValue({ auth: { passkey } } as unknown as SupabaseAuthClient)
+  return new PasskeyClient(FAKE_CONFIG)
+}
+
+beforeEach(() => {
+  vi.resetAllMocks()
+})
 
 describe('PasskeyClient', () => {
   describe('startRegistration', () => {
     describe('正常系', () => {
       it('成功時は data を ok として返すこと', async () => {
         const data = { challenge_id: 'c1', options: {} }
-        const client = new PasskeyClient(
-          createClientMock({ startRegistration: vi.fn().mockResolvedValue({ data, error: null }) }),
-        )
+        const client = buildClient({
+          startRegistration: vi.fn().mockResolvedValue({ data, error: null }),
+        })
 
         const result = await client.startRegistration()
 
@@ -32,14 +45,12 @@ describe('PasskeyClient', () => {
 
     describe('準正常系', () => {
       it('業務エラーは文脈付きの ServerError に写すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({
-            startRegistration: vi.fn().mockResolvedValue({
-              data: null,
-              error: new AuthError('boom', 500, 'unexpected_failure'),
-            }),
+        const client = buildClient({
+          startRegistration: vi.fn().mockResolvedValue({
+            data: null,
+            error: new AuthError('boom', 500, 'unexpected_failure'),
           }),
-        )
+        })
 
         const result = await client.startRegistration()
 
@@ -53,11 +64,9 @@ describe('PasskeyClient', () => {
 
     describe('異常系', () => {
       it('例外は ServerError として err を返すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({
-            startRegistration: vi.fn().mockRejectedValue(new Error('network down')),
-          }),
-        )
+        const client = buildClient({
+          startRegistration: vi.fn().mockRejectedValue(new Error('network down')),
+        })
 
         const result = await client.startRegistration()
 
@@ -71,11 +80,9 @@ describe('PasskeyClient', () => {
     describe('正常系', () => {
       it('成功時は data を ok として返すこと', async () => {
         const data = { challenge_id: 'c1', options: {} }
-        const client = new PasskeyClient(
-          createClientMock({
-            startAuthentication: vi.fn().mockResolvedValue({ data, error: null }),
-          }),
-        )
+        const client = buildClient({
+          startAuthentication: vi.fn().mockResolvedValue({ data, error: null }),
+        })
 
         const result = await client.startAuthentication()
 
@@ -86,14 +93,12 @@ describe('PasskeyClient', () => {
 
     describe('準正常系', () => {
       it('業務エラーは文脈付きの ServerError に写すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({
-            startAuthentication: vi.fn().mockResolvedValue({
-              data: null,
-              error: new AuthError('boom', 500, 'unexpected_failure'),
-            }),
+        const client = buildClient({
+          startAuthentication: vi.fn().mockResolvedValue({
+            data: null,
+            error: new AuthError('boom', 500, 'unexpected_failure'),
           }),
-        )
+        })
 
         const result = await client.startAuthentication()
 
@@ -110,11 +115,9 @@ describe('PasskeyClient', () => {
     describe('正常系', () => {
       it('成功時は登録結果を ok として返すこと', async () => {
         const data = { id: 'passkey-1' }
-        const client = new PasskeyClient(
-          createClientMock({
-            verifyRegistration: vi.fn().mockResolvedValue({ data, error: null }),
-          }),
-        )
+        const client = buildClient({
+          verifyRegistration: vi.fn().mockResolvedValue({ data, error: null }),
+        })
 
         const result = await client.verifyRegistration(verifyParams)
 
@@ -125,14 +128,12 @@ describe('PasskeyClient', () => {
 
     describe('準正常系', () => {
       it('業務エラーは 400 の ClientError に写すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({
-            verifyRegistration: vi.fn().mockResolvedValue({
-              data: null,
-              error: new AuthError('invalid credential', 400, 'validation_failed'),
-            }),
+        const client = buildClient({
+          verifyRegistration: vi.fn().mockResolvedValue({
+            data: null,
+            error: new AuthError('invalid credential', 400, 'validation_failed'),
           }),
-        )
+        })
 
         const result = await client.verifyRegistration(verifyParams)
 
@@ -149,14 +150,12 @@ describe('PasskeyClient', () => {
     describe('正常系', () => {
       it('user と session が揃うとき user を ok として返すこと', async () => {
         const user = { id: 'auth-1' }
-        const client = new PasskeyClient(
-          createClientMock({
-            verifyAuthentication: vi.fn().mockResolvedValue({
-              data: { user, session: { access_token: 'token' } },
-              error: null,
-            }),
+        const client = buildClient({
+          verifyAuthentication: vi.fn().mockResolvedValue({
+            data: { user, session: { access_token: 'token' } },
+            error: null,
           }),
-        )
+        })
 
         const result = await client.verifyAuthentication(verifyParams)
 
@@ -167,14 +166,12 @@ describe('PasskeyClient', () => {
 
     describe('準正常系', () => {
       it('業務エラーは 401 の ClientError に写すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({
-            verifyAuthentication: vi.fn().mockResolvedValue({
-              data: null,
-              error: new AuthError('invalid passkey', 401, 'invalid_credentials'),
-            }),
+        const client = buildClient({
+          verifyAuthentication: vi.fn().mockResolvedValue({
+            data: null,
+            error: new AuthError('invalid passkey', 401, 'invalid_credentials'),
           }),
-        )
+        })
 
         const result = await client.verifyAuthentication(verifyParams)
 
@@ -186,14 +183,12 @@ describe('PasskeyClient', () => {
       })
 
       it('成功でも session が空なら ServerError に畳むこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({
-            verifyAuthentication: vi.fn().mockResolvedValue({
-              data: { user: { id: 'auth-1' }, session: null },
-              error: null,
-            }),
+        const client = buildClient({
+          verifyAuthentication: vi.fn().mockResolvedValue({
+            data: { user: { id: 'auth-1' }, session: null },
+            error: null,
           }),
-        )
+        })
 
         const result = await client.verifyAuthentication(verifyParams)
 
@@ -207,11 +202,9 @@ describe('PasskeyClient', () => {
 
     describe('異常系', () => {
       it('例外は ServerError として err を返すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({
-            verifyAuthentication: vi.fn().mockRejectedValue(new Error('network down')),
-          }),
-        )
+        const client = buildClient({
+          verifyAuthentication: vi.fn().mockRejectedValue(new Error('network down')),
+        })
 
         const result = await client.verifyAuthentication(verifyParams)
 
@@ -225,9 +218,7 @@ describe('PasskeyClient', () => {
     describe('正常系', () => {
       it('成功時は passkey 配列を ok として返すこと', async () => {
         const data = [{ id: 'passkey-1' }]
-        const client = new PasskeyClient(
-          createClientMock({ list: vi.fn().mockResolvedValue({ data, error: null }) }),
-        )
+        const client = buildClient({ list: vi.fn().mockResolvedValue({ data, error: null }) })
 
         const result = await client.list()
 
@@ -238,14 +229,12 @@ describe('PasskeyClient', () => {
 
     describe('準正常系', () => {
       it('業務エラーは文脈付きの ServerError に写すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({
-            list: vi.fn().mockResolvedValue({
-              data: null,
-              error: new AuthError('boom', 500, 'unexpected_failure'),
-            }),
+        const client = buildClient({
+          list: vi.fn().mockResolvedValue({
+            data: null,
+            error: new AuthError('boom', 500, 'unexpected_failure'),
           }),
-        )
+        })
 
         const result = await client.list()
 
@@ -259,9 +248,7 @@ describe('PasskeyClient', () => {
 
     describe('異常系', () => {
       it('例外は ServerError として err を返すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({ list: vi.fn().mockRejectedValue(new Error('network down')) }),
-        )
+        const client = buildClient({ list: vi.fn().mockRejectedValue(new Error('network down')) })
 
         const result = await client.list()
 
@@ -274,9 +261,9 @@ describe('PasskeyClient', () => {
   describe('delete', () => {
     describe('正常系', () => {
       it('成功時は null を ok として返すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({ delete: vi.fn().mockResolvedValue({ data: null, error: null }) }),
-        )
+        const client = buildClient({
+          delete: vi.fn().mockResolvedValue({ data: null, error: null }),
+        })
 
         const result = await client.delete({ passkeyId: 'passkey-1' })
 
@@ -286,14 +273,12 @@ describe('PasskeyClient', () => {
 
     describe('準正常系', () => {
       it('業務エラーは ServerError に写すこと', async () => {
-        const client = new PasskeyClient(
-          createClientMock({
-            delete: vi.fn().mockResolvedValue({
-              data: null,
-              error: new AuthError('not found', 404, 'not_found'),
-            }),
+        const client = buildClient({
+          delete: vi.fn().mockResolvedValue({
+            data: null,
+            error: new AuthError('not found', 404, 'not_found'),
           }),
-        )
+        })
 
         const result = await client.delete({ passkeyId: 'passkey-1' })
 

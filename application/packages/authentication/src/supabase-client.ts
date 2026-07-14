@@ -1,17 +1,44 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { ServerError } from '@trend-diary/common/errors'
 
 export type { SupabaseClient }
 
-export interface SupabaseAuthClientConfig {
+export interface AuthClientConfig {
   url: string
   anonKey: string
   cookieHeader: string
   setCookie: (value: string) => void
 }
 
-// Cookie の入出力を素の値(ヘッダ文字列と書き込みコールバック)で受け取り、フレームワーク(Hono等)に依存させない。
-export function createSupabaseAuthClient(config: SupabaseAuthClientConfig) {
+// authClientConfig が必要とする最小限のリクエスト情報。特定フレームワークに縛られないよう構造的に受ける。
+export interface AuthRequestContext {
+  env: { SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string }
+  req: { header: (name: string) => string | undefined }
+  header: (name: string, value: string, options?: { append?: boolean }) => void
+}
+
+// リクエストから認証クライアントの設定を組み立てる。バックエンド(Supabase)の生成はクライアントクラス内へ隠蔽する。
+export function authClientConfig(context: AuthRequestContext): AuthClientConfig {
+  const url = context.env.SUPABASE_URL
+  const anonKey = context.env.SUPABASE_ANON_KEY
+
+  if (!url || !anonKey) {
+    throw new ServerError(
+      'Authentication backend is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.',
+    )
+  }
+
+  return {
+    url,
+    anonKey,
+    cookieHeader: context.req.header('Cookie') ?? '',
+    setCookie: (value) => context.header('Set-Cookie', value, { append: true }),
+  }
+}
+
+// Cookie の入出力を素の値で扱い、フレームワーク(Hono等)に依存させない。パッケージ内でのみ生成し外へは公開しない。
+export function createBackendClient(config: AuthClientConfig) {
   return createServerClient(config.url, config.anonKey, {
     // passkey(auth.passkey.*)はexperimentalなopt-inが必要。namespaceを有効化するだけで、
     // 実際に叩くのはpasskeyルートのみのため、常時有効にしても副作用はない
@@ -43,7 +70,7 @@ export function createSupabaseAuthClient(config: SupabaseAuthClientConfig) {
   })
 }
 
-export type SupabaseAuthClient = ReturnType<typeof createSupabaseAuthClient>
+export type SupabaseAuthClient = ReturnType<typeof createBackendClient>
 
 // anonキーで動作するクライアント。テストのフィクスチャ準備でのみ使う。
 export function createSupabaseClient(config: { url: string; key: string }): SupabaseClient {

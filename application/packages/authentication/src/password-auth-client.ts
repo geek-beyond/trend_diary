@@ -1,7 +1,11 @@
 import { AuthError, type User } from '@supabase/supabase-js'
 import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
-import type { SupabaseAuthClient } from './supabase-client'
+import {
+  type AuthClientConfig,
+  createBackendClient,
+  type SupabaseAuthClient,
+} from './supabase-client'
 import { callSupabase } from './supabase-result'
 
 interface PasswordCredentials {
@@ -10,10 +14,19 @@ interface PasswordCredentials {
 }
 
 export class PasswordAuthClient {
-  constructor(private readonly client: SupabaseAuthClient) {}
+  private readonly client: SupabaseAuthClient
 
-  async signIn(credentials: PasswordCredentials) {
-    return callSupabase(() => this.client.auth.signInWithPassword(credentials), toSignInError)
+  constructor(config: AuthClientConfig) {
+    this.client = createBackendClient(config)
+  }
+
+  // 成功でも user/session が空なら失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
+  async signIn(credentials: PasswordCredentials): Promise<Result<User, Error>> {
+    return (
+      await callSupabase(() => this.client.auth.signInWithPassword(credentials), toSignInError)
+    ).andThen(({ user, session }) =>
+      user && session ? ok(user) : err(new ServerError('Sign in failed')),
+    )
   }
 
   // 成功でも user が空なら登録失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす

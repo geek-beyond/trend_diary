@@ -1,10 +1,9 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
-import { PasskeyClient } from '@trend-diary/authentication'
+import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/account'
 import { z } from 'zod'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
 
@@ -22,7 +21,7 @@ export default async function passkeyLoginVerify(c: ZodValidatedContext<PasskeyL
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
-  const passkeyClient = new PasskeyClient(createSupabaseAuthClient(c))
+  const passkeyClient = new PasskeyClient(authClientConfig(c))
   const userResult = await passkeyClient.verifyAuthentication({
     challengeId: valid.challengeId,
     credential: valid.credential,

@@ -1,8 +1,8 @@
+import { authClientConfig, SessionClient } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/account'
 import type { Context } from 'hono'
 import { err, ok, type Result } from 'neverthrow'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import type { Env, SessionUser } from '../../env'
 import CONTEXT_KEY from '../context'
 
@@ -46,12 +46,12 @@ export async function validateSession(
 async function getSessionClaims(
   c: Context<Env>,
 ): Promise<Result<{ authenticationId: string }, AuthValidationError>> {
-  const client = createSupabaseAuthClient(c)
-  const { data, error } = await client.auth.getClaims()
-  if (error || !data) {
+  const sessionClient = new SessionClient(authClientConfig(c))
+  const claims = await sessionClient.getClaims()
+  if (claims.isErr()) {
     return err(createAuthValidationError('no_session', 'No session found'))
   }
-  return ok({ authenticationId: data.claims.sub })
+  return ok({ authenticationId: claims.value.authenticationId })
 }
 
 function createAuthValidationError(

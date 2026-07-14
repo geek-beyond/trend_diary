@@ -1,5 +1,5 @@
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/user'
+import { createAccountUseCase } from '@trend-diary/domain/account'
 import type { Context } from 'hono'
 import { err, ok, type Result } from 'neverthrow'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'

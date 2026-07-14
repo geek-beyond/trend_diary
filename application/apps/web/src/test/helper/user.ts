@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import { fromDbId, toDbIds } from '@trend-diary/datastore/rdb/id'
-import type { ActiveUser } from '@trend-diary/domain/user'
+import type { ActiveUser } from '@trend-diary/domain/account'
 import { eq, inArray, like } from 'drizzle-orm'
 import app from '@/server'
 import TEST_ENV from '@/test/env'

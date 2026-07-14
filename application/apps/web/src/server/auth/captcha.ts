@@ -4,14 +4,9 @@ import { err, ok, type Result } from 'neverthrow'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
-// oxlint-disable-next-line typescript/no-restricted-types -- siteverify の JSON レスポンスを型ガードで絞り込むため入力は unknown を受ける
-function isTurnstileVerifyResponse(value: unknown): value is { success: boolean } {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    'success' in value &&
-    typeof value.success === 'boolean'
-  )
+// oxlint-disable-next-line typescript/no-restricted-types -- siteverify の JSON レスポンス(未検証)から success を判定するため入力は unknown を受ける
+function isSuccessResponse(value: unknown): boolean {
+  return value !== null && typeof value === 'object' && 'success' in value && value.success === true
 }
 
 /**
@@ -33,7 +28,7 @@ export async function verifyTurnstile(
   const parsed = await wrapAsyncCall(() => response.value.json())
   if (parsed.isErr()) return err(new ServerError(parsed.error))
 
-  if (!isTurnstileVerifyResponse(parsed.value) || !parsed.value.success) {
+  if (!isSuccessResponse(parsed.value)) {
     return err(new ClientError('captcha verification failed', 403))
   }
 

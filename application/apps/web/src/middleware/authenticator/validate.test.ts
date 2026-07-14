@@ -24,6 +24,7 @@ function buildContext(): { c: Context<Env>; logger: FakeLogger } {
   const c = {
     get: (key: string) => (key === CONTEXT_KEY.APP_LOG ? logger : undefined),
     env: { DB: {} },
+    // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
   } as unknown as Context<Env>
   return { c, logger }
 }
@@ -39,9 +40,10 @@ function unwrapErr<T, E>(result: Result<T, E>): E {
   return result.error
 }
 
+// oxlint-disable-next-line typescript/no-restricted-types -- テストごとに任意の Result を返すスタブ実装を差し替えるため
 function mockGetCurrentActiveUser(impl: () => Promise<unknown>) {
   vi.mocked(createAuthUseCase).mockReturnValue(
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- テストで必要な getCurrentActiveUser のみを差し替えるため
+    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- テストで必要な getCurrentActiveUser のみを差し替えるための境界キャストのため
     { getCurrentActiveUser: impl } as unknown as ReturnType<typeof createAuthUseCase>,
   )
 }
@@ -50,7 +52,7 @@ describe('validateSession', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(createSupabaseAuthClient).mockReturnValue(
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- テストでは実クライアントを必要としないため
+      // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- テストでは実クライアントを必要とせず、空オブジェクトを目的の型へ橋渡しする境界キャストのため
       {} as unknown as ReturnType<typeof createSupabaseAuthClient>,
     )
   })

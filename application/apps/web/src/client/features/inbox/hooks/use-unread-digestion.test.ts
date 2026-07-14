@@ -82,6 +82,7 @@ describe('useUnreadDigestion', () => {
           },
         },
       },
+      // oxlint-disable-next-line typescript/no-restricted-types -- 一部のみをモックした値を実型へ橋渡しするための境界キャストのため
     } as unknown as ReturnType<typeof createSWRFetcher>)
   })
 
@@ -291,6 +292,33 @@ describe('useUnreadDigestion', () => {
   })
 
   describe('異常系', () => {
+    it('未読一覧の取得に失敗するとエラーのトーストを表示する', async () => {
+      mockUnreadDigestionGet.mockRejectedValue(new Error('取得に失敗しました'))
+
+      renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          'エラーが発生しました。時間をおいて再度お試しください。',
+          expect.objectContaining({ id: 'unread-digestion-error' }),
+        )
+      })
+    })
+
+    it('未読一覧取得が401のときはエラートーストを表示しない', async () => {
+      mockUnreadDigestionGet.mockRejectedValue(new ClientError('Unauthorized', 401))
+
+      renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+
+      await waitFor(() => {
+        expect(mockUnreadDigestionGet).toHaveBeenCalled()
+      })
+      expect(toast.error).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ id: 'unread-digestion-error' }),
+      )
+    })
+
     it('未読一覧の取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
       mockUnreadDigestionGet.mockRejectedValueOnce(new Error('取得に失敗しました'))
 

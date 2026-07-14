@@ -4,7 +4,7 @@ import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
-import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
+import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi, {
   type DiaryRangeItemResponse,
@@ -23,13 +23,6 @@ interface SummaryRangeData {
   weeklySources: DiarySource[]
 }
 
-// 週次・日次の2つの取得が同時に失敗しても通知を1つに集約するため、固定 id でトーストを重複させない
-const notifyFetchError = (error: unknown) => {
-  notifyErrorUnlessSessionExpired(error, 'エラーが発生しました。時間をおいて再度お試しください。', {
-    id: 'diary-analytics-error',
-  })
-}
-
 const buildAvailableDates = (todayJst: string) =>
   Array.from({ length: DIARY_DAYS }, (_, index) => {
     const dateResult = addJstDays(todayJst, -(DIARY_DAYS - 1 - index))
@@ -42,8 +35,8 @@ export default function useAnalytics() {
   const { fetchDiary, fetchDiaryRange } = useDiaryApi()
 
   const todayJst = getTodayJst()
-  const hasDateResolveError = todayJst === null
-  const availableDates = todayJst ? buildAvailableDates(todayJst) : []
+
+  const availableDates = buildAvailableDates(todayJst)
   const dateParam = searchParams.get('date')
   const pageParam = searchParams.get('page')
 
@@ -55,8 +48,7 @@ export default function useAnalytics() {
   })
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
-  const summaryKey =
-    availableDates.length > 0 ? ['api/articles/diary-summary', ...availableDates] : null
+  const summaryKey = ['api/articles/diary-summary', ...availableDates]
   const {
     data: summaryRangeData,
     error: summaryError,
@@ -101,7 +93,8 @@ export default function useAnalytics() {
       }
     },
     {
-      onError: notifyFetchError,
+      onError: (error) => notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
+      onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ANALYTICS_ERROR),
     },
   )
 
@@ -118,9 +111,17 @@ export default function useAnalytics() {
     ([, date, currentPage]: ['api/articles/diary', string, number]) =>
       fetchDiary(date, currentPage),
     {
-      onError: notifyFetchError,
+      onError: (error) => notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
+      // 週次・日次のどちらかが成功したらトーストを閉じる。まだ失敗中の側があれば
+      // SWR のエラーリトライで再度 onError が発火し、同一 id のトーストが出直る
+      onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ANALYTICS_ERROR),
     },
   )
+
+  const retry = () => {
+    void mutateSummary()
+    void mutateDaily()
+  }
 
   const reads = data?.reads.data.map((read) => ({ ...read, readAt: new Date(read.readAt) })) ?? []
   const normalizedSummaryRange =
@@ -168,13 +169,9 @@ export default function useAnalytics() {
       hasNext: false,
       hasPrev: false,
     },
-    dateResolveError: hasDateResolveError,
     isLoading: isLoading || isSummaryLoading,
     hasError: !!summaryError || !!dailyError,
-    retry: () => {
-      void mutateSummary()
-      void mutateDaily()
-    },
+    retry,
     selectDate,
     clearSelectedDate,
     toNextPage: () => updatePage(page + 1),

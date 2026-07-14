@@ -3,7 +3,7 @@ import { DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
-import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
+import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi from './use-diary-api'
 
@@ -22,7 +22,6 @@ export default function useDiary() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { fetchDiary } = useDiaryApi()
   const todayJst = getTodayJst()
-  const hasDateResolveError = todayJst === null
 
   const pageParam = searchParams.get('page')
   const parseResult = offsetPaginationSchema.safeParse({
@@ -31,22 +30,20 @@ export default function useDiary() {
   })
   const page = parseResult.success ? parseResult.data.page : DEFAULT_PAGE
 
-  const swrKey = todayJst ? (['api/articles/diary', todayJst, page] as const) : null
+  const swrKey = ['api/articles/diary', todayJst, page] as const
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     ([, targetDate, targetPage]: readonly ['api/articles/diary', string, number]) =>
       fetchDiary(targetDate, targetPage),
     {
-      // SWR のリトライ・再検証で失敗するたびにトーストが積み上がらないよう、固定 id で 1 つに集約する
-      onError: (swrError) => {
-        notifyErrorUnlessSessionExpired(
-          swrError,
-          'エラーが発生しました。時間をおいて再度お試しください。',
-          { id: 'diary-error' },
-        )
-      },
+      onError: (swrError) => notifyFetchError(swrError, TOAST_ID.DIARY_ERROR, () => retry()),
+      onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ERROR),
     },
   )
+
+  const retry = () => {
+    void mutate()
+  }
 
   const reads: DiaryReadItem[] =
     data?.reads.data.map((read) => ({ ...read, readAt: new Date(read.readAt) })) ?? []
@@ -64,7 +61,6 @@ export default function useDiary() {
 
   return {
     todayJst,
-    dateResolveError: hasDateResolveError,
     dailySummary,
     sources: data?.sources ?? emptySources,
     reads,
@@ -77,7 +73,7 @@ export default function useDiary() {
     },
     isLoading,
     hasError: !!error,
-    retry: () => mutate(),
+    retry,
     toNextPage: () => updatePage(page + 1),
     toPrevPage: () => updatePage(page - 1),
   }

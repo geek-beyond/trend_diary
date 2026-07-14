@@ -37,7 +37,6 @@ const buildProps = (overrides: Partial<TrendsPageProps> = {}): TrendsPageProps =
   openDrawer: vi.fn(),
   isLoading: false,
   hasError: false,
-  onRetry: vi.fn(),
   page: 1,
   totalPages: 1,
   selectedMedia: ALL_MEDIA,
@@ -100,22 +99,11 @@ describe('TrendsPage', () => {
     })
   })
 
-  it('取得エラー時は再試行ボタン付きのエラー表示をし記事一覧を表示しない', () => {
-    const onRetry = vi.fn()
-    render(
-      createElement(
-        TrendsPage,
-        buildProps({ hasError: true, articles: [buildArticle()], onRetry }),
-      ),
-    )
+  it('取得エラー時は記事一覧を表示しない（エラーの案内と再試行はトーストに集約する）', () => {
+    render(createElement(TrendsPage, buildProps({ hasError: true, articles: [buildArticle()] })))
 
-    expect(
-      screen.getByText('エラーが発生しました。時間をおいて再度お試しください。'),
-    ).toBeInTheDocument()
     expect(screen.queryByText('テスト記事タイトル')).not.toBeInTheDocument()
     expect(screen.queryByText('記事がありません')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: '再試行' }))
-    expect(onRetry).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: '再試行' })).not.toBeInTheDocument()
   })
 })

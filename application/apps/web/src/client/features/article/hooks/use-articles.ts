@@ -13,7 +13,7 @@ import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
-import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
+import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import { ALL_MEDIA, isAllMediaSelected, type SelectedMedia } from '../model/media-selection'
 
@@ -183,18 +183,25 @@ export default function useArticles(isLoggedIn = false) {
     {
       onError: (swrError) => {
         if (swrError instanceof Error) {
-          notifyErrorUnlessSessionExpired(
-            swrError,
-            'エラーが発生しました。時間をおいて再度お試しください。',
-          )
+          notifyFetchError(swrError, TOAST_ID.ARTICLES_ERROR, () => retry())
         } else {
-          toast.error('不明なエラーが発生しました')
+          // fetcher は Error 系を throw するため通常到達しないが、想定外の値に備えたフォールバック
+          toast.error('不明なエラーが発生しました', {
+            id: TOAST_ID.ARTICLES_ERROR,
+            duration: Infinity,
+            action: { label: '再試行', onClick: () => retry() },
+          })
           // oxlint-disable-next-line no-console -- 未知のエラーのため
           console.error(swrError)
         }
       },
+      onSuccess: () => dismissFetchError(TOAST_ID.ARTICLES_ERROR),
     },
   )
+
+  const retry = () => {
+    void mutate()
+  }
 
   // 表示中の一覧が「未読のみ」という条件と矛盾したまま残ると、フィルタが効いていないように見えるため
   const applyReadStateToCache =
@@ -313,7 +320,7 @@ export default function useArticles(isLoggedIn = false) {
     totalPages: data?.totalPages || 1,
     isLoading,
     hasError: !!error,
-    retry: () => mutate(),
+    retry,
     setSearchParams,
     toNextPage,
     toPreviousPage,

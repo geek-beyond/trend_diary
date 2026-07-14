@@ -1,6 +1,5 @@
-import FetchErrorAlert from '@/client/components/ui/feedback/fetch-error-alert'
+import PageCard from '@/client/components/ui/layout/page-card'
 import {
-  DiaryPageLayout,
   DiaryReadListSection,
   DiaryReadPagination,
   DiarySummarySection,
@@ -12,38 +11,33 @@ import {
 
 interface Props {
   targetDate: string | null
-  dateResolveError: boolean
   dailySummary: Summary
   sources: Source[]
   reads: ReadItem[]
   readPagination: ReadPagination
   isLoading: boolean
   hasError: boolean
-  onRetry: () => void
   onNextPage: () => void
   onPrevPage: () => void
 }
 
 export default function DiaryPage({
   targetDate,
-  dateResolveError,
   dailySummary,
   sources,
   reads,
   readPagination,
   isLoading,
   hasError,
-  onRetry,
   onNextPage,
   onPrevPage,
 }: Props) {
   const pageTitle = 'ダイアリー'
 
+  // 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する
   return (
-    <DiaryPageLayout pageTitle={pageTitle} dateResolveError={dateResolveError}>
-      {hasError && !isLoading ? (
-        <FetchErrorAlert onRetry={onRetry} />
-      ) : (
+    <PageCard title={pageTitle}>
+      {hasError && !isLoading ? null : (
         <>
           <DiarySummarySection
             sources={sources}
@@ -59,6 +53,6 @@ export default function DiaryPage({
           />
         </>
       )}
-    </DiaryPageLayout>
+    </PageCard>
   )
 }

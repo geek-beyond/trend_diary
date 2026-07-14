@@ -17,7 +17,6 @@ export const meta: MetaFunction = ({ matches, location }) =>
 export default function AnalyticsRoute() {
   const {
     selectedDate,
-    dateResolveError,
     summaryRange,
     weeklySummary,
     dailySummary,
@@ -26,7 +25,6 @@ export default function AnalyticsRoute() {
     readPagination,
     isLoading,
     hasError,
-    retry,
     selectDate,
     clearSelectedDate,
     toNextPage,
@@ -36,7 +34,6 @@ export default function AnalyticsRoute() {
   return (
     <AnalyticsPage
       selectedDate={selectedDate}
-      dateResolveError={dateResolveError}
       summaryRange={summaryRange}
       weeklySummary={weeklySummary}
       dailySummary={dailySummary}
@@ -45,7 +42,6 @@ export default function AnalyticsRoute() {
       readPagination={readPagination}
       isLoading={isLoading}
       hasError={hasError}
-      onRetry={retry}
       onSelectDate={selectDate}
       onClearSelectedDate={clearSelectedDate}
       onNextPage={toNextPage}

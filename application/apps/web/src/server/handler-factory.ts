@@ -65,6 +65,7 @@ import type { Env, SessionUser } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
 
 // コンテキストの型定義
+// oxlint-disable-next-line typescript/no-restricted-types -- ハンドラ側で具象型を指定するまでの既定値で、任意形状を受け入れる必要があるため
 export interface RequestContext<TParam = unknown, TJson = unknown, TQuery = unknown> {
   param: TParam
   json: TJson
@@ -74,6 +75,7 @@ export interface RequestContext<TParam = unknown, TJson = unknown, TQuery = unkn
 }
 
 // 認証済みコンテキストの型定義（userは必須）
+// oxlint-disable-next-line typescript/no-restricted-types -- ハンドラ側で具象型を指定するまでの既定値で、任意形状を受け入れる必要があるため
 export interface AuthenticatedRequestContext<TParam = unknown, TJson = unknown, TQuery = unknown> {
   param: TParam
   json: TJson
@@ -85,8 +87,11 @@ export interface AuthenticatedRequestContext<TParam = unknown, TJson = unknown, 
 // バリデーション済みデータを保持する中間表現
 // Hono clientの型推論を迂回してミドルウェア検証済みの値を取り出すための器
 interface ValidatedRequestData {
+  // oxlint-disable-next-line typescript/no-restricted-types -- ミドルウェア検証済みだが Hono の型推論では静的に確定できない値を保持するため
   param: unknown
+  // oxlint-disable-next-line typescript/no-restricted-types -- ミドルウェア検証済みだが Hono の型推論では静的に確定できない値を保持するため
   json: unknown
+  // oxlint-disable-next-line typescript/no-restricted-types -- ミドルウェア検証済みだが Hono の型推論では静的に確定できない値を保持するため
   query: unknown
 }
 
@@ -98,7 +103,7 @@ function extractValidatedData(c: Context<Env>): ValidatedRequestData {
   }
   // valid は内部で this（c.req）を参照するメソッドのため、変数へ取り出すとレシーバが外れて壊れる。
   // bind でレシーバを固定する。ジェネリックな Context では引数型が never に潰れるため呼び出しキーの型のみ補う。
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- ジェネリックな Context では valid() の引数型が never に潰れ、検証キーの型を補うアサーションが避けられないため
+  // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ジェネリックな Context では valid() の引数型が never に潰れ検証キーの型を補うアサーションが避けられず、戻り値も検証前の未確定な値となるため
   const valid = c.req.valid.bind(c.req) as (key: 'param' | 'json' | 'query') => unknown
   return {
     param: valid('param'),
@@ -145,6 +150,7 @@ interface BaseHandlerConfig<TUseCase, TContext, TOutput, TResponse> {
   // IMPORTANT: 未指定の場合は空のペイロード{}がログに出力される
   // セキュリティとパフォーマンスのため、必要な情報のみを明示的に指定すること
   // 大量のデータを返すハンドラーでは、サマリー情報のみをログに出力することを推奨
+  // oxlint-disable-next-line typescript/no-restricted-types -- 任意の構造化データをログ出力するペイロードで、値の型を限定できないため
   logPayload?: (output: TOutput, context: TContext) => Record<string, unknown>
 
   // HTTPステータスコード（必須）

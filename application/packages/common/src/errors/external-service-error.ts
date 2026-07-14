@@ -7,12 +7,14 @@ import ServerError from './server-error'
 export default class ExternalServiceError extends ServerError {
   public readonly originalError: ServerError
   public readonly serviceError: ServerError
+  // oxlint-disable-next-line typescript/no-restricted-types -- 任意の付随情報を保持するコンテキストであり、値の型を事前に確定できないため
   public readonly context: Record<string, unknown>
 
   constructor(
     message: string,
     originalError: ServerError,
     serviceError: ServerError,
+    // oxlint-disable-next-line typescript/no-restricted-types -- 任意の付随情報を保持するコンテキストであり、値の型を事前に確定できないため
     context: Record<string, unknown> = {},
   ) {
     super(message)

@@ -20,7 +20,6 @@ export default function InboxRoute() {
   const {
     isLoading,
     hasError,
-    retry,
     isJustCompleted,
     currentArticle,
     remainingCount,
@@ -34,7 +33,6 @@ export default function InboxRoute() {
       article={currentArticle}
       isLoading={isLoading}
       hasError={hasError}
-      onRetry={retry}
       isJustCompleted={isJustCompleted}
       remainingCount={remainingCount}
       onSkip={handleSkip}

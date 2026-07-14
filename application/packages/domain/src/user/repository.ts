@@ -5,7 +5,8 @@ import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,
   AuthenticationUser,
-  PasskeyChallenge,
+  PasskeyAuthenticationChallenge,
+  PasskeyRegistrationChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
   RegisteredPasskey,
@@ -109,7 +110,7 @@ export interface AuthRepository {
   /**
    * passkey登録を開始し、WebAuthnの資格情報生成オプションを取得する（要認証セッション）
    */
-  startPasskeyRegistration(): Promise<Result<PasskeyChallenge, ServerError>>
+  startPasskeyRegistration(): Promise<Result<PasskeyRegistrationChallenge, ServerError>>
 
   /**
    * ブラウザで生成した資格情報を検証し、passkeyを登録する（要認証セッション）
@@ -121,7 +122,9 @@ export interface AuthRepository {
   /**
    * passkey認証を開始し、WebAuthnの資格情報リクエストオプションを取得する（未認証で可）
    */
-  startPasskeyAuthentication(): Promise<Result<PasskeyChallenge, ClientError | ServerError>>
+  startPasskeyAuthentication(): Promise<
+    Result<PasskeyAuthenticationChallenge, ClientError | ServerError>
+  >
 
   /**
    * ブラウザで生成した資格情報を検証し、セッションを確立する（未認証で可）

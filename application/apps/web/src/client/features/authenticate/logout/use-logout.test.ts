@@ -22,12 +22,13 @@ vi.mock('@/client/infrastructure/create-swr-fetcher', () => ({
 // グローバル設定の no-op trigger では onSuccess/onError が発火しないため、
 // 実際の trigger 相当の振る舞いに差し替えてコールバックまで検証する
 vi.mock('swr/mutation', () => ({
-  default: (
+  default: <Data, Arg>(
     key: string,
-    fetcher: (key: string, options: { arg: unknown }) => Promise<unknown>,
-    options?: { onSuccess?: (data: unknown) => void; onError?: (error: unknown) => void },
+    fetcher: (key: string, options: { arg: Arg }) => Promise<Data>,
+    // oxlint-disable-next-line typescript/no-restricted-types -- catch で受ける失敗値は任意の型となり確定できないため
+    options?: { onSuccess?: (data: Data) => void; onError?: (error: unknown) => void },
   ) => ({
-    trigger: async (arg: unknown) => {
+    trigger: async (arg: Arg) => {
       try {
         const data = await fetcher(key, { arg })
         options?.onSuccess?.(data)

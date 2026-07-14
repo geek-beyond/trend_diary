@@ -7,6 +7,7 @@ interface ApiCallResponse {
   ok: boolean
   status: number
   statusText: string
+  // oxlint-disable-next-line typescript/no-restricted-types -- 検証前の JSON は型が定まらず、呼び出し側のジェネリック T へ橋渡しするため
   json: () => Promise<unknown>
 }
 

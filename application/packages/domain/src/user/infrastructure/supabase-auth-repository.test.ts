@@ -16,7 +16,7 @@ type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> | 
 // Supabase SDKの戻り値は判別共用体で、部分的なエラー形のモックでは正確な型を満たせないため、
 // 解決値の型推論を一箇所に閉じ込めてキャストを集約する
 const resolveAuthMock = <T>(
-  mockFn: { mockResolvedValue: (value: T) => unknown },
+  mockFn: { mockResolvedValue: (value: T) => void },
   value: DeepPartial<T>,
 ): void => {
   // oxlint-disable-next-line typescript/consistent-type-assertions -- Supabase SDKの判別共用体な戻り値型を、部分的なモック payload で満たす手段が他にないためです

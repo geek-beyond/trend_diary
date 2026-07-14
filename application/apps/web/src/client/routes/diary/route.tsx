@@ -16,14 +16,12 @@ export const meta: MetaFunction = ({ matches, location }) =>
 export default function DiaryRoute() {
   const {
     todayJst,
-    dateResolveError,
     dailySummary,
     sources,
     reads,
     readPagination,
     isLoading,
     hasError,
-    retry,
     toNextPage,
     toPrevPage,
   } = useDiary()
@@ -31,14 +29,12 @@ export default function DiaryRoute() {
   return (
     <DiaryPage
       targetDate={todayJst}
-      dateResolveError={dateResolveError}
       dailySummary={dailySummary}
       sources={sources}
       reads={reads}
       readPagination={readPagination}
       isLoading={isLoading}
       hasError={hasError}
-      onRetry={retry}
       onNextPage={toNextPage}
       onPrevPage={toPrevPage}
     />

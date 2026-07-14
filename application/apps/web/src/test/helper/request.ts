@@ -14,6 +14,7 @@ interface RequestableApp {
 export interface ApiRequestOptions {
   method?: string
   // オブジェクトを渡すと JSON 化し Content-Type: application/json を付与する
+  // oxlint-disable-next-line typescript/no-restricted-types -- JSON 化できる任意形状のリクエストボディを受けるため
   json?: unknown
   // 事前に組み立てた生ボディを渡す（json と併用しない）
   body?: string

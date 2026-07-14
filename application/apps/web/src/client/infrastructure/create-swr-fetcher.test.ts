@@ -95,8 +95,8 @@ describe('createSWRFetcher', () => {
       const testCases: Array<{
         outline: string
         status: number
-        json: unknown
-        expected: unknown
+        json: object | null
+        expected: object | null
         expect: string
       }> = [
         {

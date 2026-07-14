@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Children, isValidElement } from 'react'
 import { describe, expect, it } from 'vitest'
 import { SheetClose } from '@/client/components/shadcn/sheet'
-import type { MenuItem } from '@/client/components/ui/layout/sidebar'
+import type { MenuItem } from '@/client/entities/navigation'
 import NavMenu from './index'
 
 const menuItems: MenuItem[] = [
@@ -13,6 +13,7 @@ const menuItems: MenuItem[] = [
   },
 ]
 
+// oxlint-disable-next-line typescript/no-restricted-types -- 任意の props を受けて children の有無を絞り込む型ガードの役割のため
 function hasChildren(props: unknown): props is { children: ReactNode } {
   return typeof props === 'object' && props !== null && 'children' in props
 }

@@ -3,7 +3,7 @@ import { createdAt, updatedAt } from './schemas'
 
 interface TestCase {
   name: string
-  input: unknown
+  input: Date | string | number | null | undefined
   expected: boolean
 }
 

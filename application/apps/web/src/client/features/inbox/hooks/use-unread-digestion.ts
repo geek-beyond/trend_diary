@@ -1,7 +1,12 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { useState } from 'react'
 import useSWR from 'swr'
-import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
+import {
+  dismissFetchError,
+  notifyErrorUnlessSessionExpired,
+  notifyFetchError,
+  TOAST_ID,
+} from '@/client/entities/auth'
 import { isAllMediaSelected, type SelectedMedia, useReadArticle } from '@/client/features/article'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useCompletionCelebration from './use-completion-celebration'
@@ -33,24 +38,32 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
     isLoading: isInitialLoading,
     isValidating,
     mutate,
-  } = useSWR<UnreadDigestionResponse>(swrKey, async () => {
-    const query = isAllMediaSelected(selectedMedia) ? {} : { media: selectedMedia }
-    const result = await apiCall<UnreadDigestionResponse>(() =>
-      client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
-    )
+  } = useSWR<UnreadDigestionResponse>(
+    swrKey,
+    async () => {
+      const query = isAllMediaSelected(selectedMedia) ? {} : { media: selectedMedia }
+      const result = await apiCall<UnreadDigestionResponse>(() =>
+        client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
+      )
 
-    if (!result) {
-      throw new Error('未読消化データの取得に失敗しました')
-    }
+      if (!result) {
+        throw new Error('未読消化データの取得に失敗しました')
+      }
 
-    return {
-      data: result.data.map((article) => ({
-        ...article,
-        createdAt: new Date(article.createdAt),
-      })),
-      total: result.total,
-    }
-  })
+      return {
+        data: result.data.map((article) => ({
+          ...article,
+          createdAt: new Date(article.createdAt),
+        })),
+        total: result.total,
+      }
+    },
+    {
+      onError: (swrError) =>
+        notifyFetchError(swrError, TOAST_ID.UNREAD_DIGESTION_ERROR, () => retry()),
+      onSuccess: () => dismissFetchError(TOAST_ID.UNREAD_DIGESTION_ERROR),
+    },
+  )
 
   // SWR が新しいバッチを返したらキュー/残数を同期する。消化中の楽観更新は次の取得まで保持する。
   // SWR は同一内容の再取得では data の参照を保つため、深く等しい応答ではここをスキップできる
@@ -134,10 +147,14 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
   const isFetchingNextBatch = isValidating && queue.length === 0
   const isLoading = isInitialLoading || isActionLoading || isFetchingNextBatch
 
+  const retry = () => {
+    void mutate()
+  }
+
   return {
     isLoading,
     hasError: !!error,
-    retry: () => mutate(),
+    retry,
     isJustCompleted,
     currentArticle,
     remainingCount: remaining,

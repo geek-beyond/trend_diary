@@ -5,6 +5,7 @@ import type { CaptchaVerifier } from '../repository'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
+// oxlint-disable-next-line typescript/no-restricted-types -- JSON パース結果の未検証な値を受けて success を判定する型ガードのため、入力を具象化できないためです
 function isSuccessResponse(value: unknown): boolean {
   return value !== null && typeof value === 'object' && 'success' in value && value.success === true
 }

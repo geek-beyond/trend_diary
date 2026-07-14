@@ -1,4 +1,3 @@
-import type { RenderHookResult } from '@testing-library/react'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
 import type { ReactNode } from 'react'
@@ -92,14 +91,13 @@ const resolveJstDateWithOffset = (baseDateString: string, days: number): string 
 
 // oxlint-disable-next-line typescript/no-explicit-any, typescript/consistent-type-assertions -- Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするため any と型アサーションを許可する
 const mockGetApiClientForClient = getApiClientForClient as MockedFunction<any>
-type UseTrendsHook = ReturnType<typeof useArticles>
 
 function setupHook(
   initialEntries?: string[],
   options?: {
     isLoggedIn?: boolean
   },
-): RenderHookResult<UseTrendsHook, unknown> {
+) {
   return renderHook(() => useArticles(options?.isLoggedIn), {
     wrapper: ({ children }: { children: ReactNode }) =>
       createElement(
@@ -614,6 +612,7 @@ describe('useArticles', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
+          expect.objectContaining({ id: 'articles-error' }),
         )
         expect(result.current.isLoading).toBe(false)
       })
@@ -629,6 +628,7 @@ describe('useArticles', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
+          expect.objectContaining({ id: 'articles-error' }),
         )
         expect(result.current.isLoading).toBe(false)
       })
@@ -643,6 +643,7 @@ describe('useArticles', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
           'エラーが発生しました。時間をおいて再度お試しください。',
+          expect.objectContaining({ id: 'articles-error' }),
         )
         expect(result.current.isLoading).toBe(false)
       })
@@ -684,6 +685,7 @@ describe('useArticles', () => {
       })
       expect(toast.error).not.toHaveBeenCalledWith(
         'エラーが発生しました。時間をおいて再度お試しください。',
+        expect.objectContaining({ id: 'articles-error' }),
       )
     })
   })

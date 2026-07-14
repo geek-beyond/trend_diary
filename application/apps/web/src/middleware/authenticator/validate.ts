@@ -16,24 +16,6 @@ type AuthValidationError = Error & {
   reason: AuthValidationReason
 }
 
-function createAuthValidationError(
-  reason: AuthValidationReason,
-  message: string,
-): AuthValidationError {
-  return Object.assign(new Error(message), { reason })
-}
-
-async function getSessionClaims(
-  c: Context<Env>,
-): Promise<Result<{ authenticationId: string }, AuthValidationError>> {
-  const client = createSupabaseAuthClient(c)
-  const { data, error } = await client.auth.getClaims()
-  if (error || !data) {
-    return err(createAuthValidationError('no_session', 'No session found'))
-  }
-  return ok({ authenticationId: data.claims.sub })
-}
-
 export async function validateSession(
   c: Context<Env>,
 ): Promise<Result<AuthValidationSuccess, AuthValidationError>> {
@@ -59,4 +41,22 @@ export async function validateSession(
     email: result.value.email,
   }
   return ok({ sessionUser })
+}
+
+async function getSessionClaims(
+  c: Context<Env>,
+): Promise<Result<{ authenticationId: string }, AuthValidationError>> {
+  const client = createSupabaseAuthClient(c)
+  const { data, error } = await client.auth.getClaims()
+  if (error || !data) {
+    return err(createAuthValidationError('no_session', 'No session found'))
+  }
+  return ok({ authenticationId: data.claims.sub })
+}
+
+function createAuthValidationError(
+  reason: AuthValidationReason,
+  message: string,
+): AuthValidationError {
+  return Object.assign(new Error(message), { reason })
 }

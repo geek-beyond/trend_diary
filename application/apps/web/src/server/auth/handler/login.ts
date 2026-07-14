@@ -12,8 +12,12 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
-  const captchaResult = await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, valid.captchaToken)
-  if (captchaResult.isErr()) throw handleError(captchaResult.error, logger)
+  const captchaSecret = c.env.TURNSTILE_SECRET_KEY
+  // secret未設定の環境ではCAPTCHAを無効とみなす
+  if (captchaSecret) {
+    const captchaResult = await verifyTurnstile(captchaSecret, valid.captchaToken)
+    if (captchaResult.isErr()) throw handleError(captchaResult.error, logger)
+  }
 
   const client = createSupabaseAuthClient(c)
   const loginResult = await wrapAsyncCall(() =>

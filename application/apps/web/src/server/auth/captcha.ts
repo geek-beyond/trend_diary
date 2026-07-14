@@ -4,20 +4,23 @@ import { err, ok, type Result } from 'neverthrow'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
-// oxlint-disable-next-line typescript/no-restricted-types -- JSON パース結果の未検証な値を受けて success を判定する型ガードのため、入力を具象化できないためです
-function isSuccessResponse(value: unknown): boolean {
-  return value !== null && typeof value === 'object' && 'success' in value && value.success === true
+// oxlint-disable-next-line typescript/no-restricted-types -- siteverify の JSON レスポンスを型ガードで絞り込むため入力は unknown を受ける
+function isTurnstileVerifyResponse(value: unknown): value is { success: boolean } {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'success' in value &&
+    typeof value.success === 'boolean'
+  )
 }
 
 /**
  * Cloudflare TurnstileのトークンをsiteverifyAPIで検証する。
- * secret未設定の環境ではCAPTCHA無効とみなし検証をスキップして許可する。
  */
 export async function verifyTurnstile(
-  secret: string | undefined,
+  secret: string,
   token?: string,
 ): Promise<Result<void, ClientError | ServerError>> {
-  if (!secret) return ok(undefined)
   if (!token) return err(new ClientError('captcha token is required', 403))
 
   const body = new URLSearchParams()
@@ -30,7 +33,7 @@ export async function verifyTurnstile(
   const parsed = await wrapAsyncCall(() => response.value.json())
   if (parsed.isErr()) return err(new ServerError(parsed.error))
 
-  if (!isSuccessResponse(parsed.value)) {
+  if (!isTurnstileVerifyResponse(parsed.value) || !parsed.value.success) {
     return err(new ClientError('captcha verification failed', 403))
   }
 

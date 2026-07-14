@@ -15,13 +15,6 @@ describe('verifyTurnstile', () => {
   })
 
   describe('正常系', () => {
-    it('secret未設定の場合は検証をスキップして許可する', async () => {
-      const result = await verifyTurnstile(undefined, 'any-token')
-
-      expect(result.isOk()).toBe(true)
-      expect(fetchMock).not.toHaveBeenCalled()
-    })
-
     it('siteverifyがsuccess:trueを返す場合は許可する', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: true })))
 

@@ -20,13 +20,11 @@ export default async function passkeyLoginVerify(c: ZodValidatedContext<PasskeyV
   if (result.isErr()) throw handleError(new ServerError(result.error), logger)
 
   const { data, error } = result.value
-  // 資格情報の不一致・失効などは認証失敗として401で返す
   if (error) throw handleError(new ClientError('Invalid passkey', 401), logger)
   if (!data?.user || !data.session) {
     throw handleError(new ServerError('Passkey authentication failed'), logger)
   }
 
-  // ロールバック不能な認証が成功したときだけ、アカウント解決のドメイン処理を呼ぶ
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
   const activeUserResult = await accountUseCase.resolveActiveUser(data.user.id)

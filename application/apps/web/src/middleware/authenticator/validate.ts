@@ -28,7 +28,6 @@ function createAuthValidationError(
 
 /**
  * セッション検証の共通ロジック（auth）
- * 認証プロバイダ(Supabase)のセッション検証はこの層で行い、成功時にアカウントを解決する
  * @param c Honoコンテキスト
  * @returns セッション検証結果
  */
@@ -38,7 +37,6 @@ export async function validateSession(
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   try {
     const client = createSupabaseAuthClient(c)
-    // getClaimsは非対称署名鍵ならJWKSをローカルキャッシュして署名検証を行い、Supabaseへの往復を省く
     const claimsResult = await wrapAsyncCall(() => client.auth.getClaims())
     if (claimsResult.isErr()) {
       logger.warn('Session validation failed', { error: claimsResult.error })

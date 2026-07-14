@@ -20,7 +20,6 @@ export default async function passkeyRegisterVerify(c: ZodValidatedContext<Passk
 
   const { data, error } = result.value
   if (error || !data) {
-    // 資格情報の不一致など、ユーザーの再操作で解消しうる失敗として400で返す
     throw handleError(
       new ClientError(`Passkey registration failed: ${error?.message}`, 400),
       logger,

@@ -72,8 +72,8 @@ export default class Logger {
     this.log('warn', message, ...args)
   }
 
-  // oxlint-disable-next-line typescript/no-restricted-types -- throwされる例外値は任意の型を取り得え、付加情報も任意型で受け取るため
-  error(message: LogMessage, error: Error | unknown, ...args: unknown[]): void {
+  // oxlint-disable-next-line typescript/no-restricted-types -- throwされる例外値は任意の型を取り得るうえ、付加情報も任意型で受け取るため
+  error(message: LogMessage, error: unknown, ...args: unknown[]): void {
     const normalizedError = error instanceof Error ? error : new Error(String(error))
 
     // * pinoのstdSerializersで処理されるよう、errプロパティ名を使用

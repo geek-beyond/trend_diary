@@ -3,11 +3,6 @@ import { err, ok, type Result } from 'neverthrow'
 import type { Command, Notifier, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
 
-/**
- * アカウント(ActiveUser)集約のユースケース。
- * 認証プロバイダ(Supabase)や CAPTCHA などの外部サービスはハンドラ層に閉じ込め、
- * ここでは認証済みの authenticationId を鍵にアカウントの作成・解決だけを担う。
- */
 export class AccountUseCase {
   constructor(
     private readonly userCommand: Command,

@@ -1,4 +1,4 @@
-import { authInputSchema, passkeyVerifyInputSchema } from '@trend-diary/domain/user'
+import { authInputSchema } from '@trend-diary/domain/user'
 import { Hono } from 'hono'
 import type { Env } from '@/env'
 import { authenticator } from '@/middleware/authenticator'
@@ -14,6 +14,7 @@ import passkeyRegisterStart from './handler/passkey-register-start'
 import passkeyRegisterVerify from './handler/passkey-register-verify'
 import passkeyStatus from './handler/passkey-status'
 import signup from './handler/signup'
+import { passkeyVerifyInputSchema } from './passkey-schema'
 
 const app = new Hono<Env>()
   .post('/signup', rateLimiter, zodValidator('json', authInputSchema), signup)

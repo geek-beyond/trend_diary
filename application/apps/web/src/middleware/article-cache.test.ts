@@ -96,6 +96,35 @@ describe('articleCache ミドルウェア', () => {
       expect(handler).not.toHaveBeenCalled()
       expect(await res.text()).toBe('cached-body')
     })
+
+    it('キャッシュヒット時は後続ミドルウェアがヘッダを変更できる応答を返すこと', async () => {
+      // Cache API が返す Response はヘッダが immutable。これをそのまま返すと後続の
+      // secureHeaders がヘッダを付与できず "Can't modify immutable headers" で 5xx になる。
+      // workerd では Response.redirect のヘッダが immutable になるため Cache API 応答の代用にする
+      vi.stubGlobal('caches', {
+        default: {
+          match: vi.fn(async () => Response.redirect('https://example.com/redirect', 302)),
+          put: vi.fn(),
+        },
+      })
+
+      // next 後にヘッダを付与する外側ミドルウェアで secureHeaders を模し、実際のチェーンを走らせる
+      const app = new Hono<Env>()
+        .use(async (c, next) => {
+          await next()
+          c.res.headers.set('X-Frame-Options', 'DENY')
+        })
+        .use('/api/articles/*', articleCache)
+
+      const res = await app.request(
+        ARTICLES_URL,
+        { method: 'GET' },
+        { ...TEST_ENV, EDGE_CACHE_DISABLED: undefined },
+      )
+
+      expect(res.status).toBe(302)
+      expect(res.headers.get('X-Frame-Options')).toBe('DENY')
+    })
   })
 
   describe('準正常系', () => {

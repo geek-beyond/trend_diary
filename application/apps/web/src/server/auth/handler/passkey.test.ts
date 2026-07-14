@@ -1,9 +1,18 @@
+import type * as SupabaseModule from '@/infrastructure/supabase'
+import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
 // supa-emuは署名検証をしないため、資格情報は id だけのダミーで登録・認証を通せる
 const CREDENTIAL_ID = 'server-test-passkey-credential'
+
+// 異常系(Supabase例外→500)のみ createSupabaseAuthClient を差し替えたい。既定は実装へ委譲する
+// ため、正常系・準正常系は実結合テストのまま挙動を変えない。
+vi.mock('@/infrastructure/supabase', async (importOriginal) => {
+  const actual = await importOriginal<typeof SupabaseModule>()
+  return { ...actual, createSupabaseAuthClient: vi.fn(actual.createSupabaseAuthClient) }
+})
 
 describe('passkey認証', () => {
   const TEST_EMAIL = 'passkey-test@example.com'
@@ -49,10 +58,35 @@ describe('passkey認証', () => {
   }
 
   describe('register/start', () => {
+    describe('正常系', () => {
+      it('登録開始に成功すると200でchallengeIdを返す', async () => {
+        const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+
+        const res = await post('/api/auth/passkey/register/start', undefined, cookies)
+        expect(res.status).toBe(200)
+        const body: { challengeId: string } = await res.json()
+        expect(typeof body.challengeId).toBe('string')
+        expect(body.challengeId.length).toBeGreaterThan(0)
+      })
+    })
+
     describe('準正常系', () => {
       it('未ログインでは401を返す', async () => {
         const res = await post('/api/auth/passkey/register/start')
         expect(res.status).toBe(401)
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げた場合は500を返す', async () => {
+        const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+        // Supabase 障害時に500へ倒れることを検証するため、次の1回だけ throw させる
+        vi.mocked(createSupabaseAuthClient).mockImplementationOnce(() => {
+          throw new Error('supabase connection failed')
+        })
+
+        const res = await post('/api/auth/passkey/register/start', undefined, cookies)
+        expect(res.status).toBe(500)
       })
     })
   })
@@ -99,6 +133,23 @@ describe('passkey認証', () => {
           cookies,
         )
         expect(res.status).toBe(400)
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げた場合は500を返す', async () => {
+        const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+        // Supabase 障害時に500へ倒れることを検証するため、次の1回だけ throw させる
+        vi.mocked(createSupabaseAuthClient).mockImplementationOnce(() => {
+          throw new Error('supabase connection failed')
+        })
+
+        const res = await post(
+          '/api/auth/passkey/register/verify',
+          { challengeId: 'challenge-1', credential: { id: CREDENTIAL_ID } },
+          cookies,
+        )
+        expect(res.status).toBe(500)
       })
     })
   })
@@ -151,6 +202,21 @@ describe('passkey認証', () => {
         expect(res.status).toBe(422)
       })
     })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げた場合は500を返す', async () => {
+        // Supabase 障害時に500へ倒れることを検証するため、次の1回だけ throw させる
+        vi.mocked(createSupabaseAuthClient).mockImplementationOnce(() => {
+          throw new Error('supabase connection failed')
+        })
+
+        const res = await post('/api/auth/passkey/login/verify', {
+          challengeId: 'challenge-1',
+          credential: { id: CREDENTIAL_ID },
+        })
+        expect(res.status).toBe(500)
+      })
+    })
   })
 
   describe('passkey状態の取得・無効化', () => {
@@ -180,6 +246,19 @@ describe('passkey認証', () => {
       it('未ログインで無効化すると401を返す', async () => {
         const res = await req('DELETE', '/api/auth/passkey')
         expect(res.status).toBe(401)
+      })
+    })
+
+    describe('異常系', () => {
+      it('Supabase呼び出しが例外を投げた場合は500を返す', async () => {
+        const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+        // Supabase 障害時に500へ倒れることを検証するため、次の1回だけ throw させる
+        vi.mocked(createSupabaseAuthClient).mockImplementationOnce(() => {
+          throw new Error('supabase connection failed')
+        })
+
+        const res = await req('GET', '/api/auth/passkey', cookies)
+        expect(res.status).toBe(500)
       })
     })
   })

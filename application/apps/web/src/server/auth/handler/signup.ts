@@ -8,14 +8,6 @@ import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import { verifyTurnstile } from '../captcha'
 import { callSupabaseAuth } from '../supabase-auth'
 
-// 既に存在するユーザーは409で明示する。UX上一般的でセキュリティリスクも比較的小さいと判断。
-// NOTE: Supabaseは専用エラー型を提供しないためメッセージ文字列で判定している
-function toSignupError(error: Error): Error {
-  return error.message.includes('already registered')
-    ? new AlreadyExistsError('User already exists')
-    : new ServerError(`Authentication service error: ${error.message}`)
-}
-
 export default async function signup(c: ZodValidatedContext<AuthInput>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
@@ -55,4 +47,12 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
   logger.info('signup success', { activeUserId: result.value.activeUserId })
 
   return c.json({}, 201)
+}
+
+// 既に存在するユーザーは409で明示する。UX上一般的でセキュリティリスクも比較的小さいと判断。
+// NOTE: Supabaseは専用エラー型を提供しないためメッセージ文字列で判定している
+function toSignupError(error: Error): Error {
+  return error.message.includes('already registered')
+    ? new AlreadyExistsError('User already exists')
+    : new ServerError(`Authentication service error: ${error.message}`)
 }

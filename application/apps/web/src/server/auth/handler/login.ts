@@ -8,19 +8,6 @@ import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import { verifyTurnstile } from '../captcha'
 import { callSupabaseAuth } from '../supabase-auth'
 
-// 認証情報の不正は401、それ以外はサービス側の異常として500に振り分ける。
-// 判定はinstanceofとメッセージの両方で行う（ローカルと本番でエラーの表現が異なり得るため）
-function toLoginError(error: Error): Error {
-  const message = error.message.toLowerCase()
-  const isInvalidCredentials =
-    error instanceof AuthInvalidCredentialsError ||
-    message.includes('invalid login credentials') ||
-    message.includes('invalid credentials')
-  return isInvalidCredentials
-    ? new ClientError('Invalid email or password', 401)
-    : new ServerError(`Authentication service error: ${error.message}`)
-}
-
 export default async function login(c: ZodValidatedContext<AuthInput>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
@@ -54,4 +41,17 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
     },
     200,
   )
+}
+
+// 認証情報の不正は401、それ以外はサービス側の異常として500に振り分ける。
+// 判定はinstanceofとメッセージの両方で行う（ローカルと本番でエラーの表現が異なり得るため）
+function toLoginError(error: Error): Error {
+  const message = error.message.toLowerCase()
+  const isInvalidCredentials =
+    error instanceof AuthInvalidCredentialsError ||
+    message.includes('invalid login credentials') ||
+    message.includes('invalid credentials')
+  return isInvalidCredentials
+    ? new ClientError('Invalid email or password', 401)
+    : new ServerError(`Authentication service error: ${error.message}`)
 }

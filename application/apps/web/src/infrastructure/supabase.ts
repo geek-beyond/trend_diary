@@ -46,3 +46,12 @@ export function createSupabaseAuthClient(c: Context) {
     },
   })
 }
+
+export async function verifySessionAuthenticationId(c: Context): Promise<string | null> {
+  const client = createSupabaseAuthClient(c)
+  const { data, error } = await client.auth.getClaims()
+  if (error || !data) {
+    return null
+  }
+  return data.claims.sub
+}

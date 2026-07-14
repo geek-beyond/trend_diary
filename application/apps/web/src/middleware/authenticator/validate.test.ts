@@ -47,24 +47,22 @@ describe('validateSession', () => {
       const { activeUserId, cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
       const result = await callValidateSession(cookies)
+      if (result.isErr()) throw result.error
 
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) {
-        expect(result.value.sessionUser).toEqual({
-          activeUserId,
-          displayName: null,
-          email: TEST_EMAIL,
-        })
-      }
+      expect(result.value.sessionUser).toEqual({
+        activeUserId,
+        displayName: null,
+        email: TEST_EMAIL,
+      })
     })
   })
 
   describe('準正常系', () => {
     it('セッションが無い場合は reason=no_session を返すこと', async () => {
       const result = await callValidateSession()
+      if (result.isOk()) throw new Error('Ok が返りました')
 
-      expect(result.isErr()).toBe(true)
-      if (result.isErr()) expect(result.error.reason).toBe('no_session')
+      expect(result.error.reason).toBe('no_session')
     })
 
     it('セッションは有効だが対応するアクティブユーザーが存在しない場合は reason=validation_failed を返すこと', async () => {
@@ -75,9 +73,9 @@ describe('validateSession', () => {
       await testRdb.delete(users).where(inArray(users.userId, dbUserIds))
 
       const result = await callValidateSession(cookies)
+      if (result.isOk()) throw new Error('Ok が返りました')
 
-      expect(result.isErr()).toBe(true)
-      if (result.isErr()) expect(result.error.reason).toBe('validation_failed')
+      expect(result.error.reason).toBe('validation_failed')
     })
   })
 })

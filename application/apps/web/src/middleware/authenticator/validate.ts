@@ -2,7 +2,7 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/user'
 import type { Context } from 'hono'
 import { err, ok, type Result } from 'neverthrow'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
+import { verifySessionAuthenticationId } from '@/infrastructure/supabase'
 import type { Env, SessionUser } from '../../env'
 import CONTEXT_KEY from '../context'
 
@@ -23,31 +23,19 @@ function createAuthValidationError(
   return Object.assign(new Error(message), { reason })
 }
 
-// 検証失敗もトークン無しも、認証ゲートでは同じ未認証として扱う
-async function getSessionClaims(
-  c: Context<Env>,
-): Promise<Result<{ authenticationId: string }, AuthValidationError>> {
-  const client = createSupabaseAuthClient(c)
-  const { data, error } = await client.auth.getClaims()
-  if (error || !data) {
-    return err(createAuthValidationError('no_session', 'No session found'))
-  }
-  return ok({ authenticationId: data.claims.sub })
-}
-
 export async function validateSession(
   c: Context<Env>,
 ): Promise<Result<AuthValidationSuccess, AuthValidationError>> {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
 
-  const claims = await getSessionClaims(c)
-  if (claims.isErr()) {
-    return err(claims.error)
+  const authenticationId = await verifySessionAuthenticationId(c)
+  if (!authenticationId) {
+    return err(createAuthValidationError('no_session', 'No session found'))
   }
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
-  const result = await accountUseCase.resolveActiveUser(claims.value.authenticationId)
+  const result = await accountUseCase.resolveActiveUser(authenticationId)
   if (result.isErr()) {
     logger.warn('Session validation failed', { error: result.error })
     return err(createAuthValidationError('validation_failed', 'Session validation failed'))

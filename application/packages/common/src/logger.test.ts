@@ -9,6 +9,7 @@ const parseLogObjects = (lines: string[]) =>
     .filter(Boolean)
     .map((line) => JSON.parse(line))
 
+// oxlint-disable-next-line typescript/no-restricted-types -- 未知の値を受け取り内部構造を絞り込む型ガードのため、入力はunknown以外に書けないため
 const hasInternalLoggerLevel = (value: unknown): value is { logger: { level: string } } => {
   if (typeof value !== 'object' || value === null || !('logger' in value)) return false
   const { logger } = value
@@ -30,6 +31,7 @@ describe('Logger', () => {
 
     for (const { level } of cases) {
       const logger = new Logger(level)
+      // oxlint-disable-next-line typescript/no-restricted-types -- 型ガードで内部構造を検証するため、Loggerを意図的に未確定型として扱う必要があるため
       const scoped: unknown = logger.with({})
       expect(hasInternalLoggerLevel(scoped)).toBe(true)
       if (hasInternalLoggerLevel(scoped)) {

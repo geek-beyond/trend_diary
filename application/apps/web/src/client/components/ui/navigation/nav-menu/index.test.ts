@@ -13,6 +13,7 @@ const menuItems: MenuItem[] = [
   },
 ]
 
+// oxlint-disable-next-line typescript/no-restricted-types -- 任意の props を受けて children の有無を絞り込む型ガードの役割のため
 function hasChildren(props: unknown): props is { children: ReactNode } {
   return typeof props === 'object' && props !== null && 'children' in props
 }

@@ -4,7 +4,13 @@ import { createElement } from 'react'
 import AnalyticsPage from './page'
 
 vi.mock('recharts', () => ({
-  BarChart: ({ children, onClick }: { children: ReactNode; onClick?: (state: unknown) => void }) =>
+  BarChart: ({
+    children,
+    onClick,
+  }: {
+    children: ReactNode
+    onClick?: (state: { activeLabel?: string }) => void
+  }) =>
     createElement(
       'button',
       {

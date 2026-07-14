@@ -17,6 +17,7 @@ interface FakeLogger {
 }
 
 function buildContext(logger?: FakeLogger): Context<Env> {
+  // oxlint-disable-next-line typescript/no-restricted-types -- Hono の変数ストアを模す、任意値を保持する Map のため
   const store = new Map<string, unknown>()
   if (logger) store.set(CONTEXT_KEY.APP_LOG, logger)
   // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
@@ -29,7 +30,9 @@ function buildContext(logger?: FakeLogger): Context<Env> {
       path: '/api/x',
       header: (name: string) => (name === 'User-Agent' ? 'test-agent' : undefined),
     },
+    // oxlint-disable-next-line typescript/no-restricted-types -- Hono の c.json を模すモックで、任意の JSON 値を受けるため
     json: (data: unknown, init: ResponseInit) => new Response(JSON.stringify(data), init),
+    // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
   } as unknown as Context<Env>
 }
 

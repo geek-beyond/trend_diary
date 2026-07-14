@@ -5,7 +5,7 @@ const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
 // signalがabortされるまで解決しないfetchを模し、タイムアウト挙動を検証する
-const neverResolvingFetch = (_input: unknown, init: { signal: AbortSignal }) =>
+const neverResolvingFetch = (_input: Parameters<typeof fetch>[0], init: { signal: AbortSignal }) =>
   new Promise((_resolve, reject) => {
     // 既にabort済みのsignalではabortイベントが発火しないため即座にrejectする
     if (init.signal.aborted) {

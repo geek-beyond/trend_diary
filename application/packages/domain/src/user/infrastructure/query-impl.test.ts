@@ -18,7 +18,7 @@ describe('QueryImpl', () => {
       updatedAt: string
       userId: number
     }> = {},
-  ): unknown[] => {
+  ): (string | number | null)[] => {
     const data = {
       activeUserId: 1,
       email: 'test@example.com',

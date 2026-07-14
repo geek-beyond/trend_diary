@@ -1,26 +1,20 @@
-import type { RenderHookResult } from '@testing-library/react'
 import { act, renderHook } from '@testing-library/react'
 import useArticleDrawer from './use-article-drawer'
 import type { Article } from './use-articles'
 
-type UseArticleDrawerHook = ReturnType<typeof useArticleDrawer>
-
-function setupHook(): RenderHookResult<UseArticleDrawerHook, unknown> {
+function setupHook() {
   return renderHook(() => useArticleDrawer())
 }
 
-function openArticleDrawer(
-  result: RenderHookResult<UseArticleDrawerHook, unknown>['result'],
-  article: Article,
-): void {
+type SetupHookResult = ReturnType<typeof setupHook>['result']
+
+function openArticleDrawer(result: SetupHookResult, article: Article): void {
   act(() => {
     result.current.open(article)
   })
 }
 
-function closeArticleDrawer(
-  result: RenderHookResult<UseArticleDrawerHook, unknown>['result'],
-): void {
+function closeArticleDrawer(result: SetupHookResult): void {
   act(() => {
     result.current.close()
   })

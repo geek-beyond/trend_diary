@@ -1,5 +1,5 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
-import { createAccountUseCase } from '@trend-diary/domain/user'
+import { createAccountUseCase } from '@trend-diary/domain/account'
 import { HTTPException } from 'hono/http-exception'
 import { err, ok } from 'neverthrow'
 import type { Mock } from 'vitest'
@@ -14,7 +14,7 @@ import passkeyLoginVerify, {
 
 vi.mock('@/infrastructure/supabase', () => ({ createSupabaseAuthClient: vi.fn() }))
 vi.mock('@trend-diary/datastore/rdb', () => ({ default: vi.fn(() => ({})) }))
-vi.mock('@trend-diary/domain/user', () => ({ createAccountUseCase: vi.fn() }))
+vi.mock('@trend-diary/domain/account', () => ({ createAccountUseCase: vi.fn() }))
 
 describe('passkeyLoginVerifyInputSchema', () => {
   const authenticationCredential = {

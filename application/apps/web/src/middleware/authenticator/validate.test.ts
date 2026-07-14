@@ -12,10 +12,7 @@ import { validateSession } from './validate'
 
 type ValidateResult = Awaited<ReturnType<typeof validateSession>>
 
-// requestLogger で APP_LOG を用意し、実セッション(cookie)で validateSession を通す検証用ルート。
-// セッション検証は実 Supabase(emu)、アカウント解決は実 D1 + 実ドメインが担い、モックは使わない。
 async function callValidateSession(cookies?: string): Promise<ValidateResult> {
-  // ルート内で確定する検証結果をテストへ受け渡す
   let captured: ValidateResult | undefined
   const app = new Hono<Env>().use(requestLogger).get('/verify', async (c) => {
     captured = await validateSession(c)
@@ -53,7 +50,6 @@ describe('validateSession', () => {
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
-        // resolveActiveUser は authenticationId 等の内部項目も返すが、SESSION_USER には漏らさない
         expect(result.value.sessionUser).toEqual({
           activeUserId,
           displayName: null,

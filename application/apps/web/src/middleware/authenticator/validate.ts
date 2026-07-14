@@ -23,8 +23,7 @@ function createAuthValidationError(
   return Object.assign(new Error(message), { reason })
 }
 
-// 認証プロバイダ(Supabase)のセッション検証結果を Result へ揃える。
-// 検証失敗(error)もトークン無し(data なし)も、認証ゲートでは同じ未認証として扱う。
+// 検証失敗もトークン無しも、認証ゲートでは同じ未認証として扱う
 async function getSessionClaims(
   c: Context<Env>,
 ): Promise<Result<{ authenticationId: string }, AuthValidationError>> {
@@ -50,7 +49,6 @@ export async function validateSession(
   const accountUseCase = createAccountUseCase(rdb)
   const result = await accountUseCase.resolveActiveUser(claims.value.authenticationId)
   if (result.isErr()) {
-    // アカウント解決の失敗(未検出・DBエラー)は想定済みのため warn に留める
     logger.warn('Session validation failed', { error: result.error })
     return err(createAuthValidationError('validation_failed', 'Session validation failed'))
   }

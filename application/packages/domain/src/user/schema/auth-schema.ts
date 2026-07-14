@@ -1,3 +1,7 @@
+import type {
+  PasskeyAuthenticationOptionsResponse,
+  PasskeyRegistrationOptionsResponse,
+} from '@supabase/supabase-js'
 import { z } from 'zod'
 
 export const authInputSchema = z.object({
@@ -45,11 +49,15 @@ export interface AuthenticationSession {
   user: AuthenticationUser
 }
 
-export interface PasskeyChallenge {
+// options は WebAuthn の資格情報生成／リクエストオプション。Supabase SDK が返す JSON 型をそのまま用いる
+export interface PasskeyRegistrationChallenge {
   challengeId: string
-  // optionsはブラウザのnavigator.credentialsへ渡す値で、型の実体はブラウザWebAuthn API側にあるため解釈しない
-  // oxlint-disable-next-line typescript/no-restricted-types -- WebAuthn の options はブラウザ API 側に型の実体があり、こちらでは素通しするため具象化できないためです
-  options: unknown
+  options: PasskeyRegistrationOptionsResponse['options']
+}
+
+export interface PasskeyAuthenticationChallenge {
+  challengeId: string
+  options: PasskeyAuthenticationOptionsResponse['options']
 }
 
 // 真正性はSupabaseが検証するため、ここは形だけ受け取り中身は素通しする

@@ -13,7 +13,8 @@ import { err, ok, type Result } from 'neverthrow'
 import type { AuthLoginResult, AuthRepository, AuthSignupResult } from '../repository'
 import type {
   AuthenticationUser,
-  PasskeyChallenge,
+  PasskeyAuthenticationChallenge,
+  PasskeyRegistrationChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
   RegisteredPasskey,
@@ -223,7 +224,7 @@ export class SupabaseAuthRepository implements AuthRepository {
     return ok({ authenticationId: data.claims.sub })
   }
 
-  async startPasskeyRegistration(): Promise<Result<PasskeyChallenge, ServerError>> {
+  async startPasskeyRegistration(): Promise<Result<PasskeyRegistrationChallenge, ServerError>> {
     const result = await wrapAsyncCall(() => this.client.auth.passkey.startRegistration())
     if (result.isErr()) {
       return err(new ServerError(result.error))
@@ -260,7 +261,9 @@ export class SupabaseAuthRepository implements AuthRepository {
     return ok({ id: data.id })
   }
 
-  async startPasskeyAuthentication(): Promise<Result<PasskeyChallenge, ClientError | ServerError>> {
+  async startPasskeyAuthentication(): Promise<
+    Result<PasskeyAuthenticationChallenge, ClientError | ServerError>
+  > {
     const result = await wrapAsyncCall(() => this.client.auth.passkey.startAuthentication())
     if (result.isErr()) {
       return err(new ServerError(result.error))

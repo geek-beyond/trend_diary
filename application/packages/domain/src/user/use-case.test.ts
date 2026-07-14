@@ -7,7 +7,8 @@ import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,
   AuthenticationUser,
-  PasskeyChallenge,
+  PasskeyAuthenticationChallenge,
+  PasskeyRegistrationChallenge,
   PasskeyVerifyInput,
   VerifiedSession,
 } from './schema/auth-schema'
@@ -47,7 +48,17 @@ const mockActiveUser: CurrentUser = {
   updatedAt: new Date(),
 }
 
-const mockChallenge: PasskeyChallenge = {
+const mockRegistrationChallenge: PasskeyRegistrationChallenge = {
+  challengeId: 'challenge-id-123',
+  options: {
+    rp: { name: 'trend-diary' },
+    user: { id: 'user-id', name: 'test@example.com', displayName: 'テストユーザー' },
+    challenge: 'random-challenge',
+    pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+  },
+}
+
+const mockAuthenticationChallenge: PasskeyAuthenticationChallenge = {
   challengeId: 'challenge-id-123',
   options: { challenge: 'random-challenge' },
 }
@@ -386,7 +397,7 @@ describe('AuthUseCase', () => {
     describe('正常系', () => {
       it('repositoryのチャレンジをそのまま返す', async () => {
         // Arrange
-        repositoryMock.startPasskeyRegistration.mockResolvedValue(ok(mockChallenge))
+        repositoryMock.startPasskeyRegistration.mockResolvedValue(ok(mockRegistrationChallenge))
 
         // Act
         const result = await useCase.startPasskeyRegistration()
@@ -394,7 +405,7 @@ describe('AuthUseCase', () => {
         // Assert
         expect(result.isOk()).toBe(true)
         if (result.isOk()) {
-          expect(result.value).toEqual(mockChallenge)
+          expect(result.value).toEqual(mockRegistrationChallenge)
         }
       })
     })
@@ -457,7 +468,7 @@ describe('AuthUseCase', () => {
     describe('正常系', () => {
       it('repositoryのチャレンジをそのまま返す', async () => {
         // Arrange
-        repositoryMock.startPasskeyAuthentication.mockResolvedValue(ok(mockChallenge))
+        repositoryMock.startPasskeyAuthentication.mockResolvedValue(ok(mockAuthenticationChallenge))
 
         // Act
         const result = await useCase.startPasskeyLogin()
@@ -465,7 +476,7 @@ describe('AuthUseCase', () => {
         // Assert
         expect(result.isOk()).toBe(true)
         if (result.isOk()) {
-          expect(result.value).toEqual(mockChallenge)
+          expect(result.value).toEqual(mockAuthenticationChallenge)
         }
       })
     })

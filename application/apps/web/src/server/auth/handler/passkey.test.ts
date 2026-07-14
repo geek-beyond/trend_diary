@@ -91,16 +91,23 @@ describe('passkey認証', () => {
       expect(res.status).toBe(401)
     })
 
-    it('未ログインで登録を開始すると401を返す', async () => {
-      const res = await post('/api/auth/passkey/register/start')
-      expect(res.status).toBe(401)
-    })
-
-    it('未ログインで登録検証すると401を返す', async () => {
-      const res = await post('/api/auth/passkey/register/verify', {
-        challengeId: 'challenge-1',
-        credential: { id: CREDENTIAL_ID },
-      })
+    it.each([
+      {
+        name: '登録を開始',
+        method: 'POST',
+        path: '/api/auth/passkey/register/start',
+        body: undefined,
+      },
+      {
+        name: '登録検証',
+        method: 'POST',
+        path: '/api/auth/passkey/register/verify',
+        body: { challengeId: 'challenge-1', credential: { id: CREDENTIAL_ID } },
+      },
+      { name: '登録状態を取得', method: 'GET', path: '/api/auth/passkey', body: undefined },
+      { name: '無効化', method: 'DELETE', path: '/api/auth/passkey', body: undefined },
+    ])('未ログインで$nameすると401を返す', async ({ method, path, body }) => {
+      const res = await apiRequest(path, { method, contentTypeJson: true, json: body })
       expect(res.status).toBe(401)
     })
 
@@ -131,16 +138,6 @@ describe('passkey認証', () => {
         credential: { id: CREDENTIAL_ID },
       })
       expect(res.status).toBe(422)
-    })
-
-    it('未ログインで登録状態を取得すると401を返す', async () => {
-      const res = await req('GET', '/api/auth/passkey')
-      expect(res.status).toBe(401)
-    })
-
-    it('未ログインで無効化すると401を返す', async () => {
-      const res = await req('DELETE', '/api/auth/passkey')
-      expect(res.status).toBe(401)
     })
   })
 

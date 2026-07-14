@@ -1,27 +1,52 @@
-import { handleError } from '@trend-diary/common/errors'
+import { AuthInvalidCredentialsError } from '@supabase/supabase-js'
+import { ClientError, handleError, ServerError } from '@trend-diary/common/errors'
+import { wrapAsyncCall } from '@trend-diary/common/result'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { type AuthInput, createAuthUseCase } from '@trend-diary/domain/user'
+import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/user'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import { verifyTurnstile } from '../captcha'
 
 export default async function login(c: ZodValidatedContext<AuthInput>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
-  const client = createSupabaseAuthClient(c)
-  const rdb = getRdbClient(c.env.DB)
-  const useCase = createAuthUseCase(client, rdb, c.env.TURNSTILE_SECRET_KEY)
+  const captchaResult = await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, valid.captchaToken)
+  if (captchaResult.isErr()) throw handleError(captchaResult.error, logger)
 
-  const result = await useCase.login(valid.email, valid.password, valid.captchaToken)
+  const client = createSupabaseAuthClient(c)
+  const loginResult = await wrapAsyncCall(() =>
+    client.auth.signInWithPassword({ email: valid.email, password: valid.password }),
+  )
+  if (loginResult.isErr()) throw handleError(new ServerError(loginResult.error), logger)
+
+  const { data, error } = loginResult.value
+  if (error) {
+    // 認証情報の不正はinstanceofとメッセージの両方で判定（ローカルと本番で挙動が異なり得るため）
+    const message = error.message.toLowerCase()
+    const isInvalidCredentials =
+      error instanceof AuthInvalidCredentialsError ||
+      message.includes('invalid login credentials') ||
+      message.includes('invalid credentials')
+    if (isInvalidCredentials) {
+      throw handleError(new ClientError('Invalid email or password', 401), logger)
+    }
+    throw handleError(new ServerError(`Authentication service error: ${error.message}`), logger)
+  }
+  if (!data.user || !data.session)
+    throw handleError(new ServerError('Authentication failed'), logger)
+
+  const rdb = getRdbClient(c.env.DB)
+  const accountUseCase = createAccountUseCase(rdb)
+  const result = await accountUseCase.resolveActiveUser(data.user.id)
   if (result.isErr()) throw handleError(result.error, logger)
 
-  const { activeUser } = result.value
-  logger.info('login success', { activeUserId: activeUser.activeUserId })
+  logger.info('login success', { activeUserId: result.value.activeUserId })
 
   return c.json(
     {
-      displayName: activeUser.displayName,
+      displayName: result.value.displayName,
     },
     200,
   )

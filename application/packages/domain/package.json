@@ -13,7 +13,6 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "catalog:",
     "@trend-diary/common": "workspace:*",
     "@trend-diary/datastore": "workspace:*",
     "drizzle-orm": "catalog:",

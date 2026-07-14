@@ -1,8 +1,9 @@
-import type {
-  PasskeyAuthenticationOptionsResponse,
-  PasskeyRegistrationOptionsResponse,
-} from '@supabase/supabase-js'
 import { z } from 'zod'
+import type {
+  WebAuthnAuthenticationOptions,
+  WebAuthnCredential,
+  WebAuthnRegistrationOptions,
+} from './webauthn-schema'
 
 export const authInputSchema = z.object({
   email: z.string().email(),
@@ -49,21 +50,21 @@ export interface AuthenticationSession {
   user: AuthenticationUser
 }
 
-// options は WebAuthn の資格情報生成／リクエストオプション。Supabase SDK が返す JSON 型をそのまま用いる
+// options は WebAuthn の資格情報生成／リクエストオプション。認証プロバイダに依存しない中立な JSON 型で保持する
 export interface PasskeyRegistrationChallenge {
   challengeId: string
-  options: PasskeyRegistrationOptionsResponse['options']
+  options: WebAuthnRegistrationOptions
 }
 
 export interface PasskeyAuthenticationChallenge {
   challengeId: string
-  options: PasskeyAuthenticationOptionsResponse['options']
+  options: WebAuthnAuthenticationOptions
 }
 
-// 真正性はSupabaseが検証するため、ここは形だけ受け取り中身は素通しする
+// 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは WebAuthn ceremony 結果を素通しする。型は中立な WebAuthn 資格情報で固定する
 export const passkeyVerifyInputSchema = z.object({
   challengeId: z.string().min(1),
-  credential: z.record(z.string(), z.unknown()),
+  credential: z.custom<WebAuthnCredential>((value) => typeof value === 'object' && value !== null),
 })
 
 export type PasskeyVerifyInput = z.infer<typeof passkeyVerifyInputSchema>

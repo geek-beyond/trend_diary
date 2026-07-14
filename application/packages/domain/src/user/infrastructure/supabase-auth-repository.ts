@@ -3,8 +3,6 @@ import {
   type Session,
   type SupabaseClient,
   type User,
-  type VerifyPasskeyAuthenticationParams,
-  type VerifyPasskeyRegistrationParams,
 } from '@supabase/supabase-js'
 import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/common/errors'
 import UnauthorizedError from '@trend-diary/common/errors/client-error/unauthorized-error'
@@ -20,6 +18,10 @@ import type {
   RegisteredPasskey,
   VerifiedSession,
 } from '../schema/auth-schema'
+import type {
+  WebAuthnAuthenticationOptions,
+  WebAuthnRegistrationOptions,
+} from '../schema/webauthn-schema'
 
 /**
  * Supabaseのユーザー登録エラーが「既に存在する」ことを示すかチェック
@@ -235,7 +237,10 @@ export class SupabaseAuthRepository implements AuthRepository {
       return err(new ServerError(`Passkey registration start failed: ${error?.message}`))
     }
 
-    return ok({ challengeId: data.challenge_id, options: data.options })
+    // Supabase SDK の options を中立な WebAuthn 型へ寄せる。hints の union が SDK 側で広い（string 拡張を含む）ぶんだけ差があるため境界で単一アサーションする
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SDK 型と中立型は hints の union 幅のみ異なる構造互換のため、アンチコラプション境界での単一アサーションに留める
+    const options = data.options as WebAuthnRegistrationOptions
+    return ok({ challengeId: data.challenge_id, options })
   }
 
   async verifyPasskeyRegistration(
@@ -244,8 +249,7 @@ export class SupabaseAuthRepository implements AuthRepository {
     const result = await wrapAsyncCall(() =>
       this.client.auth.passkey.verifyRegistration({
         challengeId: input.challengeId,
-        // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
-        credential: input.credential as unknown as VerifyPasskeyRegistrationParams['credential'],
+        credential: input.credential,
       }),
     )
     if (result.isErr()) {
@@ -274,7 +278,10 @@ export class SupabaseAuthRepository implements AuthRepository {
       return err(new ServerError(`Passkey authentication start failed: ${error?.message}`))
     }
 
-    return ok({ challengeId: data.challenge_id, options: data.options })
+    // Supabase SDK の options を中立な WebAuthn 型へ寄せる。hints の union が SDK 側で広い（string 拡張を含む）ぶんだけ差があるため境界で単一アサーションする
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SDK 型と中立型は hints の union 幅のみ異なる構造互換のため、アンチコラプション境界での単一アサーションに留める
+    const options = data.options as WebAuthnAuthenticationOptions
+    return ok({ challengeId: data.challenge_id, options })
   }
 
   async verifyPasskeyAuthentication(
@@ -283,8 +290,7 @@ export class SupabaseAuthRepository implements AuthRepository {
     const result = await wrapAsyncCall(() =>
       this.client.auth.passkey.verifyAuthentication({
         challengeId: input.challengeId,
-        // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
-        credential: input.credential as unknown as VerifyPasskeyAuthenticationParams['credential'],
+        credential: input.credential,
       }),
     )
     if (result.isErr()) {

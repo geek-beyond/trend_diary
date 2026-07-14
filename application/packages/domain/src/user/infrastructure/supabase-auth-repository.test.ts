@@ -8,7 +8,27 @@ import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/commo
 import UnauthorizedError from '@trend-diary/common/errors/client-error/unauthorized-error'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
+import type {
+  WebAuthnAuthenticationCredential,
+  WebAuthnRegistrationCredential,
+} from '../schema/webauthn-schema'
 import { SupabaseAuthRepository } from './supabase-auth-repository'
+
+const buildRegistrationCredential = (): WebAuthnRegistrationCredential => ({
+  id: 'cred',
+  rawId: 'cred',
+  response: { clientDataJSON: 'client-data', attestationObject: 'attestation' },
+  clientExtensionResults: {},
+  type: 'public-key',
+})
+
+const buildAuthenticationCredential = (): WebAuthnAuthenticationCredential => ({
+  id: 'cred',
+  rawId: 'cred',
+  response: { clientDataJSON: 'client-data', authenticatorData: 'auth-data', signature: 'sig' },
+  clientExtensionResults: {},
+  type: 'public-key',
+})
 
 type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> | null } : T
 
@@ -484,7 +504,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.verifyPasskeyRegistration({
           challengeId: 'challenge-123',
-          credential: { id: 'cred', type: 'public-key' },
+          credential: buildRegistrationCredential(),
         })
 
         expect(result.isOk()).toBe(true)
@@ -503,7 +523,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.verifyPasskeyRegistration({
           challengeId: 'challenge-123',
-          credential: { id: 'cred', type: 'public-key' },
+          credential: buildRegistrationCredential(),
         })
 
         expect(result.isErr()).toBe(true)
@@ -522,7 +542,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.verifyPasskeyRegistration({
           challengeId: 'challenge-123',
-          credential: { id: 'cred', type: 'public-key' },
+          credential: buildRegistrationCredential(),
         })
 
         expect(result.isErr()).toBe(true)
@@ -579,7 +599,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.verifyPasskeyAuthentication({
           challengeId: 'challenge-456',
-          credential: { id: 'cred', type: 'public-key' },
+          credential: buildAuthenticationCredential(),
         })
 
         expect(result.isOk()).toBe(true)
@@ -599,7 +619,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.verifyPasskeyAuthentication({
           challengeId: 'challenge-456',
-          credential: { id: 'cred', type: 'public-key' },
+          credential: buildAuthenticationCredential(),
         })
 
         expect(result.isErr()).toBe(true)
@@ -620,7 +640,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.verifyPasskeyAuthentication({
           challengeId: 'challenge-456',
-          credential: { id: 'cred', type: 'public-key' },
+          credential: buildAuthenticationCredential(),
         })
 
         expect(result.isErr()).toBe(true)
@@ -636,7 +656,7 @@ describe('SupabaseAuthRepository', () => {
 
         const result = await repository.verifyPasskeyAuthentication({
           challengeId: 'challenge-456',
-          credential: { id: 'cred', type: 'public-key' },
+          credential: buildAuthenticationCredential(),
         })
 
         expect(result.isErr()).toBe(true)

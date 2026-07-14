@@ -65,7 +65,13 @@ const mockAuthenticationChallenge: PasskeyAuthenticationChallenge = {
 
 const mockVerifyInput: PasskeyVerifyInput = {
   challengeId: 'challenge-id-123',
-  credential: { id: 'credential-id', type: 'public-key' },
+  credential: {
+    id: 'credential-id',
+    rawId: 'credential-id',
+    response: { clientDataJSON: 'client-data', attestationObject: 'attestation' },
+    clientExtensionResults: {},
+    type: 'public-key',
+  },
 }
 
 describe('AuthUseCase', () => {

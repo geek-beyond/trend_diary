@@ -2,6 +2,7 @@ import { AlreadyExistsError, handleError, ServerError } from '@trend-diary/commo
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/user'
 import { DiscordWebhookClient } from '@trend-diary/notification'
+import { err, ok } from 'neverthrow'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
@@ -20,14 +21,16 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
   }
 
   const client = createSupabaseAuthClient(c)
-  const signUpResult = await callSupabaseAuth(
-    () => client.auth.signUp({ email: valid.email, password: valid.password }),
-    toSignupError,
-  )
-  if (signUpResult.isErr()) throw handleError(signUpResult.error, logger)
+  // 成功でも user が空なら登録失敗として err に畳み、後段でのResult外エラー処理を無くす
+  const userResult = (
+    await callSupabaseAuth(
+      () => client.auth.signUp({ email: valid.email, password: valid.password }),
+      toSignupError,
+    )
+  ).andThen(({ user }) => (user ? ok(user) : err(new ServerError('User registration failed'))))
+  if (userResult.isErr()) throw handleError(userResult.error, logger)
 
-  const { user } = signUpResult.value
-  if (!user) throw handleError(new ServerError('User registration failed'), logger)
+  const user = userResult.value
 
   // ロールバック不能な認証ユーザー作成が成功したときだけ、アカウント作成のドメイン処理を呼ぶ
   // NOTE: ここで失敗すると認証側に孤児ユーザーが残る。同期補償(認証ユーザーの削除)はSupabaseの

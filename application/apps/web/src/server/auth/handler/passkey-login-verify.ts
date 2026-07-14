@@ -2,6 +2,7 @@ import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
 import { ClientError, handleError, ServerError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/user'
+import { err, ok } from 'neverthrow'
 import { z } from 'zod'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
@@ -23,22 +24,24 @@ export default async function passkeyLoginVerify(c: ZodValidatedContext<PasskeyL
   const valid = c.req.valid('json')
 
   const client = createSupabaseAuthClient(c)
-  const verifyResult = await callSupabaseAuth(
-    () =>
-      client.auth.passkey.verifyAuthentication({
-        challengeId: valid.challengeId,
-        credential: valid.credential,
-      }),
-    () => new ClientError('Invalid passkey', 401),
+  // 成功でも user/session が空なら認証失敗として err に畳み、後段でのResult外エラー処理を無くす
+  const userResult = (
+    await callSupabaseAuth(
+      () =>
+        client.auth.passkey.verifyAuthentication({
+          challengeId: valid.challengeId,
+          credential: valid.credential,
+        }),
+      () => new ClientError('Invalid passkey', 401),
+    )
+  ).andThen(({ user, session }) =>
+    user && session ? ok(user) : err(new ServerError('Passkey authentication failed')),
   )
-  if (verifyResult.isErr()) throw handleError(verifyResult.error, logger)
-
-  const { user, session } = verifyResult.value
-  if (!user || !session) throw handleError(new ServerError('Passkey authentication failed'), logger)
+  if (userResult.isErr()) throw handleError(userResult.error, logger)
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
-  const activeUserResult = await accountUseCase.resolveActiveUser(user.id)
+  const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
   if (activeUserResult.isErr()) throw handleError(activeUserResult.error, logger)
 
   logger.info('passkey login success', { activeUserId: activeUserResult.value.activeUserId })

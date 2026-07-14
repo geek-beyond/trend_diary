@@ -1,7 +1,10 @@
-import type { Context, Next } from 'hono'
+import { Hono } from 'hono'
 import type { Mock } from 'vitest'
 import type { Env } from '@/env'
+import TEST_ENV from '@/test/env'
 import articleCache, { ARTICLE_CACHE_TTL_SECONDS } from './article-cache'
+
+const ARTICLES_URL = 'https://example.com/api/articles?page=1'
 
 // Cache API を模した最小のインメモリ実装を caches.default としてスタブする
 function stubEdgeCache(): { match: Mock; put: Mock; store: Map<string, Response> } {
@@ -17,43 +20,39 @@ function stubEdgeCache(): { match: Mock; put: Mock; store: Map<string, Response>
   return { match, put, store }
 }
 
-interface ContextOverrides {
+interface CallOptions {
   method?: string
-  url?: string
   cookie?: string
-  res?: Response
-  cacheDisabled?: string
+  disabled?: boolean
+  handlerStatus?: number
 }
 
-function buildContext(overrides: ContextOverrides = {}): {
-  c: Context<Env>
-  next: Mock<Next>
-  waitUntil: Mock
-} {
-  const {
-    method = 'GET',
-    url = 'https://example.com/api/articles?page=1',
-    cookie,
-    res = new Response(JSON.stringify({ data: [] }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    }),
-    cacheDisabled,
-  } = overrides
+// articleCache を通した実リクエストを送り、ダウンストリーム handler の呼び出し有無で素通し(next 実行)を観測する
+async function callArticles(
+  options: CallOptions = {},
+): Promise<{ handler: Mock; waitUntil: Mock; res: Response }> {
+  const { method = 'GET', cookie, disabled = false, handlerStatus = 200 } = options
+  const handler: Mock = vi.fn(
+    () =>
+      new Response(JSON.stringify({ data: [] }), {
+        status: handlerStatus,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+  )
+  const app = new Hono<Env>().use('/api/articles', articleCache).get('/api/articles', handler)
+
   const waitUntil = vi.fn()
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
-  const c = {
-    env: { EDGE_CACHE_DISABLED: cacheDisabled },
-    req: {
-      method,
-      url,
-      header: (name: string) => (name === 'Cookie' ? cookie : undefined),
-    },
-    res,
-    executionCtx: { waitUntil },
-  } as unknown as Context<Env>
-  const next: Mock<Next> = vi.fn(async () => {})
-  return { c, next, waitUntil }
+  const env: Env['Bindings'] = {
+    ...TEST_ENV,
+    EDGE_CACHE_DISABLED: disabled ? 'true' : undefined,
+  }
+  const res = await app.request(
+    ARTICLES_URL,
+    { method, headers: cookie ? { Cookie: cookie } : undefined },
+    env,
+    { waitUntil, passThroughOnException: () => {}, props: {} },
+  )
+  return { handler, waitUntil, res }
 }
 
 describe('articleCache ミドルウェア', () => {
@@ -66,75 +65,57 @@ describe('articleCache ミドルウェア', () => {
   })
 
   describe('正常系', () => {
-    it('未ログインの GET はキャッシュミス時に next を実行し、200 応答を保存すること', async () => {
+    it('未ログインの GET はキャッシュミス時に handler を実行し、200 応答を保存すること', async () => {
       const { put, store } = stubEdgeCache()
-      const { c, next, waitUntil } = buildContext()
+      const { handler, waitUntil, res } = await callArticles()
 
-      await articleCache(c, next)
-
-      expect(next).toHaveBeenCalledOnce()
+      expect(handler).toHaveBeenCalledOnce()
       expect(waitUntil).toHaveBeenCalledOnce()
       expect(put).toHaveBeenCalledOnce()
       expect(store.size).toBe(1)
+      expect(res.status).toBe(200)
     })
 
     it('保存する応答に Cache-Control(s-maxage) を付与すること', async () => {
       const { store } = stubEdgeCache()
-      const { c, next } = buildContext()
+      await callArticles()
 
-      await articleCache(c, next)
-
-      const stored = store.get('https://example.com/api/articles?page=1')
+      const stored = store.get(ARTICLES_URL)
       expect(stored?.headers.get('Cache-Control')).toBe(
         `public, s-maxage=${ARTICLE_CACHE_TTL_SECONDS}`,
       )
     })
 
-    it('キャッシュヒット時は next を実行せずキャッシュ応答を返すこと', async () => {
+    it('キャッシュヒット時は handler を実行せずキャッシュ応答を返すこと', async () => {
       const { store, match } = stubEdgeCache()
-      store.set(
-        'https://example.com/api/articles?page=1',
-        new Response('cached-body', { status: 200 }),
-      )
-      const { c, next } = buildContext()
+      store.set(ARTICLES_URL, new Response('cached-body', { status: 200 }))
 
-      const result = await articleCache(c, next)
+      const { handler, res } = await callArticles()
 
       expect(match).toHaveBeenCalledOnce()
-      expect(next).not.toHaveBeenCalled()
-      expect(result).toBeInstanceOf(Response)
-      if (!(result instanceof Response)) throw new Error('Response が返るはず')
-      expect(await result.text()).toBe('cached-body')
+      expect(handler).not.toHaveBeenCalled()
+      expect(await res.text()).toBe('cached-body')
     })
   })
 
   describe('準正常系', () => {
     it.each([
-      {
-        name: 'セッション Cookie 付き',
-        overrides: { cookie: 'sb-abcd-auth-token=xyz; theme=dark' },
-      },
-      { name: 'EDGE_CACHE_DISABLED が有効', overrides: { cacheDisabled: 'true' } },
-      { name: 'GET 以外', overrides: { method: 'POST' } },
-    ])('$name はキャッシュせず素通しすること', async ({ overrides }) => {
+      { name: 'セッション Cookie 付き', options: { cookie: 'sb-abcd-auth-token=xyz; theme=dark' } },
+      { name: 'EDGE_CACHE_DISABLED が有効', options: { disabled: true } },
+      { name: 'GET 以外', options: { method: 'POST' } },
+    ])('$name はキャッシュせず素通しすること', async ({ options }) => {
       const { match, put } = stubEdgeCache()
-      const { c, next } = buildContext(overrides)
+      await callArticles(options)
 
-      await articleCache(c, next)
-
-      expect(next).toHaveBeenCalledOnce()
       expect(match).not.toHaveBeenCalled()
       expect(put).not.toHaveBeenCalled()
     })
 
     it('200 以外の応答はキャッシュしないこと', async () => {
       const { put } = stubEdgeCache()
-      const res = new Response('error', { status: 500 })
-      const { c, next } = buildContext({ res })
+      const { handler } = await callArticles({ handlerStatus: 500 })
 
-      await articleCache(c, next)
-
-      expect(next).toHaveBeenCalledOnce()
+      expect(handler).toHaveBeenCalledOnce()
       expect(put).not.toHaveBeenCalled()
     })
   })

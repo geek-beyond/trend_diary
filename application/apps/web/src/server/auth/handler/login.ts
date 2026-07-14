@@ -1,4 +1,4 @@
-import { AuthInvalidCredentialsError } from '@supabase/supabase-js'
+import { AuthError } from '@supabase/supabase-js'
 import { ClientError, handleError, ServerError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
@@ -43,14 +43,8 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
   )
 }
 
-// 認証情報の不正は401、それ以外はサービス側の異常として500に振り分ける。
-// 判定はinstanceofとメッセージの両方で行う（ローカルと本番でエラーの表現が異なり得るため）
 function toLoginError(error: Error): Error {
-  const message = error.message.toLowerCase()
-  const isInvalidCredentials =
-    error instanceof AuthInvalidCredentialsError ||
-    message.includes('invalid login credentials') ||
-    message.includes('invalid credentials')
+  const isInvalidCredentials = error instanceof AuthError && error.code === 'invalid_credentials'
   return isInvalidCredentials
     ? new ClientError('Invalid email or password', 401)
     : new ServerError(`Authentication service error: ${error.message}`)

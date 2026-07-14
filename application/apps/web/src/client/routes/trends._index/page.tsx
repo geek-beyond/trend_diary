@@ -182,7 +182,7 @@ function ArticleList({
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
-              aria-disabled={isPrevDisabled}
+              disabled={isPrevDisabled}
               className={getPaginationClass(isPrevDisabled)}
               onClick={handlePrevPageClick}
             />
@@ -194,7 +194,7 @@ function ArticleList({
           </PaginationItem>
           <PaginationItem>
             <PaginationNext
-              aria-disabled={isNextDisabled}
+              disabled={isNextDisabled}
               className={getPaginationClass(isNextDisabled)}
               onClick={handleNextPageClick}
             />

@@ -59,15 +59,15 @@ describe('storeArticles', () => {
   describe('異常系', () => {
     it('DB呼び出しが失敗した場合はerrを返す', async () => {
       const dbError = new Error('D1 connection error')
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- 外部型のモックのため、必要なプロパティのみのオブジェクトをアサーションで渡す
-      const failingDb = {
+      const failingDb: Partial<D1Database> = {
         prepare: () => {
           throw dbError
         },
-      } as unknown as D1Database
+      }
 
       const result = await storeArticles('qiita', [normalizedItem()], {
-        DB: failingDb,
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- 外部型の D1Database は多数のプロパティを持つため、prepare のみを実装したモックをアサーションで渡します
+        DB: failingDb as D1Database,
         LOG_LEVEL: 'silent',
       })
 

@@ -25,6 +25,7 @@ import type {
  * NOTE: Supabaseのバージョンアップでエラーメッセージが変わる可能性がある
  * 現時点では専用のエラー型が提供されていないため、メッセージ文字列で判定している
  */
+// oxlint-disable-next-line typescript/no-restricted-types -- 未知の値を受けて message プロパティの有無で絞り込む型ガードのため、入力を具象化できないためです
 function hasMessage(value: unknown): value is { message: string } {
   return (
     value !== null &&
@@ -43,6 +44,7 @@ function isUserAlreadyExistsError(error: { message: string }): boolean {
  * NOTE: instanceofチェックが動作しない場合のフォールバック
  * ローカルSupabaseと本番Supabaseで挙動が異なる可能性がある
  */
+// oxlint-disable-next-line typescript/no-restricted-types -- Supabase のエラー形は環境差でぶれ得るため、任意のエラー値を受けて判定する必要があるためです
 function isInvalidCredentialsError(error: unknown): boolean {
   if (error instanceof AuthInvalidCredentialsError) {
     return true
@@ -241,7 +243,7 @@ export class SupabaseAuthRepository implements AuthRepository {
     const result = await wrapAsyncCall(() =>
       this.client.auth.passkey.verifyRegistration({
         challengeId: input.challengeId,
-        // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
+        // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
         credential: input.credential as unknown as VerifyPasskeyRegistrationParams['credential'],
       }),
     )
@@ -278,7 +280,7 @@ export class SupabaseAuthRepository implements AuthRepository {
     const result = await wrapAsyncCall(() =>
       this.client.auth.passkey.verifyAuthentication({
         challengeId: input.challengeId,
-        // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
+        // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 真正性はSupabaseが検証するため境界でSDKの資格情報型に合わせるだけ
         credential: input.credential as unknown as VerifyPasskeyAuthenticationParams['credential'],
       }),
     )

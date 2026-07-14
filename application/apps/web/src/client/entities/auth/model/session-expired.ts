@@ -9,6 +9,7 @@ export const SESSION_EXPIRED_MESSAGE =
 
 // 認証必須APIの401はセッション切れとして扱う。ログイン自体の401（認証情報不一致）は
 // createSWRFetcher を経由しないため、ここでは対象にならない
+// oxlint-disable-next-line typescript/no-restricted-types -- 任意の値を受けて ClientError か絞り込む型ガードの役割のため
 export const isSessionExpiredError = (error: unknown): boolean =>
   error instanceof ClientError && error.statusCode === 401
 
@@ -22,6 +23,7 @@ export function notifySessionExpired() {
 // セッション切れの案内はnotifySessionExpired側で表示済みのため、
 // 呼び出し側の汎用エラートーストと重複させないための共通ガード
 export function notifyErrorUnlessSessionExpired(
+  // oxlint-disable-next-line typescript/no-restricted-types -- JS は任意の値を throw でき、受け取る失敗値の型を確定できないため
   error: unknown,
   message: string,
   toastOptions?: Parameters<typeof toast.error>[1],

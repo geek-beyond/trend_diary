@@ -48,6 +48,7 @@ export interface AuthenticationSession {
 export interface PasskeyChallenge {
   challengeId: string
   // optionsはブラウザのnavigator.credentialsへ渡す値で、型の実体はブラウザWebAuthn API側にあるため解釈しない
+  // oxlint-disable-next-line typescript/no-restricted-types -- WebAuthn の options はブラウザ API 側に型の実体があり、こちらでは素通しするため具象化できないためです
   options: unknown
 }
 

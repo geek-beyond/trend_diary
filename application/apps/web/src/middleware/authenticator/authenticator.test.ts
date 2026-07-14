@@ -11,14 +11,18 @@ vi.mock('./validate', () => ({ validateSession: vi.fn() }))
 
 function buildContext(): {
   c: Context<Env>
+  // oxlint-disable-next-line typescript/no-restricted-types -- Hono の変数ストアを模す、任意値を保持する Map のため
   store: Map<string, unknown>
   next: Mock<Next>
 } {
+  // oxlint-disable-next-line typescript/no-restricted-types -- Hono の変数ストアを模す、任意値を保持する Map のため
   const store = new Map<string, unknown>()
   // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
   const c = {
+    // oxlint-disable-next-line typescript/no-restricted-types -- Hono の c.set を模すモックで、任意値を受けるため
     set: (key: string, value: unknown) => store.set(key, value),
     get: (key: string) => store.get(key),
+    // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
   } as unknown as Context<Env>
   const next: Mock<Next> = vi.fn(async () => {})
   return { c, store, next }
@@ -67,6 +71,7 @@ describe('authenticator ミドルウェア', () => {
         vi.mocked(validateSession).mockResolvedValue(err(authError(reason)))
 
         const { c, next } = buildContext()
+        // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
         const thrown = await authenticator(c, next).catch((e: unknown) => e)
 
         expect(thrown).toBeInstanceOf(HTTPException)

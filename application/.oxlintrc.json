@@ -16,6 +16,16 @@
     "typescript/consistent-type-imports": "error",
     "typescript/consistent-type-definitions": ["error", "interface"],
     "typescript/no-explicit-any": "error",
+    "typescript/no-restricted-types": [
+      "error",
+      {
+        "types": {
+          "unknown": {
+            "message": "Avoid `unknown`. Use a concrete type; if a value is truly untyped, narrow it with a Zod schema or a type guard instead."
+          }
+        }
+      }
+    ],
     "no-console": "warn",
     "no-var": "error",
     "eqeqeq": ["error", "always", { "null": "ignore" }],

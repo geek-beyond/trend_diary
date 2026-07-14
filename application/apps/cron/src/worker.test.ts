@@ -50,8 +50,15 @@ const HATENA_ITEMS: FeedItem[] = [
 ]
 const TOTAL_ITEMS = QIITA_ITEMS.length + ZENN_ITEMS.length + HATENA_ITEMS.length
 
-function setupFetchRouting(overrides?: { hatena?: () => unknown }): void {
-  fetchMock.mockImplementation(async (input: unknown) => {
+// fetch のモック応答は worker が参照する ok / status / text のみを備えれば十分なため、必要な最小形状で表す
+interface FetchResponseMock {
+  ok: boolean
+  status: number
+  text?: () => Promise<string>
+}
+
+function setupFetchRouting(overrides?: { hatena?: () => FetchResponseMock }): void {
+  fetchMock.mockImplementation(async (input: string | URL) => {
     const target = String(input)
     if (target.startsWith(TEST_ENV.DISCORD_WEBHOOK_URL)) return { ok: true, status: 204 }
     if (target === FEED_URL.qiita) return rssResponse(buildQiitaAtom(QIITA_ITEMS))
@@ -62,17 +69,17 @@ function setupFetchRouting(overrides?: { hatena?: () => unknown }): void {
   })
 }
 
-async function runScheduled(scheduledTime: number): Promise<Promise<unknown>[]> {
-  const waitUntilCalls: Promise<unknown>[] = []
+async function runScheduled(scheduledTime: number): Promise<Promise<void>[]> {
+  const waitUntilCalls: Promise<void>[] = []
   // Cloudflare の ScheduledController / ExecutionContext は多数のプロパティを持つ外部型のため、テストでは必要最小限のモックで代替する
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- 外部型のモックのため、必要なプロパティのみのオブジェクトをアサーションで渡す
-  const event = { cron: '0 */1 * * *', scheduledTime } as unknown as ScheduledController
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- 外部型のモックのため、必要なプロパティのみのオブジェクトをアサーションで渡す
-  await worker.scheduled(event, TEST_ENV, {
-    waitUntil: (promise: Promise<unknown>) => {
+  const event: Partial<ScheduledController> = { cron: '0 */1 * * *', scheduledTime }
+  const context: Partial<ExecutionContext> = {
+    waitUntil: (promise) => {
       waitUntilCalls.push(promise)
     },
-  } as unknown as ExecutionContext)
+  }
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- 外部型のモックのため、必要なプロパティのみのオブジェクトをアサーションで渡す
+  await worker.scheduled(event as ScheduledController, TEST_ENV, context as ExecutionContext)
   return waitUntilCalls
 }
 
@@ -132,7 +139,7 @@ describe('cron worker scheduled', () => {
       }
       let activeFetches = 0
       let peakConcurrency = 0
-      fetchMock.mockImplementation(async (input: unknown) => {
+      fetchMock.mockImplementation(async (input: string | URL) => {
         const target = String(input)
         if (target.startsWith(TEST_ENV.DISCORD_WEBHOOK_URL)) return { ok: true, status: 204 }
         const xml = feedXml[target]

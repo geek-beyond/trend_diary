@@ -8,6 +8,7 @@ interface Params {
   remaining: number
   queueLength: number
   // 新しいバッチを取得したことを判別するための参照。変化したらデータ起因の0件とみなす
+  // oxlint-disable-next-line typescript/no-restricted-types -- 変化の有無だけを見る opaque トークンで、中身の型に依存しないため
   batchToken: unknown
 }
 

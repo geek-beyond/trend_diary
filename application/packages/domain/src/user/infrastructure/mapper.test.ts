@@ -7,7 +7,7 @@ describe('mapToActiveUser', () => {
   // スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
   // テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
   const createMockRdbActiveUser = (
-    overrides: Partial<Record<keyof RdbActiveUser, unknown>> = {},
+    overrides: Partial<Record<keyof RdbActiveUser, string | number | bigint | Date | null>> = {},
   ): RdbActiveUser => {
     const now = new Date('2024-01-15T09:30:00Z')
 
@@ -21,7 +21,7 @@ describe('mapToActiveUser', () => {
       updatedAt: now,
       ...overrides,
     }
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
+    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
     return rdbActiveUser as unknown as RdbActiveUser
   }
 

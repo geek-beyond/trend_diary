@@ -33,7 +33,7 @@ export default function usePasskeyLogin(redirectTo?: string) {
     const { challengeId, options } = startResult.value
 
     // 型はSupabase/ブラウザ側が保証するため、境界でブラウザAPIの入力型に合わせるだけに留める
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- 型定義の実体はブラウザWebAuthn API側にあるため
+    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 型定義の実体はブラウザWebAuthn API側にあり、その型境界でしか受けられないため
     const optionsJSON = options as unknown as PublicKeyCredentialRequestOptionsJSON
 
     const ceremonyResult = await wrapAsyncCall(() => startAuthentication({ optionsJSON }))
@@ -44,7 +44,7 @@ export default function usePasskeyLogin(redirectTo?: string) {
       return
     }
 
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界で受けるだけ
+    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 真正性はSupabaseが検証するため、ブラウザWebAuthn APIの型境界で受けるだけのため
     const credential = ceremonyResult.value as unknown as Record<string, unknown>
 
     const verifyResult = await wrapAsyncCall(() =>

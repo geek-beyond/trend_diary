@@ -1,4 +1,3 @@
-import type { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/browser'
 import { handleError, ServerError } from '@trend-diary/common/errors'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import type { Context } from 'hono'
@@ -21,8 +20,5 @@ export default async function passkeyRegisterStart(c: Context<Env>) {
     )
   }
 
-  // Supabase SDK と @simplewebauthn の WebAuthn 型は hints の union 幅のみ異なるため、client(ceremony ライブラリ)が受ける型へ境界で寄せる
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- 上記のとおり構造互換だが宣言が別のため、ライブラリ境界での単一アサーションに留める
-  const options = data.options as PublicKeyCredentialCreationOptionsJSON
-  return c.json({ challengeId: data.challenge_id, options }, 200)
+  return c.json({ challengeId: data.challenge_id, options: data.options }, 200)
 }

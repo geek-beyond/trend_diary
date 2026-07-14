@@ -1,4 +1,7 @@
-import { startRegistration } from '@simplewebauthn/browser'
+import {
+  type PublicKeyCredentialCreationOptionsJSON,
+  startRegistration,
+} from '@simplewebauthn/browser'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -25,7 +28,10 @@ export default function usePasskeyRegister() {
 
     const { challengeId, options } = startResult.value
 
-    const ceremonyResult = await wrapAsyncCall(() => startRegistration({ optionsJSON: options }))
+    // Supabaseが返すoptions型はhintsのunion幅のみ@simplewebauthnより広いため、ceremony呼び出し直前で受け側の型へ寄せる
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- 構造互換だが宣言が別のため、ライブラリ境界での単一アサーションに留める
+    const optionsJSON = options as PublicKeyCredentialCreationOptionsJSON
+    const ceremonyResult = await wrapAsyncCall(() => startRegistration({ optionsJSON }))
     if (ceremonyResult.isErr()) {
       toast.error(PASSKEY_MESSAGES.canceled)
       setIsSubmitting(false)

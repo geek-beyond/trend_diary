@@ -1,4 +1,7 @@
-import { startAuthentication } from '@simplewebauthn/browser'
+import {
+  type PublicKeyCredentialRequestOptionsJSON,
+  startAuthentication,
+} from '@simplewebauthn/browser'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -31,7 +34,10 @@ export default function usePasskeyLogin(redirectTo?: string) {
 
     const { challengeId, options } = startResult.value
 
-    const ceremonyResult = await wrapAsyncCall(() => startAuthentication({ optionsJSON: options }))
+    // Supabaseが返すoptions型はhintsのunion幅のみ@simplewebauthnより広いため、ceremony呼び出し直前で受け側の型へ寄せる
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- 構造互換だが宣言が別のため、ライブラリ境界での単一アサーションに留める
+    const optionsJSON = options as PublicKeyCredentialRequestOptionsJSON
+    const ceremonyResult = await wrapAsyncCall(() => startAuthentication({ optionsJSON }))
     if (ceremonyResult.isErr()) {
       // キャンセルは失敗ではないので中断案内に寄せる
       setFormError(PASSKEY_MESSAGES.canceled)

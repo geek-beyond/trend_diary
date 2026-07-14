@@ -32,7 +32,9 @@ const articleCache = createMiddleware<Env>(async (c, next) => {
   const cacheKey = new Request(c.req.url, { method: 'GET' })
 
   const hit = await cache.match(cacheKey)
-  if (hit) return hit
+  // Cache API が返す Response はヘッダが immutable のため、素通しすると後続の secureHeaders 等が
+  // ヘッダを変更できず落ちる。可変なヘッダを持つ Response に作り直して返す
+  if (hit) return new Response(hit.body, hit)
 
   await next()
 

@@ -1,3 +1,4 @@
+import type { Context } from 'hono'
 import { Hono } from 'hono'
 import type { Mock } from 'vitest'
 import type { Env } from '@/env'
@@ -95,6 +96,36 @@ describe('articleCache ミドルウェア', () => {
       expect(match).toHaveBeenCalledOnce()
       expect(handler).not.toHaveBeenCalled()
       expect(await res.text()).toBe('cached-body')
+    })
+
+    it('キャッシュヒット時はヘッダが可変な Response を返すこと', async () => {
+      // Cache API が返す Response はヘッダが immutable。これをそのまま返すと後続の
+      // secureHeaders がヘッダを付与できず "Can't modify immutable headers" で 5xx になる。
+      // workerd では Response.redirect のヘッダが immutable になるため Cache API 応答の代用にする
+      const immutable = Response.redirect('https://example.com/redirect', 302)
+      vi.stubGlobal('caches', {
+        default: { match: vi.fn(async () => immutable), put: vi.fn() },
+      })
+
+      // ヒット経路のみを検証するため、ミドルウェアを直接呼び出して戻り値の Response を得る
+      const next = vi.fn(async () => {})
+      const mockContext = {
+        env: { ...TEST_ENV, EDGE_CACHE_DISABLED: undefined },
+        req: { method: 'GET', url: ARTICLES_URL, header: () => undefined },
+        executionCtx: { waitUntil: vi.fn() },
+      }
+      // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ヒット経路が参照する最小限のフィールドのみを持つモックを Context として渡すため
+      const c = mockContext as unknown as Context<Env>
+
+      const res = await articleCache(c, next)
+
+      expect(next).not.toHaveBeenCalled()
+      expect(res).toBeInstanceOf(Response)
+      expect(res).not.toBe(immutable)
+      // immutable なままなら set() が例外を投げる
+      if (res instanceof Response) {
+        expect(() => res.headers.set('X-Frame-Options', 'DENY')).not.toThrow()
+      }
     })
   })
 

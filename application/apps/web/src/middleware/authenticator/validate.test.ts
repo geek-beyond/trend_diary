@@ -141,7 +141,9 @@ describe('validateSession', () => {
       const result = await validateSession(c)
 
       expect(unwrapErr(result).reason).toBe('validation_failed')
-      expect(logger.warn).toHaveBeenCalledWith('Session validation failed', { error: claimsError })
+      expect(logger.warn).toHaveBeenCalledWith('Session validation setup failed', {
+        error: claimsError,
+      })
     })
 
     it('セットアップで例外が発生した場合はフェイルセーフで reason=validation_failed を返すこと', async () => {

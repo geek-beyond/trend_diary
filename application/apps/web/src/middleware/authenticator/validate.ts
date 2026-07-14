@@ -1,5 +1,4 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
-import { wrapAsyncCall } from '@trend-diary/common/result'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/user'
 import type { Context } from 'hono'
@@ -37,13 +36,7 @@ export async function validateSession(
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   try {
     const client = createSupabaseAuthClient(c)
-    const claimsResult = await wrapAsyncCall(() => client.auth.getClaims())
-    if (claimsResult.isErr()) {
-      logger.warn('Session validation failed', { error: claimsResult.error })
-      return err(createAuthValidationError('validation_failed', 'Session validation failed'))
-    }
-
-    const { data, error } = claimsResult.value
+    const { data, error } = await client.auth.getClaims()
     // 検証失敗(改ざん・期限切れ等)やセッション無しは、認証ゲートでは未認証として扱う
     if (error || !data) {
       return err(createAuthValidationError('no_session', 'No session found'))

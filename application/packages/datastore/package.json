@@ -10,7 +10,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check"
   },

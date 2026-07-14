@@ -76,18 +76,18 @@ const validInput: PasskeyRegisterVerifyInput = {
   },
 }
 
-function buildContext(input: PasskeyRegisterVerifyInput = validInput) {
+function buildContext() {
   const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
   const json = vi.fn()
   // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
   const c = {
     get: (key: string) => (key === CONTEXT_KEY.APP_LOG ? logger : undefined),
-    req: { valid: () => input },
+    req: { valid: () => validInput },
     json,
     env: {},
     // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
   } as unknown as ZodValidatedContext<PasskeyRegisterVerifyInput>
-  return { c, logger, json }
+  return { c, json }
 }
 
 // Supabase Auth SDK の verifyRegistration 応答を模す

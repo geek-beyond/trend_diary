@@ -84,18 +84,18 @@ const validInput: PasskeyLoginVerifyInput = {
 // verifyAuthentication が成功時に返す user / session を模す
 const verifiedUser = { user: { id: 'auth-uuid' }, session: { access_token: 'token' } }
 
-function buildContext(input: PasskeyLoginVerifyInput = validInput) {
+function buildContext() {
   const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
   const json = vi.fn()
   // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
   const c = {
     get: (key: string) => (key === CONTEXT_KEY.APP_LOG ? logger : undefined),
-    req: { valid: () => input },
+    req: { valid: () => validInput },
     json,
     env: { DB: {} },
     // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
   } as unknown as ZodValidatedContext<PasskeyLoginVerifyInput>
-  return { c, logger, json }
+  return { c, json }
 }
 
 // Supabase Auth SDK の verifyAuthentication 応答を模す

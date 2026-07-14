@@ -28,8 +28,10 @@ export default function usePasskeyRegister() {
 
     const { challengeId, options } = startResult.value
 
-    // Supabaseが返すoptions型はhintsのunion幅のみ@simplewebauthnより広いため、ceremony呼び出し直前で受け側の型へ寄せる
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- 構造互換だが宣言が別のため、ライブラリ境界での単一アサーションに留める
+    // Supabaseとceremonyライブラリ(@simplewebauthn)は同じW3CのWebAuthn JSON型を各自宣言しており、
+    // hintsのunion幅だけが異なる(Supabaseは将来の追加値に備え`(string & {})`まで広い)。実行時の値は
+    // 完全に同一で変換は不要なため、受け側が要求する狭い型へ境界で単一アサーションする
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- 上記のとおり値は同一・宣言のみ相違
     const optionsJSON = options as PublicKeyCredentialCreationOptionsJSON
     const ceremonyResult = await wrapAsyncCall(() => startRegistration({ optionsJSON }))
     if (ceremonyResult.isErr()) {

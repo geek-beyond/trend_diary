@@ -7,7 +7,7 @@
     "dev": "react-router dev",
     "build": "react-router build",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "d1:apply:local": "wrangler d1 migrations apply trend-diary-db --local"
   },
   "dependencies": {

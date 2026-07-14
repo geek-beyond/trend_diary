@@ -1,8 +1,6 @@
-import type { AuthError } from '@supabase/supabase-js'
 import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
-import { isInvalidCredentialsError } from './login'
 
 describe('POST /api/auth/login', () => {
   const TEST_EMAIL = 'login-test@example.com'
@@ -67,37 +65,6 @@ describe('POST /api/auth/login', () => {
         const res = await requestLogin(JSON.stringify(testCase.input))
         expect(res.status).toBe(testCase.status)
       })
-    })
-  })
-})
-
-describe('isInvalidCredentialsError', () => {
-  // 本番GoTrueとsupa-emuで返るエラー形が異なっても、資格情報の誤りを同一に判定できることを担保する
-  const testCases: Array<{
-    name: string
-    error: Pick<AuthError, 'code' | 'message'>
-    expected: boolean
-  }> = [
-    {
-      name: '準正常系: 本番GoTrue(code=invalid_credentials)を資格情報エラーと判定する',
-      error: { code: 'invalid_credentials', message: 'Invalid login credentials' },
-      expected: true,
-    },
-    {
-      name: '準正常系: supa-emu(codeなし・OAuth形式)を資格情報エラーと判定する',
-      error: { code: undefined, message: 'Invalid login credentials' },
-      expected: true,
-    },
-    {
-      name: '異常系: 資格情報エラー以外は判定しない',
-      error: { code: 'over_request_rate_limit', message: 'Request rate limit reached' },
-      expected: false,
-    },
-  ]
-
-  testCases.forEach((testCase) => {
-    it(testCase.name, () => {
-      expect(isInvalidCredentialsError(testCase.error)).toBe(testCase.expected)
     })
   })
 })

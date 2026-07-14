@@ -28,8 +28,7 @@ export default async function handleRequest(
     <ServerRouter context={reactRouterContext} url={request.url} />,
     {
       signal: request.signal,
-      // oxlint-disable-next-line typescript/no-restricted-types -- レンダリング中に throw される値は任意の型となり確定できないため
-      onError(error: unknown) {
+      onError(error) {
         // Log streaming rendering errors from inside the shell
         // oxlint-disable-next-line no-console -- Remixのエラーを一応出す
         console.error(error)

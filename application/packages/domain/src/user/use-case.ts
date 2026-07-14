@@ -9,13 +9,6 @@ export class AccountUseCase {
     private readonly userQuery: Query,
   ) {}
 
-  /**
-   * 認証ユーザー(authenticationId)に紐づくアクティブユーザーを作成する。
-   * NOTE: 呼び出し側で認証ユーザーは作成済みのため、ここで失敗すると認証側に孤児ユーザーが残る。
-   * 同期補償(認証ユーザーの削除)はSupabaseの管理者権限(service_role)を要するが、サインアップ経路
-   * (anonクライアント)にadmin権限を持たせるべきではないため同期補償は行わない。対応候補は、
-   * service_roleを持つ別cronでactive_user未紐付けの認証ユーザーを定期クリーンアップするなど。別イシューで再設計する。
-   */
   async registerActiveUser(
     email: string,
     authenticationId: string,
@@ -30,9 +23,6 @@ export class AccountUseCase {
     )
   }
 
-  /**
-   * 認証済みの authenticationId からアクティブユーザーを解決する。
-   */
   async resolveActiveUser(
     authenticationId: string,
   ): Promise<Result<CurrentUser, ClientError | ServerError>> {

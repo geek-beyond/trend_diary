@@ -37,6 +37,10 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
   if (!data.user) throw handleError(new ServerError('User registration failed'), logger)
 
   // ロールバック不能な認証ユーザー作成が成功したときだけ、アカウント作成のドメイン処理を呼ぶ
+  // NOTE: ここで失敗すると認証側に孤児ユーザーが残る。同期補償(認証ユーザーの削除)はSupabaseの
+  // 管理者権限(service_role)を要するが、サインアップ経路(anonクライアント)にadmin権限を持たせる
+  // べきではないため行わない。対応候補は service_role を持つ別cronで未紐付けの認証ユーザーを定期
+  // クリーンアップするなど。別イシューで再設計する。
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)

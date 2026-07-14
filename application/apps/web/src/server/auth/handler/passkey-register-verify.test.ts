@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { passkeyVerifyInputSchema } from './passkey-schema'
+import { passkeyRegisterVerifyInputSchema } from './passkey-register-verify'
 
-describe('passkeyVerifyInputSchema', () => {
+describe('passkeyRegisterVerifyInputSchema', () => {
   const registrationCredential = {
     id: 'cred-id',
     rawId: 'cred-id',
@@ -12,7 +12,7 @@ describe('passkeyVerifyInputSchema', () => {
 
   describe('正常系', () => {
     it('challengeIdとcredentialオブジェクトを持つ入力を検証できる', () => {
-      const result = passkeyVerifyInputSchema.safeParse({
+      const result = passkeyRegisterVerifyInputSchema.safeParse({
         challengeId: 'challenge-1',
         credential: registrationCredential,
       })
@@ -49,7 +49,7 @@ describe('passkeyVerifyInputSchema', () => {
     ]
 
     it.each(invalidTestCases)('$name', ({ input }) => {
-      const result = passkeyVerifyInputSchema.safeParse(input)
+      const result = passkeyRegisterVerifyInputSchema.safeParse(input)
       expect(result.success).toBe(false)
     })
   })

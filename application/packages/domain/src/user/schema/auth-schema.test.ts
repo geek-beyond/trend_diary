@@ -240,6 +240,10 @@ describe('passkeyVerifyInputSchema', () => {
         input: { challengeId: 'challenge-1', credential: 'not-an-object' },
       },
       {
+        name: 'credentialが配列の場合は検証に失敗する',
+        input: { challengeId: 'challenge-1', credential: [] },
+      },
+      {
         name: 'credentialがnullの場合は検証に失敗する',
         input: { challengeId: 'challenge-1', credential: null },
       },

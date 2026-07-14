@@ -60,7 +60,10 @@
                 "message": "Client code must not import domain use-case factories (create*UseCase). Call them via the Hono API so middleware (rate limiting, CSRF, etc.) is applied."
               },
               {
-                "group": ["@trend-diary/domain/account", "@trend-diary/domain/article"],
+                "group": [
+                  "@trend-diary/domain/account{,/index}",
+                  "@trend-diary/domain/article{,/index}"
+                ],
                 "message": "Client code must not import the domain aggregate barrels; they re-export use-case factories that transitively pull server-only datastore code into the client bundle. Import the specific leaf module instead (e.g. @trend-diary/domain/account/schema/auth-schema)."
               }
             ]

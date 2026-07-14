@@ -23,21 +23,32 @@ function createAuthValidationError(
   return Object.assign(new Error(message), { reason })
 }
 
+// 認証プロバイダ(Supabase)のセッション検証結果を Result へ揃える。
+// 検証失敗(error)もトークン無し(data なし)も、認証ゲートでは同じ未認証として扱う。
+async function getSessionClaims(
+  c: Context<Env>,
+): Promise<Result<{ authenticationId: string }, AuthValidationError>> {
+  const client = createSupabaseAuthClient(c)
+  const { data, error } = await client.auth.getClaims()
+  if (error || !data) {
+    return err(createAuthValidationError('no_session', 'No session found'))
+  }
+  return ok({ authenticationId: data.claims.sub })
+}
+
 export async function validateSession(
   c: Context<Env>,
 ): Promise<Result<AuthValidationSuccess, AuthValidationError>> {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
 
-  const client = createSupabaseAuthClient(c)
-  const { data, error } = await client.auth.getClaims()
-  // 検証失敗(改ざん・期限切れ等)やセッション無しは、認証ゲートでは未認証として扱う
-  if (error || !data) {
-    return err(createAuthValidationError('no_session', 'No session found'))
+  const claims = await getSessionClaims(c)
+  if (claims.isErr()) {
+    return err(claims.error)
   }
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
-  const result = await accountUseCase.resolveActiveUser(data.claims.sub)
+  const result = await accountUseCase.resolveActiveUser(claims.value.authenticationId)
   if (result.isErr()) {
     // アカウント解決の失敗(未検出・DBエラー)は想定済みのため warn に留める
     logger.warn('Session validation failed', { error: result.error })

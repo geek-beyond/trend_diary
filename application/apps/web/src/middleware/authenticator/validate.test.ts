@@ -1,117 +1,87 @@
-import Logger from '@trend-diary/common/logger'
 import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
-import { fromDbId, toDbIds } from '@trend-diary/datastore/rdb/id'
+import { toDbIds } from '@trend-diary/datastore/rdb/id'
 import { inArray } from 'drizzle-orm'
-import type { Context } from 'hono'
-import type { Result } from 'neverthrow'
+import { Hono } from 'hono'
 import type { Env } from '@/env'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
+import requestLogger from '@/middleware/request-logger'
+import TEST_ENV from '@/test/env'
 import { testRdb } from '@/test/helper/rdb'
-import { platformEnv } from '@/test/setup/platform-proxy'
-import CONTEXT_KEY from '../context'
+import type { CleanUpIds } from '@/test/helper/user'
+import * as userHelper from '@/test/helper/user'
 import { validateSession } from './validate'
 
-// Supabase は認証プロバイダという外部境界のため、getClaims だけを差し替える
-// (アカウント解決は実 D1 + 実ドメインで検証し、ドメインはモックしない)
-vi.mock('@/infrastructure/supabase', () => ({ createSupabaseAuthClient: vi.fn() }))
+type ValidateResult = Awaited<ReturnType<typeof validateSession>>
 
-// getClaimsは署名検証結果を返す。テストごとに任意のclaims/エラーを注入する
-// oxlint-disable-next-line typescript/no-restricted-types -- テストごとに任意の戻り値を返すスタブを差し替えるため
-function mockGetClaims(impl: () => Promise<unknown>) {
-  vi.mocked(createSupabaseAuthClient).mockReturnValue(
-    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- テストで必要な auth.getClaims のみを差し替えるための境界キャストのため
-    { auth: { getClaims: impl } } as unknown as ReturnType<typeof createSupabaseAuthClient>,
-  )
-}
+// requestLogger で APP_LOG を用意し、実セッション(cookie)で validateSession を通す検証用ルート。
+// セッション検証は実 Supabase(emu)、アカウント解決は実 D1 + 実ドメインが担い、モックは使わない。
+async function callValidateSession(cookies?: string): Promise<ValidateResult> {
+  // ルート内で確定する検証結果をテストへ受け渡す
+  let captured: ValidateResult | undefined
+  const app = new Hono<Env>().use(requestLogger).get('/verify', async (c) => {
+    captured = await validateSession(c)
+    return c.body(null, 204)
+  })
 
-function buildContext(): Context<Env> {
-  // ログは silent で実ロガーを使い、出力の詳細ではなく返り値(Result)を検証する
-  const logger = new Logger('silent')
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
-  const c = {
-    get: (key: string) => (key === CONTEXT_KEY.APP_LOG ? logger : undefined),
-    env: { DB: platformEnv.DB },
-    // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
-  } as unknown as Context<Env>
-  return c
-}
+  await app.request('/verify', { headers: cookies ? { Cookie: cookies } : undefined }, TEST_ENV)
 
-// 想定と異なる分岐に落ちたら即座に失敗させ、取り違えを検知する
-function unwrapOk<T, E>(result: Result<T, E>): T {
-  if (result.isErr()) throw result.error
-  return result.value
-}
-
-function unwrapErr<T, E>(result: Result<T, E>): E {
-  if (result.isOk()) throw new Error('Result が Ok でした')
-  return result.error
-}
-
-// 実 D1 に active user を直接投入し、実ドメインの resolveActiveUser で解決させる
-async function seedActiveUser(
-  authenticationId: string,
-  email: string,
-  displayName: string | null,
-): Promise<{ activeUserId: bigint; userId: bigint }> {
-  const [user] = await testRdb.insert(users).values({}).returning()
-  const [activeUser] = await testRdb
-    .insert(activeUsers)
-    .values({ userId: user.userId, email, displayName, authenticationId, updatedAt: new Date() })
-    .returning()
-  return { activeUserId: fromDbId(activeUser.activeUserId), userId: fromDbId(user.userId) }
+  if (!captured) throw new Error('validateSession が実行されませんでした')
+  return captured
 }
 
 describe('validateSession', () => {
-  const createdUserIds: bigint[] = []
+  const TEST_EMAIL = 'validate-session-test@example.com'
+  const TEST_PASSWORD = 'Test@password123'
+  const createdIds: CleanUpIds = { userIds: [], authIds: [] }
+
+  beforeEach(async () => {
+    const { userId, authenticationId } = await userHelper.create(TEST_EMAIL, TEST_PASSWORD)
+    createdIds.userIds.push(userId)
+    createdIds.authIds.push(authenticationId)
+  })
 
   afterEach(async () => {
-    if (createdUserIds.length > 0) {
-      const dbUserIds = toDbIds(createdUserIds)
-      await testRdb.delete(activeUsers).where(inArray(activeUsers.userId, dbUserIds))
-      await testRdb.delete(users).where(inArray(users.userId, dbUserIds))
-      createdUserIds.length = 0
-    }
-    vi.clearAllMocks()
+    await userHelper.cleanUp(createdIds)
+    createdIds.userIds.length = 0
+    createdIds.authIds.length = 0
   })
 
   describe('正常系', () => {
-    it('セッションが有効な場合はアクティブユーザーを認可に必要な3項目へ絞り込んで返すこと', async () => {
-      const authenticationId = crypto.randomUUID()
-      const seeded = await seedActiveUser(authenticationId, 'active@example.com', 'テスト太郎')
-      createdUserIds.push(seeded.userId)
-      mockGetClaims(() =>
-        Promise.resolve({ data: { claims: { sub: authenticationId } }, error: null }),
-      )
+    it('有効なセッションではアクティブユーザーを認可に必要な3項目へ絞り込んで返すこと', async () => {
+      const { activeUserId, cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
-      const result = await validateSession(buildContext())
+      const result = await callValidateSession(cookies)
 
-      // resolveActiveUser は authenticationId 等の内部項目も返すが、SESSION_USER には漏らさない
-      expect(unwrapOk(result).sessionUser).toEqual({
-        activeUserId: seeded.activeUserId,
-        displayName: 'テスト太郎',
-        email: 'active@example.com',
-      })
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) {
+        // resolveActiveUser は authenticationId 等の内部項目も返すが、SESSION_USER には漏らさない
+        expect(result.value.sessionUser).toEqual({
+          activeUserId,
+          displayName: null,
+          email: TEST_EMAIL,
+        })
+      }
     })
   })
 
   describe('準正常系', () => {
-    it('セッションが検証できない場合は reason=no_session を返すこと', async () => {
-      mockGetClaims(() => Promise.resolve({ data: null, error: { message: 'invalid session' } }))
+    it('セッションが無い場合は reason=no_session を返すこと', async () => {
+      const result = await callValidateSession()
 
-      const result = await validateSession(buildContext())
-
-      expect(unwrapErr(result).reason).toBe('no_session')
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) expect(result.error.reason).toBe('no_session')
     })
 
-    it('検証済みだが対応するアクティブユーザーが存在しない場合は reason=validation_failed を返すこと', async () => {
-      // 実 D1 に投入していない認証IDのため、resolveActiveUser が未検出(ClientError)を返す
-      mockGetClaims(() =>
-        Promise.resolve({ data: { claims: { sub: crypto.randomUUID() } }, error: null }),
-      )
+    it('セッションは有効だが対応するアクティブユーザーが存在しない場合は reason=validation_failed を返すこと', async () => {
+      const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+      // 認証プロバイダにはユーザーが残るが、アプリのアカウント行だけ失われた状態を作る
+      const dbUserIds = toDbIds(createdIds.userIds)
+      await testRdb.delete(activeUsers).where(inArray(activeUsers.userId, dbUserIds))
+      await testRdb.delete(users).where(inArray(users.userId, dbUserIds))
 
-      const result = await validateSession(buildContext())
+      const result = await callValidateSession(cookies)
 
-      expect(unwrapErr(result).reason).toBe('validation_failed')
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) expect(result.error.reason).toBe('validation_failed')
     })
   })
 })

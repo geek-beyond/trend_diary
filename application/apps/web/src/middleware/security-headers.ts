@@ -31,7 +31,9 @@ export function buildContentSecurityPolicy(isDev: boolean): ContentSecurityPolic
 }
 
 export function securityHeaders() {
+  // Cloudflare Workers ビルドの実行時は import.meta.env が未定義になるため、無ければ本番とみなす
+  const isDev = Boolean(import.meta.env?.DEV)
   return secureHeaders({
-    contentSecurityPolicy: buildContentSecurityPolicy(import.meta.env.DEV),
+    contentSecurityPolicy: buildContentSecurityPolicy(isDev),
   })
 }

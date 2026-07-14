@@ -8,6 +8,7 @@ import tailwindcss from '@tailwindcss/vite'
 import serverAdapter from 'hono-react-router-adapter/vite'
 import { defineConfig } from 'vite'
 import babel from 'vite-plugin-babel'
+import { getLoadContext } from './src/load-context'
 
 const ReactCompilerConfig = {}
 
@@ -33,6 +34,7 @@ export default defineConfig({
     }),
     serverAdapter({
       adapter,
+      getLoadContext,
       entry: 'src/server.ts',
       exclude: [...defaultOptions.exclude, '/assets/**', '/src/client/**'],
     }),

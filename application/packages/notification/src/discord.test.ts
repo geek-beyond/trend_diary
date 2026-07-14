@@ -13,6 +13,7 @@ const createMockLogger = () =>
     warn: vi.fn(),
     error: vi.fn(),
     with: vi.fn(),
+    // oxlint-disable-next-line typescript/no-restricted-types -- Loggerはprivateフィールドを持ち構造的に代入できず、二重アサーションで unknown を経由するほかないためです
   }) as unknown as LoggerType
 
 // リトライ待機を待たずにテストするため

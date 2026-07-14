@@ -28,7 +28,7 @@ export default async function handleRequest(
     <ServerRouter context={reactRouterContext} url={request.url} />,
     {
       signal: request.signal,
-      onError(error: unknown) {
+      onError(error) {
         // Log streaming rendering errors from inside the shell
         // oxlint-disable-next-line no-console -- Remixのエラーを一応出す
         console.error(error)
@@ -46,6 +46,7 @@ export default async function handleRequest(
 
 // 404エラー, abortされたリクエストの場合は不要なのでログ出力しない
 // 参考: https://zenn.dev/mkizka/articles/0db9bc30e1f707#(1)-error%3A-no-route-matches-url-%22%2Ffoo%22
+// oxlint-disable-next-line typescript/no-restricted-types -- React Router が渡す失敗値は任意の型となり確定できないため
 export function handleError(error: unknown, { request }: LoaderFunctionArgs | ActionFunctionArgs) {
   if ((isRouteErrorResponse(error) && error.status === 404) || request.signal.aborted) {
     return

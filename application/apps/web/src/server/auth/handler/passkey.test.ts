@@ -22,6 +22,7 @@ describe('passkey認証', () => {
     createdIds.authIds.length = 0
   })
 
+  // oxlint-disable-next-line typescript/no-restricted-types -- 各エンドポイントへ任意形状の JSON ボディを送るため
   function post(path: string, body?: unknown, cookies?: string) {
     return apiRequest(path, {
       method: 'POST',

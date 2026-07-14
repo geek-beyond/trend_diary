@@ -4,7 +4,8 @@ import type { AuthRepository, CaptchaVerifier, Command, Notifier, Query } from '
 import type { CurrentUser } from './schema/active-user-schema'
 import type {
   AuthenticationSession,
-  PasskeyChallenge,
+  PasskeyAuthenticationChallenge,
+  PasskeyRegistrationChallenge,
   PasskeyRegistrationResult,
   PasskeyVerifyInput,
 } from './schema/auth-schema'
@@ -106,7 +107,7 @@ export class AuthUseCase {
     return this.findActiveUserByAuthenticationId(sessionResult.value.authenticationId)
   }
 
-  async startPasskeyRegistration(): Promise<Result<PasskeyChallenge, ServerError>> {
+  async startPasskeyRegistration(): Promise<Result<PasskeyRegistrationChallenge, ServerError>> {
     return this.repository.startPasskeyRegistration()
   }
 
@@ -116,7 +117,9 @@ export class AuthUseCase {
     return this.repository.verifyPasskeyRegistration(input)
   }
 
-  async startPasskeyLogin(): Promise<Result<PasskeyChallenge, ClientError | ServerError>> {
+  async startPasskeyLogin(): Promise<
+    Result<PasskeyAuthenticationChallenge, ClientError | ServerError>
+  > {
     return this.repository.startPasskeyAuthentication()
   }
 

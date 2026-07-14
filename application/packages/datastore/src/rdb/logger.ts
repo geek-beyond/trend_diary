@@ -37,6 +37,7 @@ function getDrizzleLogger(): AppLogger {
 // レベルフィルタに委譲して debug ログを LOG_LEVEL=debug/trace のときだけ実出力させ、
 // (2)さらに文字列の bind 値をマスクして、debug 出力時にも PII がログ基盤へ流出しないようにする。
 class DrizzleQueryLogger implements DrizzleLogger {
+  // oxlint-disable-next-line typescript/no-restricted-types -- Drizzle の Logger インターフェースが定める型で、任意のカラム値が渡るため具象化できないためです
   logQuery(query: string, params: unknown[]): void {
     getDrizzleLogger().debug({ msg: 'drizzle query', query, params: maskQueryParams(params) })
   }

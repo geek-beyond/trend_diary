@@ -7,7 +7,7 @@ describe('fromRdbToArticle', () => {
   // スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
   // テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
   const createMockRdbArticle = (
-    overrides: Partial<Record<keyof RdbArticle, unknown>> = {},
+    overrides: Partial<Record<keyof RdbArticle, string | number | bigint | Date | null>> = {},
   ): RdbArticle => {
     const rdbArticle = {
       articleId: 1n,
@@ -19,7 +19,7 @@ describe('fromRdbToArticle', () => {
       createdAt: new Date('2024-01-15T09:30:00Z'),
       ...overrides,
     }
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
+    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
     return rdbArticle as unknown as RdbArticle
   }
 

@@ -60,6 +60,7 @@ beforeEach(() => {
         },
       },
     },
+    // oxlint-disable-next-line typescript/no-restricted-types -- 一部のみをモックした値を実型へ橋渡しするための境界キャストのため
   } as unknown as ReturnType<typeof createSWRFetcher>)
 })
 
@@ -69,7 +70,7 @@ describe('useDiaryApi', () => {
       const targetDate = '2026-03-01'
       const dailyResponse = buildDailyResponse(targetDate, 2, 1)
 
-      apiCall.mockImplementation(async (apiFn: () => Promise<unknown>) => {
+      apiCall.mockImplementation(async <T>(apiFn: () => Promise<T>) => {
         await apiFn()
         return {
           data: [buildRangeItem(targetDate, 2, 1)],
@@ -101,7 +102,7 @@ describe('useDiaryApi', () => {
       })
     })
 
-    const invalidResponseCases: Array<{ outline: string; response: unknown }> = [
+    const invalidResponseCases: Array<{ outline: string; response: object | null }> = [
       {
         outline: 'apiCallがnullを返した場合',
         response: null,
@@ -137,7 +138,7 @@ describe('useDiaryApi', () => {
         buildRangeItem('2026-03-01', 3, 2),
       ]
 
-      apiCall.mockImplementation(async (apiFn: () => Promise<unknown>) => {
+      apiCall.mockImplementation(async <T>(apiFn: () => Promise<T>) => {
         await apiFn()
         return { data: items }
       })

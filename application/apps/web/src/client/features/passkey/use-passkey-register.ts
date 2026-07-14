@@ -26,9 +26,9 @@ export default function usePasskeyRegister() {
 
     const { challengeId, options } = startResult.value
 
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- 型定義の実体はブラウザWebAuthn API側にあるため
-    const optionsJSON = options as unknown as PublicKeyCredentialCreationOptionsJSON
-
+    // options は Supabase SDK の型。ブラウザ WebAuthn ライブラリの同名 JSON 型とは別宣言で微差があるため境界で寄せる
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- Supabase と @simplewebauthn の WebAuthn 型は別宣言で構造が僅かに異なり、ライブラリ境界での単一アサーションが避けられないため
+    const optionsJSON = options as PublicKeyCredentialCreationOptionsJSON
     const ceremonyResult = await wrapAsyncCall(() => startRegistration({ optionsJSON }))
     if (ceremonyResult.isErr()) {
       toast.error(PASSKEY_MESSAGES.canceled)
@@ -36,7 +36,7 @@ export default function usePasskeyRegister() {
       return false
     }
 
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- 真正性はSupabaseが検証するため境界で受けるだけ
+    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 真正性はSupabaseが検証するため、ブラウザWebAuthn APIの型境界で受けるだけのため
     const credential = ceremonyResult.value as unknown as Record<string, unknown>
 
     const verifyResult = await wrapAsyncCall(() =>

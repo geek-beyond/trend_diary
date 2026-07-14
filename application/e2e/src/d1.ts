@@ -19,6 +19,7 @@ const BUSY_RETRY_BASE_DELAY_MS = 100
 // SQLITE_BUSY は miniflare の D1 エミュレーションを経由すると「internal error」としか報告されない
 const RETRYABLE_ERROR_PATTERN = /internal error|SQLITE_BUSY|database is locked/i
 
+// oxlint-disable-next-line typescript/no-restricted-types -- catch で受け取る値は任意の型が throw されうるため、unknown 以外に表現できません
 function isBusyError(error: unknown): boolean {
   return error instanceof Error && RETRYABLE_ERROR_PATTERN.test(error.message)
 }
@@ -50,9 +51,11 @@ function wrapStatementWithBusyRetry(statement: D1PreparedStatement): D1PreparedS
       const method = value.bind(target)
       // bind は新しいステートメントを返すため、戻り値にも再試行を適用し続ける
       if (prop === 'bind') {
+        // oxlint-disable-next-line typescript/no-restricted-types -- 任意のメソッドの引数をそのまま透過的に転送するプロキシのため、引数型を特定できません
         return (...args: unknown[]) => wrapStatementWithBusyRetry(method(...args))
       }
       if (STATEMENT_EXEC_METHODS.has(prop)) {
+        // oxlint-disable-next-line typescript/no-restricted-types -- 任意のメソッドの引数をそのまま透過的に転送するプロキシのため、引数型を特定できません
         return (...args: unknown[]) => withBusyRetry(() => method(...args))
       }
       return method
@@ -72,9 +75,11 @@ function wrapDbWithBusyRetry(db: D1Database): D1Database {
       if (typeof value !== 'function') return value
       const method = value.bind(target)
       if (prop === 'prepare') {
+        // oxlint-disable-next-line typescript/no-restricted-types -- 任意のメソッドの引数をそのまま透過的に転送するプロキシのため、引数型を特定できません
         return (...args: unknown[]) => wrapStatementWithBusyRetry(method(...args))
       }
       if (DATABASE_EXEC_METHODS.has(prop)) {
+        // oxlint-disable-next-line typescript/no-restricted-types -- 任意のメソッドの引数をそのまま透過的に転送するプロキシのため、引数型を特定できません
         return (...args: unknown[]) => withBusyRetry(() => method(...args))
       }
       return method

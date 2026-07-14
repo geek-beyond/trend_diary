@@ -13,14 +13,17 @@ describe('CommandImpl', () => {
   // INFO: Drizzleのinsert returningは「カラム順の配列」で行を返す
   // users:        user_id, created_at
   // active_users: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
-  const buildUserRow = (userId: number): unknown[] => [userId, '2024-01-15T09:30:00.000Z']
+  const buildUserRow = (userId: number): (string | number | null)[] => [
+    userId,
+    '2024-01-15T09:30:00.000Z',
+  ]
   const buildActiveUserRow = (data: {
     activeUserId: number
     email: string
     displayName: string | null
     authenticationId: string | null
     userId: number
-  }): unknown[] => [
+  }): (string | number | null)[] => [
     data.activeUserId,
     data.email,
     data.displayName,

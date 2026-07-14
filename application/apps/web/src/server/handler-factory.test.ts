@@ -21,6 +21,7 @@ interface FakeLogger {
 
 interface BuildContextOptions {
   user?: SessionUser
+  // oxlint-disable-next-line typescript/no-restricted-types -- 各ハンドラの検証済みデータを模す任意形状の値を渡すため
   valid?: Record<'param' | 'json' | 'query', unknown>
 }
 
@@ -41,12 +42,14 @@ function buildContext(options: BuildContextOptions = {}): {
     },
     env: { DB: {} },
     req,
+    // oxlint-disable-next-line typescript/no-restricted-types -- Hono の c.json を模すモックで、任意の JSON 値を受けるため
     json: (data: unknown, status: number) =>
       new Response(JSON.stringify(data), {
         status,
         headers: { 'Content-Type': 'application/json' },
       }),
     body: (data: BodyInit | null, status: number) => new Response(data, { status }),
+    // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
   } as unknown as Context<Env>
   return { c, logger }
 }
@@ -126,8 +129,10 @@ describe('createSimpleApiHandler', () => {
     it('バリデーション済みデータを execute に渡すこと', async () => {
       const valid = { param: { id: 1 }, json: { body: 'x' }, query: { page: 2 } }
       const execute = vi.fn(
-        (_useCase: unknown, _context: RequestContext): Promise<Result<unknown, Error>> =>
-          Promise.resolve(ok({})),
+        (
+          _useCase: object,
+          _context: RequestContext,
+        ): Promise<Result<Record<string, never>, Error>> => Promise.resolve(ok({})),
       )
       const handler = createSimpleApiHandler({
         createUseCase: () => ({}),
@@ -151,6 +156,7 @@ describe('createSimpleApiHandler', () => {
       const handler = createSimpleApiHandler(baseConfig(err(new NotFoundError('not found'))))
 
       const { c } = buildContext()
+      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
       const thrown = await handler(c).catch((e: unknown) => e)
 
       expect(thrown).toBeInstanceOf(HTTPException)
@@ -162,6 +168,7 @@ describe('createSimpleApiHandler', () => {
       const handler = createSimpleApiHandler(baseConfig(err(new ClientError('bad request', 400))))
 
       const { c } = buildContext()
+      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
       const thrown = await handler(c).catch((e: unknown) => e)
 
       expect(thrown).toBeInstanceOf(HTTPException)
@@ -182,9 +189,9 @@ describe('createAuthenticatedApiHandler', () => {
     it('認証済みユーザーを context.user に渡して実行すること', async () => {
       const execute = vi.fn(
         (
-          _useCase: unknown,
+          _useCase: object,
           _context: AuthenticatedRequestContext,
-        ): Promise<Result<unknown, Error>> => Promise.resolve(ok({ ok: true })),
+        ): Promise<Result<{ ok: boolean }, Error>> => Promise.resolve(ok({ ok: true })),
       )
       const handler = createAuthenticatedApiHandler({
         createUseCase: () => ({}),
@@ -205,6 +212,7 @@ describe('createAuthenticatedApiHandler', () => {
       const handler = createAuthenticatedApiHandler(baseConfig(ok({})))
 
       const { c } = buildContext()
+      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
       const thrown = await handler(c).catch((e: unknown) => e)
 
       expect(thrown).toBeInstanceOf(HTTPException)

@@ -82,6 +82,7 @@ describe('useUnreadDigestion', () => {
           },
         },
       },
+      // oxlint-disable-next-line typescript/no-restricted-types -- 一部のみをモックした値を実型へ橋渡しするための境界キャストのため
     } as unknown as ReturnType<typeof createSWRFetcher>)
   })
 

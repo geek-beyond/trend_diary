@@ -12,13 +12,13 @@ interface DateRangeSqlBuilders {
     range: { fromDate?: Date; toDateExclusive?: Date },
   ): SQL[]
 }
-// oxlint-disable-next-line typescript/consistent-type-assertions -- privateなstaticメソッドをホワイトボックステストするため、型システムを意図的に迂回する必要があるためです
+// oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- privateなstaticメソッドをホワイトボックステストするため、型システムを意図的に迂回する必要があるためです
 const dateRangeSqlBuilders = QueryImpl as unknown as DateRangeSqlBuilders
 
 interface DateRangeEnumerator {
   enumerateJstDateRange(fromDateJst: string, toDateJst: string): Result<string[], Error>
 }
-// oxlint-disable-next-line typescript/consistent-type-assertions -- privateなstaticメソッドをホワイトボックステストするため、型システムを意図的に迂回する必要があるためです
+// oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- privateなstaticメソッドをホワイトボックステストするため、型システムを意図的に迂回する必要があるためです
 const dateRangeEnumerator = QueryImpl as unknown as DateRangeEnumerator
 
 describe('QueryImpl', () => {

@@ -8,6 +8,7 @@ const app = new Hono().post('/', zodValidator('json', z.object({ name: z.string(
   c.json({ ok: true }),
 )
 
+// oxlint-disable-next-line typescript/no-restricted-types -- 検証成功・失敗の双方を試すため任意形状のボディを受けるため
 function postJson(body: unknown) {
   return apiRequest('/', { method: 'POST', json: body, app })
 }

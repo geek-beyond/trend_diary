@@ -1,7 +1,9 @@
 import pino from 'pino'
 
 export type LogLevel = pino.LevelWithSilent
+// oxlint-disable-next-line typescript/no-restricted-types -- 任意の構造化ログを受け取る基盤型であり、値の型を事前に確定できないため
 export type LogMessage = string | Record<string, unknown>
+// oxlint-disable-next-line typescript/no-restricted-types -- 任意のキーを持つログコンテキストを受け取る基盤型であり、値の型を事前に確定できないため
 export type LogContext = Record<string, unknown>
 
 export default class Logger {
@@ -33,6 +35,7 @@ export default class Logger {
     return new Logger(this.level, { ...this.context, ...context })
   }
 
+  // oxlint-disable-next-line typescript/no-restricted-types -- 任意個・任意型の付加情報を受け取るログ基盤のため、事前に型を確定できないため
   private log(level: LogLevel, message: LogMessage, ...args: unknown[]): void {
     const extra = args[0]
 
@@ -54,19 +57,23 @@ export default class Logger {
     this.logger[level]({ ...this.context, ...message })
   }
 
+  // oxlint-disable-next-line typescript/no-restricted-types -- 任意個・任意型の付加情報を受け取るログ基盤のため、事前に型を確定できないため
   debug(message: LogMessage, ...args: unknown[]): void {
     this.log('debug', message, ...args)
   }
 
+  // oxlint-disable-next-line typescript/no-restricted-types -- 任意個・任意型の付加情報を受け取るログ基盤のため、事前に型を確定できないため
   info(message: LogMessage, ...args: unknown[]): void {
     this.log('info', message, ...args)
   }
 
+  // oxlint-disable-next-line typescript/no-restricted-types -- 任意個・任意型の付加情報を受け取るログ基盤のため、事前に型を確定できないため
   warn(message: LogMessage, ...args: unknown[]): void {
     this.log('warn', message, ...args)
   }
 
-  error(message: LogMessage, error: Error | unknown, ...args: unknown[]): void {
+  // oxlint-disable-next-line typescript/no-restricted-types -- throwされる例外値は任意の型を取り得るうえ、付加情報も任意型で受け取るため
+  error(message: LogMessage, error: unknown, ...args: unknown[]): void {
     const normalizedError = error instanceof Error ? error : new Error(String(error))
 
     // * pinoのstdSerializersで処理されるよう、errプロパティ名を使用

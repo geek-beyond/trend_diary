@@ -85,6 +85,32 @@ describe('passkey認証', () => {
       expect(res.status).toBe(401)
     })
 
+    it('未ログインで登録検証すると401を返す', async () => {
+      const res = await post('/api/auth/passkey/register/verify', {
+        challengeId: 'challenge-1',
+        credential: { id: CREDENTIAL_ID },
+      })
+      expect(res.status).toBe(401)
+    })
+
+    it('challengeId欠落で登録検証すると422を返す', async () => {
+      const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+
+      const res = await post(
+        '/api/auth/passkey/register/verify',
+        { credential: { id: CREDENTIAL_ID } },
+        cookies,
+      )
+      expect(res.status).toBe(422)
+    })
+
+    it('challengeId欠落で認証検証すると422を返す', async () => {
+      const res = await post('/api/auth/passkey/login/verify', {
+        credential: { id: CREDENTIAL_ID },
+      })
+      expect(res.status).toBe(422)
+    })
+
     it('未ログインで登録状態を取得すると401を返す', async () => {
       const res = await req('GET', '/api/auth/passkey')
       expect(res.status).toBe(401)

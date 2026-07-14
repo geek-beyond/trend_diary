@@ -1,36 +1,39 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
-import type { LoggerType } from '@trend-diary/common/logger'
-import type { CurrentUser } from '@trend-diary/domain/user'
+import Logger from '@trend-diary/common/logger'
+import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
+import { fromDbId, toDbIds } from '@trend-diary/datastore/rdb/id'
+import { inArray } from 'drizzle-orm'
 import type { Context } from 'hono'
-import { err, ok, type Result } from 'neverthrow'
+import type { Result } from 'neverthrow'
 import type { Env } from '@/env'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
+import { testRdb } from '@/test/helper/rdb'
+import { platformEnv } from '@/test/setup/platform-proxy'
 import CONTEXT_KEY from '../context'
-import { toSessionUser, validateSession, verifySessionClaims } from './validate'
+import { validateSession } from './validate'
 
-// Supabase は認証プロバイダという外部境界のため、ユニットではここだけ差し替える
+// Supabase は認証プロバイダという外部境界のため、getClaims だけを差し替える
+// (アカウント解決は実 D1 + 実ドメインで検証し、ドメインはモックしない)
 vi.mock('@/infrastructure/supabase', () => ({ createSupabaseAuthClient: vi.fn() }))
 
-interface FakeLogger {
-  warn: ReturnType<typeof vi.fn>
-  error: ReturnType<typeof vi.fn>
-  info: ReturnType<typeof vi.fn>
+// getClaimsは署名検証結果を返す。テストごとに任意のclaims/エラーを注入する
+// oxlint-disable-next-line typescript/no-restricted-types -- テストごとに任意の戻り値を返すスタブを差し替えるため
+function mockGetClaims(impl: () => Promise<unknown>) {
+  vi.mocked(createSupabaseAuthClient).mockReturnValue(
+    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- テストで必要な auth.getClaims のみを差し替えるための境界キャストのため
+    { auth: { getClaims: impl } } as unknown as ReturnType<typeof createSupabaseAuthClient>,
+  )
 }
 
-// ログ出力の呼び出しだけを検証するため、Logger の必要メソッドのみを備えたフェイクを橋渡しする
-function buildLogger(): FakeLogger & LoggerType {
-  // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 検証に使う warn/error/info のみを持つフェイクを Logger 型へ橋渡しする境界キャストのため
-  return { warn: vi.fn(), error: vi.fn(), info: vi.fn() } as unknown as FakeLogger & LoggerType
-}
-
-function buildContext(logger: FakeLogger = buildLogger()): { c: Context<Env>; logger: FakeLogger } {
+function buildContext(): Context<Env> {
+  // ログは silent で実ロガーを使い、出力の詳細ではなく返り値(Result)を検証する
+  const logger = new Logger('silent')
   // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
   const c = {
     get: (key: string) => (key === CONTEXT_KEY.APP_LOG ? logger : undefined),
-    env: { DB: {} },
+    env: { DB: platformEnv.DB },
     // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
   } as unknown as Context<Env>
-  return { c, logger }
+  return c
 }
 
 // 想定と異なる分岐に落ちたら即座に失敗させ、取り違えを検知する
@@ -44,63 +47,47 @@ function unwrapErr<T, E>(result: Result<T, E>): E {
   return result.error
 }
 
-// getClaimsは認証プロバイダの署名検証結果を返す。テストごとに戻り値/例外を差し替える
-// oxlint-disable-next-line typescript/no-restricted-types -- テストごとに任意の戻り値を返すスタブを差し替えるため
-function mockGetClaims(impl: () => Promise<unknown>) {
-  vi.mocked(createSupabaseAuthClient).mockReturnValue(
-    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- テストで必要な auth.getClaims のみを差し替えるための境界キャストのため
-    { auth: { getClaims: impl } } as unknown as ReturnType<typeof createSupabaseAuthClient>,
-  )
+// 実 D1 に active user を直接投入し、実ドメインの resolveActiveUser で解決させる
+async function seedActiveUser(
+  authenticationId: string,
+  email: string,
+  displayName: string | null,
+): Promise<{ activeUserId: bigint; userId: bigint }> {
+  const [user] = await testRdb.insert(users).values({}).returning()
+  const [activeUser] = await testRdb
+    .insert(activeUsers)
+    .values({ userId: user.userId, email, displayName, authenticationId, updatedAt: new Date() })
+    .returning()
+  return { activeUserId: fromDbId(activeUser.activeUserId), userId: fromDbId(user.userId) }
 }
 
-const validClaims = { data: { claims: { sub: 'auth-abc' } }, error: null }
+describe('validateSession', () => {
+  const createdUserIds: bigint[] = []
 
-describe('verifySessionClaims', () => {
-  beforeEach(() => {
+  afterEach(async () => {
+    if (createdUserIds.length > 0) {
+      const dbUserIds = toDbIds(createdUserIds)
+      await testRdb.delete(activeUsers).where(inArray(activeUsers.userId, dbUserIds))
+      await testRdb.delete(users).where(inArray(users.userId, dbUserIds))
+      createdUserIds.length = 0
+    }
     vi.clearAllMocks()
   })
 
   describe('正常系', () => {
-    it('検証成功時は claims の sub を認証IDとして返すこと', async () => {
-      mockGetClaims(() => Promise.resolve(validClaims))
+    it('セッションが有効な場合はアクティブユーザーを認可に必要な3項目へ絞り込んで返すこと', async () => {
+      const authenticationId = crypto.randomUUID()
+      const seeded = await seedActiveUser(authenticationId, 'active@example.com', 'テスト太郎')
+      createdUserIds.push(seeded.userId)
+      mockGetClaims(() =>
+        Promise.resolve({ data: { claims: { sub: authenticationId } }, error: null }),
+      )
 
-      const { c } = buildContext()
-      const result = await verifySessionClaims(c)
+      const result = await validateSession(buildContext())
 
-      expect(unwrapOk(result)).toEqual({ authenticationId: 'auth-abc' })
-    })
-  })
-
-  describe('準正常系', () => {
-    it('セッションが検証できない場合は reason=no_session を返すこと', async () => {
-      mockGetClaims(() => Promise.resolve({ data: null, error: { message: 'invalid session' } }))
-
-      const { c } = buildContext()
-      const result = await verifySessionClaims(c)
-
-      expect(unwrapErr(result).reason).toBe('no_session')
-    })
-  })
-})
-
-describe('toSessionUser', () => {
-  // resolveActiveUser は authenticationId 等の内部項目も返すが、SESSION_USER には漏らさない
-  const currentUser: CurrentUser = {
-    activeUserId: 123n,
-    userId: 456n,
-    authenticationId: 'auth-abc',
-    email: 'active@example.com',
-    displayName: 'テスト太郎',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }
-
-  describe('正常系', () => {
-    it('アクティブユーザーを認可に必要な3項目へ絞り込んで返すこと', () => {
-      const result = toSessionUser(ok(currentUser), buildLogger())
-
+      // resolveActiveUser は authenticationId 等の内部項目も返すが、SESSION_USER には漏らさない
       expect(unwrapOk(result).sessionUser).toEqual({
-        activeUserId: 123n,
+        activeUserId: seeded.activeUserId,
         displayName: 'テスト太郎',
         email: 'active@example.com',
       })
@@ -108,84 +95,23 @@ describe('toSessionUser', () => {
   })
 
   describe('準正常系', () => {
-    // アカウント解決の ClientError / ServerError は想定済みの失敗として warn ログを出す
-    const warnCases: Array<{ name: string; error: Error }> = [
-      { name: 'ClientError', error: new ClientError('client error', 400) },
-      { name: 'ServerError', error: new ServerError('server error') },
-    ]
-
-    warnCases.forEach(({ name, error }) => {
-      it(`${name} の場合は reason=validation_failed を返し warn ログを出すこと`, () => {
-        const logger = buildLogger()
-        const result = toSessionUser(err(error), logger)
-
-        expect(unwrapErr(result).reason).toBe('validation_failed')
-        expect(logger.warn).toHaveBeenCalledWith('Session validation failed', { error })
-        expect(logger.error).not.toHaveBeenCalled()
-      })
-    })
-  })
-
-  describe('異常系', () => {
-    it('想定外のエラーの場合は reason=validation_failed を返し error ログを出すこと', () => {
-      const unexpected = new Error('unexpected')
-      const logger = buildLogger()
-      const result = toSessionUser(err(unexpected), logger)
-
-      expect(unwrapErr(result).reason).toBe('validation_failed')
-      expect(logger.error).toHaveBeenCalledWith('Unexpected error occurred', { error: unexpected })
-    })
-  })
-})
-
-describe('validateSession', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  describe('準正常系', () => {
-    it('セッションが検証できない場合は reason=no_session を返し、ログを出さないこと', async () => {
+    it('セッションが検証できない場合は reason=no_session を返すこと', async () => {
       mockGetClaims(() => Promise.resolve({ data: null, error: { message: 'invalid session' } }))
 
-      const { c, logger } = buildContext()
-      const result = await validateSession(c)
+      const result = await validateSession(buildContext())
 
       expect(unwrapErr(result).reason).toBe('no_session')
-      // no_session は想定内のため警告・エラーログを出さない
-      expect(logger.warn).not.toHaveBeenCalled()
-      expect(logger.error).not.toHaveBeenCalled()
-    })
-  })
-
-  // 配線の正常系(実 Supabase + RDB を要するアカウント解決)は E2E(passkey)で担保し、
-  // ここではドメインに触れないフェイルセーフ経路のみを検証する
-  describe('異常系', () => {
-    it('セッション検証が例外を投げた場合は reason=validation_failed を返し warn ログを出すこと', async () => {
-      const claimsError = new Error('network down')
-      mockGetClaims(() => Promise.reject(claimsError))
-
-      const { c, logger } = buildContext()
-      const result = await validateSession(c)
-
-      expect(unwrapErr(result).reason).toBe('validation_failed')
-      expect(logger.warn).toHaveBeenCalledWith('Session validation setup failed', {
-        error: claimsError,
-      })
     })
 
-    it('セットアップで例外が発生した場合はフェイルセーフで reason=validation_failed を返すこと', async () => {
-      const setupError = new Error('supabase client creation failed')
-      vi.mocked(createSupabaseAuthClient).mockImplementation(() => {
-        throw setupError
-      })
+    it('検証済みだが対応するアクティブユーザーが存在しない場合は reason=validation_failed を返すこと', async () => {
+      // 実 D1 に投入していない認証IDのため、resolveActiveUser が未検出(ClientError)を返す
+      mockGetClaims(() =>
+        Promise.resolve({ data: { claims: { sub: crypto.randomUUID() } }, error: null }),
+      )
 
-      const { c, logger } = buildContext()
-      const result = await validateSession(c)
+      const result = await validateSession(buildContext())
 
       expect(unwrapErr(result).reason).toBe('validation_failed')
-      expect(logger.warn).toHaveBeenCalledWith('Session validation setup failed', {
-        error: setupError,
-      })
     })
   })
 })

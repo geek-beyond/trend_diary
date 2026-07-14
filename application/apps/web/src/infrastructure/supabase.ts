@@ -1,8 +1,8 @@
-import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
+import { createSupabaseAuthClient as buildSupabaseAuthClient } from '@trend-diary/authentication'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 
-export type SupabaseAuthClient = ReturnType<typeof createSupabaseAuthClient>
+export type { SupabaseAuthClient } from '@trend-diary/authentication'
 
 export function createSupabaseAuthClient(c: Context) {
   const supabaseUrl = c.env.SUPABASE_URL
@@ -14,35 +14,10 @@ export function createSupabaseAuthClient(c: Context) {
     })
   }
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
-    // passkey(auth.passkey.*)はexperimentalなopt-inが必要。namespaceを有効化するだけで、
-    // 実際に叩くのはpasskeyルートのみのため、常時有効にしても副作用はない
-    auth: {
-      experimental: {
-        passkey: true,
-      },
-    },
-    cookies: {
-      getAll() {
-        return parseCookieHeader(c.req.header('Cookie') ?? '').map((cookie) => ({
-          name: cookie.name,
-          value: cookie.value ?? '',
-        }))
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          // SDKが渡すoptionsでセキュリティ属性が無効化されないよう、自前の属性を後勝ちにする
-          const mergedOptions = {
-            ...options,
-            httpOnly: true,
-            secure: true,
-            sameSite: 'lax' as const,
-          }
-          c.header('Set-Cookie', serializeCookieHeader(name, value, mergedOptions), {
-            append: true,
-          })
-        })
-      },
-    },
+  return buildSupabaseAuthClient({
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+    cookieHeader: c.req.header('Cookie') ?? '',
+    setCookie: (value) => c.header('Set-Cookie', value, { append: true }),
   })
 }

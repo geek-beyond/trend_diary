@@ -1,13 +1,12 @@
-import { AlreadyExistsError, handleError, ServerError } from '@trend-diary/common/errors'
+import { PasswordAuthClient } from '@trend-diary/authentication'
+import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
-import { err, ok } from 'neverthrow'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import { verifyTurnstile } from '../captcha'
-import { callSupabaseAuth } from '../supabase-auth'
 
 export default async function signup(c: ZodValidatedContext<AuthInput>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
@@ -20,14 +19,8 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
     if (captchaResult.isErr()) throw handleError(captchaResult.error, logger)
   }
 
-  const client = createSupabaseAuthClient(c)
-  // 成功でも user が空なら登録失敗として err に畳み、後段でのResult外エラー処理を無くす
-  const userResult = (
-    await callSupabaseAuth(
-      () => client.auth.signUp({ email: valid.email, password: valid.password }),
-      toSignupError,
-    )
-  ).andThen(({ user }) => (user ? ok(user) : err(new ServerError('User registration failed'))))
+  const authClient = new PasswordAuthClient(createSupabaseAuthClient(c))
+  const userResult = await authClient.signUp({ email: valid.email, password: valid.password })
   if (userResult.isErr()) throw handleError(userResult.error, logger)
 
   const user = userResult.value
@@ -50,12 +43,4 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
   logger.info('signup success', { activeUserId: result.value.activeUserId })
 
   return c.json({}, 201)
-}
-
-// 既に存在するユーザーは409で明示する。UX上一般的でセキュリティリスクも比較的小さいと判断。
-// NOTE: Supabaseは専用エラー型を提供しないためメッセージ文字列で判定している
-function toSignupError(error: Error): Error {
-  return error.message.includes('already registered')
-    ? new AlreadyExistsError('User already exists')
-    : new ServerError(`Authentication service error: ${error.message}`)
 }

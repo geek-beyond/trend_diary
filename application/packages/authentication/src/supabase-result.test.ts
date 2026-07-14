@@ -1,11 +1,11 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { describe, expect, it } from 'vitest'
-import { callSupabaseAuth } from './supabase-auth'
+import { callSupabase } from './supabase-result'
 
-describe('callSupabaseAuth', () => {
+describe('callSupabase', () => {
   describe('正常系', () => {
     it('error が null のとき data を ok として返すこと', async () => {
-      const result = await callSupabaseAuth(async () => ({
+      const result = await callSupabase(async () => ({
         data: { id: 'passkey-1' },
         error: null,
       }))
@@ -19,7 +19,7 @@ describe('callSupabaseAuth', () => {
 
   describe('準正常系', () => {
     it('業務エラー({ error })を既定で ServerError に写して err を返すこと', async () => {
-      const result = await callSupabaseAuth(async () => ({
+      const result = await callSupabase(async () => ({
         data: null,
         error: new Error('service down'),
       }))
@@ -32,7 +32,7 @@ describe('callSupabaseAuth', () => {
     })
 
     it('業務エラーは mapError で任意のドメインエラーへ写せること', async () => {
-      const result = await callSupabaseAuth(
+      const result = await callSupabase(
         async () => ({ data: null, error: new Error('invalid credentials') }),
         () => new ClientError('Invalid', 401),
       )
@@ -46,7 +46,7 @@ describe('callSupabaseAuth', () => {
 
   describe('異常系', () => {
     it('例外は mapError を経由せず常に ServerError として err を返すこと', async () => {
-      const result = await callSupabaseAuth(
+      const result = await callSupabase(
         async () => {
           throw new Error('network down')
         },

@@ -1,4 +1,8 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import {
+  createSupabaseAdminClient,
+  createSupabaseClient,
+  type SupabaseClient,
+} from '@trend-diary/authentication'
 import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import { fromDbId, toDbIds } from '@trend-diary/datastore/rdb/id'
 import type { ActiveUser } from '@trend-diary/domain/account'
@@ -13,7 +17,10 @@ let supabaseAdmin: SupabaseClient | null = null
 
 function getSupabase(): SupabaseClient {
   if (!supabase) {
-    supabase = createClient(TEST_ENV.SUPABASE_URL, TEST_ENV.SUPABASE_ANON_KEY)
+    supabase = createSupabaseClient({
+      url: TEST_ENV.SUPABASE_URL,
+      key: TEST_ENV.SUPABASE_ANON_KEY,
+    })
   }
   return supabase
 }
@@ -21,8 +28,9 @@ function getSupabase(): SupabaseClient {
 function getSupabaseAdmin(): SupabaseClient | null {
   if (!TEST_ENV.SUPABASE_SERVICE_ROLE_KEY) return null
   if (!supabaseAdmin) {
-    supabaseAdmin = createClient(TEST_ENV.SUPABASE_URL, TEST_ENV.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
+    supabaseAdmin = createSupabaseAdminClient({
+      url: TEST_ENV.SUPABASE_URL,
+      serviceRoleKey: TEST_ENV.SUPABASE_SERVICE_ROLE_KEY,
     })
   }
   return supabaseAdmin

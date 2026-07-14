@@ -1,7 +1,6 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
-import UnauthorizedError from '@trend-diary/common/errors/client-error/unauthorized-error'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAuthUseCase } from '@trend-diary/domain/user'
+import { createAccountUseCase } from '@trend-diary/domain/user'
 import type { Context } from 'hono'
 import { err, ok, type Result } from 'neverthrow'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
@@ -36,15 +35,17 @@ export async function validateSession(
 ): Promise<Result<AuthValidationSuccess, AuthValidationError>> {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   try {
-    const supabaseClient = createSupabaseAuthClient(c)
-    const rdb = getRdbClient(c.env.DB)
-    const useCase = createAuthUseCase(supabaseClient, rdb)
+    const client = createSupabaseAuthClient(c)
+    const { data, error } = await client.auth.getClaims()
+    // 検証失敗(改ざん・期限切れ等)やセッション無しは、認証ゲートでは未認証として扱う
+    if (error || !data) {
+      return err(createAuthValidationError('no_session', 'No session found'))
+    }
 
-    const result = await useCase.getCurrentActiveUser()
+    const rdb = getRdbClient(c.env.DB)
+    const accountUseCase = createAccountUseCase(rdb)
+    const result = await accountUseCase.resolveActiveUser(data.claims.sub)
     if (result.isErr()) {
-      if (result.error instanceof UnauthorizedError) {
-        return err(createAuthValidationError('no_session', 'No session found'))
-      }
       if (result.error instanceof ClientError || result.error instanceof ServerError) {
         logger.warn('Session validation failed', { error: result.error })
       } else {
@@ -53,7 +54,6 @@ export async function validateSession(
       return err(createAuthValidationError('validation_failed', 'Session validation failed'))
     }
 
-    // 管理者権限をチェック
     const sessionUser: SessionUser = {
       activeUserId: result.value.activeUserId,
       displayName: result.value.displayName,

@@ -412,9 +412,6 @@ importers:
 
   packages/domain:
     dependencies:
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.110.0
       '@trend-diary/common':
         specifier: workspace:*
         version: link:../common

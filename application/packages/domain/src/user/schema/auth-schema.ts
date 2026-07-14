@@ -1,9 +1,6 @@
-import type {
-  PasskeyAuthenticationOptionsResponse,
-  PasskeyRegistrationOptionsResponse,
-} from '@supabase/supabase-js'
 import { z } from 'zod'
 
+// 認証プロバイダに依存しない入力検証。クライアントのフォームとサーバのバリデーションで共有するため domain に置く
 export const authInputSchema = z.object({
   email: z.string().email(),
   password: z
@@ -19,60 +16,3 @@ export const authInputSchema = z.object({
 })
 
 export type AuthInput = z.infer<typeof authInputSchema>
-
-/**
- * 認証ユーザーモデル
- */
-export interface AuthenticationUser {
-  id: string
-  email: string
-  emailConfirmedAt?: Date | null
-  createdAt: Date
-}
-
-/**
- * JWTのローカル検証で得られる検証済みセッション
- * NOTE: 毎リクエストのSupabase往復を避けるため、認証ゲートでは認証IDのみを扱う
- */
-export interface VerifiedSession {
-  authenticationId: string
-}
-
-/**
- * 認証セッションモデル
- */
-export interface AuthenticationSession {
-  accessToken: string
-  refreshToken: string
-  expiresIn: number
-  expiresAt?: number
-  user: AuthenticationUser
-}
-
-// options は WebAuthn の資格情報生成／リクエストオプション。Supabase SDK が返す JSON 型をそのまま用いる
-export interface PasskeyRegistrationChallenge {
-  challengeId: string
-  options: PasskeyRegistrationOptionsResponse['options']
-}
-
-export interface PasskeyAuthenticationChallenge {
-  challengeId: string
-  options: PasskeyAuthenticationOptionsResponse['options']
-}
-
-// 真正性はSupabaseが検証するため、ここは形だけ受け取り中身は素通しする
-export const passkeyVerifyInputSchema = z.object({
-  challengeId: z.string().min(1),
-  credential: z.record(z.string(), z.unknown()),
-})
-
-export type PasskeyVerifyInput = z.infer<typeof passkeyVerifyInputSchema>
-
-export interface PasskeyRegistrationResult {
-  id: string
-}
-
-// 無効化(全削除)で個々のpasskeyを指定するためidだけを扱う
-export interface RegisteredPasskey {
-  id: string
-}

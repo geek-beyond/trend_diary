@@ -2,24 +2,21 @@ import { ServerError } from '@trend-diary/common/errors'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { err, ok, type Result } from 'neverthrow'
 
-// Supabase Auth の戻り値。成功時は data を持ち error は null、失敗時は error を持つ判別可能ユニオン。
-interface SupabaseAuthResponse {
-  // oxlint-disable-next-line typescript/no-restricted-types -- SDKごとにdata形状が異なる制約用の器で、具体型は呼び出し時のTResponseが確定するため
-  data: unknown
-  error: Error | null
-}
-
-// 成功ブランチ(error が null)の data 型だけを取り出す。ユニオンを分配し失敗ブランチを never へ畳む。
+// Supabase Auth の戻り値のうち成功ブランチ(error が null)の data 型だけを取り出す。
+// ユニオンを分配し失敗ブランチを never へ畳む。
 type SupabaseAuthData<TResponse> = TResponse extends { error: null; data: infer TData }
   ? TData
   : never
 
 // Supabase Auth SDK は失敗を2経路で表す。通信断など基盤レベルの失敗は例外を投げ、資格情報エラー等の
 // 業務的な失敗は戻り値 { error } で返す。この2経路を単一の Result に畳むことで、ハンドラ側の
-// 「wrapAsyncCall で例外を見た上に { error } も個別に見る」二段分岐を無くし、成功パスを直列に保つ。
-// 例外は原因を特定できないため常に ServerError とし、業務エラーのみ mapError でドメインエラーへ写す
-// （既定は ServerError。401/409 等へ振り分けたいハンドラだけが mapError を渡す）。
-export async function callSupabaseAuth<TResponse extends SupabaseAuthResponse>(
+// 「wrapAsyncCall で例外を見た上に { error } も個別に見る」二段分岐を無くし、エラーは Result(err)
+// でのみ扱えるようにする。例外は原因を特定できないため常に ServerError とし、業務エラーのみ mapError
+// でドメインエラーへ写す（既定は ServerError。401/409 等へ振り分けたいハンドラだけが mapError を渡す）。
+export async function callSupabaseAuth<
+  // oxlint-disable-next-line typescript/no-restricted-types -- SDKごとにdata形状が異なる制約用で、具体型は呼び出し時のTResponseが確定するため
+  TResponse extends { data: unknown; error: Error | null },
+>(
   call: () => Promise<TResponse>,
   mapError: (error: Error) => Error = (error) => new ServerError(error),
 ): Promise<Result<SupabaseAuthData<TResponse>, Error>> {

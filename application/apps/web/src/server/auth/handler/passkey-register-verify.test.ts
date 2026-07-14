@@ -1,6 +1,6 @@
 import { HTTPException } from 'hono/http-exception'
 import type { Mock } from 'vitest'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSupabaseAuthClient, type SupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'

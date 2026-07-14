@@ -1,7 +1,7 @@
 import { AuthError } from '@supabase/supabase-js'
 import { ClientError, handleError, ServerError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/user'
+import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'

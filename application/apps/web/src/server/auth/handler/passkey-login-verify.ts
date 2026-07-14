@@ -1,7 +1,7 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
 import { ClientError, handleError, ServerError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/user'
+import { createAccountUseCase } from '@trend-diary/domain/account'
 import { err, ok } from 'neverthrow'
 import { z } from 'zod'
 import { createSupabaseAuthClient } from '@/infrastructure/supabase'

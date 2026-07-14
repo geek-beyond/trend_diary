@@ -1,4 +1,4 @@
-import { authInputSchema } from '@trend-diary/domain/user'
+import { authInputSchema } from '@trend-diary/domain/account'
 import { Hono } from 'hono'
 import type { Env } from '@/env'
 import { authenticator } from '@/middleware/authenticator'

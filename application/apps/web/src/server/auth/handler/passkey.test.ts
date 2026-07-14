@@ -52,6 +52,9 @@ describe('passkey認証', () => {
         cookies,
       )
       expect(registerVerify.status).toBe(201)
+      const registerVerifyBody: { id: string } = await registerVerify.json()
+      expect(typeof registerVerifyBody.id).toBe('string')
+      expect(registerVerifyBody.id.length).toBeGreaterThan(0)
 
       // 認証: start(未認証で可) → verify(未認証で可) → セッション確立
       const loginStart = await post('/api/auth/passkey/login/start')
@@ -80,6 +83,14 @@ describe('passkey認証', () => {
       expect(res.status).toBe(401)
     })
 
+    it('存在しないchallengeIdでは認証検証に失敗し401を返す', async () => {
+      const res = await post('/api/auth/passkey/login/verify', {
+        challengeId: 'nonexistent-challenge',
+        credential: { id: CREDENTIAL_ID },
+      })
+      expect(res.status).toBe(401)
+    })
+
     it('未ログインで登録を開始すると401を返す', async () => {
       const res = await post('/api/auth/passkey/register/start')
       expect(res.status).toBe(401)
@@ -102,6 +113,17 @@ describe('passkey認証', () => {
         cookies,
       )
       expect(res.status).toBe(422)
+    })
+
+    it('存在しないchallengeIdでは登録検証に失敗し400を返す', async () => {
+      const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+
+      const res = await post(
+        '/api/auth/passkey/register/verify',
+        { challengeId: 'nonexistent-challenge', credential: { id: CREDENTIAL_ID } },
+        cookies,
+      )
+      expect(res.status).toBe(400)
     })
 
     it('challengeId欠落で認証検証すると422を返す', async () => {

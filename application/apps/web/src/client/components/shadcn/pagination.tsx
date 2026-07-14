@@ -51,9 +51,10 @@ function PaginationLink({
     className,
   )
 
-  // href が無い場合はページ遷移ではなくクリックハンドラで処理する操作ボタンのため、<a> ではなく <button> で描画する。
-  // href の無い <a> は generic ロールとなり aria-disabled 等の ARIA 属性が許可されず、ユーザー補助ツリーの監査で不適格になる
-  if (href === undefined) {
+  // href が無い（クリックハンドラで処理する操作）場合、または disabled の場合は <a> ではなく <button> で描画する。
+  // href の無い <a> は generic ロールとなり aria-disabled 等の ARIA 属性が許可されず監査で不適格になる。
+  // また <a> は native disabled を持たないため、disabled 指定時も <button> にしないと無効化の表現・挙動が成立しない
+  if (href === undefined || disabled) {
     return (
       <button
         type='button'

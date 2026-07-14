@@ -2,6 +2,7 @@ import {
   AuthAdminClient,
   type AuthClientConfig,
   PasswordAuthClient,
+  UserAlreadyExistsError,
 } from '@trend-diary/authentication'
 import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import { fromDbId, toDbIds } from '@trend-diary/datastore/rdb/id'
@@ -100,7 +101,7 @@ export async function create(email: string, password: string): Promise<CreateRes
   let authenticationId: string
   if (signUpResult.isErr()) {
     // 既に登録済みならサインインして認証IDを引く。それ以外は想定外の失敗
-    if (signUpResult.error.reason !== 'user_already_exists') {
+    if (!(signUpResult.error instanceof UserAlreadyExistsError)) {
       throw new Error(`Failed to create user: ${signUpResult.error.message}`)
     }
 

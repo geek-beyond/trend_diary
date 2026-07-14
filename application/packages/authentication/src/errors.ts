@@ -1,20 +1,28 @@
-export type AuthErrorReason =
-  | 'invalid_credentials'
-  | 'user_already_exists'
-  | 'registration_failed'
-  | 'passkey_registration_failed'
-  | 'passkey_verification_failed'
-  | 'no_session'
-  | 'unexpected'
+// 認証パッケージが返すカスタムエラー。HTTPステータスやドメインエラーへの写像は行わず、
+// 失敗の種別を型そのもので表す。変換は呼び出し側(ハンドラ)の責務とする。
+export abstract class AuthenticationError extends Error {}
 
-// 認証パッケージ独自のエラー。HTTPステータス等への写像は行わず、失敗の種別(reason)だけを表す。
-// ステータスやドメインエラーへの変換は呼び出し側(ハンドラ)の責務とする。
-export class AuthenticationError extends Error {
-  readonly reason: AuthErrorReason
+export class InvalidCredentialsError extends AuthenticationError {
+  name = 'InvalidCredentialsError'
+}
 
-  constructor(reason: AuthErrorReason, message: string, options?: { cause?: Error }) {
-    super(message, options)
-    this.reason = reason
-    this.name = 'AuthenticationError'
-  }
+export class UserAlreadyExistsError extends AuthenticationError {
+  name = 'UserAlreadyExistsError'
+}
+
+export class PasskeyRegistrationError extends AuthenticationError {
+  name = 'PasskeyRegistrationError'
+}
+
+export class PasskeyVerificationError extends AuthenticationError {
+  name = 'PasskeyVerificationError'
+}
+
+export class NoSessionError extends AuthenticationError {
+  name = 'NoSessionError'
+}
+
+// 例外や想定外の失敗(通信断・空データ等)を表す。
+export class UnexpectedAuthError extends AuthenticationError {
+  name = 'UnexpectedAuthError'
 }

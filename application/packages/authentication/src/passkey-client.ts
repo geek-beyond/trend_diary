@@ -1,6 +1,11 @@
 import type { User } from '@supabase/supabase-js'
 import { err, ok, type Result } from 'neverthrow'
-import { AuthenticationError } from './errors'
+import {
+  type AuthenticationError,
+  PasskeyRegistrationError,
+  PasskeyVerificationError,
+  UnexpectedAuthError,
+} from './errors'
 import {
   type AuthClientConfig,
   createBackendClient,
@@ -27,8 +32,7 @@ export class PasskeyClient {
   async verifyRegistration(params: VerifyRegistrationParams) {
     return callSupabase(
       () => this.client.auth.passkey.verifyRegistration(params),
-      (error) =>
-        new AuthenticationError('passkey_registration_failed', error.message, { cause: error }),
+      (error) => new PasskeyRegistrationError(error.message, { cause: error }),
     )
   }
 
@@ -43,15 +47,10 @@ export class PasskeyClient {
     return (
       await callSupabase(
         () => this.client.auth.passkey.verifyAuthentication(params),
-        (error) =>
-          new AuthenticationError('passkey_verification_failed', error.message, { cause: error }),
+        (error) => new PasskeyVerificationError(error.message, { cause: error }),
       )
     ).andThen(({ user, session }) =>
-      user && session
-        ? ok(user)
-        : err(
-            new AuthenticationError('passkey_verification_failed', 'Passkey authentication failed'),
-          ),
+      user && session ? ok(user) : err(new UnexpectedAuthError('Passkey authentication failed')),
     )
   }
 

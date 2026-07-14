@@ -1,5 +1,5 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
-import { AuthenticationError } from './errors'
+import { UnexpectedAuthError } from './errors'
 
 export interface AuthClientConfig {
   url: string
@@ -21,8 +21,7 @@ export function authClientConfig(context: AuthRequestContext): AuthClientConfig 
   const anonKey = context.env.SUPABASE_ANON_KEY
 
   if (!url || !anonKey) {
-    throw new AuthenticationError(
-      'unexpected',
+    throw new UnexpectedAuthError(
       'Authentication backend is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.',
     )
   }

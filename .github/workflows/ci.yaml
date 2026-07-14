@@ -234,8 +234,8 @@ jobs:
           SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
           # 本番sitekeyはheadlessで解けずトークン取得待ちがflakyになる。サーバーはsecret未設定で検証skipのため、空指定でwrangler.tomlの[vars]を上書きしウィジェットごと無効化して整合させる
           TURNSTILE_SITE_KEY=
-          # 共有エッジキャッシュはE2Eのテスト間分離を壊すため、[vars]のtrueを上書きして無効化する
-          EDGE_CACHE_ENABLED=false
+          # 共有エッジキャッシュはE2Eのテスト間分離を壊すため無効化する（本番は既定で有効）
+          EDGE_CACHE_DISABLED=true
           EOF
 
       # --only-changed は import 依存でテストを選ぶが、E2Eは apps/web を import しないため web の変更を拾えない。web変更のあるPRと main への push は全実行し、それ以外(e2eのみの変更)は差分実行する

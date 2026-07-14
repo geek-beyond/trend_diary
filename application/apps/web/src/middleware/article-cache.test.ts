@@ -3,11 +3,8 @@ import type { Mock } from 'vitest'
 import type { Env } from '@/env'
 import articleCache, { ARTICLE_CACHE_TTL_SECONDS } from './article-cache'
 
-// oxlint-disable-next-line typescript/consistent-type-assertions -- グローバルの caches をテストで差し替えるため
-const globalWithCaches = globalThis as { caches?: unknown }
-
-// Cache API を模した最小のインメモリ実装を caches.default に差し込む
-function installFakeCache(): { match: Mock; put: Mock; store: Map<string, Response> } {
+// Cache API を模した最小のインメモリ実装を caches.default としてスタブする
+function stubEdgeCache(): { match: Mock; put: Mock; store: Map<string, Response> } {
   const store = new Map<string, Response>()
   const match = vi.fn(async (request: Request) => {
     const cached = store.get(request.url)
@@ -16,7 +13,7 @@ function installFakeCache(): { match: Mock; put: Mock; store: Map<string, Respon
   const put = vi.fn(async (request: Request, response: Response) => {
     store.set(request.url, response)
   })
-  globalWithCaches.caches = { default: { match, put } }
+  vi.stubGlobal('caches', { default: { match, put } })
   return { match, put, store }
 }
 
@@ -25,7 +22,7 @@ interface ContextOverrides {
   url?: string
   cookie?: string
   res?: Response
-  cacheEnabled?: string
+  cacheDisabled?: string
 }
 
 function buildContext(overrides: ContextOverrides = {}): {
@@ -41,12 +38,12 @@ function buildContext(overrides: ContextOverrides = {}): {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     }),
-    cacheEnabled = 'true',
+    cacheDisabled,
   } = overrides
   const waitUntil = vi.fn()
   // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
   const c = {
-    env: { EDGE_CACHE_ENABLED: cacheEnabled },
+    env: { EDGE_CACHE_DISABLED: cacheDisabled },
     req: {
       method,
       url,
@@ -65,12 +62,12 @@ describe('articleCache ミドルウェア', () => {
   })
 
   afterEach(() => {
-    delete globalWithCaches.caches
+    vi.unstubAllGlobals()
   })
 
   describe('正常系', () => {
     it('未ログインの GET はキャッシュミス時に next を実行し、200 応答を保存すること', async () => {
-      const { put, store } = installFakeCache()
+      const { put, store } = stubEdgeCache()
       const { c, next, waitUntil } = buildContext()
 
       await articleCache(c, next)
@@ -82,7 +79,7 @@ describe('articleCache ミドルウェア', () => {
     })
 
     it('保存する応答に Cache-Control(s-maxage) を付与すること', async () => {
-      const { store } = installFakeCache()
+      const { store } = stubEdgeCache()
       const { c, next } = buildContext()
 
       await articleCache(c, next)
@@ -94,7 +91,7 @@ describe('articleCache ミドルウェア', () => {
     })
 
     it('キャッシュヒット時は next を実行せずキャッシュ応答を返すこと', async () => {
-      const { store, match } = installFakeCache()
+      const { store, match } = stubEdgeCache()
       store.set(
         'https://example.com/api/articles?page=1',
         new Response('cached-body', { status: 200 }),
@@ -117,10 +114,10 @@ describe('articleCache ミドルウェア', () => {
         name: 'セッション Cookie 付き',
         overrides: { cookie: 'sb-abcd-auth-token=xyz; theme=dark' },
       },
-      { name: 'EDGE_CACHE_ENABLED が無効', overrides: { cacheEnabled: 'false' } },
+      { name: 'EDGE_CACHE_DISABLED が有効', overrides: { cacheDisabled: 'true' } },
       { name: 'GET 以外', overrides: { method: 'POST' } },
     ])('$name はキャッシュせず素通しすること', async ({ overrides }) => {
-      const { match, put } = installFakeCache()
+      const { match, put } = stubEdgeCache()
       const { c, next } = buildContext(overrides)
 
       await articleCache(c, next)
@@ -131,7 +128,7 @@ describe('articleCache ミドルウェア', () => {
     })
 
     it('200 以外の応答はキャッシュしないこと', async () => {
-      const { put } = installFakeCache()
+      const { put } = stubEdgeCache()
       const res = new Response('error', { status: 500 })
       const { c, next } = buildContext({ res })
 

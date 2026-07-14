@@ -18,12 +18,11 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
-    "@supabase/supabase-js": "catalog:",
+    "@supabase/supabase-js": "^2.110.0",
     "@trend-diary/common": "workspace:*",
     "neverthrow": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
     "vitest": "catalog:"
   }
 }

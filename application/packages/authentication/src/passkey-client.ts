@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js'
-import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
+import { AuthenticationError } from './errors'
 import {
   type AuthClientConfig,
   createBackendClient,
@@ -21,49 +21,45 @@ export class PasskeyClient {
   }
 
   async startRegistration() {
-    return callSupabase(
-      () => this.client.auth.passkey.startRegistration(),
-      (error) => new ServerError(`Passkey registration start failed: ${error.message}`),
-    )
+    return callSupabase(() => this.client.auth.passkey.startRegistration())
   }
 
   async verifyRegistration(params: VerifyRegistrationParams) {
     return callSupabase(
       () => this.client.auth.passkey.verifyRegistration(params),
-      (error) => new ClientError(`Passkey registration failed: ${error.message}`, 400),
+      (error) =>
+        new AuthenticationError('passkey_registration_failed', error.message, { cause: error }),
     )
   }
 
   async startAuthentication() {
-    return callSupabase(
-      () => this.client.auth.passkey.startAuthentication(),
-      (error) => new ServerError(`Passkey authentication start failed: ${error.message}`),
-    )
+    return callSupabase(() => this.client.auth.passkey.startAuthentication())
   }
 
   // 成功でも user/session が空なら認証失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
-  async verifyAuthentication(params: VerifyAuthenticationParams): Promise<Result<User, Error>> {
+  async verifyAuthentication(
+    params: VerifyAuthenticationParams,
+  ): Promise<Result<User, AuthenticationError>> {
     return (
       await callSupabase(
         () => this.client.auth.passkey.verifyAuthentication(params),
-        () => new ClientError('Invalid passkey', 401),
+        (error) =>
+          new AuthenticationError('passkey_verification_failed', error.message, { cause: error }),
       )
     ).andThen(({ user, session }) =>
-      user && session ? ok(user) : err(new ServerError('Passkey authentication failed')),
+      user && session
+        ? ok(user)
+        : err(
+            new AuthenticationError('passkey_verification_failed', 'Passkey authentication failed'),
+          ),
     )
   }
 
   async list() {
-    return callSupabase(
-      () => this.client.auth.passkey.list(),
-      (error) => new ServerError(`Passkey list failed: ${error.message}`),
-    )
+    return callSupabase(() => this.client.auth.passkey.list())
   }
 
   async delete(params: DeleteParams) {
-    return callSupabase(
-      () => this.client.auth.passkey.delete(params),
-      (error) => new ServerError(`Passkey deletion failed: ${error.message}`),
-    )
+    return callSupabase(() => this.client.auth.passkey.delete(params))
   }
 }

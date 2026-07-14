@@ -1,8 +1,5 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { ServerError } from '@trend-diary/common/errors'
-
-export type { SupabaseClient }
+import { AuthenticationError } from './errors'
 
 export interface AuthClientConfig {
   url: string
@@ -24,7 +21,8 @@ export function authClientConfig(context: AuthRequestContext): AuthClientConfig 
   const anonKey = context.env.SUPABASE_ANON_KEY
 
   if (!url || !anonKey) {
-    throw new ServerError(
+    throw new AuthenticationError(
+      'unexpected',
       'Authentication backend is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.',
     )
   }
@@ -71,18 +69,3 @@ export function createBackendClient(config: AuthClientConfig) {
 }
 
 export type SupabaseAuthClient = ReturnType<typeof createBackendClient>
-
-// anonキーで動作するクライアント。テストのフィクスチャ準備でのみ使う。
-export function createSupabaseClient(config: { url: string; key: string }): SupabaseClient {
-  return createClient(config.url, config.key)
-}
-
-// service_role権限の管理クライアント。テストの認証ユーザー掃除でのみ使う。
-export function createSupabaseAdminClient(config: {
-  url: string
-  serviceRoleKey: string
-}): SupabaseClient {
-  return createClient(config.url, config.serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-}

@@ -1,5 +1,5 @@
-import { ClientError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
+import { AuthenticationError } from './errors'
 import {
   type AuthClientConfig,
   createBackendClient,
@@ -14,17 +14,17 @@ export class SessionClient {
     this.client = createBackendClient(config)
   }
 
-  // セッション無し・失効はエラーではなく未認証として扱うため、業務エラーも空データも一律 no-session の err に畳む
-  async getClaims(): Promise<Result<{ authenticationId: string }, Error>> {
+  // セッション無し・失効はエラーではなく未認証として扱うため、業務エラーも空データも一律 no_session の err に畳む
+  async getClaims(): Promise<Result<{ authenticationId: string }, AuthenticationError>> {
     return (
       await callSupabase(
         () => this.client.auth.getClaims(),
-        () => new ClientError('No session found', 401),
+        (error) => new AuthenticationError('no_session', error.message, { cause: error }),
       )
     ).andThen((data) =>
       data
         ? ok({ authenticationId: data.claims.sub })
-        : err(new ClientError('No session found', 401)),
+        : err(new AuthenticationError('no_session', 'No session found')),
     )
   }
 }

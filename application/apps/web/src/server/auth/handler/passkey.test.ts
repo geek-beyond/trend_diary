@@ -1,5 +1,5 @@
-import type * as SupabaseModule from '@/infrastructure/supabase'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
+import type * as AuthModule from '@trend-diary/authentication'
+import { authClientConfig } from '@trend-diary/authentication'
 import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
@@ -7,11 +7,11 @@ import * as userHelper from '@/test/helper/user'
 // supa-emuは署名検証をしないため、資格情報は id だけのダミーで登録・認証を通せる
 const CREDENTIAL_ID = 'server-test-passkey-credential'
 
-// 異常系(Supabase例外→500)のみ createSupabaseAuthClient を差し替えたい。既定は実装へ委譲する
+// 異常系(認証基盤の例外→500)のみ authClientConfig を差し替えたい。既定は実装へ委譲する
 // ため、正常系・準正常系は実結合テストのまま挙動を変えない。
-vi.mock('@/infrastructure/supabase', async (importOriginal) => {
-  const actual = await importOriginal<typeof SupabaseModule>()
-  return { ...actual, createSupabaseAuthClient: vi.fn(actual.createSupabaseAuthClient) }
+vi.mock('@trend-diary/authentication', async (importOriginal) => {
+  const actual = await importOriginal<typeof AuthModule>()
+  return { ...actual, authClientConfig: vi.fn(actual.authClientConfig) }
 })
 
 describe('passkey認証', () => {
@@ -81,7 +81,7 @@ describe('passkey認証', () => {
       it('Supabase呼び出しが例外を投げた場合は500を返す', async () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
         // Supabase 障害時に500へ倒れることを検証するため、次の1回だけ throw させる
-        vi.mocked(createSupabaseAuthClient).mockImplementationOnce(() => {
+        vi.mocked(authClientConfig).mockImplementationOnce(() => {
           throw new Error('supabase connection failed')
         })
 
@@ -140,7 +140,7 @@ describe('passkey認証', () => {
       it('Supabase呼び出しが例外を投げた場合は500を返す', async () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
         // Supabase 障害時に500へ倒れることを検証するため、次の1回だけ throw させる
-        vi.mocked(createSupabaseAuthClient).mockImplementationOnce(() => {
+        vi.mocked(authClientConfig).mockImplementationOnce(() => {
           throw new Error('supabase connection failed')
         })
 
@@ -206,7 +206,7 @@ describe('passkey認証', () => {
     describe('異常系', () => {
       it('Supabase呼び出しが例外を投げた場合は500を返す', async () => {
         // Supabase 障害時に500へ倒れることを検証するため、次の1回だけ throw させる
-        vi.mocked(createSupabaseAuthClient).mockImplementationOnce(() => {
+        vi.mocked(authClientConfig).mockImplementationOnce(() => {
           throw new Error('supabase connection failed')
         })
 
@@ -253,7 +253,7 @@ describe('passkey認証', () => {
       it('Supabase呼び出しが例外を投げた場合は500を返す', async () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
         // Supabase 障害時に500へ倒れることを検証するため、次の1回だけ throw させる
-        vi.mocked(createSupabaseAuthClient).mockImplementationOnce(() => {
+        vi.mocked(authClientConfig).mockImplementationOnce(() => {
           throw new Error('supabase connection failed')
         })
 

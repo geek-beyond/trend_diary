@@ -1,13 +1,13 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
-import { coverageConfig } from '../../vitest.coverage'
 
 export default defineConfig({
   test: {
     globals: true,
     include: ['src/**/*.test.ts'],
     watch: false,
-    // supabase-client は SDK 生成とリクエスト→設定の組み立てで、実 Supabase を要する web 統合テストで担保する
-    coverage: coverageConfig({ exclude: ['src/supabase-client.ts'] }),
+    // クライアントの実挙動は実 Supabase(supa-emu)を要するため web の統合テストで担保する。
+    // 本パッケージのユニットテストは Supabase 非依存の純粋ロジックのみを対象とし、カバレッジ閾値は課さない。
+    passWithNoTests: true,
   },
 })

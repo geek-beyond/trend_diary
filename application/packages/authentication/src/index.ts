@@ -1,12 +1,6 @@
+export { AuthAdminClient, type AuthAdminConfig, type AuthUserSummary } from './auth-admin-client'
+export { type AuthErrorReason, AuthenticationError } from './errors'
 export { PasskeyClient } from './passkey-client'
 export { PasswordAuthClient } from './password-auth-client'
 export { SessionClient } from './session-client'
-export {
-  type AuthClientConfig,
-  authClientConfig,
-  type AuthRequestContext,
-  createSupabaseAdminClient,
-  createSupabaseClient,
-  type SupabaseClient,
-} from './supabase-client'
-export { callSupabase } from './supabase-result'
+export { type AuthClientConfig, authClientConfig, type AuthRequestContext } from './supabase-client'

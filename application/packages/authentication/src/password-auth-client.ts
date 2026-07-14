@@ -1,6 +1,6 @@
 import { AuthError, type User } from '@supabase/supabase-js'
-import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
+import { AuthenticationError } from './errors'
 import {
   type AuthClientConfig,
   createBackendClient,
@@ -21,38 +21,40 @@ export class PasswordAuthClient {
   }
 
   // 成功でも user/session が空なら失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
-  async signIn(credentials: PasswordCredentials): Promise<Result<User, Error>> {
+  async signIn(credentials: PasswordCredentials): Promise<Result<User, AuthenticationError>> {
     return (
       await callSupabase(() => this.client.auth.signInWithPassword(credentials), toSignInError)
     ).andThen(({ user, session }) =>
-      user && session ? ok(user) : err(new ServerError('Sign in failed')),
+      user && session ? ok(user) : err(new AuthenticationError('unexpected', 'Sign in failed')),
     )
   }
 
   // 成功でも user が空なら登録失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
-  async signUp(credentials: PasswordCredentials): Promise<Result<User, Error>> {
+  async signUp(credentials: PasswordCredentials): Promise<Result<User, AuthenticationError>> {
     return (await callSupabase(() => this.client.auth.signUp(credentials), toSignUpError)).andThen(
-      ({ user }) => (user ? ok(user) : err(new ServerError('User registration failed'))),
+      ({ user }) =>
+        user
+          ? ok(user)
+          : err(new AuthenticationError('registration_failed', 'User registration failed')),
     )
   }
 
   // 既にログアウト済みでもSupabaseはエラーを返さないため、error は通信・サーバ障害のみを表す
-  async signOut(): Promise<Result<null, Error>> {
+  async signOut(): Promise<Result<null, AuthenticationError>> {
     return callSupabase(async () => ({ ...(await this.client.auth.signOut()), data: null }))
   }
 }
 
-function toSignInError(error: Error): Error {
+function toSignInError(error: Error): AuthenticationError {
   const isInvalidCredentials = error instanceof AuthError && error.code === 'invalid_credentials'
   return isInvalidCredentials
-    ? new ClientError('Invalid email or password', 401)
-    : new ServerError(`Authentication service error: ${error.message}`)
+    ? new AuthenticationError('invalid_credentials', error.message, { cause: error })
+    : new AuthenticationError('unexpected', error.message, { cause: error })
 }
 
-// 既に存在するユーザーは409で明示する。UX上一般的でセキュリティリスクも比較的小さいと判断。
-// NOTE: Supabaseは専用エラー型を提供しないためメッセージ文字列で判定している
-function toSignUpError(error: Error): Error {
+// NOTE: Supabaseは専用エラー型を提供しないためメッセージ文字列で既存ユーザーを判定している
+function toSignUpError(error: Error): AuthenticationError {
   return error.message.includes('already registered')
-    ? new AlreadyExistsError('User already exists')
-    : new ServerError(`Authentication service error: ${error.message}`)
+    ? new AuthenticationError('user_already_exists', error.message, { cause: error })
+    : new AuthenticationError('unexpected', error.message, { cause: error })
 }

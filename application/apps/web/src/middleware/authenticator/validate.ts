@@ -12,7 +12,7 @@ interface AuthValidationSuccess {
 
 type AuthValidationReason = 'no_session' | 'validation_failed' | 'user_not_found'
 
-type AuthValidationError = Error & {
+interface AuthValidationError extends Error {
   reason: AuthValidationReason
 }
 

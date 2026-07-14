@@ -26,7 +26,6 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
 
   const { data, error } = loginResult.value
   if (error) {
-    // 本番GoTrue・supa-emuともに資格情報の誤りはerror.code=invalid_credentialsで返るため、codeのみで判定する
     if (error.code === 'invalid_credentials') {
       throw handleError(new ClientError('Invalid email or password', 401), logger)
     }

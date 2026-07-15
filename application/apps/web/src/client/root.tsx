@@ -1,6 +1,3 @@
-// SSR（サーバ realm）向けに jitless を設定する。ブラウザ側はバンドル読込前に走る
-// head 内インラインscript（ZOD_JITLESS_BOOTSTRAP_SCRIPT）で設定する
-import '@/client/lib/configure-zod'
 import React from 'react'
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
 import {

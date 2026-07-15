@@ -76,5 +76,12 @@ describe('GitHub OAuthコールバック', () => {
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe('/login?oauthError=github')
     })
+
+    it('コード交換に失敗したらエラー種別を添えて元の画面へ戻す', async () => {
+      const res = await apiRequest('/api/oauth/github/callback?code=not-issued')
+
+      expect(res.status).toBe(302)
+      expect(res.headers.get('Location')).toBe('/login?oauthError=github')
+    })
   })
 })

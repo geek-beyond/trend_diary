@@ -32,6 +32,18 @@ describe('GitHub連携解除', () => {
 
       expect(res.status).toBe(204)
     })
+
+    it('未連携でも冪等に成功する', async () => {
+      const email = 'oauth-github-unlink-none@example.com'
+      const { userId, authenticationId } = await userHelper.create(email, TEST_PASSWORD)
+      createdIds.userIds.push(userId)
+      createdIds.authIds.push(authenticationId)
+      const { cookies } = await userHelper.login(email, TEST_PASSWORD)
+
+      const res = await deleteUnlink(cookies)
+
+      expect(res.status).toBe(204)
+    })
   })
 
   describe('準正常系', () => {

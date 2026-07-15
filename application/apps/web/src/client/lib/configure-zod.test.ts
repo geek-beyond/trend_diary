@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 describe('configure-zod', () => {
-  // 副作用適用前の状態へ戻し、各テストの独立性を保つ
+  // 各テストの独立性を保つ
   beforeEach(() => {
     z.config({ jitless: false })
   })

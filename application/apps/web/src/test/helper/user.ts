@@ -1,4 +1,9 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import {
+  AuthAdminClient,
+  type AuthClientConfig,
+  PasswordAuthClient,
+  UserAlreadyExistsError,
+} from '@trend-diary/authentication'
 import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import { fromDbId, toDbIds } from '@trend-diary/datastore/rdb/id'
 import type { ActiveUser } from '@trend-diary/domain/account'
@@ -7,47 +12,44 @@ import app from '@/server'
 import TEST_ENV from '@/test/env'
 import { testRdb as db } from './rdb'
 
-// Supabaseクライアント
-let supabase: SupabaseClient | null = null
-let supabaseAdmin: SupabaseClient | null = null
-
-function getSupabase(): SupabaseClient {
-  if (!supabase) {
-    supabase = createClient(TEST_ENV.SUPABASE_URL, TEST_ENV.SUPABASE_ANON_KEY)
-  }
-  return supabase
+// フィクスチャ用途では Cookie を使わないため素通しにする
+const authConfig: AuthClientConfig = {
+  url: TEST_ENV.SUPABASE_URL,
+  anonKey: TEST_ENV.SUPABASE_ANON_KEY,
+  cookieHeader: '',
+  setCookie: () => undefined,
 }
 
-function getSupabaseAdmin(): SupabaseClient | null {
+let passwordAuth: PasswordAuthClient | null = null
+let authAdmin: AuthAdminClient | null = null
+
+function getPasswordAuth(): PasswordAuthClient {
+  if (!passwordAuth) {
+    passwordAuth = new PasswordAuthClient(authConfig)
+  }
+  return passwordAuth
+}
+
+function getAuthAdmin(): AuthAdminClient | null {
   if (!TEST_ENV.SUPABASE_SERVICE_ROLE_KEY) return null
-  if (!supabaseAdmin) {
-    supabaseAdmin = createClient(TEST_ENV.SUPABASE_URL, TEST_ENV.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
+  if (!authAdmin) {
+    authAdmin = new AuthAdminClient({
+      url: TEST_ENV.SUPABASE_URL,
+      serviceRoleKey: TEST_ENV.SUPABASE_SERVICE_ROLE_KEY,
     })
   }
-  return supabaseAdmin
+  return authAdmin
 }
 
 async function deleteAuthUsersByEmailPattern(emailPattern: string): Promise<void> {
-  const admin = getSupabaseAdmin()
+  const admin = getAuthAdmin()
   if (!admin) return
 
-  let page = 1
-  const perPage = 200
+  const matchedIds = (await admin.listUsers())
+    .filter((user) => (user.email ?? '').includes(emailPattern))
+    .map((user) => user.id)
 
-  while (true) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage })
-    if (error) break
-
-    const matchedIds = data.users
-      .filter((user) => (user.email ?? '').includes(emailPattern))
-      .map((user) => user.id)
-
-    await Promise.all(matchedIds.map((id) => admin.auth.admin.deleteUser(id)))
-
-    if (data.users.length < perPage) break
-    page += 1
-  }
+  await Promise.all(matchedIds.map((id) => admin.deleteUser(id)))
 }
 
 async function createActiveUser(email: string, authenticationId: string): Promise<ActiveUser> {
@@ -92,25 +94,24 @@ export interface CleanUpIds {
 }
 
 export async function create(email: string, password: string): Promise<CreateResult> {
-  const client = getSupabase()
+  const auth = getPasswordAuth()
 
-  const signUpResult = await client.auth.signUp({ email, password })
+  const signUpResult = await auth.signUp({ email, password })
 
   let authenticationId: string
-  if (signUpResult.error) {
-    if (!signUpResult.error.message.includes('User already registered')) {
+  if (signUpResult.isErr()) {
+    // 既に登録済みならサインインして認証IDを引く。それ以外は想定外の失敗
+    if (!(signUpResult.error instanceof UserAlreadyExistsError)) {
       throw new Error(`Failed to create user: ${signUpResult.error.message}`)
     }
 
-    const signInResult = await client.auth.signInWithPassword({ email, password })
-    if (signInResult.error || !signInResult.data.user) {
-      throw new Error(`Failed to create user: ${signInResult.error?.message ?? 'Unknown error'}`)
+    const signInResult = await auth.signIn({ email, password })
+    if (signInResult.isErr()) {
+      throw new Error(`Failed to create user: ${signInResult.error.message}`)
     }
-    authenticationId = signInResult.data.user.id
-  } else if (signUpResult.data.user) {
-    authenticationId = signUpResult.data.user.id
+    authenticationId = signInResult.value.id
   } else {
-    throw new Error('Failed to create user: Unknown error')
+    authenticationId = signUpResult.value.id
   }
 
   const [existingActiveUser] = await db
@@ -127,7 +128,7 @@ export async function create(email: string, password: string): Promise<CreateRes
     : await createActiveUser(email, authenticationId)
 
   // signUp後はログアウトして初期状態にする
-  await client.auth.signOut()
+  await auth.signOut()
 
   return {
     activeUserId: activeUser.activeUserId,
@@ -177,14 +178,12 @@ export async function login(email: string, password: string): Promise<LoginResul
 }
 
 export async function logout(): Promise<void> {
-  const client = getSupabase()
-  await client.auth.signOut()
+  await getPasswordAuth().signOut()
 }
 
 export async function cleanUp(ids: CleanUpIds): Promise<void> {
   // ログアウト
-  const client = getSupabase()
-  await client.auth.signOut()
+  await getPasswordAuth().signOut()
 
   // DBのユーザーをバッチ削除
   if (ids.userIds.length > 0) {
@@ -193,11 +192,11 @@ export async function cleanUp(ids: CleanUpIds): Promise<void> {
     await db.delete(users).where(inArray(users.userId, dbUserIds))
   }
 
-  // Supabase Authのユーザーをバッチ削除
+  // 認証ユーザーをバッチ削除
   if (ids.authIds.length > 0) {
-    const admin = getSupabaseAdmin()
+    const admin = getAuthAdmin()
     if (admin) {
-      await Promise.all(ids.authIds.map((id) => admin.auth.admin.deleteUser(id)))
+      await Promise.all(ids.authIds.map((id) => admin.deleteUser(id)))
     }
   }
 }
@@ -217,11 +216,11 @@ export async function cleanUpByEmailPattern(emailPattern: string): Promise<void>
     await db.delete(activeUsers).where(inArray(activeUsers.userId, userIds))
     await db.delete(users).where(inArray(users.userId, userIds))
 
-    // Supabase Authのユーザーも削除
+    // 認証ユーザーも削除
     if (authIds.length > 0) {
-      const admin = getSupabaseAdmin()
+      const admin = getAuthAdmin()
       if (admin) {
-        await Promise.all(authIds.map((id) => admin.auth.admin.deleteUser(id)))
+        await Promise.all(authIds.map((id) => admin.deleteUser(id)))
       }
     }
   }

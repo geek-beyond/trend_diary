@@ -1,13 +1,12 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
-import { ClientError, handleError, ServerError } from '@trend-diary/common/errors'
+import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
+import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/account'
-import { err, ok } from 'neverthrow'
 import { z } from 'zod'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { callSupabaseAuth } from '../supabase-auth'
+import toAuthError from '../auth-error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
 export const passkeyLoginVerifyInputSchema = z.object({
@@ -23,21 +22,12 @@ export default async function passkeyLoginVerify(c: ZodValidatedContext<PasskeyL
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
-  const client = createSupabaseAuthClient(c)
-  // 成功でも user/session が空なら認証失敗として err に畳み、後段でのResult外エラー処理を無くす
-  const userResult = (
-    await callSupabaseAuth(
-      () =>
-        client.auth.passkey.verifyAuthentication({
-          challengeId: valid.challengeId,
-          credential: valid.credential,
-        }),
-      () => new ClientError('Invalid passkey', 401),
-    )
-  ).andThen(({ user, session }) =>
-    user && session ? ok(user) : err(new ServerError('Passkey authentication failed')),
-  )
-  if (userResult.isErr()) throw handleError(userResult.error, logger)
+  const passkeyClient = new PasskeyClient(authClientConfig(c))
+  const userResult = await passkeyClient.verifyAuthentication({
+    challengeId: valid.challengeId,
+    credential: valid.credential,
+  })
+  if (userResult.isErr()) throw handleError(toAuthError(userResult.error), logger)
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)

@@ -1,4 +1,4 @@
-import type { User, UserIdentity } from '@supabase/supabase-js'
+import type { OAuthResponse, User, UserIdentity } from '@supabase/supabase-js'
 import { err, ok, type Result } from 'neverthrow'
 import { type AuthError, UnexpectedAuthError } from './errors'
 import {
@@ -17,20 +17,28 @@ export class OAuthClient {
     this.client = createBackendClient(config)
   }
 
-  // ブラウザ遷移はサーバ側で行うため skipBrowserRedirect で認可URLの発行だけに留める。url が空なら失敗として畳む
+  // 認可URLの発行はログイン(signInWithOAuth)と連携(linkIdentity)でSDKメソッドだけが異なる。
+  // ブラウザ遷移はサーバ側で行うため skipBrowserRedirect で発行だけに留め、url が空なら失敗として畳む
+  private async startFlow(
+    request: () => Promise<OAuthResponse>,
+    failureLabel: string,
+  ): Promise<Result<{ url: string }, AuthError>> {
+    return (await callSupabase(request)).andThen(({ url }) =>
+      url ? ok({ url }) : err(new UnexpectedAuthError(failureLabel)),
+    )
+  }
+
   async startAuthorization(
     provider: OAuthProvider,
     redirectTo: string,
   ): Promise<Result<{ url: string }, AuthError>> {
-    return (
-      await callSupabase(() =>
+    return this.startFlow(
+      () =>
         this.client.auth.signInWithOAuth({
           provider,
           options: { redirectTo, skipBrowserRedirect: true },
         }),
-      )
-    ).andThen(({ url }) =>
-      url ? ok({ url }) : err(new UnexpectedAuthError('OAuth authorization start failed')),
+      'OAuth authorization start failed',
     )
   }
 
@@ -38,15 +46,13 @@ export class OAuthClient {
     provider: OAuthProvider,
     redirectTo: string,
   ): Promise<Result<{ url: string }, AuthError>> {
-    return (
-      await callSupabase(() =>
+    return this.startFlow(
+      () =>
         this.client.auth.linkIdentity({
           provider,
           options: { redirectTo, skipBrowserRedirect: true },
         }),
-      )
-    ).andThen(({ url }) =>
-      url ? ok({ url }) : err(new UnexpectedAuthError('OAuth link start failed')),
+      'OAuth link start failed',
     )
   }
 

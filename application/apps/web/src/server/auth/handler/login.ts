@@ -1,10 +1,10 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
-import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import toAuthError from '../auth-error'
+import toAuthError from '@/server/error/auth-error'
+import { handleError } from '@/server/error/handle-error'
 import { verifyTurnstile } from '../captcha'
 
 export default async function login(c: ZodValidatedContext<AuthInput>) {

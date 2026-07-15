@@ -1,3 +1,5 @@
+// スキーマ構築より前に効かせる必要があり、他ルートより先に評価される root の先頭で読み込む
+import '@/client/lib/configure-zod'
 import React from 'react'
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
 import {

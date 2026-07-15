@@ -1,11 +1,12 @@
 import { z } from 'zod'
 
 /**
- * Zod v4 はバリデータをJITコンパイルするため、起動後最初の parse で eval 可否を
- * `Function('')` により試行する。script-src に 'unsafe-eval' を持たない本CSPでは、
+ * Zod v4 は最初の `z.object()` 構築時に、eval 可否を `new Function` の実行で判定する
+ * （成否はメモ化され一度きり）。script-src に 'unsafe-eval' を持たない本CSPでは、
  * その試行が try/catch で握りつぶされても securitypolicyviolation として DevTools に報告される。
- * jitless を有効化して試行自体を止める。試行結果はメモ化され一度きりのため、
- * 最初の parse より前（クライアント起動の最初）に呼ぶ必要がある。
+ * jitless を有効化すると判定自体を止められる。ただしメモ化前、すなわち最初のスキーマ構築より
+ * 前に呼ぶ必要がある。ルートモジュールは他ルートのモジュールより先に評価されるため、
+ * その先頭で副作用として呼ぶ（configure-zod 経由）。
  */
 export function disableZodJitForStrictCsp(): void {
   z.config({ jitless: true })

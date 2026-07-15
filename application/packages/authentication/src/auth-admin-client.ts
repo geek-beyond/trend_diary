@@ -10,11 +10,15 @@ export interface AuthUserSummary {
   email: string | null
 }
 
-// service_role 権限を要する認証ユーザーの後始末はテスト専用。本番コードからは使わないこと。
+// service_role 権限を要する認証ユーザーの後始末はテスト専用。
+// 本番で誤用すると service_role 権限を露出させる契約違反になりうるため、テスト環境以外での生成を実行時に禁じる。
 export class AuthAdminClient {
   private readonly client: SupabaseClient
 
   constructor(config: AuthAdminConfig) {
+    if (process.env.NODE_ENV !== 'test') {
+      throw new Error('AuthAdminClient はテスト専用であり、テスト環境以外では生成できません')
+    }
     this.client = createClient(config.url, config.serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })

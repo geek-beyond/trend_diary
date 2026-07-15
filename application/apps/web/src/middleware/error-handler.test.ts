@@ -1,4 +1,3 @@
-import { InvalidCredentialsError, UnexpectedAuthError } from '@trend-diary/authentication'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { Env } from '@/env'
@@ -77,28 +76,6 @@ describe('errorHandler', () => {
 
       expect(res.status).toBe(500)
       expect(logger.error).toHaveBeenCalledWith('Unhandled error', expect.any(Error))
-      expect(discordError).toHaveBeenCalledOnce()
-    })
-
-    it('認証パッケージのカスタムエラーは対応するステータスへ写像しメッセージを保つこと', async () => {
-      const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
-      const res = await errorHandler(
-        new InvalidCredentialsError('invalid login credentials'),
-        buildContext(logger),
-      )
-
-      expect(res.status).toBe(401)
-      expect(await res.json()).toEqual({ message: 'invalid login credentials' })
-      expect(logger.warn).toHaveBeenCalledOnce()
-      expect(discordError).not.toHaveBeenCalled()
-    })
-
-    it('対応表に無い認証エラー(UnexpectedAuthError)は500に倒すこと', async () => {
-      const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
-      const res = await errorHandler(new UnexpectedAuthError('boom'), buildContext(logger))
-
-      expect(res.status).toBe(500)
-      expect(logger.error).toHaveBeenCalledOnce()
       expect(discordError).toHaveBeenCalledOnce()
     })
   })

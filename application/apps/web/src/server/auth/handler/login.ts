@@ -4,6 +4,7 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import toHttpException from '../auth-error'
 import { verifyTurnstile } from '../captcha'
 
 export default async function login(c: ZodValidatedContext<AuthInput>) {
@@ -19,7 +20,7 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const loginResult = await authClient.signIn({ email: valid.email, password: valid.password })
-  if (loginResult.isErr()) throw loginResult.error
+  if (loginResult.isErr()) throw toHttpException(loginResult.error)
 
   const user = loginResult.value
 

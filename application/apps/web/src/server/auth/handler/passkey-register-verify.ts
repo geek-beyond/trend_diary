@@ -3,6 +3,7 @@ import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import toHttpException from '../auth-error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは登録 ceremony 結果を素通しする
 export const passkeyRegisterVerifyInputSchema = z.object({
@@ -25,7 +26,7 @@ export default async function passkeyRegisterVerify(
     challengeId: valid.challengeId,
     credential: valid.credential,
   })
-  if (result.isErr()) throw result.error
+  if (result.isErr()) throw toHttpException(result.error)
 
   logger.info('passkey registration success', { passkeyId: result.value.id })
 

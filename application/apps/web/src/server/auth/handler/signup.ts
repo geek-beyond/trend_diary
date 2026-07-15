@@ -5,6 +5,7 @@ import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/accoun
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import toHttpException from '../auth-error'
 import { verifyTurnstile } from '../captcha'
 
 export default async function signup(c: ZodValidatedContext<AuthInput>) {
@@ -20,7 +21,7 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const userResult = await authClient.signUp({ email: valid.email, password: valid.password })
-  if (userResult.isErr()) throw userResult.error
+  if (userResult.isErr()) throw toHttpException(userResult.error)
 
   const user = userResult.value
 

@@ -9,7 +9,7 @@ import {
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { isArticleMedia } from '@trend-diary/domain/article/media'
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
-import { useSearchParams } from 'react-router'
+import { useLocation, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
@@ -117,8 +117,18 @@ const applyDatePresetToSearchParams = (
   params.set('to', to)
 }
 
+// page=1 は既定ページのためクエリから除き URL を素にする。1 より大きいときだけ page を持たせる
+const applyPageToSearchParams = (params: URLSearchParams, targetPage: number) => {
+  if (targetPage > 1) {
+    params.set('page', targetPage.toString())
+  } else {
+    params.delete('page')
+  }
+}
+
 export default function useArticles(isLoggedIn = false) {
   const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
   const isMobile = useIsMobile()
   const { client, apiCall } = createSWRFetcher()
 
@@ -254,13 +264,19 @@ export default function useArticles(isLoggedIn = false) {
 
   const handlePageChange = (newPage: number) => {
     const newParams = new URLSearchParams(searchParams)
-    if (newPage > 1) {
-      newParams.set('page', newPage.toString())
-    } else {
-      newParams.delete('page')
-    }
+    applyPageToSearchParams(newParams, newPage)
 
     setSearchParams(newParams)
+  }
+
+  // 検索エンジンがページ送りをたどれるよう、前へ／次へに実体のある href を持たせるためのリンク先を組み立てる。
+  // SPA 遷移（setSearchParams）後の URL と一致するよう、handlePageChange と同じ page 付与ルールを使う
+  const buildPagePath = (targetPage: number) => {
+    const newParams = new URLSearchParams(searchParams)
+    applyPageToSearchParams(newParams, targetPage)
+
+    const queryString = newParams.toString()
+    return queryString ? `${location.pathname}?${queryString}` : location.pathname
   }
 
   const clearPageParam = (params: URLSearchParams) => {
@@ -311,11 +327,15 @@ export default function useArticles(isLoggedIn = false) {
     setSearchParams(newParams)
   }
 
+  const resolvedPage = data?.page || params.page
+
   return {
     date,
     articles: data?.data || [],
     updateArticleReadState,
-    page: data?.page || params.page,
+    page: resolvedPage,
+    prevPageHref: buildPagePath(resolvedPage - 1),
+    nextPageHref: buildPagePath(resolvedPage + 1),
     limit: data?.limit || params.limit,
     totalPages: data?.totalPages || 1,
     isLoading,

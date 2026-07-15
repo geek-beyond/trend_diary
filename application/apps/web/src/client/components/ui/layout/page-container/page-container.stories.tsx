@@ -19,6 +19,8 @@ export const Default: Story = {
   play: async ({ canvas }) => {
     const content = canvas.getByText('本文コンテンツ')
     await expect(content).toBeInTheDocument()
+    // スクリーンリーダー向けに本文を main ランドマークとして公開することを確認する
+    await expect(canvas.getByRole('main')).toContainElement(content)
     // 残り高さを埋める flex-1 が付いていることを確認する
     await expect(content.parentElement).toHaveClass('flex-1')
   },

@@ -599,6 +599,37 @@ describe('useArticles', () => {
         { init: { credentials: 'include' } },
       )
     })
+
+    it('前へ・次へのリンク先(href)が前後のページを指す（検索エンジンがたどれるようにする）', async () => {
+      mockApiClient.articles.$get.mockResolvedValue(
+        generateFakeResponse({ page: 2, totalPages: 3 }),
+      )
+
+      const { result } = setupHook(['/?page=2'])
+
+      await waitFor(() => {
+        expect(result.current.page).toBe(2)
+      })
+
+      // page=1 は既定ページのため href からは page を落として素の URL にする
+      expect(result.current.prevPageHref).toBe('/')
+      expect(result.current.nextPageHref).toBe('/?page=3')
+    })
+
+    it('リンク先(href)は page 以外の絞り込みクエリを保持する', async () => {
+      mockApiClient.articles.$get.mockResolvedValue(
+        generateFakeResponse({ page: 2, totalPages: 3 }),
+      )
+
+      const { result } = setupHook(['/?media=qiita&page=2'])
+
+      await waitFor(() => {
+        expect(result.current.page).toBe(2)
+      })
+
+      expect(result.current.prevPageHref).toBe('/?media=qiita')
+      expect(result.current.nextPageHref).toBe('/?media=qiita&page=3')
+    })
   })
 
   describe('APIのエラーケース', () => {

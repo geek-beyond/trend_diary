@@ -29,6 +29,8 @@ export default function Trends() {
     hasError,
     page,
     totalPages,
+    prevPageHref,
+    nextPageHref,
     date,
     handleFiltersApply,
     toPreviousPage,
@@ -65,6 +67,8 @@ export default function Trends() {
         hasError={hasError}
         page={page}
         totalPages={totalPages}
+        prevPageHref={prevPageHref}
+        nextPageHref={nextPageHref}
         selectedMedia={selectedMedia}
         toPreviousPage={toPreviousPage}
         toNextPage={toNextPage}

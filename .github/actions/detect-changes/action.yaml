@@ -76,7 +76,7 @@ runs:
         has() { grep -qx "$1" <<<"$names"; }
 
         items=""
-        for p in common datastore domain notification cron; do
+        for p in common datastore domain notification authentication cron; do
           if has "$p"; then items="${items}\"${p}\","; fi
         done
         packages="[${items%,}]"

@@ -38,5 +38,7 @@ export interface Env {
 declare module 'react-router' {
   interface AppLoadContext {
     cloudflare: { env: Env['Bindings'] }
+    // secureHeaders が生成する CSP nonce。<Scripts> 等のインラインscript許可に使う
+    nonce?: string
   }
 }

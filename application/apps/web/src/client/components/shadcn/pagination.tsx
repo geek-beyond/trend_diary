@@ -30,23 +30,51 @@ function PaginationItem({ ...props }: React.ComponentProps<'li'>) {
 
 type PaginationLinkProps = {
   isActive?: boolean
+  disabled?: boolean
 } & Pick<React.ComponentProps<typeof Button>, 'size'> &
   React.ComponentProps<'a'>
 
-function PaginationLink({ className, isActive, size = 'icon', ...props }: PaginationLinkProps) {
+function PaginationLink({
+  className,
+  isActive,
+  disabled,
+  size = 'icon',
+  href,
+  ...props
+}: PaginationLinkProps) {
+  const sharedClassName = cn(
+    buttonVariants({
+      variant: isActive ? 'outline' : 'ghost',
+      size,
+    }),
+    'cursor-pointer',
+    className,
+  )
+
+  // href が無い（クリックハンドラで処理する操作）場合、または disabled の場合は <a> ではなく <button> で描画する。
+  // href の無い <a> は generic ロールとなり aria-disabled 等の ARIA 属性が許可されず監査で不適格になる。
+  // また <a> は native disabled を持たないため、disabled 指定時も <button> にしないと無効化の表現・挙動が成立しない
+  if (href === undefined || disabled) {
+    return (
+      <button
+        type='button'
+        disabled={disabled}
+        aria-current={isActive ? 'page' : undefined}
+        data-slot='pagination-link'
+        data-active={isActive}
+        className={sharedClassName}
+        {...(props as React.ComponentProps<'button'>)}
+      />
+    )
+  }
+
   return (
     <a
+      href={href}
       aria-current={isActive ? 'page' : undefined}
       data-slot='pagination-link'
       data-active={isActive}
-      className={cn(
-        buttonVariants({
-          variant: isActive ? 'outline' : 'ghost',
-          size,
-        }),
-        'cursor-pointer',
-        className,
-      )}
+      className={sharedClassName}
       {...props}
     />
   )

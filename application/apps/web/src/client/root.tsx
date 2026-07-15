@@ -1,5 +1,5 @@
 import React from 'react'
-import type { MetaFunction } from 'react-router'
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
 import {
   isRouteErrorResponse,
   Links,
@@ -8,6 +8,7 @@ import {
   Scripts,
   ScrollRestoration,
   useRouteError,
+  useRouteLoaderData,
 } from 'react-router'
 import './styles.css'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
@@ -44,7 +45,14 @@ export const meta: MetaFunction = () => [
   { tagName: 'link', rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
 ]
 
+// secureHeaders が生成した nonce を Layout 側で参照し、インラインscriptのCSP許可に使う
+export function loader({ context }: LoaderFunctionArgs) {
+  return { nonce: context.nonce }
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  // Layoutはエラー描画時もrootのloaderData（成功済み）を参照できるため useRouteLoaderData を使う
+  const nonce = useRouteLoaderData<typeof loader>('root')?.nonce
   return (
     // next-themesがハイドレーション前にhtmlへdarkクラスを付与するため、SSRとの差分警告を抑止する
     <html lang='ja' suppressHydrationWarning={true}>
@@ -55,10 +63,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name='viewport' content='width=device-width, initial-scale=1.0' />
       </head>
       <body>
-        <ThemeProvider>
+        <ThemeProvider nonce={nonce}>
           {children}
-          <ScrollRestoration />
-          <Scripts />
+          <ScrollRestoration nonce={nonce} />
+          <Scripts nonce={nonce} />
           <Toaster position='top-left' visibleToasts={3} richColors={true} expand={true} />
         </ThemeProvider>
       </body>

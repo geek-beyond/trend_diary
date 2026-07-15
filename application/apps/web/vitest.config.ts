@@ -33,6 +33,7 @@ export default defineConfig(() => {
               'src/server.test.ts',
               'src/server/**/*.test.ts',
               'src/middleware/**/*.test.ts',
+              'src/common/**/*.test.ts',
             ],
           },
         },

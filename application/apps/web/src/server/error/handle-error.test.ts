@@ -1,10 +1,8 @@
+import { ClientError, ExternalServiceError, ServerError } from '@trend-diary/common/errors'
+import Logger from '@trend-diary/common/logger'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it, vi } from 'vitest'
-import Logger from '../logger'
-import ClientError from './client-error/client-error'
-import ExternalServiceError from './external-service-error'
-import handleError from './handle'
-import ServerError from './server-error'
+import { handleError } from './handle-error'
 
 // 実際のLoggerインスタンスのメソッドをスパイすることで、型のバイパス（二重アサーション）を避ける
 const createLoggerWithSpies = () => {

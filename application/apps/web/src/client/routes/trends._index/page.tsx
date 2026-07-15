@@ -1,4 +1,3 @@
-import { toJaDateString } from '@trend-diary/common/locale'
 import type { MouseEvent } from 'react'
 import { Button } from '@/client/components/shadcn/button'
 import {
@@ -22,6 +21,7 @@ import {
   type SelectedMedia,
 } from '@/client/features/article'
 import { scrollToTop } from '@/client/lib/scroll'
+import { toJaDateString } from '@/common/locale/date'
 
 // ローディング中に一覧領域を埋めるスケルトン枚数。1ページの件数に近い枚数で領域の急な伸縮を抑える
 const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`)

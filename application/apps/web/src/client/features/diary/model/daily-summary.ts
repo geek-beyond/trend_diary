@@ -1,4 +1,4 @@
-import { toTodayJstDateString } from '@trend-diary/common/locale/date'
+import { toTodayJstDateString } from '@/common/locale/date'
 
 interface SourceSummary {
   read: number

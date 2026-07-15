@@ -1,6 +1,6 @@
-import * as dateModule from '@trend-diary/common/locale/date'
 import { err, ok } from 'neverthrow'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as dateModule from '@/common/locale/date'
 import { getTodayJst, sumSourceSummary } from './daily-summary'
 
 describe('daily-summary', () => {

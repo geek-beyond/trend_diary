@@ -1,12 +1,10 @@
+import { ClientError, ExternalServiceError, ServerError } from '@trend-diary/common/errors'
+import type { LoggerType } from '@trend-diary/common/logger'
 import { HTTPException } from 'hono/http-exception'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
-import type { LoggerType } from '../logger'
-import ClientError from './client-error/client-error'
-import ExternalServiceError from './external-service-error'
-import ServerError from './server-error'
 
 // oxlint-disable-next-line typescript/no-restricted-types -- throwされる値は任意の型を取り得るため、エラーハンドラの入力は事前に型を確定できないため
-export default function handleError(error: unknown, logger: LoggerType): HTTPException {
+export function handleError(error: unknown, logger: LoggerType): HTTPException {
   if (error instanceof ClientError) {
     logger.warn('client error', error)
     // oxlint-disable-next-line typescript/consistent-type-assertions -- statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため

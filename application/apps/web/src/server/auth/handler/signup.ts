@@ -1,10 +1,10 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
-import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import { handleError } from '@/server/handle-error'
 import toAuthError from '../auth-error'
 import { verifyTurnstile } from '../captcha'
 

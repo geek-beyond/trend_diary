@@ -1,10 +1,10 @@
-import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { DIARY_DAYS } from '@trend-diary/domain/article/diary'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedParamJsonContext } from '@/middleware/zod-validator'
+import { handleError } from '@/server/handle-error'
 
 const MS_PER_MINUTE = 60 * 1000
 const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE

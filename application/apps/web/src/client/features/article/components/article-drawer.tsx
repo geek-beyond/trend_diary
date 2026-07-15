@@ -1,4 +1,3 @@
-import { toJaDateString } from '@trend-diary/common/locale'
 import { Calendar, Check, ExternalLink, User, X } from 'lucide-react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -13,6 +12,7 @@ import {
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
 import { cn } from '@/client/components/shadcn/lib/utils'
 import type { Article } from '@/client/features/article/hooks/use-articles'
+import { toJaDateString } from '@/common/locale/date'
 import MediaIcon, { toMediaType } from './media-icon'
 
 const DESCRIPTION_TOGGLE_THRESHOLD = 100

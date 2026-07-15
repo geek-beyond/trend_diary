@@ -3,6 +3,9 @@ import { type ComponentProps, createElement } from 'react'
 import { ALL_MEDIA, type Article } from '@/client/features/article'
 import TrendsPage from './page'
 
+// ページ送りクリックで呼ばれる scrollToTop（window.scrollTo）を jsdom 向けに補う
+Object.defineProperty(window, 'scrollTo', { writable: true, value: vi.fn() })
+
 // FilterPanel が参照する matchMedia を jsdom 向けに補う
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -105,5 +108,72 @@ describe('TrendsPage', () => {
     expect(screen.queryByText('テスト記事タイトル')).not.toBeInTheDocument()
     expect(screen.queryByText('記事がありません')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '再試行' })).not.toBeInTheDocument()
+  })
+
+  // ページ送りは遷移リンクではなくクリック操作のため、ユーザー補助ツリー上も button ロールで露出させ aria 属性の不整合を避ける
+  describe('ページネーション', () => {
+    it('前へ・次へは button ロールで公開される', () => {
+      render(
+        createElement(
+          TrendsPage,
+          buildProps({ articles: [buildArticle()], page: 2, totalPages: 3 }),
+        ),
+      )
+
+      expect(screen.getByRole('button', { name: 'Go to previous page' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Go to next page' })).toBeInTheDocument()
+    })
+
+    it('先頭ページでは前へが無効・次へが有効になる', () => {
+      render(
+        createElement(
+          TrendsPage,
+          buildProps({ articles: [buildArticle()], page: 1, totalPages: 3 }),
+        ),
+      )
+
+      expect(screen.getByRole('button', { name: 'Go to previous page' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Go to next page' })).toBeEnabled()
+    })
+
+    it('最終ページでは次へが無効・前へが有効になる', () => {
+      render(
+        createElement(
+          TrendsPage,
+          buildProps({ articles: [buildArticle()], page: 3, totalPages: 3 }),
+        ),
+      )
+
+      expect(screen.getByRole('button', { name: 'Go to next page' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Go to previous page' })).toBeEnabled()
+    })
+
+    it('次へを押すと次ページへ遷移する', () => {
+      const toNextPage = vi.fn()
+      render(
+        createElement(
+          TrendsPage,
+          buildProps({ articles: [buildArticle()], page: 1, totalPages: 3, toNextPage }),
+        ),
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'Go to next page' }))
+
+      expect(toNextPage).toHaveBeenCalledWith(1)
+    })
+
+    it('前へを押すと前ページへ遷移する', () => {
+      const toPreviousPage = vi.fn()
+      render(
+        createElement(
+          TrendsPage,
+          buildProps({ articles: [buildArticle()], page: 2, totalPages: 3, toPreviousPage }),
+        ),
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'Go to previous page' }))
+
+      expect(toPreviousPage).toHaveBeenCalledWith(2)
+    })
   })
 })

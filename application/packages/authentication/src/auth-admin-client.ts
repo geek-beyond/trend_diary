@@ -10,8 +10,7 @@ export interface AuthUserSummary {
   email: string | null
 }
 
-// service_role 権限で認証ユーザーを管理するクライアント。テストの後始末でのみ使う。
-// バックエンド(Supabase)はコンストラクタ内へ隠蔽し、呼び出し側へ生のクライアントや型を露出しない。
+// service_role 権限を要する認証ユーザーの後始末はテスト専用。本番コードからは使わないこと。
 export class AuthAdminClient {
   private readonly client: SupabaseClient
 
@@ -21,22 +20,11 @@ export class AuthAdminClient {
     })
   }
 
+  // テストで作られるユーザー数は十分小さいため1ページで足りる
   async listUsers(): Promise<AuthUserSummary[]> {
-    const summaries: AuthUserSummary[] = []
-    const perPage = 200
-    let page = 1
-
-    while (true) {
-      const { data, error } = await this.client.auth.admin.listUsers({ page, perPage })
-      if (error) break
-
-      summaries.push(...data.users.map((user) => ({ id: user.id, email: user.email ?? null })))
-
-      if (data.users.length < perPage) break
-      page += 1
-    }
-
-    return summaries
+    const { data, error } = await this.client.auth.admin.listUsers({ page: 1, perPage: 1000 })
+    if (error) return []
+    return data.users.map((user) => ({ id: user.id, email: user.email ?? null }))
   }
 
   async deleteUser(id: string): Promise<void> {

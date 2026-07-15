@@ -1,6 +1,5 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/browser'
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
-import { handleError } from '@trend-diary/common/errors'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
@@ -26,7 +25,7 @@ export default async function passkeyRegisterVerify(
     challengeId: valid.challengeId,
     credential: valid.credential,
   })
-  if (result.isErr()) throw handleError(result.error, logger)
+  if (result.isErr()) throw result.error
 
   logger.info('passkey registration success', { passkeyId: result.value.id })
 

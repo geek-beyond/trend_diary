@@ -1,5 +1,4 @@
 import { toJaDateString } from '@trend-diary/common/locale'
-import { twMerge } from 'tailwind-merge'
 import { Button } from '@/client/components/shadcn/button'
 import {
   Pagination,
@@ -26,11 +25,8 @@ import { scrollToTop } from '@/client/lib/scroll'
 // ローディング中に一覧領域を埋めるスケルトン枚数。1ページの件数に近い枚数で領域の急な伸縮を抑える
 const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`)
 
-const getPaginationClass = (isDisabled: boolean) =>
-  twMerge(
-    'border-solid border border-b-border cursor-pointer',
-    isDisabled ? 'opacity-50 cursor-not-allowed' : '',
-  )
+// 無効時の淡色化・クリック抑止は buttonVariants の disabled: スタイルが担うため、ここでは枠線とカーソルのみ指定する
+const PAGINATION_LINK_CLASS = 'border-solid border border-b-border cursor-pointer'
 
 const DEFAULT_FILTERS: FilterParams = {
   media: ALL_MEDIA,
@@ -152,17 +148,13 @@ function ArticleList({
   const isNextDisabled = page >= totalPages
 
   const handlePrevPageClick = () => {
-    if (!isPrevDisabled) {
-      toPreviousPage(page)
-      scrollToTop()
-    }
+    toPreviousPage(page)
+    scrollToTop()
   }
 
   const handleNextPageClick = () => {
-    if (!isNextDisabled) {
-      toNextPage(page)
-      scrollToTop()
-    }
+    toNextPage(page)
+    scrollToTop()
   }
 
   return (
@@ -183,7 +175,7 @@ function ArticleList({
           <PaginationItem>
             <PaginationPrevious
               disabled={isPrevDisabled}
-              className={getPaginationClass(isPrevDisabled)}
+              className={PAGINATION_LINK_CLASS}
               onClick={handlePrevPageClick}
             />
           </PaginationItem>
@@ -195,7 +187,7 @@ function ArticleList({
           <PaginationItem>
             <PaginationNext
               disabled={isNextDisabled}
-              className={getPaginationClass(isNextDisabled)}
+              className={PAGINATION_LINK_CLASS}
               onClick={handleNextPageClick}
             />
           </PaginationItem>

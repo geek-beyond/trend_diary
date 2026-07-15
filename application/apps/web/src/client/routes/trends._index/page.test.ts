@@ -3,6 +3,9 @@ import { type ComponentProps, createElement } from 'react'
 import { ALL_MEDIA, type Article } from '@/client/features/article'
 import TrendsPage from './page'
 
+// ページ送りクリックで呼ばれる scrollToTop（window.scrollTo）を jsdom 向けに補う
+Object.defineProperty(window, 'scrollTo', { writable: true, value: vi.fn() })
+
 // FilterPanel が参照する matchMedia を jsdom 向けに補う
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

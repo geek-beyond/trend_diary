@@ -23,7 +23,6 @@ export default async function handleRequest(
   // free to delete this parameter in your app if you're not using it!
   loadContext: AppLoadContext,
 ) {
-  // React 自身がbootstrap・ストリーミング用に挿入するインラインscriptへCSP nonceを付与する
   const nonce = loadContext.nonce
   let statusCode = responseStatusCode
   const body = await renderToReadableStream(

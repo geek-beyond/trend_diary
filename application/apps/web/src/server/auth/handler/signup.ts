@@ -4,8 +4,8 @@ import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/accoun
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/handle-error'
-import toAuthError from '../auth-error'
+import toAuthError from '@/server/error/auth-error'
+import { handleError } from '@/server/error/handle-error'
 import { verifyTurnstile } from '../captcha'
 
 export default async function signup(c: ZodValidatedContext<AuthInput>) {

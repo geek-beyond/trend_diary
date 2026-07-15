@@ -12,7 +12,7 @@ import { z } from 'zod'
 import { toTodayJstDateString } from '@/common/locale/date'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/handle-error'
+import { handleError } from '@/server/error/handle-error'
 
 const DATE_STRING_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const DIARY_DATE_MESSAGE = 'date must be a valid JST date'

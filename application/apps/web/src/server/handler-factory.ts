@@ -62,7 +62,7 @@ import type { ContentfulStatusCode, StatusCode } from 'hono/utils/http-status'
 import { type Result } from 'neverthrow'
 import type { Env, SessionUser } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
-import { handleError } from '@/server/handle-error'
+import { handleError } from '@/server/error/handle-error'
 
 // コンテキストの型定義
 // oxlint-disable-next-line typescript/no-restricted-types -- ハンドラ側で具象型を指定するまでの既定値で、任意形状を受け入れる必要があるため

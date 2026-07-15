@@ -8,10 +8,6 @@
 import { StrictMode, startTransition } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { HydratedRouter } from 'react-router/dom'
-import { disableZodJitForStrictCsp } from '@/client/lib/zod'
-
-// ハイドレーション前に呼び、最初の parse より先に Zod の eval 試行を止める
-disableZodJitForStrictCsp()
 
 startTransition(() => {
   hydrateRoot(

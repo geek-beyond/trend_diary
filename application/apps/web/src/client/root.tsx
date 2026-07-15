@@ -1,3 +1,5 @@
+// Zod の JIT を最初のスキーマ構築より前に無効化する。ルートモジュールは最初に評価されるため先頭で読み込む
+import '@/client/lib/configure-zod'
 import React from 'react'
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
 import {

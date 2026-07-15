@@ -1,10 +1,8 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/browser'
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
-import { handleError } from '@trend-diary/common/errors'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import toAuthError from '../auth-error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは登録 ceremony 結果を素通しする
 export const passkeyRegisterVerifyInputSchema = z.object({
@@ -27,7 +25,7 @@ export default async function passkeyRegisterVerify(
     challengeId: valid.challengeId,
     credential: valid.credential,
   })
-  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
+  if (result.isErr()) throw result.error
 
   logger.info('passkey registration success', { passkeyId: result.value.id })
 

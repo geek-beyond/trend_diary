@@ -1,7 +1,7 @@
 import { AuthError, type User } from '@supabase/supabase-js'
 import { err, ok, type Result } from 'neverthrow'
 import {
-  type AuthenticationError,
+  type AuthError as AuthClientError,
   InvalidCredentialsError,
   UnexpectedAuthError,
   UserAlreadyExistsError,
@@ -26,7 +26,7 @@ export class PasswordAuthClient {
   }
 
   // 成功でも user/session が空なら失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
-  async signIn(credentials: PasswordCredentials): Promise<Result<User, AuthenticationError>> {
+  async signIn(credentials: PasswordCredentials): Promise<Result<User, AuthClientError>> {
     return (
       await callSupabase(() => this.client.auth.signInWithPassword(credentials), toSignInError)
     ).andThen(({ user, session }) =>
@@ -35,28 +35,28 @@ export class PasswordAuthClient {
   }
 
   // 成功でも user が空なら登録失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
-  async signUp(credentials: PasswordCredentials): Promise<Result<User, AuthenticationError>> {
+  async signUp(credentials: PasswordCredentials): Promise<Result<User, AuthClientError>> {
     return (await callSupabase(() => this.client.auth.signUp(credentials), toSignUpError)).andThen(
       ({ user }) => (user ? ok(user) : err(new UnexpectedAuthError('User registration failed'))),
     )
   }
 
   // 既にログアウト済みでもSupabaseはエラーを返さないため、error は通信・サーバ障害のみを表す
-  async signOut(): Promise<Result<null, AuthenticationError>> {
+  async signOut(): Promise<Result<null, AuthClientError>> {
     return callSupabase(async () => ({ ...(await this.client.auth.signOut()), data: null }))
   }
 }
 
-function toSignInError(error: Error): AuthenticationError {
+function toSignInError(error: Error): AuthClientError {
   const isInvalidCredentials = error instanceof AuthError && error.code === 'invalid_credentials'
   return isInvalidCredentials
-    ? new InvalidCredentialsError(error.message, { cause: error })
-    : new UnexpectedAuthError(error.message, { cause: error })
+    ? new InvalidCredentialsError(error.message)
+    : new UnexpectedAuthError(error.message)
 }
 
 // NOTE: Supabaseは専用エラー型を提供しないためメッセージ文字列で既存ユーザーを判定している
-function toSignUpError(error: Error): AuthenticationError {
+function toSignUpError(error: Error): AuthClientError {
   return error.message.includes('already registered')
-    ? new UserAlreadyExistsError(error.message, { cause: error })
-    : new UnexpectedAuthError(error.message, { cause: error })
+    ? new UserAlreadyExistsError(error.message)
+    : new UnexpectedAuthError(error.message)
 }

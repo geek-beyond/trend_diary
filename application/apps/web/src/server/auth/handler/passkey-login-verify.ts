@@ -26,7 +26,7 @@ export default async function passkeyLoginVerify(c: ZodValidatedContext<PasskeyL
     challengeId: valid.challengeId,
     credential: valid.credential,
   })
-  if (userResult.isErr()) throw userResult.error
+  if (userResult.isErr()) throw handleError(userResult.error, logger)
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)

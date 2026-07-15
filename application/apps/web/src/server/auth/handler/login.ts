@@ -19,7 +19,7 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const loginResult = await authClient.signIn({ email: valid.email, password: valid.password })
-  if (loginResult.isErr()) throw loginResult.error
+  if (loginResult.isErr()) throw handleError(loginResult.error, logger)
 
   const user = loginResult.value
 

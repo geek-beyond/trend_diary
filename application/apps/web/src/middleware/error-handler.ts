@@ -1,11 +1,9 @@
-import { AuthenticationError } from '@trend-diary/authentication'
 import type { LoggerType } from '@trend-diary/common/logger'
 import Logger from '@trend-diary/common/logger'
 import { DiscordNotifier } from '@trend-diary/notification'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { Env } from '../env'
-import toAuthError from '../server/auth/auth-error'
 import CONTEXT_KEY from './context'
 
 export interface RequestInfo {
@@ -17,9 +15,6 @@ export interface RequestInfo {
 const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
   // errorHandler はロガーミドルウェア確立前にも起動しうるため、未設定の可能性を型に残す
   const logger: LoggerType | undefined = c.get(CONTEXT_KEY.APP_LOG)
-
-  // 認証パッケージのカスタムエラーはここで HTTPException へ写像し、ハンドラ毎に変換を挟まない
-  const normalizedError = err instanceof AuthenticationError ? toAuthError(err) : err
 
   // Discord通知を送信（5xxエラーの場合）
   const discordWebhookUrl = c.env.DISCORD_WEBHOOK_URL
@@ -34,54 +29,54 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
     discordWebhookUrl,
     logger ?? new Logger(c.env.LOG_LEVEL || 'info'),
   )
-  if (normalizedError instanceof HTTPException) {
-    if (normalizedError.status >= 500) {
+  if (err instanceof HTTPException) {
+    if (err.status >= 500) {
       if (logger && typeof logger.error === 'function') {
         logger.error(
           {
             msg: 'http exception',
-            status: normalizedError.status,
+            status: err.status,
             path: c.req.path,
             method: c.req.method,
           },
-          normalizedError,
+          err,
         )
       } else {
         // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
-        console.error('http exception', normalizedError)
+        console.error('http exception', err)
       }
     } else if (logger && typeof logger.warn === 'function') {
       logger.warn({
         msg: 'http exception',
-        status: normalizedError.status,
+        status: err.status,
         path: c.req.path,
         method: c.req.method,
       })
     } else {
       // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
-      console.warn('http exception', normalizedError)
+      console.warn('http exception', err)
     }
 
-    if (normalizedError.status >= 500) await discordNotifier.error(normalizedError, requestInfo)
+    if (err.status >= 500) await discordNotifier.error(err, requestInfo)
 
     return c.json(
       {
-        message: normalizedError.message,
+        message: err.message,
       },
       {
-        status: normalizedError.status,
+        status: err.status,
       },
     )
   }
 
   // 予期しないエラーの場合
   if (logger && typeof logger.error === 'function') {
-    logger.error('Unhandled error', normalizedError)
+    logger.error('Unhandled error', err)
   } else {
     // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
-    console.error('Unhandled error', normalizedError)
+    console.error('Unhandled error', err)
   }
-  await discordNotifier.error(normalizedError, requestInfo)
+  await discordNotifier.error(err, requestInfo)
 
   return c.json('Internal Server Error', { status: 500 })
 }

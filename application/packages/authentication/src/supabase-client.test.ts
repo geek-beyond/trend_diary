@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { AuthenticationError } from './errors'
+import { UnexpectedAuthError } from './errors'
 import { authClientConfig, type AuthRequestContext } from './supabase-client'
 
 // Cookie の入出力とバックエンド生成は実 Supabase(supa-emu)を要するため web 統合テストで担保する。
@@ -46,8 +46,8 @@ describe('authClientConfig', () => {
       { name: 'URL 未設定', env: { SUPABASE_ANON_KEY: 'anon-key' } },
       { name: 'anonKey 未設定', env: { SUPABASE_URL: 'http://localhost:54321' } },
       { name: '両方未設定', env: {} },
-    ])('$name のとき AuthenticationError を投げること', ({ env }) => {
-      expect(() => authClientConfig(buildContext(env))).toThrow(AuthenticationError)
+    ])('$name のとき UnexpectedAuthError を投げること', ({ env }) => {
+      expect(() => authClientConfig(buildContext(env))).toThrow(UnexpectedAuthError)
     })
   })
 })

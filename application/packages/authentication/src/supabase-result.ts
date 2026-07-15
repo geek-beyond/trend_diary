@@ -1,6 +1,6 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { err, ok, type Result } from 'neverthrow'
-import { type AuthenticationError, UnexpectedAuthError } from './errors'
+import { type AuthError, UnexpectedAuthError } from './errors'
 
 type SupabaseData<TResponse> = TResponse extends { error: null; data: infer TData } ? TData : never
 
@@ -11,12 +11,10 @@ export async function callSupabase<
   TResponse extends { data: unknown; error: Error | null },
 >(
   call: () => Promise<TResponse>,
-  mapError: (error: Error) => AuthenticationError = (error) =>
-    new UnexpectedAuthError(error.message, { cause: error }),
-): Promise<Result<SupabaseData<TResponse>, AuthenticationError>> {
+  mapError: (error: Error) => AuthError = (error) => new UnexpectedAuthError(error.message),
+): Promise<Result<SupabaseData<TResponse>, AuthError>> {
   const called = await wrapAsyncCall(call)
-  if (called.isErr())
-    return err(new UnexpectedAuthError(called.error.message, { cause: called.error }))
+  if (called.isErr()) return err(new UnexpectedAuthError(called.error.message))
 
   const response = called.value
   if (response.error) return err(mapError(response.error))

@@ -1,13 +1,7 @@
-import { z } from 'zod'
-
-/**
- * Zod v4 は最初の `z.object()` 構築時に、eval 可否を `new Function` の実行で判定する
- * （成否はメモ化され一度きり）。script-src に 'unsafe-eval' を持たない本CSPでは、
- * その試行が try/catch で握りつぶされても securitypolicyviolation として DevTools に報告される。
- * jitless を有効化すると判定自体を止められる。ただしメモ化前、すなわち最初のスキーマ構築より
- * 前に呼ぶ必要がある。ルートモジュールは他ルートのモジュールより先に評価されるため、
- * その先頭で副作用として呼ぶ（configure-zod 経由）。
- */
-export function disableZodJitForStrictCsp(): void {
-  z.config({ jitless: true })
-}
+// Zod v4 のスキーマ構築時の eval 可否判定(new Function)は、CSP(unsafe-eval なし)下で
+// securitypolicyviolation を出す。jitless で判定を止められるが、判定はメモ化され最初のスキーマ構築で
+// 走るため、それより前に設定する必要がある。z.config() の import 副作用ではコード分割チャンクの
+// 評価順に依存して間に合わないので、Zod 共有の globalThis.__zod_globalConfig へ、バンドル読込前に
+// 走る head 内インラインscriptで直接書く。
+// 参考: https://github.com/colinhacks/zod/issues/5789, https://github.com/colinhacks/zod/pull/5889
+export const ZOD_JITLESS_BOOTSTRAP_SCRIPT = 'globalThis.__zod_globalConfig={jitless:true}'

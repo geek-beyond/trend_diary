@@ -1,5 +1,3 @@
-// スキーマ構築より前に効かせる必要があり、他ルートより先に評価される root の先頭で読み込む
-import '@/client/lib/configure-zod'
 import React from 'react'
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
 import {
@@ -16,6 +14,7 @@ import './styles.css'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 import { ThemeProvider } from '@/client/features/theme'
 import { SITE_URL } from '@/client/lib/meta'
+import { ZOD_JITLESS_BOOTSTRAP_SCRIPT } from '@/client/lib/zod'
 import { Toaster } from './components/shadcn/sonner'
 
 export const meta: MetaFunction = () => [
@@ -59,6 +58,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
     // next-themesがハイドレーション前にhtmlへdarkクラスを付与するため、SSRとの差分警告を抑止する
     <html lang='ja' suppressHydrationWarning={true}>
       <head>
+        {/* Zod のスキーマ構築(eval可否判定)より前に jitless を設定するため、バンドル読込前に走る
+            インラインscriptで注入する。'unsafe-inline' 無しで許可するため nonce を付与する */}
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: ZOD_JITLESS_BOOTSTRAP_SCRIPT }} />
         <Meta />
         <Links />
         {/* metaに入れても反映されないため */}

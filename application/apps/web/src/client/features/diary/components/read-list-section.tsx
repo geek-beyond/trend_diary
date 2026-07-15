@@ -1,10 +1,10 @@
-import { toJaTimeString } from '@trend-diary/common/locale/date'
 import { Skeleton } from '@/client/components/shadcn/skeleton'
 import { AnchorLink } from '@/client/components/ui/navigation/link'
 // barrel 経由だと記事スライスのデータ取得 hook（swr 依存）まで巻き込み、Storybook 環境で読み込みに失敗するため
 import MediaIcon from '@/client/features/article/components/media-icon'
 import type { ReadItem } from '@/client/features/diary/model/types'
 import { toSafeExternalPath } from '@/client/lib/url'
+import { toJaTimeString } from '@/common/locale/date'
 
 interface Props {
   isLoading: boolean

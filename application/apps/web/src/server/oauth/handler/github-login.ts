@@ -1,11 +1,11 @@
-import { handleError } from '@trend-diary/common/errors'
+import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAuthUseCase, type OAuthLoginQuery } from '@trend-diary/domain/user'
+import type { OAuthLoginQuery } from '@trend-diary/domain/account'
 import { deleteCookie, setCookie } from 'hono/cookie'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import toAuthError from '@/server/error/auth-error'
+import { handleError } from '@/server/error/handle-error'
 import {
   buildGithubCallbackUrl,
   OAUTH_COOKIE_OPTIONS,
@@ -18,12 +18,9 @@ export default async function githubLogin(c: ZodValidatedQueryContext<OAuthLogin
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const { redirect } = c.req.valid('query')
 
-  const client = createSupabaseAuthClient(c)
-  const rdb = getRdbClient(c.env.DB)
-  const useCase = createAuthUseCase(client, rdb)
-
-  const result = await useCase.startGithubLogin(buildGithubCallbackUrl(c))
-  if (result.isErr()) throw handleError(result.error, logger)
+  const oauthClient = new OAuthClient(authClientConfig(c))
+  const result = await oauthClient.startAuthorization('github', buildGithubCallbackUrl(c))
+  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
 
   setCookie(c, OAUTH_FLOW_COOKIE, OAUTH_FLOW.login, OAUTH_COOKIE_OPTIONS)
 

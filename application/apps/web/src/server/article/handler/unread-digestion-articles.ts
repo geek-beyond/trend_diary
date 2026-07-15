@@ -1,10 +1,10 @@
-import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { mediaListSchema } from '@trend-diary/domain/article/schema/query-schema'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import { handleError } from '@/server/error/handle-error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 interface UnreadDigestionArticlesResponse {

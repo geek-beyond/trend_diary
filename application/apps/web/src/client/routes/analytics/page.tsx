@@ -1,4 +1,4 @@
-import { formatSummaryDateTick, toJaDateString, toJstDate } from '@trend-diary/common/locale/date'
+import { toJstDate } from '@trend-diary/common/locale/date'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
 import type { ChartConfig } from '@/client/components/shadcn/chart'
 import {
@@ -18,6 +18,7 @@ import {
   type Source,
   type Summary,
 } from '@/client/features/diary'
+import { formatSummaryDateTick, toJaDateString } from '@/common/locale/date'
 
 interface SummaryRangePoint {
   date: string

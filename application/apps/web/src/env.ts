@@ -25,6 +25,8 @@ export interface Env {
     TURNSTILE_SECRET_KEY?: string
     // ローカル開発などバインディング未設定の環境ではフェイルオープンするためoptional
     AUTH_RATE_LIMITER?: RateLimiter
+    // エッジキャッシュの無効フラグ。本番は常時有効とし、テスト間分離が必要な E2E 等でのみ "true" にして無効化する
+    EDGE_CACHE_DISABLED?: string
   }
   Variables: {
     [CONTEXT_KEY.APP_LOG]: LoggerType
@@ -36,5 +38,7 @@ export interface Env {
 declare module 'react-router' {
   interface AppLoadContext {
     cloudflare: { env: Env['Bindings'] }
+    // secureHeaders が生成する CSP nonce。<Scripts> 等のインラインscript許可に使う
+    nonce?: string
   }
 }

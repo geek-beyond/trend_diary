@@ -14,7 +14,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@trend-diary/common": "workspace:*"

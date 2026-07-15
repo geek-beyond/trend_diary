@@ -21,7 +21,7 @@ export default function LoginPage({
   return (
     <div className='min-h-screen bg-gradient-to-br from-muted to-background'>
       <LandingHeader />
-      <div className='flex min-h-[calc(100vh-180px)] items-center justify-center p-4'>
+      <main className='flex min-h-[calc(100vh-180px)] items-center justify-center p-4'>
         <Card className='flex w-full max-w-md flex-col'>
           <CardHeader className='space-y-1'>
             <CardTitle className='text-2xl font-bold'>ログイン</CardTitle>
@@ -53,7 +53,7 @@ export default function LoginPage({
             </div>
           </CardFooter>
         </Card>
-      </div>
+      </main>
       <Footer />
     </div>
   )

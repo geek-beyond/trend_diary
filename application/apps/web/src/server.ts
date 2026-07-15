@@ -1,15 +1,15 @@
 import { Hono } from 'hono'
 import { csrf } from 'hono/csrf'
-import { secureHeaders } from 'hono/secure-headers'
 import { timeout } from 'hono/timeout'
 import type { Env } from './env'
 import errorHandler from './middleware/error-handler'
 import requestLogger from './middleware/request-logger'
+import { securityHeaders } from './middleware/security-headers'
 import apiApp from './server/route'
 
 const app = new Hono<Env>()
 
-app.use(secureHeaders())
+app.use(securityHeaders())
 app.use(requestLogger)
 app.onError(errorHandler)
 

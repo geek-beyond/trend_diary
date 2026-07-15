@@ -1,143 +1,81 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
-import UnauthorizedError from '@trend-diary/common/errors/client-error/unauthorized-error'
-import { createAuthUseCase } from '@trend-diary/domain/user'
-import type { Context } from 'hono'
-import { err, ok, type Result } from 'neverthrow'
+import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
+import { toDbIds } from '@trend-diary/datastore/rdb/id'
+import { inArray } from 'drizzle-orm'
+import { Hono } from 'hono'
 import type { Env } from '@/env'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
-import CONTEXT_KEY from '../context'
+import requestLogger from '@/middleware/request-logger'
+import TEST_ENV from '@/test/env'
+import { testRdb } from '@/test/helper/rdb'
+import type { CleanUpIds } from '@/test/helper/user'
+import * as userHelper from '@/test/helper/user'
 import { validateSession } from './validate'
 
-vi.mock('@trend-diary/domain/user', () => ({ createAuthUseCase: vi.fn() }))
-vi.mock('@/infrastructure/supabase', () => ({ createSupabaseAuthClient: vi.fn() }))
-vi.mock('@trend-diary/datastore/rdb', () => ({ default: vi.fn(() => ({})) }))
+type ValidateResult = Awaited<ReturnType<typeof validateSession>>
 
-interface FakeLogger {
-  warn: ReturnType<typeof vi.fn>
-  error: ReturnType<typeof vi.fn>
-  info: ReturnType<typeof vi.fn>
-}
+async function callValidateSession(cookies?: string): Promise<ValidateResult> {
+  let captured: ValidateResult | undefined
+  const app = new Hono<Env>().use(requestLogger).get('/verify', async (c) => {
+    captured = await validateSession(c)
+    return c.body(null, 204)
+  })
 
-function buildContext(): { c: Context<Env>; logger: FakeLogger } {
-  const logger: FakeLogger = { warn: vi.fn(), error: vi.fn(), info: vi.fn() }
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
-  const c = {
-    get: (key: string) => (key === CONTEXT_KEY.APP_LOG ? logger : undefined),
-    env: { DB: {} },
-    // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
-  } as unknown as Context<Env>
-  return { c, logger }
-}
+  await app.request('/verify', { headers: cookies ? { Cookie: cookies } : undefined }, TEST_ENV)
 
-// 想定と異なる分岐に落ちたら即座に失敗させ、取り違えを検知する
-function unwrapOk<T, E>(result: Result<T, E>): T {
-  if (result.isErr()) throw result.error
-  return result.value
-}
-
-function unwrapErr<T, E>(result: Result<T, E>): E {
-  if (result.isOk()) throw new Error('Result が Ok でした')
-  return result.error
-}
-
-// oxlint-disable-next-line typescript/no-restricted-types -- テストごとに任意の Result を返すスタブ実装を差し替えるため
-function mockGetCurrentActiveUser(impl: () => Promise<unknown>) {
-  vi.mocked(createAuthUseCase).mockReturnValue(
-    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- テストで必要な getCurrentActiveUser のみを差し替えるための境界キャストのため
-    { getCurrentActiveUser: impl } as unknown as ReturnType<typeof createAuthUseCase>,
-  )
+  if (!captured) throw new Error('validateSession が実行されませんでした')
+  return captured
 }
 
 describe('validateSession', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    vi.mocked(createSupabaseAuthClient).mockReturnValue(
-      // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- テストでは実クライアントを必要とせず、空オブジェクトを目的の型へ橋渡しする境界キャストのため
-      {} as unknown as ReturnType<typeof createSupabaseAuthClient>,
-    )
+  const TEST_EMAIL = 'validate-session-test@example.com'
+  const TEST_PASSWORD = 'Test@password123'
+  const createdIds: CleanUpIds = { userIds: [], authIds: [] }
+
+  beforeEach(async () => {
+    const { userId, authenticationId } = await userHelper.create(TEST_EMAIL, TEST_PASSWORD)
+    createdIds.userIds.push(userId)
+    createdIds.authIds.push(authenticationId)
+  })
+
+  afterEach(async () => {
+    await userHelper.cleanUp(createdIds)
+    createdIds.userIds.length = 0
+    createdIds.authIds.length = 0
   })
 
   describe('正常系', () => {
-    it('アクティブユーザーを認可に必要な3項目へ絞り込んで返すこと', async () => {
-      // getCurrentActiveUser は authenticationId 等の内部項目も返すが、SESSION_USER には漏らさない
-      const currentUser = {
-        activeUserId: 123n,
-        userId: 456n,
-        authenticationId: 'auth-abc',
-        email: 'active@example.com',
-        displayName: 'テスト太郎',
-      }
-      mockGetCurrentActiveUser(() => Promise.resolve(ok(currentUser)))
+    it('有効なセッションではアクティブユーザーを認可に必要な3項目へ絞り込んで返すこと', async () => {
+      const { activeUserId, cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
-      const { c } = buildContext()
-      const result = await validateSession(c)
+      const result = await callValidateSession(cookies)
+      if (result.isErr()) throw result.error
 
-      expect(unwrapOk(result).sessionUser).toEqual({
-        activeUserId: 123n,
-        displayName: 'テスト太郎',
-        email: 'active@example.com',
+      expect(result.value.sessionUser).toEqual({
+        activeUserId,
+        displayName: null,
+        email: TEST_EMAIL,
       })
     })
   })
 
   describe('準正常系', () => {
-    it('UnauthorizedError の場合は reason=no_session を返すこと', async () => {
-      mockGetCurrentActiveUser(() => Promise.resolve(err(new UnauthorizedError('unauthorized'))))
+    it('セッションが無い場合は reason=no_session を返すこと', async () => {
+      const result = await callValidateSession()
+      if (result.isOk()) throw new Error('Ok が返りました')
 
-      const { c, logger } = buildContext()
-      const result = await validateSession(c)
-
-      expect(unwrapErr(result).reason).toBe('no_session')
-      // no_session は想定内のため警告・エラーログを出さない
-      expect(logger.warn).not.toHaveBeenCalled()
-      expect(logger.error).not.toHaveBeenCalled()
+      expect(result.error.reason).toBe('no_session')
     })
 
-    // ClientError / ServerError は想定済みの失敗として warn ログを出す
-    const warnCases: Array<{ name: string; error: Error }> = [
-      { name: 'ClientError', error: new ClientError('client error', 400) },
-      { name: 'ServerError', error: new ServerError('server error') },
-    ]
+    it('セッションは有効だが対応するアクティブユーザーが存在しない場合は reason=validation_failed を返すこと', async () => {
+      const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
+      // 認証プロバイダにはユーザーが残るが、アプリのアカウント行だけ失われた状態を作る
+      const dbUserIds = toDbIds(createdIds.userIds)
+      await testRdb.delete(activeUsers).where(inArray(activeUsers.userId, dbUserIds))
+      await testRdb.delete(users).where(inArray(users.userId, dbUserIds))
 
-    warnCases.forEach(({ name, error }) => {
-      it(`${name} の場合は reason=validation_failed を返し warn ログを出すこと`, async () => {
-        mockGetCurrentActiveUser(() => Promise.resolve(err(error)))
+      const result = await callValidateSession(cookies)
+      if (result.isOk()) throw new Error('Ok が返りました')
 
-        const { c, logger } = buildContext()
-        const result = await validateSession(c)
-
-        expect(unwrapErr(result).reason).toBe('validation_failed')
-        expect(logger.warn).toHaveBeenCalledWith('Session validation failed', { error })
-        expect(logger.error).not.toHaveBeenCalled()
-      })
-    })
-  })
-
-  describe('異常系', () => {
-    it('想定外のエラーの場合は reason=validation_failed を返し error ログを出すこと', async () => {
-      const unexpected = new Error('unexpected')
-      mockGetCurrentActiveUser(() => Promise.resolve(err(unexpected)))
-
-      const { c, logger } = buildContext()
-      const result = await validateSession(c)
-
-      expect(unwrapErr(result).reason).toBe('validation_failed')
-      expect(logger.error).toHaveBeenCalledWith('Unexpected error occurred', { error: unexpected })
-    })
-
-    it('セットアップで例外が発生した場合はフェイルセーフで reason=validation_failed を返すこと', async () => {
-      const setupError = new Error('supabase client creation failed')
-      vi.mocked(createSupabaseAuthClient).mockImplementation(() => {
-        throw setupError
-      })
-
-      const { c, logger } = buildContext()
-      const result = await validateSession(c)
-
-      expect(unwrapErr(result).reason).toBe('validation_failed')
-      expect(logger.warn).toHaveBeenCalledWith('Session validation setup failed', {
-        error: setupError,
-      })
+      expect(result.error.reason).toBe('validation_failed')
     })
   })
 })

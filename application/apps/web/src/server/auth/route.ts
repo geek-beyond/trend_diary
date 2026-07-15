@@ -1,4 +1,4 @@
-import { authInputSchema, passkeyVerifyInputSchema } from '@trend-diary/domain/user'
+import { authInputSchema } from '@trend-diary/domain/account'
 import { Hono } from 'hono'
 import type { Env } from '@/env'
 import { authenticator } from '@/middleware/authenticator'
@@ -9,9 +9,11 @@ import logout from './handler/logout'
 import me from './handler/me'
 import passkeyDisable from './handler/passkey-disable'
 import passkeyLoginStart from './handler/passkey-login-start'
-import passkeyLoginVerify from './handler/passkey-login-verify'
+import passkeyLoginVerify, { passkeyLoginVerifyInputSchema } from './handler/passkey-login-verify'
 import passkeyRegisterStart from './handler/passkey-register-start'
-import passkeyRegisterVerify from './handler/passkey-register-verify'
+import passkeyRegisterVerify, {
+  passkeyRegisterVerifyInputSchema,
+} from './handler/passkey-register-verify'
 import passkeyStatus from './handler/passkey-status'
 import signup from './handler/signup'
 
@@ -25,7 +27,7 @@ const app = new Hono<Env>()
   .post(
     '/passkey/login/verify',
     rateLimiter,
-    zodValidator('json', passkeyVerifyInputSchema),
+    zodValidator('json', passkeyLoginVerifyInputSchema),
     passkeyLoginVerify,
   )
   // passkey登録(要認証)。ログイン中ユーザーが自分のpasskeyを登録する
@@ -33,7 +35,7 @@ const app = new Hono<Env>()
   .post(
     '/passkey/register/verify',
     authenticator,
-    zodValidator('json', passkeyVerifyInputSchema),
+    zodValidator('json', passkeyRegisterVerifyInputSchema),
     passkeyRegisterVerify,
   )
   // passkey管理(要認証)。設定画面のトグルが登録状態の取得と無効化に使う

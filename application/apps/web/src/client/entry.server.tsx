@@ -23,11 +23,13 @@ export default async function handleRequest(
   // free to delete this parameter in your app if you're not using it!
   loadContext: AppLoadContext,
 ) {
+  const nonce = loadContext.nonce
   let statusCode = responseStatusCode
   const body = await renderToReadableStream(
-    <ServerRouter context={reactRouterContext} url={request.url} />,
+    <ServerRouter context={reactRouterContext} url={request.url} nonce={nonce} />,
     {
       signal: request.signal,
+      nonce,
       onError(error) {
         // Log streaming rendering errors from inside the shell
         // oxlint-disable-next-line no-console -- Remixのエラーを一応出す

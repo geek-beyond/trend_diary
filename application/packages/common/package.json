@@ -15,7 +15,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "hono": "catalog:",

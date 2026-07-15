@@ -1,5 +1,4 @@
-import { toJaDateString } from '@trend-diary/common/locale'
-import { twMerge } from 'tailwind-merge'
+import type { MouseEvent } from 'react'
 import { Button } from '@/client/components/shadcn/button'
 import {
   Pagination,
@@ -22,15 +21,17 @@ import {
   type SelectedMedia,
 } from '@/client/features/article'
 import { scrollToTop } from '@/client/lib/scroll'
+import { toJaDateString } from '@/common/locale/date'
 
 // ローディング中に一覧領域を埋めるスケルトン枚数。1ページの件数に近い枚数で領域の急な伸縮を抑える
 const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`)
 
-const getPaginationClass = (isDisabled: boolean) =>
-  twMerge(
-    'border-solid border border-b-border cursor-pointer',
-    isDisabled ? 'opacity-50 cursor-not-allowed' : '',
-  )
+// 無効時の淡色化・クリック抑止は buttonVariants の disabled: スタイルが担うため、ここでは枠線とカーソルのみ指定する
+const PAGINATION_LINK_CLASS = 'border-solid border border-b-border cursor-pointer'
+
+// 修飾キー・中クリック等（新規タブで開く等のブラウザ標準挙動）は href に任せ、通常クリックだけ SPA 遷移に差し替える
+const isModifiedClick = (event: MouseEvent<HTMLAnchorElement>) =>
+  event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
 
 const DEFAULT_FILTERS: FilterParams = {
   media: ALL_MEDIA,
@@ -62,6 +63,8 @@ export default function TrendsPage({
   selectedMedia,
   selectedReadStatus,
   selectedDatePreset,
+  prevPageHref,
+  nextPageHref,
   toNextPage,
   toPreviousPage,
   onApplyFilters,
@@ -105,6 +108,8 @@ export default function TrendsPage({
         isLoggedIn={isLoggedIn}
         page={page}
         totalPages={totalPages}
+        prevPageHref={prevPageHref}
+        nextPageHref={nextPageHref}
         toNextPage={toNextPage}
         toPreviousPage={toPreviousPage}
       />
@@ -123,6 +128,8 @@ interface ArticleListProps {
   isLoggedIn: boolean
   page: number
   totalPages: number
+  prevPageHref: string
+  nextPageHref: string
   toNextPage: (currentPage: number) => void
   toPreviousPage: (currentPage: number) => void
 }
@@ -138,6 +145,8 @@ function ArticleList({
   isLoggedIn,
   page,
   totalPages,
+  prevPageHref,
+  nextPageHref,
   toNextPage,
   toPreviousPage,
 }: ArticleListProps) {
@@ -151,18 +160,18 @@ function ArticleList({
   const isPrevDisabled = page <= 1
   const isNextDisabled = page >= totalPages
 
-  const handlePrevPageClick = () => {
-    if (!isPrevDisabled) {
-      toPreviousPage(page)
-      scrollToTop()
-    }
+  const handlePrevPageClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (isModifiedClick(event)) return
+    event.preventDefault()
+    toPreviousPage(page)
+    scrollToTop()
   }
 
-  const handleNextPageClick = () => {
-    if (!isNextDisabled) {
-      toNextPage(page)
-      scrollToTop()
-    }
+  const handleNextPageClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (isModifiedClick(event)) return
+    event.preventDefault()
+    toNextPage(page)
+    scrollToTop()
   }
 
   return (
@@ -182,8 +191,9 @@ function ArticleList({
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
-              aria-disabled={isPrevDisabled}
-              className={getPaginationClass(isPrevDisabled)}
+              href={prevPageHref}
+              disabled={isPrevDisabled}
+              className={PAGINATION_LINK_CLASS}
               onClick={handlePrevPageClick}
             />
           </PaginationItem>
@@ -194,8 +204,9 @@ function ArticleList({
           </PaginationItem>
           <PaginationItem>
             <PaginationNext
-              aria-disabled={isNextDisabled}
-              className={getPaginationClass(isNextDisabled)}
+              href={nextPageHref}
+              disabled={isNextDisabled}
+              className={PAGINATION_LINK_CLASS}
               onClick={handleNextPageClick}
             />
           </PaginationItem>

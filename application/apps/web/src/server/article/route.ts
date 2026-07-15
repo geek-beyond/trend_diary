@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { Env } from '@/env'
+import articleCache from '@/middleware/article-cache'
 import { authenticator, optionalAuthenticator } from '@/middleware/authenticator'
 import zodValidator from '@/middleware/zod-validator'
 import getArticles, { apiArticleQuerySchema } from './handler/get-articles'
@@ -15,7 +16,13 @@ import unreadDigestionArticles, {
 } from './handler/unread-digestion-articles'
 
 const app = new Hono<Env>()
-  .get('/', optionalAuthenticator, zodValidator('query', apiArticleQuerySchema), getArticles)
+  .get(
+    '/',
+    articleCache,
+    optionalAuthenticator,
+    zodValidator('query', apiArticleQuerySchema),
+    getArticles,
+  )
   .get('/diary', authenticator, zodValidator('query', diaryQuerySchema), getDiary)
   .get(
     '/unread-digestion',

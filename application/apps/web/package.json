@@ -7,7 +7,7 @@
     "dev": "react-router dev",
     "build": "react-router build",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "d1:apply:local": "wrangler d1 migrations apply trend-diary-db --local"
   },
   "dependencies": {
@@ -24,8 +24,7 @@
     "@radix-ui/react-switch": "^1.3.2",
     "@radix-ui/react-tooltip": "^1.2.11",
     "@simplewebauthn/browser": "^13.3.0",
-    "@supabase/ssr": "^0.12.0",
-    "@supabase/supabase-js": "catalog:",
+    "@trend-diary/authentication": "workspace:*",
     "@trend-diary/common": "workspace:*",
     "@trend-diary/datastore": "workspace:*",
     "@trend-diary/domain": "workspace:*",

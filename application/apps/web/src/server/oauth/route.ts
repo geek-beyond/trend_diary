@@ -1,4 +1,4 @@
-import { oauthCallbackQuerySchema, oauthLoginQuerySchema } from '@trend-diary/domain/user'
+import { oauthCallbackQuerySchema, oauthLoginQuerySchema } from '@trend-diary/domain/account'
 import { Hono } from 'hono'
 import type { Env } from '@/env'
 import { authenticator } from '@/middleware/authenticator'

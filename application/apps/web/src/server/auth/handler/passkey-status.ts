@@ -1,20 +1,16 @@
-import { handleError } from '@trend-diary/common/errors'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAuthUseCase } from '@trend-diary/domain/user'
+import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import type { Context } from 'hono'
 import type { Env } from '@/env'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
+import toAuthError from '@/server/error/auth-error'
+import { handleError } from '@/server/error/handle-error'
 
 export default async function passkeyStatus(c: Context<Env>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
 
-  const client = createSupabaseAuthClient(c)
-  const rdb = getRdbClient(c.env.DB)
-  const useCase = createAuthUseCase(client, rdb)
+  const passkeyClient = new PasskeyClient(authClientConfig(c))
+  const result = await passkeyClient.list()
+  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
 
-  const result = await useCase.hasRegisteredPasskey()
-  if (result.isErr()) throw handleError(result.error, logger)
-
-  return c.json({ hasPasskey: result.value }, 200)
+  return c.json({ hasPasskey: result.value.length > 0 }, 200)
 }

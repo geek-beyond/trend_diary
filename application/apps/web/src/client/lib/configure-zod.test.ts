@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 describe('configure-zod', () => {
-  // 各テストの独立性を保つ
   beforeEach(() => {
     z.config({ jitless: false })
   })

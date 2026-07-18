@@ -20,4 +20,4 @@ fi
 cd "$(git rev-parse --show-toplevel)/application"
 
 echo "[pre-push] packages/* の単体テストを実行します（スキップ: git push --no-verify）"
-pnpm --filter "./packages/*" test
+pnpm --filter "./packages/*" run test:unit

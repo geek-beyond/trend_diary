@@ -78,26 +78,13 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
-      # 単体テストの範囲は各パッケージの test:unit スクリプトが定義する
       - name: テスト
         run: pnpm --filter @trend-diary/${{ matrix.package }} run test:unit
 
-      # test:unit がカバレッジを出力するパッケージだけ可視化する（対象を CI 側で列挙しない）
-      - name: カバレッジ出力の確認
-        id: coverage
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          dir=$(pnpm --filter @trend-diary/${{ matrix.package }} exec pwd)
-          if [[ -f "${dir}/coverage/coverage-summary.json" ]]; then
-            echo "dir=${dir#"${PWD}/"}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: カバレッジの可視化
-        if: ${{ steps.coverage.outputs.dir }}
-        uses: davelosert/vitest-coverage-report-action@c0c9b09c93750ee1d8335d14e94ce3d6fc61df50 # v2
+        uses: ./.github/actions/coverage_report
         with:
-          name: ${{ matrix.package }}
-          working-directory: ./application/${{ steps.coverage.outputs.dir }}
+          package: ${{ matrix.package }}
 
   web-build:
     needs: changes
@@ -120,7 +107,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
-    # test_cov のカバレッジコメント投稿に必要
+    # カバレッジコメント投稿に必要
     permissions:
       contents: read
       pull-requests: write
@@ -141,9 +128,14 @@ jobs:
           webauthn-rp-id: 127.0.0.1
 
       - name: サーバーのテスト
-        uses: ./.github/actions/test_cov
+        run: pnpm --filter @trend-diary/web run test --project server --coverage
+
+      # web の中の server project なので、コメント識別名は従来どおり server を指定する
+      - name: カバレッジの可視化
+        uses: ./.github/actions/coverage_report
         with:
-          target: server
+          package: web
+          name: server
 
   component-test:
     name: integration-test (web component)

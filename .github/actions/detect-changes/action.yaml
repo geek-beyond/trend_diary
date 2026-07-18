@@ -42,12 +42,6 @@ runs:
       run: |
         set -euo pipefail
 
-        # `pnpm -r exec pwd` は各ワークスペースパッケージのルートを1行ずつ返すため、
-        # パス末尾のディレクトリ名がそのままパッケージ短縮名になる。
-        parse_pkg_names() {
-          sed 's#.*/##' | sort -u
-        }
-
         run_all=false
         if [[ -z "$BASE" ]]; then
           run_all=true
@@ -61,27 +55,24 @@ runs:
           fi
         fi
 
+        # `pnpm -r exec pwd` は各ワークスペースパッケージのルートを1行ずつ返すため、
+        # パス末尾のディレクトリ名がそのままパッケージ短縮名になる。
         if [[ "$run_all" == "true" ]]; then
           dirs=$(pnpm -r exec pwd | sort -u)
         else
           dirs=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd | sort -u)
         fi
-        names=$(parse_pkg_names <<<"$dirs")
+        names=$(sed 's#.*/##' <<<"$dirs")
 
         echo "変更パッケージ(依存先含む, run_all=${run_all}): ${names:-(なし)}"
 
         has() { grep -qx "$1" <<<"$names"; }
 
-        # matrix 対象は各パッケージが test:unit を定義しているかで決まる。
-        # CI 側で対象を列挙せず、パッケージ追加時は test:unit を書くだけで matrix に載る
-        items=""
-        while read -r dir; do
-          [[ -z "$dir" ]] && continue
-          if jq -e '.scripts["test:unit"] != null' "${dir}/package.json" >/dev/null; then
-            items="${items}\"$(basename "$dir")\","
-          fi
-        done <<<"$dirs"
-        packages="[${items%,}]"
+        # CI 側で対象を列挙せず、test:unit を定義したパッケージだけが matrix に載るようにする
+        packages=$(while read -r dir; do
+            [[ -z "$dir" ]] && continue
+            if jq -e '.scripts["test:unit"] != null' "${dir}/package.json" >/dev/null; then basename "$dir"; fi
+          done <<<"$dirs" | jq -Rnc '[inputs]')
 
         web=false
         if has web; then web=true; fi

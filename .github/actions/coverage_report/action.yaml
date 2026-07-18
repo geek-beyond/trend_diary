@@ -1,0 +1,33 @@
+name: 'Coverage Report Composite Action'
+description: 'カバレッジ出力があるパッケージのカバレッジをPRコメントとして可視化するComposite Action'
+
+inputs:
+  package:
+    description: 'カバレッジ出力を探すパッケージ短縮名'
+    required: true
+  name:
+    description: 'カバレッジコメントの識別名（省略時は package）'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    # カバレッジを出力するパッケージだけ可視化する（対象を CI 側で列挙しない）
+    - name: カバレッジ出力の確認
+      id: coverage
+      if: ${{ github.event_name == 'pull_request' }}
+      shell: bash
+      working-directory: ./application
+      run: |
+        dir=$(pnpm --filter @trend-diary/${{ inputs.package }} exec pwd)
+        if [[ -f "${dir}/coverage/coverage-summary.json" ]]; then
+          echo "dir=${dir#"${PWD}/"}" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: カバレッジの可視化
+      if: ${{ steps.coverage.outputs.dir }}
+      uses: davelosert/vitest-coverage-report-action@c0c9b09c93750ee1d8335d14e94ce3d6fc61df50 # v2
+      with:
+        name: ${{ inputs.name || inputs.package }}
+        working-directory: ./application/${{ steps.coverage.outputs.dir }}

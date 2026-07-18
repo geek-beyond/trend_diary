@@ -41,8 +41,8 @@ runs:
         if [[ -z "$BASE" ]]; then
           changed() { true; }
         else
-          # ブランチ名などローカルに無い ref は origin から取得する(ツリー差分だけ取るので shallow で足りる)
           if ! git rev-parse -q --verify "${BASE}^{commit}" >/dev/null; then
+            # ツリー差分しか取らないため shallow で足りる
             git fetch --no-tags --depth=1 origin "$BASE"
             BASE=FETCH_HEAD
           fi
@@ -50,8 +50,8 @@ runs:
           changed() { grep -qE "$1" <<<"$files"; }
         fi
 
-        # 共有コード(packages)の変更は利用側すべてに影響するとみなし、パッケージ間の依存関係は追わない。
-        # ルート設定や CI/CD 定義の変更は全経路に影響しうるため全フラグを立てる(デプロイは冪等で過剰実行の害がない)
+        # パッケージ間の依存関係は追わず粗く判定する。過剰実行になるのは軽量なテストと
+        # 冪等なデプロイだけなので、厳密な選別より判定の単純さを優先する
         pkgs='^application/packages/'
         root='^application/[^/]+$|^\.github/'
 

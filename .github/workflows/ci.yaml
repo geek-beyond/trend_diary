@@ -39,7 +39,6 @@ jobs:
       - id: detect
         uses: ./.github/actions/detect-changes
         with:
-          # PRはベースブランチとの差分で判定する。mainへのpushではbase_refが空になり全件実行になる
           base: ${{ github.base_ref }}
 
   code-quality:

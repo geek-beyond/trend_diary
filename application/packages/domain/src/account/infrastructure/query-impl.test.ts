@@ -3,42 +3,42 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import QueryImpl from './query-impl'
 
+// INFO: Drizzleのselectは「カラム順の配列」で行を返す
+// 並び順: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
+const buildActiveUserRow = (
+  overrides: Partial<{
+    activeUserId: number
+    email: string
+    displayName: string | null
+    authenticationId: string | null
+    createdAt: string
+    updatedAt: string
+    userId: number
+  }> = {},
+): (string | number | null)[] => {
+  const data = {
+    activeUserId: 1,
+    email: 'test@example.com',
+    displayName: 'テストユーザー',
+    authenticationId: null,
+    createdAt: '2024-01-15T09:30:00.000Z',
+    updatedAt: '2024-01-15T09:30:00.000Z',
+    userId: 2,
+    ...overrides,
+  }
+  return [
+    data.activeUserId,
+    data.email,
+    data.displayName,
+    data.authenticationId,
+    data.createdAt,
+    data.updatedAt,
+    data.userId,
+  ]
+}
+
 describe('QueryImpl', () => {
   let useCase: QueryImpl
-
-  // INFO: Drizzleのselectは「カラム順の配列」で行を返す
-  // 並び順: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
-  const buildActiveUserRow = (
-    overrides: Partial<{
-      activeUserId: number
-      email: string
-      displayName: string | null
-      authenticationId: string | null
-      createdAt: string
-      updatedAt: string
-      userId: number
-    }> = {},
-  ): (string | number | null)[] => {
-    const data = {
-      activeUserId: 1,
-      email: 'test@example.com',
-      displayName: 'テストユーザー',
-      authenticationId: null,
-      createdAt: '2024-01-15T09:30:00.000Z',
-      updatedAt: '2024-01-15T09:30:00.000Z',
-      userId: 2,
-      ...overrides,
-    }
-    return [
-      data.activeUserId,
-      data.email,
-      data.displayName,
-      data.authenticationId,
-      data.createdAt,
-      data.updatedAt,
-      data.userId,
-    ]
-  }
 
   beforeEach(() => {
     useCase = new QueryImpl(getRdbClient())

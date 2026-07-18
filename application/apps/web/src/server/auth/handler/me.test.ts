@@ -2,6 +2,10 @@ import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
+async function requestMe(cookies?: string) {
+  return apiRequest('/api/auth/me', { method: 'GET', cookies, contentTypeJson: true })
+}
+
 describe('GET /api/auth/me', () => {
   const TEST_EMAIL = 'me-test@example.com'
   const TEST_PASSWORD = 'Test@password123'
@@ -19,10 +23,6 @@ describe('GET /api/auth/me', () => {
     createdIds.userIds.length = 0
     createdIds.authIds.length = 0
   })
-
-  async function requestMe(cookies?: string) {
-    return apiRequest('/api/auth/me', { method: 'GET', cookies, contentTypeJson: true })
-  }
 
   it('正常系: 現在のユーザー情報を取得できる', async () => {
     const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)

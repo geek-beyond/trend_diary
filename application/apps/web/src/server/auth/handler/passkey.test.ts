@@ -14,6 +14,21 @@ vi.mock('@trend-diary/authentication', async (importOriginal) => {
   return { ...actual, authClientConfig: vi.fn(actual.authClientConfig) }
 })
 
+// oxlint-disable-next-line typescript/no-restricted-types -- 各エンドポイントへ任意形状の JSON ボディを送るため
+function post(path: string, body?: unknown, cookies?: string) {
+  return apiRequest(path, {
+    method: 'POST',
+    cookies,
+    contentTypeJson: true,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+}
+
+function req(method: string, path: string, cookies?: string) {
+  // Content-Type未指定だとcsrf()がtext/plain扱いでDELETEを403にするため、他のテスト同様JSONを明示する
+  return apiRequest(path, { method, cookies, contentTypeJson: true })
+}
+
 describe('passkey認証', () => {
   const TEST_EMAIL = 'passkey-test@example.com'
   const TEST_PASSWORD = 'Test@password123'
@@ -30,21 +45,6 @@ describe('passkey認証', () => {
     createdIds.userIds.length = 0
     createdIds.authIds.length = 0
   })
-
-  // oxlint-disable-next-line typescript/no-restricted-types -- 各エンドポイントへ任意形状の JSON ボディを送るため
-  function post(path: string, body?: unknown, cookies?: string) {
-    return apiRequest(path, {
-      method: 'POST',
-      cookies,
-      contentTypeJson: true,
-      body: body === undefined ? undefined : JSON.stringify(body),
-    })
-  }
-
-  function req(method: string, path: string, cookies?: string) {
-    // Content-Type未指定だとcsrf()がtext/plain扱いでDELETEを403にするため、他のテスト同様JSONを明示する
-    return apiRequest(path, { method, cookies, contentTypeJson: true })
-  }
 
   // 認証検証には事前に登録済みpasskeyが要るため、登録 ceremony を通すヘルパ
   async function registerPasskey(cookies: string) {

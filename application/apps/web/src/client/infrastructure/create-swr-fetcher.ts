@@ -33,8 +33,8 @@ const fetcher = async <T>(url: string): Promise<T> => {
   return response.safeJson<T>()
 }
 
-const apiCall = async <T>(apiCall: () => Promise<ApiCallResponse>): Promise<T | null> => {
-  const response = await apiCall()
+const apiCall = async <T>(request: () => Promise<ApiCallResponse>): Promise<T | null> => {
+  const response = await request()
 
   if (!response.ok) {
     throw toHttpError(response.status, response.statusText)

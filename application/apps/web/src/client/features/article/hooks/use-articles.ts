@@ -126,6 +126,11 @@ const applyPageToSearchParams = (params: URLSearchParams, targetPage: number) =>
   }
 }
 
+const clearPageParam = (params: URLSearchParams) => {
+  params.delete('page')
+  return params
+}
+
 export default function useArticles(isLoggedIn = false) {
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
@@ -277,11 +282,6 @@ export default function useArticles(isLoggedIn = false) {
 
     const queryString = newParams.toString()
     return queryString ? `${location.pathname}?${queryString}` : location.pathname
-  }
-
-  const clearPageParam = (params: URLSearchParams) => {
-    params.delete('page')
-    return params
   }
 
   const toPreviousPage = (currentPage: number) => {

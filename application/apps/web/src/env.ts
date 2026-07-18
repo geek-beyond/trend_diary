@@ -3,6 +3,8 @@ import type { LoggerType } from '@trend-diary/common/logger'
 import type { Nullable } from '@trend-diary/common/types/utility'
 import type CONTEXT_KEY from './middleware/context'
 
+// AppLoadContext の型は load-context.ts で定義する（v8 で react-router の同名 interface が撤去されたため）
+
 export interface SessionUser {
   activeUserId: bigint
   displayName?: Nullable<string>
@@ -32,13 +34,5 @@ export interface Env {
     [CONTEXT_KEY.APP_LOG]: LoggerType
     [CONTEXT_KEY.SESSION_USER]: SessionUser
     [CONTEXT_KEY.SESSION_ID]: string
-  }
-}
-
-declare module 'react-router' {
-  interface AppLoadContext {
-    cloudflare: { env: Env['Bindings'] }
-    // secureHeaders が生成する CSP nonce。<Scripts> 等のインラインscript許可に使う
-    nonce?: string
   }
 }

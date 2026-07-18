@@ -7,6 +7,7 @@ import {
 import { resolveTurnstileSiteKey } from '@/client/entities/auth'
 import { resolveLoginRedirectTarget, useLogin } from '@/client/features/authenticate/login'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
+import { appLoadContext } from '@/load-context'
 import LoginPage from './page'
 
 export const meta: MetaFunction = ({ matches, location }) =>
@@ -22,7 +23,7 @@ export const meta: MetaFunction = ({ matches, location }) =>
 
 export function loader({ context }: LoaderFunctionArgs) {
   return {
-    turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null,
+    turnstileSiteKey: resolveTurnstileSiteKey(context.get(appLoadContext)) ?? null,
   }
 }
 

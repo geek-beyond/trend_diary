@@ -11,13 +11,16 @@ import server from './server'
 
 /**
  * Hono の API アプリに React Router の SSR をフォールバックで結線した Hono アプリを組み立てる。
- * 本番（worker.ts）と dev（dev-server.ts）で build の供給元だけが異なるため、build と mode のみ受け取る。
+ * 本番（worker.ts）と dev（dev-server.ts）で build の供給元だけが異なる。
+ * mode 省略時は React Router 既定の production 挙動となり、dev サーバのみ 'development' を渡す
+ * （エラーオーバーレイ等の dev フックを有効化するため）。worker/dev は別ツールチェーンでビルドされ
+ * 実行時に環境を自動判別できないため、dev 側だけが明示する。
  *
  * context トークンは必ず build.entry.module から取得する。worker と SSR ビルドは別バンドルで、
  * それぞれ createContext を再評価すると別インスタンスになり "No value found for context" になるため、
  * SSR ビルド内で生成された唯一のインスタンスを共有する（entry.server が再エクスポートしている）。
  */
-export function createHonoReactRouterApp(build: ServerBuild, mode: string): Hono<Env> {
+export function createHonoReactRouterApp(build: ServerBuild, mode?: 'development'): Hono<Env> {
   const requestHandler = createRequestHandler(build, mode)
   // oxlint-disable-next-line typescript/consistent-type-assertions -- entry.server が実行時に付与する appLoadContext は ServerBuild の静的型に無いため
   const { appLoadContext } = build.entry.module as ServerBuild['entry']['module'] & {

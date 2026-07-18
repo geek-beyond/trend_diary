@@ -1,0 +1,73 @@
+name: Detect Changes
+description: 変更パスから CI ジョブ・CD デプロイの実行要否フラグを算出する
+
+inputs:
+  base:
+    description: 比較対象の ref。空なら全変更扱い(全フラグ true)
+    required: false
+    default: ''
+
+outputs:
+  unit:
+    description: ユニットテスト(web 以外のパッケージ)の実行要否
+    value: ${{ steps.detect.outputs.unit }}
+  web:
+    description: web のテスト・ビルド・デプロイの要否
+    value: ${{ steps.detect.outputs.web }}
+  cron:
+    description: cron のデプロイ要否
+    value: ${{ steps.detect.outputs.cron }}
+  e2e:
+    description: E2E テストの実行要否
+    value: ${{ steps.detect.outputs.e2e }}
+  schema:
+    description: スキーマドリフト検査の要否
+    value: ${{ steps.detect.outputs.schema }}
+  database:
+    description: DB マイグレーション適用の要否
+    value: ${{ steps.detect.outputs.database }}
+
+runs:
+  using: composite
+  steps:
+    - name: 変更パスの検知
+      id: detect
+      shell: bash
+      env:
+        BASE: ${{ inputs.base }}
+      run: |
+        set -euo pipefail
+
+        if [[ -z "$BASE" ]]; then
+          changed() { true; }
+        else
+          # ブランチ名などローカルに無い ref は origin から取得する(ツリー差分だけ取るので shallow で足りる)
+          if ! git rev-parse -q --verify "${BASE}^{commit}" >/dev/null; then
+            git fetch --no-tags --depth=1 origin "$BASE"
+            BASE=FETCH_HEAD
+          fi
+          files=$(git diff --name-only "$BASE" HEAD)
+          changed() { grep -qE "$1" <<<"$files"; }
+        fi
+
+        # 共有コード(packages)の変更は利用側すべてに影響するとみなし、パッケージ間の依存関係は追わない。
+        # ルート設定や CI/CD 定義の変更は全経路に影響しうるため全フラグを立てる(デプロイは冪等で過剰実行の害がない)
+        pkgs='^application/packages/'
+        root='^application/[^/]+$|^\.github/'
+
+        unit=false;     if changed "^application/apps/cron/|$pkgs|$root"; then unit=true; fi
+        cron=false;     if changed "^application/apps/cron/|$pkgs|$root"; then cron=true; fi
+        web=false;      if changed "^application/apps/web/|$pkgs|$root"; then web=true; fi
+        e2e=false;      if changed "^application/e2e/" || [[ "$web" == "true" ]]; then e2e=true; fi
+        schema=false;   if changed "^application/packages/datastore/|$root"; then schema=true; fi
+        database=false; if changed "^application/packages/datastore/migrations/"; then database=true; fi
+
+        {
+          echo "unit=$unit"
+          echo "cron=$cron"
+          echo "web=$web"
+          echo "e2e=$e2e"
+          echo "schema=$schema"
+          echo "database=$database"
+        } >> "$GITHUB_OUTPUT"
+        echo "unit=$unit cron=$cron web=$web e2e=$e2e schema=$schema database=$database"

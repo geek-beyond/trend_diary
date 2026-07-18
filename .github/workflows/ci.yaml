@@ -36,41 +36,11 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-
-      # 変更パスだけで後続ジョブの実行要否を決める。パッケージ間の依存関係は追わず、
-      # 共有コード(packages)の変更は利用側すべてに影響するとみなす
-      - name: 変更パスの検知
-        id: detect
-        env:
-          # mainへのpushではbase_refが空になり全件実行になる
-          BASE: ${{ github.base_ref }}
-        run: |
-          set -euo pipefail
-
-          if [[ -z "$BASE" ]]; then
-            changed() { true; }
-          else
-            # PRのHEADはマージコミットのため、ベース先端とのツリー差分がそのままPRの変更になる
-            git fetch --no-tags --depth=1 origin "$BASE"
-            files=$(git diff --name-only "origin/${BASE}" HEAD)
-            changed() { grep -qE "$1" <<<"$files"; }
-          fi
-
-          # ルート設定やCI定義の変更は全ジョブに影響しうる
-          root='^application/[^/]+$|^\.github/'
-
-          unit=false;   if changed "^application/apps/cron/|^application/packages/|$root"; then unit=true; fi
-          web=false;    if changed "^application/apps/web/|^application/packages/|$root"; then web=true; fi
-          e2e=false;    if changed "^application/e2e/" || [[ "$web" == "true" ]]; then e2e=true; fi
-          schema=false; if changed "^application/packages/datastore/|$root"; then schema=true; fi
-
-          {
-            echo "unit=$unit"
-            echo "web=$web"
-            echo "e2e=$e2e"
-            echo "schema=$schema"
-          } >> "$GITHUB_OUTPUT"
-          echo "unit=$unit web=$web e2e=$e2e schema=$schema"
+      - id: detect
+        uses: ./.github/actions/detect-changes
+        with:
+          # PRはベースブランチとの差分で判定する。mainへのpushではbase_refが空になり全件実行になる
+          base: ${{ github.base_ref }}
 
   code-quality:
     needs: changes

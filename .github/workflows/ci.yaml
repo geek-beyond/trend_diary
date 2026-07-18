@@ -205,8 +205,9 @@ jobs:
 
   e2e:
     name: E2E
-    needs: changes
-    if: ${{ needs.changes.outputs.e2e == 'true' }}
+    # 高コストなE2Eは土台(lint・単体テスト・ビルド)が通ってから実行する。土台がchangesでskipされた場合はfailure()にならず実行され、失敗した場合のみskipされる
+    needs: [changes, code-quality, unit-test, web-build]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.e2e == 'true' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: develop

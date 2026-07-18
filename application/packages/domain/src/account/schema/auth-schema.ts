@@ -16,3 +16,19 @@ export const authInputSchema = z.object({
 })
 
 export type AuthInput = z.infer<typeof authInputSchema>
+
+// OAuthログイン開始時のクエリ。redirectはログイン成功後に戻す内部パス
+export const oauthLoginQuerySchema = z.object({
+  redirect: z.string().optional(),
+})
+
+export type OAuthLoginQuery = z.infer<typeof oauthLoginQuerySchema>
+
+// OAuthコールバックのクエリ。認可拒否や失敗時はcodeが無くerrorが渡ってくる
+export const oauthCallbackQuerySchema = z.object({
+  code: z.string().optional(),
+  error: z.string().optional(),
+  error_description: z.string().optional(),
+})
+
+export type OAuthCallbackQuery = z.infer<typeof oauthCallbackQuerySchema>

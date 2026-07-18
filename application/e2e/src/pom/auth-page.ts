@@ -10,6 +10,7 @@ export class AuthPage {
   private readonly passwordInput: Locator
   private readonly signupButton: Locator
   private readonly loginButton: Locator
+  private readonly githubLoginLink: Locator
   private readonly loginPageText: Locator
   private readonly signupConflictErrorText: Locator
   private readonly trendsPageText: Locator
@@ -21,6 +22,8 @@ export class AuthPage {
     this.signupButton = page.getByRole('button', { name: 'アカウント作成' })
     // 「パスキーでログイン」と部分一致しないよう完全一致で絞る
     this.loginButton = page.getByRole('button', { name: 'ログイン', exact: true })
+    // OAuth開始はページ遷移のためbuttonではなくlinkとして描画される
+    this.githubLoginLink = page.getByRole('link', { name: 'GitHubでログイン' })
     this.loginPageText = page.getByText('アカウントをお持ちでないですか？')
     this.signupConflictErrorText = page.getByText('このメールアドレスは既に使用されています')
     this.trendsPageText = page.getByText('絞り込み')
@@ -60,6 +63,11 @@ export class AuthPage {
   async waitForLoginPage(): Promise<void> {
     await expect(this.page).toHaveURL(LOGIN_URL_PATTERN, { timeout: AUTH_FLOW_TIMEOUT })
     await expect(this.loginPageText).toBeVisible({ timeout: 5000 })
+  }
+
+  // GitHub本体の認可画面は外部サービスのためE2Eでは通せず、導線の表示までを確認する
+  async expectGithubLoginVisible(): Promise<void> {
+    await expect(this.githubLoginLink).toBeVisible({ timeout: 5000 })
   }
 
   async submitLogin(email: string, password: string): Promise<void> {

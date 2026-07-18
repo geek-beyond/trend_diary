@@ -62,3 +62,7 @@ export function apiRequest(
     env,
   )
 }
+
+export function findSetCookie(res: Response, prefix: string): string | undefined {
+  return res.headers.getSetCookie().find((cookie) => cookie.startsWith(prefix))
+}

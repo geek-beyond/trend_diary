@@ -17,7 +17,7 @@ import server from './server'
  * それぞれ createContext を再評価すると別インスタンスになり "No value found for context" になるため、
  * SSR ビルド内で生成された唯一のインスタンスを共有する（entry.server が再エクスポートしている）。
  */
-export function createHonoReactRouterApp(build: ServerBuild): Hono<Env> {
+export function createApp(build: ServerBuild): Hono<Env> {
   const requestHandler = createRequestHandler(build)
   // oxlint-disable-next-line typescript/consistent-type-assertions -- entry.server が実行時に付与する appLoadContext は ServerBuild の静的型に無いため
   const { appLoadContext } = build.entry.module as ServerBuild['entry']['module'] & {

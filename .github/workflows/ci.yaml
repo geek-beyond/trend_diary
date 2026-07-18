@@ -61,6 +61,10 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.packages != '[]' }}
     runs-on: ubuntu-latest
+    # web-client の test_cov によるカバレッジコメント投稿に必要
+    permissions:
+      contents: read
+      pull-requests: write
     strategy:
       fail-fast: false
       matrix:
@@ -75,7 +79,16 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: テスト
+        if: ${{ matrix.package != 'web-client' }}
         run: pnpm --filter @trend-diary/${{ matrix.package }} test
+
+      # web は複数の vitest project を持つため package 単位の test では絞れず、
+      # カバレッジコメント投稿も伴うため test_cov 経由で client project のみ実行する
+      - name: クライアントのテスト
+        if: ${{ matrix.package == 'web-client' }}
+        uses: ./.github/actions/test_cov
+        with:
+          target: client
 
   web-build:
     needs: changes
@@ -92,29 +105,6 @@ jobs:
 
       - name: ビルド
         run: pnpm run build
-
-  client-test:
-    name: unit-test (web client)
-    needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' }}
-    runs-on: ubuntu-latest
-    # test_cov のカバレッジコメント投稿に必要
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-      - name: Node.jsの構築
-        uses: ./.github/actions/setup_node
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
-
-      - name: クライアントのテスト
-        uses: ./.github/actions/test_cov
-        with:
-          target: client
 
   server-test:
     name: integration-test (web server)
@@ -269,7 +259,7 @@ jobs:
 
   gate:
     if: ${{ !cancelled() }}
-    needs: [changes, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e]
+    needs: [changes, code-quality, unit-test, web-build, server-test, component-test, schema, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: いずれかのジョブが失敗していないか確認

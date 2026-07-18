@@ -13,7 +13,7 @@ inputs:
 
 outputs:
   packages:
-    description: matrix 対象パッケージ短縮名の JSON 配列
+    description: matrix 対象の JSON 配列（パッケージ短縮名。web の client project は web-client として含む）
     value: ${{ steps.detect.outputs.packages }}
   web:
     description: web(＋依存元)の変更有無
@@ -75,14 +75,17 @@ runs:
 
         has() { grep -qx "$1" <<<"$names"; }
 
+        web=false
+        if has web; then web=true; fi
+
         items=""
         for p in common datastore domain notification authentication cron; do
           if has "$p"; then items="${items}\"${p}\","; fi
         done
+        # web は client / server / storybook の複数 project を持つため、
+        # 単体テストにあたる client だけを web-client として matrix に載せる
+        if [[ "$web" == "true" ]]; then items="${items}\"web-client\","; fi
         packages="[${items%,}]"
-
-        web=false
-        if has web; then web=true; fi
 
         e2e=false
         if has e2e || [[ "$web" == "true" ]]; then e2e=true; fi

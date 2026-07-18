@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import QueryImpl from './query-impl'
 
+const normalize = (s: string) => s.replace(/\s+/g, ' ').trim()
+
 interface DateRangeSqlBuilders {
   buildClosedOpenDateRangeSql(columnName: string, fromDate: Date, toDateExclusive: Date): SQL
   buildDateRangeConditions(
@@ -524,7 +526,6 @@ describe('QueryImpl', () => {
       })
       const joined = dialect.sqlToQuery(sql.join(conditions, sql.raw(' AND ')))
 
-      const normalize = (s: string) => s.replace(/\s+/g, ' ').trim()
       expect(normalize(closedOpen.sql)).toBe(normalize(joined.sql))
       expect(closedOpen.params).toEqual(joined.params)
     })

@@ -25,16 +25,16 @@ interface UnreadDigestionResponse {
   total: number
 }
 
+async function requestUnreadDigestion(query?: string, cookies?: string) {
+  const suffix = query ? `?${query}` : ''
+  return apiRequest(`/api/articles/unread-digestion${suffix}`, { method: 'GET', cookies })
+}
+
 describe('GET /api/articles/unread-digestion', () => {
   let testActiveUserId: bigint
   let authCookies: string
   const createdArticleIds: bigint[] = []
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
-
-  async function requestUnreadDigestion(query?: string, cookies?: string) {
-    const suffix = query ? `?${query}` : ''
-    return apiRequest(`/api/articles/unread-digestion${suffix}`, { method: 'GET', cookies })
-  }
 
   beforeEach(async () => {
     const { userId, authenticationId } = await userHelper.create(

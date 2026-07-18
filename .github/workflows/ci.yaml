@@ -61,7 +61,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.packages != '[]' }}
     runs-on: ubuntu-latest
-    # web-client の test_cov によるカバレッジコメント投稿に必要
+    # test_cov のカバレッジコメント投稿に必要
     permissions:
       contents: read
       pull-requests: write
@@ -82,8 +82,7 @@ jobs:
         if: ${{ matrix.package != 'web-client' }}
         run: pnpm --filter @trend-diary/${{ matrix.package }} test
 
-      # web は複数の vitest project を持つため package 単位の test では絞れず、
-      # カバレッジコメント投稿も伴うため test_cov 経由で client project のみ実行する
+      # web は複数の vitest project を持ち package 単位の test では絞れないため、project を指定できる test_cov で実行する
       - name: クライアントのテスト
         if: ${{ matrix.package == 'web-client' }}
         uses: ./.github/actions/test_cov

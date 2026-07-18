@@ -13,7 +13,7 @@ inputs:
 
 outputs:
   packages:
-    description: matrix 対象の JSON 配列（パッケージ短縮名。web の client project は web-client として含む）
+    description: matrix 対象の JSON 配列
     value: ${{ steps.detect.outputs.packages }}
   web:
     description: web(＋依存元)の変更有無

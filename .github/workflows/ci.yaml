@@ -196,7 +196,7 @@ jobs:
 
   e2e:
     name: E2E
-    needs: [changes, unit-test, client-test, server-test, component-test, web-build]
+    needs: [changes, unit-test, server-test, component-test, web-build]
     if: ${{ !cancelled() && !failure() && needs.changes.outputs.e2e == 'true' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest

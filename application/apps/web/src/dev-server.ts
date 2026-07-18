@@ -1,6 +1,6 @@
 // @ts-ignore Vite が dev 時に解決する仮想モジュール
 import * as build from 'virtual:react-router/server-build'
-import { createDevelopmentApp } from './react-router-hono'
+import { createHonoReactRouterApp } from './react-router-hono'
 
 // dev では @hono/vite-dev-server がこの Hono アプリを実行し、仮想モジュール経由で SSR を委譲する
-export default createDevelopmentApp(build)
+export default createHonoReactRouterApp(build)

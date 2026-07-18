@@ -9,26 +9,16 @@ import type { Env } from './env'
 import { type AppLoadContext, buildLoadContext } from './load-context'
 import server from './server'
 
-// 本番（worker.ts, wrangler ビルド）向け。React Router を production モードで動かす。
-export function createProductionApp(build: ServerBuild): Hono<Env> {
-  return createApp(build, 'production')
-}
-
-// dev サーバ（dev-server.ts, Vite ビルド）向け。エラーオーバーレイ等の dev フックを有効化する。
-// worker/dev は別ツールチェーンでビルドされ実行時に環境を自動判別できないため、専用関数で明示する。
-export function createDevelopmentApp(build: ServerBuild): Hono<Env> {
-  return createApp(build, 'development')
-}
-
 /**
  * Hono の API アプリに React Router の SSR をフォールバックで結線した Hono アプリを組み立てる。
+ * 本番（worker.ts）と dev（dev-server.ts）で build の供給元だけが異なる。
  *
  * context トークンは必ず build.entry.module から取得する。worker と SSR ビルドは別バンドルで、
  * それぞれ createContext を再評価すると別インスタンスになり "No value found for context" になるため、
  * SSR ビルド内で生成された唯一のインスタンスを共有する（entry.server が再エクスポートしている）。
  */
-function createApp(build: ServerBuild, mode: 'development' | 'production'): Hono<Env> {
-  const requestHandler = createRequestHandler(build, mode)
+export function createHonoReactRouterApp(build: ServerBuild): Hono<Env> {
+  const requestHandler = createRequestHandler(build)
   // oxlint-disable-next-line typescript/consistent-type-assertions -- entry.server が実行時に付与する appLoadContext は ServerBuild の静的型に無いため
   const { appLoadContext } = build.entry.module as ServerBuild['entry']['module'] & {
     appLoadContext: RouterContext<AppLoadContext>

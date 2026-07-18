@@ -8,22 +8,26 @@
 import { renderToReadableStream } from 'react-dom/server'
 import type {
   ActionFunctionArgs,
-  AppLoadContext,
   EntryContext,
   LoaderFunctionArgs,
+  RouterContextProvider,
 } from 'react-router'
 import { isRouteErrorResponse, ServerRouter } from 'react-router'
+import { appLoadContext } from '@/load-context'
+
+// worker/dev サーバは build.entry.module 経由でこのトークンを取得する。
+// 別バンドル（worker）で createContext を再評価すると別インスタンスになり context が解決できないため、
+// SSR ビルド内で生成した唯一のインスタンスを共有する。
+export { appLoadContext }
 
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
-  // This is ignored so we can keep it in the template for visibility.  Feel
-  // free to delete this parameter in your app if you're not using it!
-  loadContext: AppLoadContext,
+  loadContext: RouterContextProvider,
 ) {
-  const nonce = loadContext.nonce
+  const nonce = loadContext.get(appLoadContext).nonce
   let statusCode = responseStatusCode
   const body = await renderToReadableStream(
     <ServerRouter context={reactRouterContext} url={request.url} nonce={nonce} />,

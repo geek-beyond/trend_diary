@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mergeMeta, type MetaMatches, pageMeta, SITE_URL } from './meta'
 
 function buildMatch(meta: MetaMatches[number]['meta']): MetaMatches[number] {
-  return { id: 'test', pathname: '/', data: undefined, loaderData: undefined, params: {}, meta }
+  return { id: 'test', pathname: '/', loaderData: undefined, params: {}, meta }
 }
 
 describe('pageMeta', () => {

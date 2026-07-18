@@ -15,6 +15,7 @@ import { AnchorLink } from '@/client/components/ui/navigation/link'
 import { ThemeProvider } from '@/client/features/theme'
 import { SITE_URL } from '@/client/lib/meta'
 import { ZOD_JITLESS_BOOTSTRAP_SCRIPT } from '@/client/lib/zod'
+import { appLoadContext } from '@/load-context'
 import { Toaster } from './components/shadcn/sonner'
 
 export const meta: MetaFunction = () => [
@@ -48,7 +49,7 @@ export const meta: MetaFunction = () => [
 
 // secureHeaders が生成した nonce を Layout 側で参照し、インラインscriptのCSP許可に使う
 export function loader({ context }: LoaderFunctionArgs) {
-  return { nonce: context.nonce }
+  return { nonce: context.get(appLoadContext).nonce }
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {

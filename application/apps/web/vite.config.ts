@@ -1,14 +1,12 @@
 /// <reference types="vitest/config" />
 /// <reference types="vitest" />
 
-import { defaultOptions } from '@hono/vite-dev-server'
+import devServer, { defaultOptions } from '@hono/vite-dev-server'
 import adapter from '@hono/vite-dev-server/cloudflare'
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
-import serverAdapter from 'hono-react-router-adapter/vite'
 import { defineConfig } from 'vite'
 import babel from 'vite-plugin-babel'
-import { getLoadContext } from './src/load-context'
 
 const ReactCompilerConfig = {}
 
@@ -32,11 +30,16 @@ export default defineConfig({
         plugins: [['babel-plugin-react-compiler', ReactCompilerConfig]],
       },
     }),
-    serverAdapter({
+    devServer({
       adapter,
-      getLoadContext,
-      entry: 'src/server.ts',
-      exclude: [...defaultOptions.exclude, '/assets/**', '/src/client/**'],
+      entry: 'src/dev-server.ts',
+      exclude: [
+        ...defaultOptions.exclude,
+        '/assets/**',
+        '/src/client/**',
+        // Vite のアセット読込サフィックス（?url, ?raw 等）は dev サーバに渡さず Vite に処理させる
+        /\?(?:inline|url|no-inline|raw|import(?:&(?:inline|url|no-inline|raw)?)?)$/,
+      ],
     }),
   ],
   optimizeDeps: {

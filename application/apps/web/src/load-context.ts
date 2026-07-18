@@ -1,21 +1,24 @@
 import type { Context } from 'hono'
-import type { AppLoadContext } from 'react-router'
+import { createContext } from 'react-router'
+import type { Env } from './env'
 
-// hono-react-router-adapter が getLoadContext に渡す引数の形。型が非公開のため必要分だけ定義する
-interface GetLoadContextArgs {
-  request: Request
-  context: {
-    cloudflare: AppLoadContext['cloudflare']
-    hono: { context: Context }
-  }
+export interface AppLoadContext {
+  cloudflare: { env: Env['Bindings'] }
+  // secureHeaders が生成する CSP nonce。<Scripts> 等のインラインscript許可に使う
+  nonce?: string
 }
 
+// v8 では loader/action/middleware の context が RouterContextProvider になり、
+// plain object を渡せない。値の受け渡しは createContext のトークン経由で行う。
+export const appLoadContext = createContext<AppLoadContext>()
+
 /**
- * secureHeaders が生成した nonce を React Router 側へ引き渡し、<Scripts> 等のインラインscriptを許可する。
+ * secureHeaders が生成した nonce と Cloudflare バインディングを、SSR ハンドラ呼び出し時に
+ * RouterContextProvider へ set するための値を Hono の Context から組み立てる。
  */
-export function getLoadContext({ context }: GetLoadContextArgs): AppLoadContext {
+export function buildLoadContext(c: Context<Env>): AppLoadContext {
   return {
-    ...context,
-    nonce: context.hono.context.get('secureHeadersNonce'),
+    cloudflare: { env: c.env },
+    nonce: c.get('secureHeadersNonce'),
   }
 }

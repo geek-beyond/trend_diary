@@ -3,6 +3,8 @@ import { createRequestHandler, RouterContextProvider } from 'react-router'
 // @ts-ignore Vite が dev 時に解決する仮想モジュール
 import * as build from 'virtual:react-router/server-build'
 import type { Env } from './env'
+// dev は Vite 単一グラフのため直接 import で同一インスタンスになる。
+// 本番（worker.ts）は別バンドルのため build.entry.module 経由で共有する点が異なる。
 import { appLoadContext, buildLoadContext } from './load-context'
 import server from './server'
 

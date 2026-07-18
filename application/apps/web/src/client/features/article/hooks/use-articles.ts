@@ -126,9 +126,8 @@ const applyPageToSearchParams = (params: URLSearchParams, targetPage: number) =>
   }
 }
 
-const clearPageParam = (params: URLSearchParams) => {
+const clearPageParam = (params: URLSearchParams): void => {
   params.delete('page')
-  return params
 }
 
 export default function useArticles(isLoggedIn = false) {

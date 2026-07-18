@@ -2,37 +2,37 @@ import type { Env } from '@/env'
 import TEST_ENV from '@/test/env'
 import { apiRequest } from '@/test/helper/request'
 
+// limit()の結果を制御してレートリミットの挙動を検証する
+function buildEnv(success: boolean): Env['Bindings'] {
+  return {
+    ...TEST_ENV,
+    AUTH_RATE_LIMITER: {
+      limit: async () => ({ success }),
+    },
+  }
+}
+
+// limit()が例外をスローする障害時を再現する
+function buildErrorEnv(): Env['Bindings'] {
+  return {
+    ...TEST_ENV,
+    AUTH_RATE_LIMITER: {
+      limit: async () => {
+        throw new Error('rate limiter unavailable')
+      },
+    },
+  }
+}
+
+function requestAuth(path: string, env: Env['Bindings']) {
+  return apiRequest(path, {
+    method: 'POST',
+    json: { email: 'rate-limit-test@example.com', password: 'Test@password123' },
+    env,
+  })
+}
+
 describe('レートリミットミドルウェア', () => {
-  // limit()の結果を制御してレートリミットの挙動を検証する
-  function buildEnv(success: boolean): Env['Bindings'] {
-    return {
-      ...TEST_ENV,
-      AUTH_RATE_LIMITER: {
-        limit: async () => ({ success }),
-      },
-    }
-  }
-
-  // limit()が例外をスローする障害時を再現する
-  function buildErrorEnv(): Env['Bindings'] {
-    return {
-      ...TEST_ENV,
-      AUTH_RATE_LIMITER: {
-        limit: async () => {
-          throw new Error('rate limiter unavailable')
-        },
-      },
-    }
-  }
-
-  function requestAuth(path: string, env: Env['Bindings']) {
-    return apiRequest(path, {
-      method: 'POST',
-      json: { email: 'rate-limit-test@example.com', password: 'Test@password123' },
-      env,
-    })
-  }
-
   describe('正常系', () => {
     // 後続のログイン処理で401となるが、ここでは制限されず429にならないことを確認する
     const testCases: Array<{ name: string; env: Env['Bindings'] }> = [

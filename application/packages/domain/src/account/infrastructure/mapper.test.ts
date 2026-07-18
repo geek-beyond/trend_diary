@@ -2,29 +2,29 @@ import type { ActiveUser as RdbActiveUser } from '@trend-diary/datastore/drizzle
 import { describe, expect, it } from 'vitest'
 import { mapToActiveUser } from './mapper'
 
-describe('mapToActiveUser', () => {
-  // テストデータ作成ヘルパー
-  // スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
-  // テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
-  const createMockRdbActiveUser = (
-    overrides: Partial<Record<keyof RdbActiveUser, string | number | bigint | Date | null>> = {},
-  ): RdbActiveUser => {
-    const now = new Date('2024-01-15T09:30:00Z')
+// テストデータ作成ヘルパー
+// スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
+// テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
+const createMockRdbActiveUser = (
+  overrides: Partial<Record<keyof RdbActiveUser, string | number | bigint | Date | null>> = {},
+): RdbActiveUser => {
+  const now = new Date('2024-01-15T09:30:00Z')
 
-    const rdbActiveUser = {
-      activeUserId: 12345n,
-      userId: 67890n,
-      email: 'john.doe@example.com',
-      displayName: '田中太郎',
-      authenticationId: '550e8400-e29b-41d4-a716-446655440000',
-      createdAt: new Date('2023-11-20T10:15:30Z'),
-      updatedAt: now,
-      ...overrides,
-    }
-    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
-    return rdbActiveUser as unknown as RdbActiveUser
+  const rdbActiveUser = {
+    activeUserId: 12345n,
+    userId: 67890n,
+    email: 'john.doe@example.com',
+    displayName: '田中太郎',
+    authenticationId: '550e8400-e29b-41d4-a716-446655440000',
+    createdAt: new Date('2023-11-20T10:15:30Z'),
+    updatedAt: now,
+    ...overrides,
   }
+  // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
+  return rdbActiveUser as unknown as RdbActiveUser
+}
 
+describe('mapToActiveUser', () => {
   describe('基本動作', () => {
     it('標準的なActiveUserデータで全フィールドが正確にマッピングされること', () => {
       const rdbActiveUser = createMockRdbActiveUser()

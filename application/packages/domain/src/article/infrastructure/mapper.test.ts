@@ -2,27 +2,27 @@ import type { Article as RdbArticle } from '@trend-diary/datastore/drizzle-orm/s
 import { describe, expect, it } from 'vitest'
 import fromRdbToArticle from './mapper'
 
-describe('fromRdbToArticle', () => {
-  // テストデータ作成ヘルパー
-  // スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
-  // テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
-  const createMockRdbArticle = (
-    overrides: Partial<Record<keyof RdbArticle, string | number | bigint | Date | null>> = {},
-  ): RdbArticle => {
-    const rdbArticle = {
-      articleId: 1n,
-      media: 'Qiita',
-      title: 'TypeScriptの型安全性について',
-      author: '山田太郎',
-      description: 'TypeScriptの型安全性に関する解説記事です',
-      url: 'https://example.com/article/1',
-      createdAt: new Date('2024-01-15T09:30:00Z'),
-      ...overrides,
-    }
-    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
-    return rdbArticle as unknown as RdbArticle
+// テストデータ作成ヘルパー
+// スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
+// テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
+const createMockRdbArticle = (
+  overrides: Partial<Record<keyof RdbArticle, string | number | bigint | Date | null>> = {},
+): RdbArticle => {
+  const rdbArticle = {
+    articleId: 1n,
+    media: 'Qiita',
+    title: 'TypeScriptの型安全性について',
+    author: '山田太郎',
+    description: 'TypeScriptの型安全性に関する解説記事です',
+    url: 'https://example.com/article/1',
+    createdAt: new Date('2024-01-15T09:30:00Z'),
+    ...overrides,
   }
+  // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
+  return rdbArticle as unknown as RdbArticle
+}
 
+describe('fromRdbToArticle', () => {
   describe('基本動作', () => {
     it('標準的なArticleデータで全フィールドが正確にマッピングされること', () => {
       // Arrange

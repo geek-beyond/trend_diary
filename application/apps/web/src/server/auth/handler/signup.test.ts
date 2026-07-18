@@ -1,6 +1,10 @@
 import { apiRequest } from '@/test/helper/request'
 import * as userHelper from '@/test/helper/user'
 
+async function requestSignup(body: string) {
+  return apiRequest('/api/auth/signup', { method: 'POST', body, contentTypeJson: true })
+}
+
 describe('POST /api/auth/signup', () => {
   let emailSequence = 0
   const nextEmail = (prefix: string) => {
@@ -22,10 +26,6 @@ describe('POST /api/auth/signup', () => {
     await userHelper.cleanUpByEmailPattern(SIGNUP_TEST_EMAIL_PATTERN)
     await userHelper.cleanUpByEmailPattern(DUPLICATE_EMAIL_PATTERN)
   })
-
-  async function requestSignup(body: string) {
-    return apiRequest('/api/auth/signup', { method: 'POST', body, contentTypeJson: true })
-  }
 
   it('正常系: signupが成功する', async () => {
     const email = nextEmail('signup')

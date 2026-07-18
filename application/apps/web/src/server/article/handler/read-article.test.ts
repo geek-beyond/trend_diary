@@ -5,6 +5,14 @@ import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import { articleIdParamSchema, createReadHistoryApiSchema } from './read-article'
 
+async function requestReadArticle(articleId: string, cookies: string, readAt?: string) {
+  return apiRequest(`/api/articles/${articleId}/read`, {
+    method: 'POST',
+    cookies,
+    json: { read_at: readAt || faker.date.recent().toISOString() },
+  })
+}
+
 describe('API ReadHistoryスキーマ', () => {
   describe('createReadHistoryApiSchema', () => {
     const MS_PER_MINUTE = 60 * 1000
@@ -90,14 +98,6 @@ describe('POST /api/articles/:article_id/read', () => {
   let authCookies: string
   const createdArticleIds: bigint[] = []
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
-
-  async function requestReadArticle(articleId: string, cookies: string, readAt?: string) {
-    return apiRequest(`/api/articles/${articleId}/read`, {
-      method: 'POST',
-      cookies,
-      json: { read_at: readAt || faker.date.recent().toISOString() },
-    })
-  }
 
   beforeEach(async () => {
     // アカウント作成・ログイン

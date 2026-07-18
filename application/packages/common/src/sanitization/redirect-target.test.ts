@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import { resolveLoginRedirectTarget } from './redirect-target'
 
 describe('resolveLoginRedirectTarget', () => {
@@ -18,6 +17,7 @@ describe('resolveLoginRedirectTarget', () => {
 
   describe('準正常系', () => {
     it.each([
+      { outline: 'undefined', input: undefined },
       { outline: 'null', input: null },
       { outline: '空文字', input: '' },
       { outline: 'スキーム付きの外部URL', input: 'https://evil.example.com' },

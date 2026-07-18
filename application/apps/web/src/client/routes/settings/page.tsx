@@ -1,4 +1,5 @@
 import PageCard from '@/client/components/ui/layout/page-card'
+import { GithubLinkToggle } from '@/client/features/github-auth'
 import { PasskeyToggle } from '@/client/features/passkey'
 import { SettingsSection } from '@/client/features/settings'
 import { ThemeToggle } from '@/client/features/theme'
@@ -22,6 +23,14 @@ export default function SettingsPage() {
         withDivider
       >
         <PasskeyToggle />
+      </SettingsSection>
+
+      <SettingsSection
+        title='GitHub連携'
+        description='GitHubアカウントを連携すると、次回からGitHubでログインできます。'
+        withDivider
+      >
+        <GithubLinkToggle />
       </SettingsSection>
     </PageCard>
   )

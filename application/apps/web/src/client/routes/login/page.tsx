@@ -1,4 +1,5 @@
 import { LoginForm, type LoginFormProps } from '@/client/features/authenticate/login'
+import { GithubLoginButton } from '@/client/features/github-auth'
 import { PasskeyLoginButton } from '@/client/features/passkey'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
@@ -40,6 +41,7 @@ export default function LoginPage({
                 <span className='bg-border h-px flex-1' />
               </div>
               <PasskeyLoginButton redirectTo={redirectTo} />
+              <GithubLoginButton redirectTo={redirectTo} />
             </div>
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>

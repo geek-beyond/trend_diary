@@ -35,11 +35,65 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          # pnpm がベースブランチとの差分でパッケージを選ぶため全履歴を取得する
           fetch-depth: 0
-      - id: detect
-        uses: ./.github/actions/detect-changes
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
         with:
-          base: ${{ github.base_ref }}
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+
+      # pnpm の依存グラフで「変更パッケージ＋その依存元」を算出し、後続ジョブの実行要否を決める
+      - name: 変更パッケージの検知
+        id: detect
+        env:
+          # mainへのpushではbase_refが空になり全件実行になる
+          BASE: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+
+          filter_args=(-r)
+          if [[ -n "$BASE" ]]; then
+            git fetch --no-tags origin "$BASE"
+            # ルート設定やCI定義の変更は全パッケージに影響しうるため全件扱いにする
+            if [[ -z "$(git diff --name-only "origin/${BASE}" HEAD -- \
+                package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json \
+                vitest.coverage.ts \
+                ../.github/workflows/ci.yaml ../.github/actions)" ]]; then
+              filter_args=(-r --filter "...[origin/${BASE}]")
+            fi
+          fi
+
+          # `pnpm exec pwd` は対象パッケージのルートを1行ずつ返すため、パス末尾のディレクトリ名が
+          # そのまま短縮名になる。パス以外の行(該当なし通知やワークスペースルート)は除外する
+          names=$(pnpm "${filter_args[@]}" exec pwd \
+            | awk -v root="$PWD" 'index($0, root "/") == 1 { sub(".*/", ""); print }' \
+            | sort -u)
+          echo "変更パッケージ(依存元含む): ${names:-(なし)}"
+
+          has() { grep -qx "$1" <<<"$names"; }
+
+          # web と e2e は専用ジョブで実行するため unit-test の matrix から除外する
+          items=""
+          for name in $names; do
+            if [[ "$name" != web && "$name" != e2e ]]; then items+="\"${name}\","; fi
+          done
+
+          web=false
+          if has web; then web=true; fi
+
+          e2e=false
+          if has e2e || [[ "$web" == "true" ]]; then e2e=true; fi
+
+          # スキーマ関連ファイルはdatastore配下に閉じており検査も軽量なため、datastoreの変更有無で代用する
+          schema=false
+          if has datastore; then schema=true; fi
+
+          {
+            echo "packages=[${items%,}]"
+            echo "web=$web"
+            echo "e2e=$e2e"
+            echo "schema=$schema"
+          } >> "$GITHUB_OUTPUT"
 
   code-quality:
     needs: changes

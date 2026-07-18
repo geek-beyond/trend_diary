@@ -48,10 +48,6 @@ runs:
           sed 's#.*/##' | sort -u
         }
 
-        all_pkg_names() {
-          pnpm -r exec pwd | parse_pkg_names
-        }
-
         run_all=false
         if [[ -z "$BASE" ]]; then
           run_all=true
@@ -66,26 +62,29 @@ runs:
         fi
 
         if [[ "$run_all" == "true" ]]; then
-          names=$(all_pkg_names)
+          dirs=$(pnpm -r exec pwd | sort -u)
         else
-          names=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd | parse_pkg_names)
+          dirs=$(pnpm --filter "...[origin/${BASE}]" -r exec pwd | sort -u)
         fi
+        names=$(parse_pkg_names <<<"$dirs")
 
         echo "変更パッケージ(依存先含む, run_all=${run_all}): ${names:-(なし)}"
 
         has() { grep -qx "$1" <<<"$names"; }
 
+        # matrix 対象は各パッケージが test:unit を定義しているかで決まる。
+        # CI 側で対象を列挙せず、パッケージ追加時は test:unit を書くだけで matrix に載る
+        items=""
+        while read -r dir; do
+          [[ -z "$dir" ]] && continue
+          if jq -e '.scripts["test:unit"] != null' "${dir}/package.json" >/dev/null; then
+            items="${items}\"$(basename "$dir")\","
+          fi
+        done <<<"$dirs"
+        packages="[${items%,}]"
+
         web=false
         if has web; then web=true; fi
-
-        items=""
-        for p in common datastore domain notification authentication cron; do
-          if has "$p"; then items="${items}\"${p}\","; fi
-        done
-        # web は client / server / storybook の複数 project を持つため、
-        # 単体テストにあたる client だけを web-client として matrix に載せる
-        if [[ "$web" == "true" ]]; then items="${items}\"web-client\","; fi
-        packages="[${items%,}]"
 
         e2e=false
         if has e2e || [[ "$web" == "true" ]]; then e2e=true; fi

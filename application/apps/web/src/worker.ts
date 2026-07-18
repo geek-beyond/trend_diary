@@ -1,7 +1,5 @@
-import handle from 'hono-react-router-adapter/cloudflare-workers'
 // @ts-ignore ビルド後に生成されるため
 import * as build from '../build/server'
-import { getLoadContext } from './load-context'
-import server from './server'
+import { handle } from './react-router-hono'
 
-export default handle(build, server, { getLoadContext })
+export default handle(build)

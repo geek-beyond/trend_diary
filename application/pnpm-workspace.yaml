@@ -6,19 +6,19 @@ packages:
 # パッケージ間で共有する依存のバージョンを集中管理する。
 # 各パッケージでは "<dep>": "catalog:" と宣言してここのバージョンを参照する。
 catalog:
-  '@cloudflare/vitest-pool-workers': ^0.18.0
-  '@cloudflare/workers-types': ^5.20260704.1
+  '@cloudflare/vitest-pool-workers': ^0.18.4
+  '@cloudflare/workers-types': ^5.20260711.1
   '@faker-js/faker': ^10.5.0
   '@playwright/test': ^1.61.1
-  '@types/node': ^26.1.0
+  '@types/node': ^26.1.1
   drizzle-orm: 0.45.2
-  hono: ^4.12.27
+  hono: ^4.12.29
   neverthrow: ^8.2.0
   pino: ^10.3.1
   playwright: ^1.61.1
-  vitest: ^4.1.9
+  vitest: ^4.1.10
   vitest-mock-extended: ^4.0.0
-  wrangler: ^4.107.0
+  wrangler: ^4.110.0
   zod: ^4.4.3
 
 allowBuilds:

@@ -28,22 +28,18 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.detect.outputs.packages }}
+      unit: ${{ steps.detect.outputs.unit }}
       web: ${{ steps.detect.outputs.web }}
       e2e: ${{ steps.detect.outputs.e2e }}
       schema: ${{ steps.detect.outputs.schema }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          # pnpm がベースブランチとの差分でパッケージを選ぶため全履歴を取得する
-          fetch-depth: 0
-      - name: Node.jsの構築
-        uses: ./.github/actions/setup_node
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
+          persist-credentials: false
 
-      # pnpm の依存グラフで「変更パッケージ＋その依存元」を算出し、後続ジョブの実行要否を決める
-      - name: 変更パッケージの検知
+      # 変更パスだけで後続ジョブの実行要否を決める。パッケージ間の依存関係は追わず、
+      # 共有コード(packages)の変更は利用側すべてに影響するとみなす
+      - name: 変更パスの検知
         id: detect
         env:
           # mainへのpushではbase_refが空になり全件実行になる
@@ -51,49 +47,30 @@ jobs:
         run: |
           set -euo pipefail
 
-          filter_args=(-r)
-          if [[ -n "$BASE" ]]; then
-            git fetch --no-tags origin "$BASE"
-            # ルート設定やCI定義の変更は全パッケージに影響しうるため全件扱いにする
-            if [[ -z "$(git diff --name-only "origin/${BASE}" HEAD -- \
-                package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json tsconfig.json \
-                vitest.coverage.ts \
-                ../.github/workflows/ci.yaml ../.github/actions)" ]]; then
-              filter_args=(-r --filter "...[origin/${BASE}]")
-            fi
+          if [[ -z "$BASE" ]]; then
+            changed() { true; }
+          else
+            # PRのHEADはマージコミットのため、ベース先端とのツリー差分がそのままPRの変更になる
+            git fetch --no-tags --depth=1 origin "$BASE"
+            files=$(git diff --name-only "origin/${BASE}" HEAD)
+            changed() { grep -qE "$1" <<<"$files"; }
           fi
 
-          # `pnpm exec pwd` は対象パッケージのルートを1行ずつ返すため、パス末尾のディレクトリ名が
-          # そのまま短縮名になる。パス以外の行(該当なし通知やワークスペースルート)は除外する
-          names=$(pnpm "${filter_args[@]}" exec pwd \
-            | awk -v root="$PWD" 'index($0, root "/") == 1 { sub(".*/", ""); print }' \
-            | sort -u)
-          echo "変更パッケージ(依存元含む): ${names:-(なし)}"
+          # ルート設定やCI定義の変更は全ジョブに影響しうる
+          root='^application/[^/]+$|^\.github/'
 
-          has() { grep -qx "$1" <<<"$names"; }
-
-          # web と e2e は専用ジョブで実行するため unit-test の matrix から除外する
-          items=""
-          for name in $names; do
-            if [[ "$name" != web && "$name" != e2e ]]; then items+="\"${name}\","; fi
-          done
-
-          web=false
-          if has web; then web=true; fi
-
-          e2e=false
-          if has e2e || [[ "$web" == "true" ]]; then e2e=true; fi
-
-          # スキーマ関連ファイルはdatastore配下に閉じており検査も軽量なため、datastoreの変更有無で代用する
-          schema=false
-          if has datastore; then schema=true; fi
+          unit=false;   if changed "^application/apps/cron/|^application/packages/|$root"; then unit=true; fi
+          web=false;    if changed "^application/apps/web/|^application/packages/|$root"; then web=true; fi
+          e2e=false;    if changed "^application/e2e/" || [[ "$web" == "true" ]]; then e2e=true; fi
+          schema=false; if changed "^application/packages/datastore/|$root"; then schema=true; fi
 
           {
-            echo "packages=[${items%,}]"
+            echo "unit=$unit"
             echo "web=$web"
             echo "e2e=$e2e"
             echo "schema=$schema"
           } >> "$GITHUB_OUTPUT"
+          echo "unit=$unit web=$web e2e=$e2e schema=$schema"
 
   code-quality:
     needs: changes
@@ -113,12 +90,13 @@ jobs:
 
   unit-test:
     needs: changes
-    if: ${{ needs.changes.outputs.packages != '[]' }}
+    if: ${{ needs.changes.outputs.unit == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package: ${{ fromJSON(needs.changes.outputs.packages) }}
+        # web は client/server/component の専用ジョブ、e2e は E2E ジョブで実行するため含めない
+        package: [authentication, common, cron, datastore, domain, notification]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:

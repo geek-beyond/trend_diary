@@ -21,7 +21,7 @@ const requestLogger = createMiddleware<Env>(async (c, next) => {
       : DEFAULT_LOG_LEVEL
 
   const logger = new Logger(resolvedLogLevel)
-  const requestLogger = logger.with({
+  const accessLogger = logger.with({
     request_id: requestId,
     method,
     path,
@@ -32,13 +32,13 @@ const requestLogger = createMiddleware<Env>(async (c, next) => {
     request_id: requestId,
   })
 
-  requestLogger.info('Request started')
+  accessLogger.info('Request started')
 
   c.set(CONTEXT_KEY.APP_LOG, appLogger)
   await next()
 
   const responseTime = Math.round(performance.now() - startTime)
-  requestLogger.info('Request completed', {
+  accessLogger.info('Request completed', {
     status: c.res.status,
     response_time: responseTime,
   })

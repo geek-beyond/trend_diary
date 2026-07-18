@@ -27,6 +27,8 @@ export interface FetchWithTimeoutOptions {
   timeoutMs?: number
 }
 
+const noop = () => undefined
+
 // AbortSignal.any 未対応環境向けに、複数signalのいずれかの中断を伝播する合成signalを生成する。
 // 中断後はリスナーを解放できるよう、解放用のクリーンアップ関数もあわせて返す。
 const combineSignals = (signals: AbortSignal[]): { signal: AbortSignal; cleanup: () => void } => {
@@ -36,7 +38,6 @@ const combineSignals = (signals: AbortSignal[]): { signal: AbortSignal; cleanup:
   if (alreadyAborted) {
     controller.abort(alreadyAborted.reason)
     // 既に中断済みでリスナーを登録しないため、解放処理は不要
-    const noop = () => undefined
     return { signal: controller.signal, cleanup: noop }
   }
 

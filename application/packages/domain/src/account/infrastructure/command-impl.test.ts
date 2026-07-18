@@ -5,33 +5,33 @@ import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import type { Notifier } from '../repository'
 import CommandImpl from './command-impl'
 
+// INFO: Drizzleのinsert returningは「カラム順の配列」で行を返す
+// users:        user_id, created_at
+// active_users: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
+const buildUserRow = (userId: number): (string | number | null)[] => [
+  userId,
+  '2024-01-15T09:30:00.000Z',
+]
+const buildActiveUserRow = (data: {
+  activeUserId: number
+  email: string
+  displayName: string | null
+  authenticationId: string | null
+  userId: number
+}): (string | number | null)[] => [
+  data.activeUserId,
+  data.email,
+  data.displayName,
+  data.authenticationId,
+  '2024-01-15T09:30:00.000Z',
+  '2024-01-15T09:30:00.000Z',
+  data.userId,
+]
+
 describe('CommandImpl', () => {
   let useCase: CommandImpl
   let logger: Logger
   let notifier: Notifier
-
-  // INFO: Drizzleのinsert returningは「カラム順の配列」で行を返す
-  // users:        user_id, created_at
-  // active_users: active_user_id, email, display_name, authentication_id, created_at, updated_at, user_id
-  const buildUserRow = (userId: number): (string | number | null)[] => [
-    userId,
-    '2024-01-15T09:30:00.000Z',
-  ]
-  const buildActiveUserRow = (data: {
-    activeUserId: number
-    email: string
-    displayName: string | null
-    authenticationId: string | null
-    userId: number
-  }): (string | number | null)[] => [
-    data.activeUserId,
-    data.email,
-    data.displayName,
-    data.authenticationId,
-    '2024-01-15T09:30:00.000Z',
-    '2024-01-15T09:30:00.000Z',
-    data.userId,
-  ]
 
   beforeEach(() => {
     logger = new Logger('silent')

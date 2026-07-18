@@ -10,7 +10,7 @@ import { type AppLoadContext, buildLoadContext } from './load-context'
 import server from './server'
 
 /**
- * Hono の API アプリに React Router の SSR をフォールバックで結線した Hono アプリを組み立てる。
+ * Hono の API アプリに React Router の SSR をフォールバックとして組み合わせた Hono アプリを組み立てる。
  * 本番（worker.ts）と dev（dev-server.ts）で build の供給元だけが異なる。
  *
  * context トークンは必ず build.entry.module から取得する。worker と SSR ビルドは別バンドルで、

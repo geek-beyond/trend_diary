@@ -100,7 +100,7 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      # 未使用の export / ファイル / 依存を検出し、残っていれば fail させる（cross-module のため lint では拾えない）
+      # cross-module の未使用 export は lint / tsc では検出できないため
       - name: Knip
         run: pnpm knip
 

@@ -38,24 +38,4 @@ export class AccountUseCase {
 
     return ok(activeUserResult.value)
   }
-
-  async resolveOrRegisterActiveUser(
-    authenticationId: string,
-    email: string | null | undefined,
-    notifier: Notifier,
-  ): Promise<Result<CurrentUser, ClientError | ServerError>> {
-    const resolved = await this.resolveActiveUser(authenticationId)
-
-    // 既存ユーザーは認証IDだけで特定できるため、メール未取得でもログインを許可する
-    if (resolved.isOk() || !(resolved.error instanceof ClientError)) {
-      return resolved
-    }
-
-    // 新規登録にはメールが必須で、GitHub側で取得できないと登録できない
-    if (!email) {
-      return err(new ClientError('Email is required for registration', 400))
-    }
-
-    return this.userCommand.createActiveWithAuthenticationId(email, authenticationId, notifier)
-  }
 }

@@ -51,20 +51,30 @@ export default async function githubCallback(c: ZodValidatedQueryContext<OAuthCa
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
-  // 連携済みなら既存ユーザーを解決し、未連携の初回ログインは新規登録として扱う
-  const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
-  const result = await accountUseCase.resolveOrRegisterActiveUser(authenticationId, email, notifier)
-  if (result.isErr()) {
-    // メール未取得での新規登録拒否などは、再試行で解消しうる認証失敗として元の画面へ戻す
-    if (result.error instanceof ClientError) {
-      logger.warn('github oauth login failed', { message: result.error.message })
-      return c.redirect(errorRedirect, 302)
-    }
 
-    throw handleError(result.error, logger)
+  // 既存ユーザーは認証IDだけで特定できるため、メール未取得でもログインを許可する
+  const resolved = await accountUseCase.resolveActiveUser(authenticationId)
+  if (resolved.isOk()) {
+    logger.info('github oauth login success', { activeUserId: resolved.value.activeUserId })
+    return c.redirect(redirectTarget, 302)
+  }
+  if (!(resolved.error instanceof ClientError)) {
+    throw handleError(resolved.error, logger)
   }
 
-  logger.info('github oauth login success', { activeUserId: result.value.activeUserId })
+  // 未連携の初回ログインは新規登録として扱う。メール未取得では登録できないため認証失敗として戻す
+  if (!email) {
+    logger.warn('github oauth registration failed: email is required', { authenticationId })
+    return c.redirect(errorRedirect, 302)
+  }
+
+  const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
+  const registered = await accountUseCase.registerActiveUser(email, authenticationId, notifier)
+  if (registered.isErr()) {
+    throw handleError(registered.error, logger)
+  }
+
+  logger.info('github oauth signup success', { activeUserId: registered.value.activeUserId })
 
   return c.redirect(redirectTarget, 302)
 }

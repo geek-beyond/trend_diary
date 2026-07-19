@@ -173,10 +173,8 @@ function resolveOrFallback(
   availableDates: string[],
   page: number,
 ) {
-  const summaryRange =
-    summaryRangeData?.points ?? availableDates.map((date) => ({ date, read: 0, skip: 0 }))
-  const weeklySources =
-    summaryRangeData?.weeklySources ?? ARTICLE_MEDIA.map((media) => ({ media, read: 0, skip: 0 }))
+  const summaryRange = resolveSummaryRange(summaryRangeData, availableDates)
+  const weeklySources = resolveWeeklySources(summaryRangeData)
 
   return {
     reads: data?.reads.data.map((read) => ({ ...read, readAt: new Date(read.readAt) })) ?? [],
@@ -192,6 +190,19 @@ function resolveOrFallback(
       hasPrev: false,
     },
   }
+}
+
+function resolveSummaryRange(
+  summaryRangeData: SummaryRangeData | undefined,
+  availableDates: string[],
+): DiaryPoint[] {
+  return summaryRangeData?.points ?? availableDates.map((date) => ({ date, read: 0, skip: 0 }))
+}
+
+function resolveWeeklySources(summaryRangeData: SummaryRangeData | undefined): DiarySource[] {
+  return (
+    summaryRangeData?.weeklySources ?? ARTICLE_MEDIA.map((media) => ({ media, read: 0, skip: 0 }))
+  )
 }
 
 function buildEmptyRangeItem(date: string): DiaryRangeItemResponse {

@@ -165,14 +165,7 @@ export default function useArticles(isLoggedIn = false) {
   }
 
   const dateRange = getDateRangeByPreset(params.datePreset, todayJstDateString)
-  const query = {
-    to: dateRange.to,
-    from: dateRange.from,
-    page: params.page,
-    limit: params.limit,
-    ...(!isAllMediaSelected(params.media) && { media: params.media }),
-    ...(params.readStatus === 'unread' && isLoggedIn && { read_status: '0' as const }),
-  }
+  const query = buildArticlesQuery(params, dateRange, isLoggedIn)
 
   const swrKey = ['api/articles', query]
   const { data, error, isLoading, mutate } = useSWR<ArticlesResponse>(
@@ -348,6 +341,21 @@ export default function useArticles(isLoggedIn = false) {
     selectedMedia: params.media,
     selectedReadStatus: params.readStatus,
     selectedDatePreset: params.datePreset,
+  }
+}
+
+function buildArticlesQuery(
+  params: Params,
+  dateRange: { from: string; to: string },
+  isLoggedIn: boolean,
+) {
+  return {
+    to: dateRange.to,
+    from: dateRange.from,
+    page: params.page,
+    limit: params.limit,
+    ...(!isAllMediaSelected(params.media) && { media: params.media }),
+    ...(params.readStatus === 'unread' && isLoggedIn && { read_status: '0' as const }),
   }
 }
 

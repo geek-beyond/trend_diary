@@ -41,10 +41,8 @@ export default function ArticleDrawer({
 
   const isRead = article.isRead ?? false
   const media = toMediaType(article.media)
-  const drawerDirection = isMobile ? 'bottom' : 'right'
-  const drawerContentClass = isMobile
-    ? 'h-[90vh] w-full data-[vaul-drawer-direction=bottom]:max-h-[90vh]'
-    : 'h-full w-3/4 md:w-1/2'
+  const { direction: drawerDirection, contentClass: drawerContentClass } =
+    resolveDrawerLayout(isMobile)
   const shouldShowDescriptionToggle = article.description.length > DESCRIPTION_TOGGLE_THRESHOLD
 
   const handleReadArticle = () => {
@@ -145,4 +143,16 @@ export default function ArticleDrawer({
     </Drawer>,
     document.body,
   )
+}
+
+function resolveDrawerLayout(isMobile: boolean): {
+  direction: 'bottom' | 'right'
+  contentClass: string
+} {
+  return {
+    direction: isMobile ? 'bottom' : 'right',
+    contentClass: isMobile
+      ? 'h-[90vh] w-full data-[vaul-drawer-direction=bottom]:max-h-[90vh]'
+      : 'h-full w-3/4 md:w-1/2',
+  }
 }

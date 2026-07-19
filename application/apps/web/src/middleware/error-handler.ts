@@ -30,32 +30,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
     logger ?? new Logger(c.env.LOG_LEVEL || 'info'),
   )
   if (err instanceof HTTPException) {
-    if (err.status >= 500) {
-      if (logger && typeof logger.error === 'function') {
-        logger.error(
-          {
-            msg: 'http exception',
-            status: err.status,
-            path: c.req.path,
-            method: c.req.method,
-          },
-          err,
-        )
-      } else {
-        // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
-        console.error('http exception', err)
-      }
-    } else if (logger && typeof logger.warn === 'function') {
-      logger.warn({
-        msg: 'http exception',
-        status: err.status,
-        path: c.req.path,
-        method: c.req.method,
-      })
-    } else {
-      // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
-      console.warn('http exception', err)
-    }
+    logHttpException(logger, err, c)
 
     if (err.status >= 500) await discordNotifier.error(err, requestInfo)
 
@@ -70,15 +45,50 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
   }
 
   // 予期しないエラーの場合
-  if (logger && typeof logger.error === 'function') {
-    logger.error('Unhandled error', err)
-  } else {
-    // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
-    console.error('Unhandled error', err)
-  }
+  logUnhandled(logger, err)
   await discordNotifier.error(err, requestInfo)
 
   return c.json('Internal Server Error', { status: 500 })
 }
 
 export default errorHandler
+
+// ロガーミドルウェア確立前は logger が未設定、または部分実装のこともあるため呼び出し可能かを確かめる
+const canLog = (logger: LoggerType | undefined, level: 'error' | 'warn'): logger is LoggerType =>
+  logger !== undefined && typeof logger[level] === 'function'
+
+function logHttpException(
+  logger: LoggerType | undefined,
+  err: HTTPException,
+  c: Context<Env>,
+): void {
+  const meta = {
+    msg: 'http exception',
+    status: err.status,
+    path: c.req.path,
+    method: c.req.method,
+  }
+
+  if (err.status >= 500) {
+    if (canLog(logger, 'error')) {
+      logger.error(meta, err)
+    } else {
+      // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
+      console.error('http exception', err)
+    }
+  } else if (canLog(logger, 'warn')) {
+    logger.warn(meta)
+  } else {
+    // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
+    console.warn('http exception', err)
+  }
+}
+
+function logUnhandled(logger: LoggerType | undefined, err: Error): void {
+  if (canLog(logger, 'error')) {
+    logger.error('Unhandled error', err)
+  } else {
+    // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
+    console.error('Unhandled error', err)
+  }
+}

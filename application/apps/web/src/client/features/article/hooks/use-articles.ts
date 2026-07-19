@@ -165,14 +165,7 @@ export default function useArticles(isLoggedIn = false) {
   }
 
   const dateRange = getDateRangeByPreset(params.datePreset, todayJstDateString)
-  const query = {
-    to: dateRange.to,
-    from: dateRange.from,
-    page: params.page,
-    limit: params.limit,
-    ...(!isAllMediaSelected(params.media) && { media: params.media }),
-    ...(params.readStatus === 'unread' && isLoggedIn && { read_status: '0' as const }),
-  }
+  const query = buildArticlesQuery(params, dateRange, isLoggedIn)
 
   const swrKey = ['api/articles', query]
   const { data, error, isLoading, mutate } = useSWR<ArticlesResponse>(
@@ -326,17 +319,17 @@ export default function useArticles(isLoggedIn = false) {
     setSearchParams(newParams)
   }
 
-  const resolvedPage = data?.page || params.page
+  const view = resolveOrFallback(data, params)
 
   return {
     date,
-    articles: data?.data || [],
+    articles: view.articles,
     updateArticleReadState,
-    page: resolvedPage,
-    prevPageHref: buildPagePath(resolvedPage - 1),
-    nextPageHref: buildPagePath(resolvedPage + 1),
-    limit: data?.limit || params.limit,
-    totalPages: data?.totalPages || 1,
+    page: view.page,
+    prevPageHref: buildPagePath(view.page - 1),
+    nextPageHref: buildPagePath(view.page + 1),
+    limit: view.limit,
+    totalPages: view.totalPages,
     isLoading,
     hasError: !!error,
     retry,
@@ -348,5 +341,36 @@ export default function useArticles(isLoggedIn = false) {
     selectedMedia: params.media,
     selectedReadStatus: params.readStatus,
     selectedDatePreset: params.datePreset,
+  }
+}
+
+function buildArticlesQuery(
+  params: Params,
+  dateRange: { from: string; to: string },
+  isLoggedIn: boolean,
+) {
+  return {
+    to: dateRange.to,
+    from: dateRange.from,
+    page: params.page,
+    limit: params.limit,
+    ...(!isAllMediaSelected(params.media) && { media: params.media }),
+    ...(params.readStatus === 'unread' && isLoggedIn && { read_status: '0' as const }),
+  }
+}
+
+interface ArticlesView {
+  articles: Article[]
+  page: number
+  limit: number
+  totalPages: number
+}
+
+function resolveOrFallback(data: ArticlesResponse | undefined, params: Params): ArticlesView {
+  return {
+    articles: data?.data || [],
+    page: data?.page || params.page,
+    limit: data?.limit || params.limit,
+    totalPages: data?.totalPages || 1,
   }
 }

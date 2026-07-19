@@ -27,6 +27,9 @@ export default function LoginForm({
     onSubmit(new FormData(event.currentTarget))
   }
 
+  const emailErrors = errors?.email
+  const passwordErrors = errors?.password
+
   return (
     <form onSubmit={handleSubmit} className='flex flex-1 flex-col gap-6'>
       <div className='space-y-2'>
@@ -36,10 +39,10 @@ export default function LoginForm({
           name='email'
           type='email'
           placeholder='taro@example.com'
-          aria-invalid={errors?.email ? true : undefined}
+          aria-invalid={emailErrors ? true : undefined}
           disabled={isSubmitting}
         />
-        {errors?.email && <p className='text-destructive text-sm'>{errors.email.at(0)}</p>}
+        {emailErrors && <p className='text-destructive text-sm'>{emailErrors.at(0)}</p>}
       </div>
       <div className='space-y-2'>
         <Label htmlFor='password'>パスワード</Label>
@@ -47,10 +50,10 @@ export default function LoginForm({
           id='password'
           name='password'
           type='password'
-          aria-invalid={errors?.password ? true : undefined}
+          aria-invalid={passwordErrors ? true : undefined}
           disabled={isSubmitting}
         />
-        {errors?.password && <p className='text-destructive text-sm'>{errors.password.at(0)}</p>}
+        {passwordErrors && <p className='text-destructive text-sm'>{passwordErrors.at(0)}</p>}
       </div>
       {turnstileSiteKey && <TurnstileWidget siteKey={turnstileSiteKey} />}
       {formError && <p className='text-destructive text-sm'>{formError}</p>}

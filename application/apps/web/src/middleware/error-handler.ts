@@ -53,10 +53,6 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
 
 export default errorHandler
 
-// ロガーミドルウェア確立前は logger が未設定、または部分実装のこともあるため呼び出し可能かを確かめる
-const canLog = (logger: LoggerType | undefined, level: 'error' | 'warn'): logger is LoggerType =>
-  logger !== undefined && typeof logger[level] === 'function'
-
 function logHttpException(
   logger: LoggerType | undefined,
   err: HTTPException,
@@ -70,13 +66,13 @@ function logHttpException(
   }
 
   if (err.status >= 500) {
-    if (canLog(logger, 'error')) {
+    if (logger) {
       logger.error(meta, err)
     } else {
       // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
       console.error('http exception', err)
     }
-  } else if (canLog(logger, 'warn')) {
+  } else if (logger) {
     logger.warn(meta)
   } else {
     // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック
@@ -85,7 +81,7 @@ function logHttpException(
 }
 
 function logUnhandled(logger: LoggerType | undefined, err: Error): void {
-  if (canLog(logger, 'error')) {
+  if (logger) {
     logger.error('Unhandled error', err)
   } else {
     // oxlint-disable-next-line no-console -- request logger未設定時の最終フォールバック

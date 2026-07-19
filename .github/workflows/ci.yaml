@@ -28,10 +28,8 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      unit: ${{ steps.detect.outputs.unit }}
       web: ${{ steps.detect.outputs.web }}
-      e2e: ${{ steps.detect.outputs.e2e }}
-      schema: ${{ steps.detect.outputs.schema }}
+      cron: ${{ steps.detect.outputs.cron }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -59,7 +57,8 @@ jobs:
 
   unit-test:
     needs: changes
-    if: ${{ needs.changes.outputs.unit == 'true' }}
+    # cron の変更有無は「web 以外のアプリコード＋共有コードの変更」と一致するため使い回す
+    if: ${{ needs.changes.outputs.cron == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -182,7 +181,8 @@ jobs:
 
   schema:
     needs: changes
-    if: ${{ needs.changes.outputs.schema == 'true' }}
+    # datastore は共有コードに含まれるため cron の変更有無で足りる
+    if: ${{ needs.changes.outputs.cron == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -207,15 +207,13 @@ jobs:
   e2e:
     name: E2E
     needs: [changes, unit-test, client-test, server-test, component-test, web-build]
-    if: ${{ !cancelled() && !failure() && needs.changes.outputs.e2e == 'true' }}
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.web == 'true' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: develop
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          # PRの差分実行(--only-changed)がベースブランチとの比較に全履歴を要するため取得する
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Supabaseのセットアップ
@@ -239,17 +237,11 @@ jobs:
           EDGE_CACHE_DISABLED=true
           EOF
 
-      # --only-changed は import 依存でテストを選ぶが、E2Eは apps/web を import しないため web の変更を拾えない。web変更のあるPRと main への push は全実行し、それ以外(e2eのみの変更)は差分実行する
       - name: E2Eテストの実行
-        env:
-          WEB_CHANGED: ${{ needs.changes.outputs.web }}
         run: |
           args=(--fail-on-flaky-tests)
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             args+=(--reporter=github,html)
-            if [[ "$WEB_CHANGED" != "true" ]]; then
-              args+=(--only-changed=origin/"$GITHUB_BASE_REF" --pass-with-no-tests)
-            fi
           fi
           pnpm --filter @trend-diary/e2e test "${args[@]}"
 

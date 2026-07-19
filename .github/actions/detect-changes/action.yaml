@@ -8,23 +8,14 @@ inputs:
     default: ''
 
 outputs:
-  unit:
-    description: ユニットテスト(web 以外のパッケージ)の実行要否
-    value: ${{ steps.detect.outputs.unit }}
   web:
-    description: web のテスト・ビルド・デプロイの要否
+    description: web(＋共有コード)の変更有無。web のデプロイ・テスト・E2E の要否
     value: ${{ steps.detect.outputs.web }}
   cron:
-    description: cron のデプロイ要否
+    description: cron(＋共有コード)の変更有無。cron のデプロイとユニットテスト・スキーマ検査の要否
     value: ${{ steps.detect.outputs.cron }}
-  e2e:
-    description: E2E テストの実行要否
-    value: ${{ steps.detect.outputs.e2e }}
-  schema:
-    description: スキーマドリフト検査の要否
-    value: ${{ steps.detect.outputs.schema }}
   database:
-    description: DB マイグレーション適用の要否
+    description: マイグレーションの変更有無。D1 適用の要否
     value: ${{ steps.detect.outputs.database }}
 
 runs:
@@ -55,19 +46,13 @@ runs:
         pkgs='^application/packages/'
         root='^application/[^/]+$|^\.github/'
 
-        unit=false;     if changed "^application/apps/cron/|$pkgs|$root"; then unit=true; fi
-        cron=false;     if changed "^application/apps/cron/|$pkgs|$root"; then cron=true; fi
         web=false;      if changed "^application/apps/web/|$pkgs|$root"; then web=true; fi
-        e2e=false;      if changed "^application/e2e/" || [[ "$web" == "true" ]]; then e2e=true; fi
-        schema=false;   if changed "^application/packages/datastore/|$root"; then schema=true; fi
+        cron=false;     if changed "^application/apps/cron/|$pkgs|$root"; then cron=true; fi
         database=false; if changed "^application/packages/datastore/migrations/"; then database=true; fi
 
         {
-          echo "unit=$unit"
-          echo "cron=$cron"
           echo "web=$web"
-          echo "e2e=$e2e"
-          echo "schema=$schema"
+          echo "cron=$cron"
           echo "database=$database"
         } >> "$GITHUB_OUTPUT"
-        echo "unit=$unit cron=$cron web=$web e2e=$e2e schema=$schema database=$database"
+        echo "web=$web cron=$cron database=$database"

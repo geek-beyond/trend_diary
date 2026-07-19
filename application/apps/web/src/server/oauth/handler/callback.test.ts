@@ -39,6 +39,15 @@ describe('GitHub OAuthコールバック', () => {
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe('/trends')
     })
+
+    it('未連携ユーザーの初回ログインは新規登録して既定の遷移先へリダイレクトする', async () => {
+      const { code, cookies } = await startGithubOAuth(`${EMAIL_PREFIX}-new@example.com`)
+
+      const res = await apiRequest(`/api/oauth/github/callback?code=${code}`, { cookies })
+
+      expect(res.status).toBe(302)
+      expect(res.headers.get('Location')).toBe('/trends')
+    })
   })
 
   describe('準正常系', () => {
@@ -66,15 +75,6 @@ describe('GitHub OAuthコールバック', () => {
 
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe(location)
-    })
-
-    it('連携済みユーザーが見つからなければログイン画面へ戻す', async () => {
-      const { code, cookies } = await startGithubOAuth(`${EMAIL_PREFIX}-unlinked@example.com`)
-
-      const res = await apiRequest(`/api/oauth/github/callback?code=${code}`, { cookies })
-
-      expect(res.status).toBe(302)
-      expect(res.headers.get('Location')).toBe('/login?oauthError=github')
     })
 
     it('コード交換に失敗したらエラー種別を添えて元の画面へ戻す', async () => {

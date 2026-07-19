@@ -10,7 +10,6 @@ export {
 } from './errors'
 export { OAuthClient } from './oauth-client'
 export {
-  OAUTH_PROVIDERS,
   type OAuthProvider,
   oauthProviderParamSchema,
   type OAuthProviderParam,

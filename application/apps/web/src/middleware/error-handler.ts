@@ -2,7 +2,7 @@ import { DiscordNotifier } from '@trend-diary/notification'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { Env } from '../env'
-import CONTEXT_KEY from './context'
+import CONTEXT_KEY, { mustGet } from './context'
 
 interface RequestInfo {
   url: string
@@ -11,11 +11,7 @@ interface RequestInfo {
 }
 
 const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
-
-  if (!logger) {
-    throw new Error('APP_LOG must be set by request-logger before errorHandler runs')
-  }
+  const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
 
   const requestInfo: RequestInfo = {
     url: c.req.url,

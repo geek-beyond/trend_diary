@@ -2,7 +2,7 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { mediaListSchema } from '@trend-diary/domain/article/schema/query-schema'
 import { z } from 'zod'
-import CONTEXT_KEY from '@/middleware/context'
+import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
@@ -22,7 +22,7 @@ export default async function unreadDigestionArticles(
   c: ZodValidatedContext<[typeof unreadDigestionQueryValidator]>,
 ): Promise<Response> {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!
+  const sessionUser = mustGet(c, CONTEXT_KEY.SESSION_USER)
   const query = c.req.valid('query')
 
   const rdb = getRdbClient(c.env.DB)

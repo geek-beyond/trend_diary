@@ -1,4 +1,5 @@
 import { SignupForm, type SignupFormProps } from '@/client/features/authenticate/signup'
+import { GithubAuthButton } from '@/client/features/github-auth'
 import {
   Card,
   CardContent,
@@ -35,6 +36,14 @@ export default function SignupPage({
               formError={formError}
               turnstileSiteKey={turnstileSiteKey}
             />
+            <div className='mt-6 space-y-4'>
+              <div className='flex items-center gap-3'>
+                <span className='bg-border h-px flex-1' />
+                <span className='text-muted-foreground text-xs'>または</span>
+                <span className='bg-border h-px flex-1' />
+              </div>
+              <GithubAuthButton label='GitHubで登録' />
+            </div>
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>
             <div className='text-muted-foreground text-center text-sm'>

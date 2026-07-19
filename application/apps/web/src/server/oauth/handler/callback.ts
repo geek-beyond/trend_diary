@@ -3,6 +3,7 @@ import { ClientError } from '@trend-diary/common/errors'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase, type OAuthCallbackQuery } from '@trend-diary/domain/account'
+import { DiscordWebhookClient } from '@trend-diary/notification'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedParamQueryContext } from '@/middleware/zod-validator'
@@ -54,21 +55,34 @@ export default async function oauthCallback(
     return c.redirect(errorRedirect, 302)
   }
 
+  const { id: authenticationId, email } = exchangeResult.value
+
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
-  const result = await accountUseCase.resolveActiveUser(exchangeResult.value.id)
-  if (result.isErr()) {
-    // OAuthログインは既存ユーザーの認証手段としてのみ許可する。連携済みアプリユーザーが無ければ
-    // 新規登録させず、再試行で解消しうる認証失敗(404)として元の画面へ戻す
-    if (result.error instanceof ClientError) {
-      logger.warn('oauth login failed', { provider, message: result.error.message })
-      return c.redirect(errorRedirect, 302)
-    }
 
-    throw handleError(result.error, logger)
+  // 既存ユーザーは認証IDだけで特定できるため、メール未取得でもログインを許可する
+  const resolved = await accountUseCase.resolveActiveUser(authenticationId)
+  if (resolved.isOk()) {
+    logger.info('oauth login success', { provider, activeUserId: resolved.value.activeUserId })
+    return c.redirect(redirectTarget, 302)
+  }
+  if (!(resolved.error instanceof ClientError)) {
+    throw handleError(resolved.error, logger)
   }
 
-  logger.info('oauth login success', { provider, activeUserId: result.value.activeUserId })
+  // 未連携の初回ログインは新規登録として扱う。メール未取得では登録できないため認証失敗として戻す
+  if (!email) {
+    logger.warn('oauth registration failed: email is required', { provider, authenticationId })
+    return c.redirect(errorRedirect, 302)
+  }
+
+  const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
+  const registered = await accountUseCase.registerActiveUser(email, authenticationId, notifier)
+  if (registered.isErr()) {
+    throw handleError(registered.error, logger)
+  }
+
+  logger.info('oauth signup success', { provider, activeUserId: registered.value.activeUserId })
 
   return c.redirect(redirectTarget, 302)
 }

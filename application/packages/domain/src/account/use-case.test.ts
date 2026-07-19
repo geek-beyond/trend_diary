@@ -38,10 +38,7 @@ describe('AccountUseCase', () => {
           notifierMock,
         )
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toEqual(mockActiveUser)
-        }
+        expect(result._unsafeUnwrap()).toEqual(mockActiveUser)
         expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
           'test@example.com',
           'auth-user-id-123',
@@ -63,10 +60,7 @@ describe('AccountUseCase', () => {
           notifierMock,
         )
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
   })
@@ -78,10 +72,7 @@ describe('AccountUseCase', () => {
 
         const result = await useCase.resolveActiveUser('auth-user-id-123')
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) {
-          expect(result.value).toEqual(mockActiveUser)
-        }
+        expect(result._unsafeUnwrap()).toEqual(mockActiveUser)
       })
     })
 
@@ -91,13 +82,9 @@ describe('AccountUseCase', () => {
 
         const result = await useCase.resolveActiveUser('auth-user-id-123')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ClientError)
-          if (result.error instanceof ClientError) {
-            expect(result.error.statusCode).toBe(404)
-          }
-        }
+        const error = result._unsafeUnwrapErr()
+        expect(error).toBeInstanceOf(ClientError)
+        expect(error).toMatchObject({ statusCode: 404 })
       })
     })
 
@@ -107,10 +94,7 @@ describe('AccountUseCase', () => {
 
         const result = await useCase.resolveActiveUser('auth-user-id-123')
 
-        expect(result.isErr()).toBe(true)
-        if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
-        }
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })
     })
   })

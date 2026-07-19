@@ -3,7 +3,6 @@ export { default as ArticleCardSkeleton } from './components/article-card-skelet
 export { default as ArticleDrawer } from './components/article-drawer'
 export { FilterPanel } from './components/filter-panel'
 export { default as MediaMultiFilter } from './components/media-multi-filter'
-export { default as MediaIcon, type MediaType as MediaIconType } from './components/media-icon'
 export { default as useArticleDrawer } from './hooks/use-article-drawer'
 export {
   default as useArticles,

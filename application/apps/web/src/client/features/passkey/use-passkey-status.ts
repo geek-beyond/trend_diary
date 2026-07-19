@@ -1,7 +1,7 @@
 import useSWR from 'swr'
 import getApiClientForClient from '@/client/infrastructure/api'
 
-export const PASSKEY_STATUS_SWR_KEY = 'api/auth/passkey'
+const PASSKEY_STATUS_SWR_KEY = 'api/auth/passkey'
 
 // 設定画面のトグルはログイン時のみ描画されるため、ここでは無条件に登録状態を取得する
 export default function usePasskeyStatus() {

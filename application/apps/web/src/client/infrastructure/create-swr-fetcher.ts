@@ -50,7 +50,7 @@ const apiCall = async <T>(request: () => Promise<ApiCallResponse>): Promise<T | 
 }
 
 // fetcher / apiCall はモジュールスコープで定義済み、client も getApiClientForClient 側でシングルトン化されているため、軽量なオブジェクトリテラルを返すだけでよい
-export const createSWRFetcher = () => ({
+const createSWRFetcher = () => ({
   fetcher,
   apiCall,
   client: getApiClientForClient(),

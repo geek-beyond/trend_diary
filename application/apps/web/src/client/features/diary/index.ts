@@ -1,7 +1,6 @@
 export { default as DiaryReadListSection } from './components/read-list-section'
 export { default as DiaryReadPagination } from './components/read-pagination'
 export { default as DiarySummarySection } from './components/summary-section'
-export { getTodayJst, sumSourceSummary } from './model/daily-summary'
 export { default as useAnalytics } from './hooks/use-analytics'
 export { default as useDiary } from './hooks/use-diary'
 export type { ReadItem, ReadPagination, Source, Summary } from './model/types'

@@ -6,7 +6,7 @@ import { HTTPException } from 'hono/http-exception'
 import type { Env } from '../env'
 import CONTEXT_KEY from './context'
 
-export interface RequestInfo {
+interface RequestInfo {
   url: string
   method: string
   userAgent: string

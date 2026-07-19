@@ -16,7 +16,7 @@ import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 const readStatusEnum = z.enum(['0', '1'])
 
-export const apiArticleQuerySchema = baseArticleSearchSchema
+const apiArticleQuerySchema = baseArticleSearchSchema
   .extend({
     read_status: readStatusEnum.optional(),
   })

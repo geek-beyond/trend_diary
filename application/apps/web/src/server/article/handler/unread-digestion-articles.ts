@@ -12,7 +12,7 @@ interface UnreadDigestionArticlesResponse {
   total: number
 }
 
-export const unreadDigestionQuerySchema = z.object({
+const unreadDigestionQuerySchema = z.object({
   media: mediaListSchema,
 })
 

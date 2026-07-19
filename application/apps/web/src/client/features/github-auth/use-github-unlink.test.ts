@@ -6,7 +6,7 @@ import useGithubUnlink from './use-github-unlink'
 
 const mockApiClient = {
   oauth: {
-    github: {
+    ':provider': {
       $delete: vi.fn(),
     },
   },
@@ -23,7 +23,7 @@ describe('useGithubUnlink', () => {
 
   describe('正常系', () => {
     it('解除に成功すると成功トーストを出す', async () => {
-      mockApiClient.oauth.github.$delete.mockResolvedValue({ ok: true, status: 204 })
+      mockApiClient.oauth[':provider'].$delete.mockResolvedValue({ ok: true, status: 204 })
 
       const { result } = renderHook(() => useGithubUnlink())
 
@@ -37,7 +37,7 @@ describe('useGithubUnlink', () => {
 
   describe('準正常系', () => {
     it('唯一のログイン手段なら解除不可の案内トーストを出す', async () => {
-      mockApiClient.oauth.github.$delete.mockResolvedValue({ ok: false, status: 400 })
+      mockApiClient.oauth[':provider'].$delete.mockResolvedValue({ ok: false, status: 400 })
 
       const { result } = renderHook(() => useGithubUnlink())
 
@@ -51,7 +51,7 @@ describe('useGithubUnlink', () => {
     })
 
     it('解除に失敗するとエラートーストを出す', async () => {
-      mockApiClient.oauth.github.$delete.mockResolvedValue({ ok: false, status: 500 })
+      mockApiClient.oauth[':provider'].$delete.mockResolvedValue({ ok: false, status: 500 })
 
       const { result } = renderHook(() => useGithubUnlink())
 
@@ -65,7 +65,7 @@ describe('useGithubUnlink', () => {
 
   describe('異常系', () => {
     it('通信が例外を投げるとエラートーストを出す', async () => {
-      mockApiClient.oauth.github.$delete.mockRejectedValue(new Error('network down'))
+      mockApiClient.oauth[':provider'].$delete.mockRejectedValue(new Error('network down'))
 
       const { result } = renderHook(() => useGithubUnlink())
 

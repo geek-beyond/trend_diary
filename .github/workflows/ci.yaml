@@ -27,52 +27,60 @@ defaults:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    # mainへのpushは全ジョブ実行。PRは web/cron をCD用アクションから、web内の
+    # client/server 分割と schema は split ステップから受け取る
     outputs:
-      client: ${{ steps.detect.outputs.client }}
-      server: ${{ steps.detect.outputs.server }}
-      cron: ${{ steps.detect.outputs.cron }}
-      shared: ${{ steps.detect.outputs.shared }}
-      e2e: ${{ steps.detect.outputs.e2e }}
+      web: ${{ steps.all.outputs.on || steps.deploy.outputs.web }}
+      cron: ${{ steps.all.outputs.on || steps.deploy.outputs.cron }}
+      client: ${{ steps.all.outputs.on || steps.split.outputs.client }}
+      server: ${{ steps.all.outputs.on || steps.split.outputs.server }}
+      schema: ${{ steps.all.outputs.on || steps.split.outputs.schema }}
+      e2e: ${{ steps.all.outputs.on || steps.split.outputs.e2e }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          # HEAD~1 との差分を取るため直前のコミットも取得する
+          fetch-depth: 2
           persist-credentials: false
-      - name: 変更パスの検知
-        id: detect
-        env:
-          BASE: ${{ github.base_ref }}
+
+      - name: 全実行の判定
+        id: all
+        if: ${{ github.event_name == 'push' }}
+        run: echo "on=true" >> "$GITHUB_OUTPUT"
+
+      - name: デプロイ対象の検知
+        id: deploy
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: ./.github/actions/detect-changes
+        with:
+          # PRのHEADはマージコミットのため、第一親(HEAD~1)がベース先端になる
+          base: HEAD~1
+
+      - name: web内テストと schema の細分化
+        id: split
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           set -euo pipefail
 
-          if [[ -z "$BASE" ]]; then
-            changed() { true; }
-            web_changed_except() { true; }
-          else
-            # ツリー差分しか取らないため shallow で足りる
-            git fetch --no-tags --depth=1 origin "$BASE"
-            files=$(git diff --name-only FETCH_HEAD HEAD)
-            changed() { grep -qE "$1" <<<"$files"; }
-            # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
-            # web 変更(共通設定・ミドルウェア等)は両方に影響するとみなす
-            web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
-          fi
+          files=$(git diff --name-only HEAD~1 HEAD)
+          changed() { grep -qE "$1" <<<"$files"; }
+          # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
+          # web 変更(共通設定・ミドルウェア等)と共有コードは両方に影響するとみなす
+          web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
+          shared='^application/packages/|^application/[^/]+$|^\.github/'
 
-          # フラグは変更エリアの事実だけを返し、どのジョブを動かすかは各ジョブの if 側で組み合わせる。
-          # パッケージ間の依存関係は追わず、共有コードの変更は shared として利用側すべてに影響させる
-          client=false; if web_changed_except '^application/apps/web/src/server/'; then client=true; fi
-          server=false; if web_changed_except '^application/apps/web/src/client/'; then server=true; fi
-          cron=false;   if changed "^application/apps/cron/"; then cron=true; fi
-          shared=false; if changed '^application/packages/|^application/[^/]+$|^\.github/'; then shared=true; fi
-          e2e=false;    if changed "^application/e2e/" || [[ "$client" == "true" || "$server" == "true" || "$shared" == "true" ]]; then e2e=true; fi
+          client=false; if web_changed_except '^application/apps/web/src/server/' || changed "$shared"; then client=true; fi
+          server=false; if web_changed_except '^application/apps/web/src/client/' || changed "$shared"; then server=true; fi
+          schema=false; if changed '^application/packages/datastore/'; then schema=true; fi
+          e2e=false;    if changed '^application/e2e/' || [[ "${{ steps.deploy.outputs.web }}" == 'true' ]]; then e2e=true; fi
 
           {
             echo "client=$client"
             echo "server=$server"
-            echo "cron=$cron"
-            echo "shared=$shared"
+            echo "schema=$schema"
             echo "e2e=$e2e"
           } >> "$GITHUB_OUTPUT"
-          echo "client=$client server=$server cron=$cron shared=$shared e2e=$e2e"
+          echo "client=$client server=$server schema=$schema e2e=$e2e"
 
   code-quality:
     needs: changes
@@ -92,7 +100,7 @@ jobs:
 
   unit-test:
     needs: changes
-    if: ${{ needs.changes.outputs.cron == 'true' || needs.changes.outputs.shared == 'true' }}
+    if: ${{ needs.changes.outputs.cron == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -113,7 +121,7 @@ jobs:
 
   web-build:
     needs: changes
-    if: ${{ needs.changes.outputs.client == 'true' || needs.changes.outputs.server == 'true' || needs.changes.outputs.shared == 'true' }}
+    if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -130,7 +138,7 @@ jobs:
   client-test:
     name: unit-test (web client)
     needs: changes
-    if: ${{ needs.changes.outputs.client == 'true' || needs.changes.outputs.shared == 'true' }}
+    if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
     # test_cov のカバレッジコメント投稿に必要
     permissions:
@@ -153,7 +161,7 @@ jobs:
   server-test:
     name: integration-test (web server)
     needs: changes
-    if: ${{ needs.changes.outputs.server == 'true' || needs.changes.outputs.shared == 'true' }}
+    if: ${{ needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
     # test_cov のカバレッジコメント投稿に必要
     permissions:
@@ -183,8 +191,7 @@ jobs:
   component-test:
     name: integration-test (web component)
     needs: changes
-    # コンポーネントテストの対象はクライアントコードのため client で判定する
-    if: ${{ needs.changes.outputs.client == 'true' || needs.changes.outputs.shared == 'true' }}
+    if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -216,7 +223,7 @@ jobs:
 
   schema:
     needs: changes
-    if: ${{ needs.changes.outputs.shared == 'true' }}
+    if: ${{ needs.changes.outputs.schema == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -276,7 +283,7 @@ jobs:
       # --only-changed は import 依存でテストを選ぶが、E2Eは apps/web を import しないため web の変更を拾えない。web変更のあるPRと main への push は全実行し、それ以外(e2eのみの変更)は差分実行する
       - name: E2Eテストの実行
         env:
-          WEB_CHANGED: ${{ needs.changes.outputs.client == 'true' || needs.changes.outputs.server == 'true' || needs.changes.outputs.shared == 'true' }}
+          WEB_CHANGED: ${{ needs.changes.outputs.web }}
         run: |
           args=(--fail-on-flaky-tests)
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then

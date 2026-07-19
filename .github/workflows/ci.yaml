@@ -30,10 +30,9 @@ jobs:
     outputs:
       web: ${{ steps.all.outputs.on || steps.deploy.outputs.web }}
       cron: ${{ steps.all.outputs.on || steps.deploy.outputs.cron }}
-      client: ${{ steps.all.outputs.on || steps.split.outputs.client }}
-      server: ${{ steps.all.outputs.on || steps.split.outputs.server }}
       schema: ${{ steps.all.outputs.on || steps.split.outputs.schema }}
       e2e: ${{ steps.all.outputs.on || steps.split.outputs.e2e }}
+      web_matrix: ${{ steps.web_matrix.outputs.web_matrix }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -83,6 +82,29 @@ jobs:
             echo "e2e=$e2e"
           } >> "$GITHUB_OUTPUT"
           echo "client=$client server=$server schema=$schema e2e=$e2e"
+
+      # web のテストは client(unit)・server/component(integration) を web-test ジョブに束ねる。
+      # 変更のある project のみ entry を積み、env で必要な環境セットアップだけ切り替える
+      - name: web テストのマトリクス構築
+        id: web_matrix
+        run: |
+          set -euo pipefail
+
+          client='${{ steps.all.outputs.on || steps.split.outputs.client }}'
+          server='${{ steps.all.outputs.on || steps.split.outputs.server }}'
+
+          entries=()
+          if [[ "$client" == 'true' ]]; then
+            entries+=('{"label":"client","type":"unit","target":"client"}')
+            entries+=('{"label":"component","type":"integration","target":"storybook","env":"playwright"}')
+          fi
+          if [[ "$server" == 'true' ]]; then
+            entries+=('{"label":"server","type":"integration","target":"server","env":"supabase"}')
+          fi
+
+          matrix="[$(IFS=,; echo "${entries[*]}")]"
+          echo "web_matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "web_matrix=$matrix"
 
   code-quality:
     needs: changes
@@ -137,15 +159,20 @@ jobs:
       - name: ビルド
         run: pnpm run build
 
-  client-test:
-    name: unit-test (web client)
+  web-test:
+    name: "web-test (${{ matrix.type }}: ${{ matrix.label }})"
     needs: changes
-    if: ${{ needs.changes.outputs.client == 'true' }}
+    if: ${{ needs.changes.outputs.web_matrix != '[]' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # test_cov のカバレッジコメント投稿に必要
     permissions:
       contents: read
       pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.changes.outputs.web_matrix) }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -155,57 +182,18 @@ jobs:
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
-      - name: クライアントのテスト
-        uses: ./.github/actions/test_cov
-        with:
-          target: client
-
-  server-test:
-    name: integration-test (web server)
-    needs: changes
-    if: ${{ needs.changes.outputs.server == 'true' }}
-    runs-on: ubuntu-latest
-    # test_cov のカバレッジコメント投稿に必要
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-      - name: Node.jsの構築
-        uses: ./.github/actions/setup_node
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
-
+      # server の結合テストは Supabase Auth を実際に叩くためエミュレータを起動する
       - name: Supabase Emulator のセットアップ
+        if: ${{ matrix.env == 'supabase' }}
         uses: rin2yh/supa-emu@2cdf06de6d58bee6e22adaf6e4c2dad55e414977 # v0.1.8
         with:
           version: v0.1.8
           addr: 127.0.0.1:54321
           webauthn-rp-id: 127.0.0.1
 
-      - name: サーバーのテスト
-        uses: ./.github/actions/test_cov
-        with:
-          target: server
-
-  component-test:
-    name: integration-test (web component)
-    needs: changes
-    if: ${{ needs.changes.outputs.client == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-      - name: Node.jsの構築
-        uses: ./.github/actions/setup_node
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
-
+      # component の結合テストは Storybook をブラウザ実行するため Playwright を用意する
       - name: Playwrightブラウザのキャッシュ
+        if: ${{ matrix.env == 'playwright' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         id: playwright-cache
         with:
@@ -213,15 +201,17 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Playwrightのセットアップ(キャッシュミス)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: ${{ matrix.env == 'playwright' && steps.playwright-cache.outputs.cache-hit != 'true' }}
         run: pnpm --filter @trend-diary/web exec playwright install chromium --with-deps
 
       - name: Playwright依存のセットアップ(キャッシュヒット)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        if: ${{ matrix.env == 'playwright' && steps.playwright-cache.outputs.cache-hit == 'true' }}
         run: pnpm --filter @trend-diary/web exec playwright install-deps chromium
 
-      - name: コンポーネントのテスト
-        run: pnpm --filter @trend-diary/web test --project storybook --coverage
+      - name: テスト
+        uses: ./.github/actions/test_cov
+        with:
+          target: ${{ matrix.target }}
 
   schema:
     needs: changes
@@ -249,7 +239,7 @@ jobs:
 
   e2e:
     name: E2E
-    needs: [changes, unit-test, client-test, server-test, component-test, web-build]
+    needs: [changes, unit-test, web-test, web-build]
     if: ${{ !cancelled() && !failure() && needs.changes.outputs.e2e == 'true' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -313,7 +303,7 @@ jobs:
 
   gate:
     if: ${{ !cancelled() }}
-    needs: [changes, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e]
+    needs: [changes, code-quality, unit-test, web-build, web-test, schema, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: いずれかのジョブが失敗していないか確認

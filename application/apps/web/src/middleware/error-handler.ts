@@ -15,9 +15,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
 
   // APP_LOG は request-logger が必ず設定する契約。未設定なら契約違反として送出し、握りつぶさない
   if (!logger) {
-    throw new Error(
-      'APP_LOG が未設定のまま errorHandler が呼び出されました。request-logger が先に実行される必要があります',
-    )
+    throw new Error('APP_LOG must be set by request-logger before errorHandler runs')
   }
 
   const requestInfo: RequestInfo = {

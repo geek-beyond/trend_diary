@@ -16,13 +16,13 @@ const defaultLogger = new Logger('error', { component: 'user-command' })
 export default class CommandImpl implements Command {
   constructor(
     private readonly db: RdbClient,
+    private readonly notifier: Notifier,
     private readonly logger: Logger = defaultLogger,
   ) {}
 
   async createActiveWithAuthenticationId(
     email: string,
     authenticationId: string,
-    notifier: Notifier,
     displayName?: string | null,
   ): Promise<Result<CurrentUser, ServerError>> {
     // INFO: D1はインタラクティブトランザクション非対応のため、users→active_usersを逐次insertし、
@@ -51,7 +51,7 @@ export default class CommandImpl implements Command {
           compensateResult.error,
         )
         // 通知失敗は補償処理の結果に影響させない（通知基盤側で握りつぶす）
-        await notifier.sendMessage(
+        await this.notifier.sendMessage(
           `🚨 整合性エラー: active_usersを持たないusersレコードが孤立（サインアップ補償トランザクション失敗）\nuserId: ${userId}\nerror: ${compensateResult.error.message}`,
         )
       }

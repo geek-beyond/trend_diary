@@ -1,8 +1,7 @@
 import { authClientConfig, SessionClient } from '@trend-diary/authentication'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/account'
 import type { Context } from 'hono'
 import { err, ok, type Result } from 'neverthrow'
+import { createAccountUseCase } from '@/server/account/account-use-case'
 import type { Env, SessionUser } from '../../env'
 import CONTEXT_KEY from '../context'
 
@@ -26,8 +25,7 @@ export async function validateSession(
     return err(claims.error)
   }
 
-  const rdb = getRdbClient(c.env.DB)
-  const accountUseCase = createAccountUseCase(rdb)
+  const accountUseCase = createAccountUseCase(c)
   const result = await accountUseCase.resolveActiveUser(claims.value.authenticationId)
   if (result.isErr()) {
     logger.warn('Session validation failed', { error: result.error })

@@ -22,7 +22,6 @@ export interface Command {
   createActiveWithAuthenticationId(
     email: string,
     authenticationId: string,
-    notifier: Notifier,
     displayName?: string | null,
   ): Promise<Result<CurrentUser, ServerError>>
 }

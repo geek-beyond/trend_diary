@@ -1,6 +1,6 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
-import type { Command, Notifier, Query } from './repository'
+import type { Command, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
 
 export class AccountUseCase {
@@ -12,15 +12,9 @@ export class AccountUseCase {
   async registerActiveUser(
     email: string,
     authenticationId: string,
-    notifier: Notifier,
     displayName?: string | null,
   ): Promise<Result<CurrentUser, ServerError>> {
-    return this.userCommand.createActiveWithAuthenticationId(
-      email,
-      authenticationId,
-      notifier,
-      displayName,
-    )
+    return this.userCommand.createActiveWithAuthenticationId(email, authenticationId, displayName)
   }
 
   async resolveActiveUser(

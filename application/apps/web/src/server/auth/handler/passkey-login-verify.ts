@@ -1,10 +1,9 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/account'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import { createAccountUseCase } from '@/server/account/account-use-case'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 
@@ -29,8 +28,7 @@ export default async function passkeyLoginVerify(c: ZodValidatedContext<PasskeyL
   })
   if (userResult.isErr()) throw handleError(toAuthError(userResult.error), logger)
 
-  const rdb = getRdbClient(c.env.DB)
-  const accountUseCase = createAccountUseCase(rdb)
+  const accountUseCase = createAccountUseCase(c)
   const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
   if (activeUserResult.isErr()) throw handleError(activeUserResult.error, logger)
 

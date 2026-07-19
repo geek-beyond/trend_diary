@@ -36,7 +36,7 @@ describe('CommandImpl', () => {
   beforeEach(() => {
     logger = new Logger('silent')
     notifier = { sendMessage: vi.fn().mockResolvedValue(undefined) }
-    useCase = new CommandImpl(getRdbClient(), logger)
+    useCase = new CommandImpl(getRdbClient(), notifier, logger)
   })
 
   describe('createActiveWithAuthenticationId', () => {
@@ -58,7 +58,6 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
-        notifier,
         '表示名',
       )
 
@@ -113,7 +112,6 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
-        notifier,
       )
 
       // Assert
@@ -133,7 +131,6 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
-        notifier,
       )
 
       // Assert: ServerErrorを返す
@@ -165,7 +162,6 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
-        notifier,
       )
 
       // Assert: ServerErrorを返す
@@ -195,7 +191,6 @@ describe('CommandImpl', () => {
       const result = await useCase.createActiveWithAuthenticationId(
         'test@example.com',
         'auth-id-123',
-        notifier,
       )
 
       // Assert: 補償が失敗しても元のServerErrorを返す
@@ -222,7 +217,7 @@ describe('CommandImpl', () => {
         .mockRejectedValueOnce(compensationError)
 
       // Act
-      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123', notifier)
+      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123')
 
       // Assert: 手動対応に必要なuserId(=2)と補償エラーをerrorログに残すこと
       expect(errorSpy).toHaveBeenCalledWith(
@@ -243,7 +238,7 @@ describe('CommandImpl', () => {
         .mockRejectedValueOnce(compensationError)
 
       // Act
-      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123', notifier)
+      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123')
 
       // Assert: userId(=2)と補償エラーを含むメッセージを通知すること
       expect(notifier.sendMessage).toHaveBeenCalledWith(expect.stringContaining('userId: 2'))
@@ -261,7 +256,7 @@ describe('CommandImpl', () => {
         .mockResolvedValueOnce({ rows: [] })
 
       // Act
-      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123', notifier)
+      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123')
 
       // Assert: 補償が成功した場合はログも通知も出さないこと
       expect(errorSpy).not.toHaveBeenCalled()

@@ -1,8 +1,8 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
+import type { AuthInput } from '@trend-diary/domain/account'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import { createAccountUseCase } from '@/server/account/account-use-case'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 import { verifyTurnstile } from '../captcha'
@@ -24,8 +24,7 @@ export default async function login(c: ZodValidatedContext<AuthInput>) {
 
   const user = loginResult.value
 
-  const rdb = getRdbClient(c.env.DB)
-  const accountUseCase = createAccountUseCase(rdb)
+  const accountUseCase = createAccountUseCase(c)
   const result = await accountUseCase.resolveActiveUser(user.id)
   if (result.isErr()) throw handleError(result.error, logger)
 

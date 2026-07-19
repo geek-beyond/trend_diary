@@ -2,13 +2,12 @@ import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
-import type { Command, Notifier, Query } from './repository'
+import type { Command, Query } from './repository'
 import type { CurrentUser } from './schema/active-user-schema'
 import { AccountUseCase } from './use-case'
 
 const commandMock = mockDeep<Command>()
 const queryMock = mockDeep<Query>()
-const notifierMock = mockDeep<Notifier>()
 
 const mockActiveUser: CurrentUser = {
   activeUserId: 1n,
@@ -32,17 +31,12 @@ describe('AccountUseCase', () => {
       it('認証IDに紐づくアクティブユーザーを作成して返す', async () => {
         commandMock.createActiveWithAuthenticationId.mockResolvedValue(ok(mockActiveUser))
 
-        const result = await useCase.registerActiveUser(
-          'test@example.com',
-          'auth-user-id-123',
-          notifierMock,
-        )
+        const result = await useCase.registerActiveUser('test@example.com', 'auth-user-id-123')
 
         expect(result._unsafeUnwrap()).toEqual(mockActiveUser)
         expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
           'test@example.com',
           'auth-user-id-123',
-          notifierMock,
           undefined,
         )
       })
@@ -54,11 +48,7 @@ describe('AccountUseCase', () => {
           err(new ServerError('create failed')),
         )
 
-        const result = await useCase.registerActiveUser(
-          'test@example.com',
-          'auth-user-id-123',
-          notifierMock,
-        )
+        const result = await useCase.registerActiveUser('test@example.com', 'auth-user-id-123')
 
         expect(result._unsafeUnwrapErr()).toBeInstanceOf(ServerError)
       })

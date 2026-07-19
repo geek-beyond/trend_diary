@@ -1,12 +1,11 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { ClientError } from '@trend-diary/common/errors'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase, type OAuthCallbackQuery } from '@trend-diary/domain/account'
-import { DiscordWebhookClient } from '@trend-diary/notification'
+import type { OAuthCallbackQuery } from '@trend-diary/domain/account'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedParamQueryContext } from '@/middleware/zod-validator'
+import { createAccountUseCase } from '@/server/account/account-use-case'
 import { handleError } from '@/server/error/handle-error'
 import {
   OAUTH_COOKIE_OPTIONS,
@@ -57,8 +56,7 @@ export default async function oauthCallback(
 
   const { id: authenticationId, email } = exchangeResult.value
 
-  const rdb = getRdbClient(c.env.DB)
-  const accountUseCase = createAccountUseCase(rdb)
+  const accountUseCase = createAccountUseCase(c)
 
   // 既存ユーザーは認証IDだけで特定できるため、メール未取得でもログインを許可する
   const resolved = await accountUseCase.resolveActiveUser(authenticationId)
@@ -76,8 +74,7 @@ export default async function oauthCallback(
     return c.redirect(errorRedirect, 302)
   }
 
-  const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
-  const registered = await accountUseCase.registerActiveUser(email, authenticationId, notifier)
+  const registered = await accountUseCase.registerActiveUser(email, authenticationId)
   if (registered.isErr()) {
     throw handleError(registered.error, logger)
   }

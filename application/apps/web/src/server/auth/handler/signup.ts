@@ -1,9 +1,8 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
-import { DiscordWebhookClient } from '@trend-diary/notification'
+import type { AuthInput } from '@trend-diary/domain/account'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import { createAccountUseCase } from '@/server/account/account-use-case'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 import { verifyTurnstile } from '../captcha'
@@ -30,14 +29,8 @@ export default async function signup(c: ZodValidatedContext<AuthInput>) {
   // 管理者権限(service_role)を要するが、サインアップ経路(anonクライアント)にadmin権限を持たせる
   // べきではないため行わない。対応候補は service_role を持つ別cronで未紐付けの認証ユーザーを定期
   // クリーンアップするなど。別イシューで再設計する。
-  const rdb = getRdbClient(c.env.DB)
-  const accountUseCase = createAccountUseCase(rdb)
-  const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
-  const result = await accountUseCase.registerActiveUser(
-    user.email ?? valid.email,
-    user.id,
-    notifier,
-  )
+  const accountUseCase = createAccountUseCase(c)
+  const result = await accountUseCase.registerActiveUser(user.email ?? valid.email, user.id)
   if (result.isErr()) throw handleError(result.error, logger)
 
   logger.info('signup success', { activeUserId: result.value.activeUserId })

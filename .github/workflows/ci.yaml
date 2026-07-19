@@ -29,7 +29,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       web: ${{ steps.all.outputs.on || steps.deploy.outputs.web }}
-      cron: ${{ steps.all.outputs.on || steps.deploy.outputs.cron }}
       client: ${{ steps.all.outputs.on || steps.split.outputs.client }}
       server: ${{ steps.all.outputs.on || steps.split.outputs.server }}
       schema: ${{ steps.all.outputs.on || steps.split.outputs.schema }}
@@ -85,23 +84,33 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "client=$client server=$server schema=$schema e2e=$e2e"
 
-      # web client も含め単体テストを単一マトリクスに集約するため、実行対象のフラグから
-      # entry を動的に構築する
+      # web client も含め単体テストを単一マトリクスに集約する。パッケージは自身の変更時
+      # のみ entry を積み、変更のないパッケージのテストは回さない
       - name: 単体テストのマトリクス構築
         id: matrix
         run: |
           set -euo pipefail
 
-          cron='${{ steps.all.outputs.on || steps.deploy.outputs.cron }}'
-          client='${{ steps.all.outputs.on || steps.split.outputs.client }}'
+          files=$(git diff --name-only HEAD~1 HEAD)
+          changed() { grep -qE "$1" <<<"$files"; }
+
+          # ルート直下の共有設定(pnpm-workspace/lock/tsconfig 等)は全パッケージに波及する。
+          # 依存グラフは追わず、パッケージ間の影響はこの共有変更でのみ全実行に倒す
+          root='${{ steps.all.outputs.on }}'
+          if [[ "$root" != 'true' ]] && changed '^application/[^/]+$'; then root=true; fi
 
           entries=()
-          if [[ "$cron" == 'true' ]]; then
-            for pkg in authentication common cron datastore domain notification; do
+          for pkg in authentication common cron datastore domain notification; do
+            case "$pkg" in
+              cron) path='^application/apps/cron/' ;;
+              *)    path="^application/packages/$pkg/" ;;
+            esac
+            if [[ "$root" == 'true' ]] || changed "$path"; then
               entries+=("{\"name\":\"$pkg\",\"filter\":\"@trend-diary/$pkg\"}")
-            done
-          fi
-          if [[ "$client" == 'true' ]]; then
+            fi
+          done
+
+          if [[ '${{ steps.all.outputs.on || steps.split.outputs.client }}' == 'true' ]]; then
             entries+=('{"name":"web client","target":"client"}')
           fi
 
@@ -138,8 +147,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # web は client のみ単体テスト。server/component は結合テスト、e2e は E2E の
-        # 専用ジョブで実行するためこのマトリクスには含めない
+        # server/component(結合テスト)・e2e は専用ジョブのため単体マトリクスには含めない
         include: ${{ fromJSON(needs.changes.outputs.unit_matrix) }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

@@ -167,7 +167,6 @@ export default function useAnalytics() {
   }
 }
 
-// レスポンス未取得時は表示用の空データへフォールバックする
 function resolveDiaryView(
   data: DiaryResponse | undefined,
   summaryRangeData: SummaryRangeData | undefined,

@@ -41,15 +41,18 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
-      # mainへのpushは差分を問わず全ジョブを実行する
+      # mainへのpush、またはCI設定(.github)の変更は差分を問わず全ジョブを実行する
+      # (CDはこのアクションの検知対象に.githubを含めないためデプロイは走らない)
       - name: 全実行の判定
         id: all
-        if: ${{ github.ref == 'refs/heads/main' }}
-        run: echo "on=true" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF" == 'refs/heads/main' ]] || git diff --name-only HEAD~1 HEAD | grep -qE '^\.github/'; then
+            echo "on=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: デプロイ対象の検知
         id: deploy
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ steps.all.outputs.on != 'true' }}
         uses: ./.github/actions/detect-changes
         with:
           # PRのHEADはマージコミットのため、第一親(HEAD~1)がベース先端になる
@@ -57,7 +60,7 @@ jobs:
 
       - name: web内テストと schema の細分化
         id: split
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ steps.all.outputs.on != 'true' }}
         run: |
           set -euo pipefail
 

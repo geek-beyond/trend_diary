@@ -42,12 +42,8 @@ export class DiscordWebhookClient {
 
   private readonly timeoutMs: number
 
-  constructor(
-    webhookUrl: string | undefined,
-    logger: LoggerType,
-    options: DiscordWebhookClientOptions = {},
-  ) {
-    this.webhookUrl = webhookUrl ?? ''
+  constructor(webhookUrl: string, logger: LoggerType, options: DiscordWebhookClientOptions = {}) {
+    this.webhookUrl = webhookUrl
     this.logger = logger
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES
     this.baseDelayMs = options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS
@@ -121,11 +117,7 @@ export class DiscordNotifier {
 
   private readonly maxFieldLength = 1018 // Discord field limit (1024) minus code block chars (6)
 
-  constructor(
-    webhookUrl: string | undefined,
-    logger: LoggerType,
-    options: DiscordWebhookClientOptions = {},
-  ) {
+  constructor(webhookUrl: string, logger: LoggerType, options: DiscordWebhookClientOptions = {}) {
     this.client = new DiscordWebhookClient(webhookUrl, logger, options)
   }
 

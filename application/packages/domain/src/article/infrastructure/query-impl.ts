@@ -9,7 +9,7 @@ import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { eq, type SQL, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { ARTICLE_MEDIA, type ArticleMedia } from '../media'
+import { ARTICLE_MEDIA, type ArticleMedia, isArticleMedia } from '../media'
 import type { Query } from '../port'
 import type {
   Article,
@@ -607,11 +607,14 @@ export default class QueryImpl implements Query {
   }
 
   private static mapRawDiaryReadItem(row: RawDiaryReadRow): DiaryReadItem {
+    // DBのmediaカラムは任意文字列のため、型アサーションで偽装せず実行時に契約を検証する
+    if (!isArticleMedia(row.media)) {
+      throw new Error(`Diary read row has unknown media: ${row.media}`)
+    }
     return {
       readHistoryId: fromDbId(row.readHistoryId),
       articleId: fromDbId(row.articleId),
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- DBのmediaカラムは登録時にArticleMediaへ制約済みのため安全に絞り込めます
-      media: row.media as ArticleMedia,
+      media: row.media,
       title: row.title,
       url: row.url,
       readAt: normalizeDateTime(row.readAt),
@@ -632,20 +635,27 @@ export default class QueryImpl implements Query {
     const sourceRows: RawDiaryTypedSourceRow[] = []
     const readsRows: RawDiaryReadRow[] = []
 
+    // UNION ALL の SELECT 句が rowKind ごとに必須カラムを非 NULL で構築する契約のため、
+    // NULL 混入はクエリ・スキーマの破綻を意味する。黙殺すると日記データが静かに欠落するので送出する
     for (const row of rows) {
       if (row.rowKind === 'source') {
-        if (row.sourceType !== null) {
-          sourceRows.push({ sourceType: row.sourceType, media: row.media, count: row.count ?? 0 })
+        const { sourceType, count } = row
+        if (sourceType === null || count === null) {
+          throw new Error(`Diary source row must have sourceType and count (media: ${row.media})`)
         }
-      } else if (row.readHistoryId !== null && row.articleId !== null && row.readAt !== null) {
-        readsRows.push({
-          readHistoryId: row.readHistoryId,
-          articleId: row.articleId,
-          media: row.media,
-          title: row.title ?? '',
-          url: row.url ?? '',
-          readAt: row.readAt,
-        })
+        sourceRows.push({ sourceType, media: row.media, count })
+      } else {
+        const { readHistoryId, articleId, title, url, readAt } = row
+        if (
+          readHistoryId === null ||
+          articleId === null ||
+          title === null ||
+          url === null ||
+          readAt === null
+        ) {
+          throw new Error(`Diary read row must have all read columns (media: ${row.media})`)
+        }
+        readsRows.push({ readHistoryId, articleId, media: row.media, title, url, readAt })
       }
     }
 
@@ -689,6 +699,13 @@ export default class QueryImpl implements Query {
   }
 
   private static mergeDiarySources(readRows: RawDiarySourceRow[], skipRows: RawDiarySourceRow[]) {
+    // 出力は ARTICLE_MEDIA の走査で組み立てるため、未知の media を黙って捨てると
+    // summary と sources の集計が静かに食い違う。契約外の media はここで顕在化させる
+    for (const row of [...readRows, ...skipRows]) {
+      if (!isArticleMedia(row.media)) {
+        throw new Error(`Diary source row has unknown media: ${row.media}`)
+      }
+    }
     const readMap = new Map<string, number>(readRows.map((row) => [row.media, Number(row.count)]))
     const skipMap = new Map<string, number>(skipRows.map((row) => [row.media, Number(row.count)]))
 

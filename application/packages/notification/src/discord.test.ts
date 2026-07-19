@@ -76,11 +76,9 @@ describe('DiscordWebhookClient', () => {
     })
 
     describe('準正常系', () => {
-      it.each([
-        { label: '空文字', url: '' },
-        { label: 'undefined', url: undefined },
-      ])('Webhook URLが$labelの場合は何もしない', async ({ url }) => {
-        const client = new DiscordWebhookClient(url, createMockLogger())
+      // undefined は型契約（webhookUrl: string）で禁止したため、未設定は空文字のみが表現できる
+      it('Webhook URLが空文字の場合は何もしない', async () => {
+        const client = new DiscordWebhookClient('', createMockLogger())
 
         await client.send({ content: 'test' })
 

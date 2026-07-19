@@ -30,9 +30,8 @@ function buildContext(options: BuildContextOptions = {}): {
   logger: FakeLogger
 } {
   const logger: FakeLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-  const req = options.valid
-    ? { valid: (key: 'param' | 'json' | 'query') => options.valid![key] }
-    : {}
+  // Hono の HonoRequest は valid メソッドを常に持ち、未検証キーには undefined を返す契約に合わせる
+  const req = { valid: (key: 'param' | 'json' | 'query') => options.valid?.[key] }
   // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
   const c = {
     get: (key: string) => {
@@ -207,17 +206,14 @@ describe('createAuthenticatedApiHandler', () => {
     })
   })
 
-  describe('準正常系', () => {
-    it('SESSION_USER が未設定なら401を投げること', async () => {
+  describe('異常系', () => {
+    // authenticator が先行適用される契約のため、未設定は 401 に偽装せず契約違反として送出する
+    it('SESSION_USER が未設定なら契約違反エラーを投げること', async () => {
       const handler = createAuthenticatedApiHandler(baseConfig(ok({})))
 
       const { c } = buildContext()
-      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
-      const thrown = await handler(c).catch((e: unknown) => e)
 
-      expect(thrown).toBeInstanceOf(HTTPException)
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- instanceof で確認済みのため
-      expect((thrown as HTTPException).status).toBe(401)
+      await expect(handler(c)).rejects.toThrow(CONTEXT_KEY.SESSION_USER)
     })
   })
 })

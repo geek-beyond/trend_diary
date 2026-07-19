@@ -2,7 +2,7 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { DIARY_DAYS } from '@trend-diary/domain/article/diary'
 import { z } from 'zod'
-import CONTEXT_KEY from '@/middleware/context'
+import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 
@@ -53,7 +53,7 @@ export default async function readArticle(
   c: ZodValidatedContext<[typeof articleIdParamValidator, typeof createReadHistoryJsonValidator]>,
 ) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const user = c.get(CONTEXT_KEY.SESSION_USER)
+  const user = mustGet(c, CONTEXT_KEY.SESSION_USER)
   const { article_id } = c.req.valid('param')
   const { read_at } = c.req.valid('json')
 

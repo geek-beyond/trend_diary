@@ -43,7 +43,7 @@ export class RssFetchError extends Error {
 async function collectDiagnostics(response: Response): Promise<RssFetchDiagnostics> {
   const headers: Record<string, string> = {}
   for (const name of DIAGNOSTIC_HEADER_NAMES) {
-    const value = response.headers?.get(name)
+    const value = response.headers.get(name)
     if (value !== null && value !== undefined) headers[name] = value
   }
 
@@ -52,8 +52,6 @@ async function collectDiagnostics(response: Response): Promise<RssFetchDiagnosti
 }
 
 async function readBodySnippet(response: Response): Promise<string | undefined> {
-  if (typeof response.text !== 'function') return undefined
-
   // 本文取得自体が失敗しても診断材料を欠くだけに留め、失敗通知そのものは継続させる
   const result = await wrapAsyncCall(() => response.text())
   if (result.isErr()) return undefined

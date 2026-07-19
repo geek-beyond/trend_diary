@@ -36,6 +36,17 @@ describe('normalizeDateTime', () => {
   ])('$name', ({ input, expected }) => {
     expect(normalizeDateTime(input).getTime()).toBe(expected)
   })
+
+  describe('異常系', () => {
+    // DB の日時カラムはパース可能な値のみが書き込まれる契約のため、破損値は Invalid Date に
+    // 変換して黙って通さず契約違反として送出する
+    it.each([
+      { name: 'パース不能な文字列', input: 'not-a-datetime' },
+      { name: 'NaN', input: Number.NaN },
+    ])('$name は契約違反として送出する', ({ input }) => {
+      expect(() => normalizeDateTime(input)).toThrow('not parseable')
+    })
+  })
 })
 
 describe('serializeDateTime', () => {

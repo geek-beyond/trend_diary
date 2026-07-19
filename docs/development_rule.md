@@ -37,9 +37,9 @@ trend_diary/
 │   ├── packages/               # 各 app から共有されるライブラリ（@trend-diary/*）
 │   │   ├── common/             # 全パッケージ共通基盤（エラー・ロガー・結果型・環境変数・i18n等）
 │   │   │   └── src/            # env / errors / locale / pagination / result / sanitization / types
-│   │   ├── domain/             # ドメイン層（集約・ユースケース・リポジトリIF・Zodスキーマ）
+│   │   ├── domain/             # ドメイン層（集約・ユースケース・ポートIF・Zodスキーマ）
 │   │   │   └── src/
-│   │   │       ├── article/    # 記事集約（diary / media / use-case / repository / schema / infrastructure）
+│   │   │       ├── article/    # 記事集約（diary / media / use-case / port / schema / infrastructure）
 │   │   │       └── user/       # ユーザー集約
 │   │   ├── datastore/          # 永続化層
 │   │   │   ├── migrations/     # DBマイグレーション

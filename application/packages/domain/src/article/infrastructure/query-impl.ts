@@ -10,7 +10,7 @@ import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { eq, type SQL, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import { ARTICLE_MEDIA, type ArticleMedia } from '../media'
-import type { Query } from '../repository'
+import type { Query } from '../port'
 import type {
   Article,
   ArticleWithOptionalReadStatus,

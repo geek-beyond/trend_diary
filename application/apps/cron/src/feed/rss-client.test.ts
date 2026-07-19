@@ -41,6 +41,16 @@ describe('parseRetryAfterMs', () => {
       expect(parseRetryAfterMs('Sun, 19 Jul 2026 00:00:10 GMT')).toBe(10_000)
     })
 
+    it('HTTP-date は基準時刻(Dateヘッダ)が指定されれば時刻ズレを避けてその差分を返す', () => {
+      expect(
+        parseRetryAfterMs('Sun, 19 Jul 2026 00:00:10 GMT', 'Sun, 19 Jul 2026 00:00:05 GMT'),
+      ).toBe(5_000)
+    })
+
+    it('基準時刻(Dateヘッダ)が不正なら現在時刻へフォールバックする', () => {
+      expect(parseRetryAfterMs('Sun, 19 Jul 2026 00:00:10 GMT', 'invalid-date')).toBe(10_000)
+    })
+
     it('過去の HTTP-date は待機不要として0を返す', () => {
       expect(parseRetryAfterMs('Sat, 18 Jul 2026 23:59:50 GMT')).toBe(0)
     })

@@ -32,7 +32,12 @@ export function backoffDelayMs(attempt: number): number {
 }
 
 // Retry-After は「delta-seconds（非負整数）」か「HTTP-date」の2形式を取り得るため、両方を待機ミリ秒へ正規化する。
-export function parseRetryAfterMs(value: string | null | undefined): number | undefined {
+// HTTP-date は差分計算に基準時刻を要するが、クライアントとサーバの時刻ズレ（clock drift）を避けるため、
+// 呼び出し側がレスポンスの Date ヘッダを refDateStr として渡せるようにする。無い/不正なら Date.now() を使う。
+export function parseRetryAfterMs(
+  value: string | null | undefined,
+  refDateStr?: string | null,
+): number | undefined {
   if (!value) return undefined
   const trimmed = value.trim()
 
@@ -43,8 +48,11 @@ export function parseRetryAfterMs(value: string | null | undefined): number | un
 
   const dateMs = Date.parse(trimmed)
   if (Number.isNaN(dateMs)) return undefined
+
+  const refMs = refDateStr ? Date.parse(refDateStr) : Number.NaN
+  const nowMs = Number.isNaN(refMs) ? Date.now() : refMs
   // 既に過去日付なら待機不要とみなし0へ丸める
-  return Math.max(0, dateMs - Date.now())
+  return Math.max(0, dateMs - nowMs)
 }
 
 // サーバ指定の Retry-After があれば優先し、無ければ指数バックオフにフォールバックする。
@@ -67,7 +75,7 @@ async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], FetchFailur
   if (!response.ok) {
     const retryAfterMs =
       response.status === TOO_MANY_REQUESTS
-        ? parseRetryAfterMs(response.headers?.get('retry-after'))
+        ? parseRetryAfterMs(response.headers?.get('retry-after'), response.headers?.get('date'))
         : undefined
     return err({
       error: new Error(`Failed to fetch rss feed: ${url}, status=${response.status}`),

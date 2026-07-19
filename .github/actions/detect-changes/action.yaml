@@ -3,9 +3,8 @@ description: 変更パスから CD 各デプロイの実行要否フラグを算
 
 inputs:
   base:
-    description: 比較対象の ref。空なら全変更扱い(全フラグ true)
-    required: false
-    default: ''
+    description: 比較対象の ref。チェックアウト済みの履歴で解決できること
+    required: true
 
 outputs:
   web:
@@ -29,17 +28,8 @@ runs:
       run: |
         set -euo pipefail
 
-        if [[ -z "$BASE" ]]; then
-          changed() { true; }
-        else
-          if ! git rev-parse -q --verify "${BASE}^{commit}" >/dev/null; then
-            # ツリー差分しか取らないため shallow で足りる
-            git fetch --no-tags --depth=1 origin "$BASE"
-            BASE=FETCH_HEAD
-          fi
-          files=$(git diff --name-only "$BASE" HEAD)
-          changed() { grep -qE "$1" <<<"$files"; }
-        fi
+        files=$(git diff --name-only "$BASE" HEAD)
+        changed() { grep -qE "$1" <<<"$files"; }
 
         # パッケージ間の依存関係は追わず粗く判定する。デプロイは冪等で過剰実行の害がない
         # ため、厳密な選別より判定の単純さを優先する

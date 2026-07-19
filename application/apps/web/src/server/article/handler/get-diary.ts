@@ -11,7 +11,7 @@ import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
 import { toTodayJstDateString } from '@/common/locale/date'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 
 const DATE_STRING_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -75,7 +75,7 @@ interface DiaryRangeResponse {
   }
 }
 
-export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) {
+export default async function getDiary(c: ZodValidatedContext<{ query: DiaryQuery }>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!
   const query = c.req.valid('query')

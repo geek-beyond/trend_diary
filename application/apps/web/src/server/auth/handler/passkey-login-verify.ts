@@ -18,7 +18,9 @@ export const passkeyLoginVerifyInputSchema = z.object({
 
 export type PasskeyLoginVerifyInput = z.infer<typeof passkeyLoginVerifyInputSchema>
 
-export default async function passkeyLoginVerify(c: ZodValidatedContext<PasskeyLoginVerifyInput>) {
+export default async function passkeyLoginVerify(
+  c: ZodValidatedContext<{ json: PasskeyLoginVerifyInput }>,
+) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 

@@ -8,7 +8,7 @@ import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 import { verifyTurnstile } from '../captcha'
 
-export default async function signup(c: ZodValidatedContext<AuthInput>) {
+export default async function signup(c: ZodValidatedContext<{ json: AuthInput }>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 

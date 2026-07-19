@@ -23,65 +23,19 @@ const zodValidator = <Target extends keyof ValidationTargets, T extends ZodSchem
 export default zodValidator
 
 // zodValidatorの型は自動推論が厳しかったため、何度も書きそうなベタガキを共通化
-type ZodValidatedContextBase<T, K extends keyof ValidationTargets, P extends string = ''> = Context<
-  Env,
-  P,
-  {
-    in: {
-      [Key in K]: T
-    }
-    out: {
-      [Key in K]: T
-    }
-  }
->
+type ValidatedFields = Partial<Record<keyof ValidationTargets, object>>
 
-export type ZodValidatedContext<T, P extends string = ''> = ZodValidatedContextBase<T, 'json', P>
-
-export type ZodValidatedQueryContext<T, P extends string = ''> = ZodValidatedContextBase<
-  T,
-  'query',
-  P
->
-
-export type ZodValidatedParamContext<T, P extends string = ''> = ZodValidatedContextBase<
-  T,
-  'param',
-  P
->
-
-export type ZodValidatedParamQueryContext<P, Q, Path extends string = ''> = Context<
+// 検証対象（query / param / json）→ 型のマップで in / out を指定する単一の汎用型。
+// transform でリクエスト時（z.input）と検証後（z.output）の型が分かれる場合のみ Out を明示する
+export type ZodValidatedContext<
+  In extends ValidatedFields,
+  Out extends ValidatedFields = In,
+  Path extends string = '',
+> = Context<
   Env,
   Path,
   {
-    in: {
-      param: P
-      query: Q
-    }
-    out: {
-      param: P
-      query: Q
-    }
-  }
->
-
-// param は transform でリクエスト時の型（z.input）と検証後の型（z.output）が異なりうるため、
-// Hono client の RPC 型推論にはスキーマから in / out を別々に導く必要がある
-export type ZodValidatedParamJsonContext<
-  ParamSchema extends ZodSchema,
-  JsonSchema extends ZodSchema,
-  P extends string = '',
-> = Context<
-  Env,
-  P,
-  {
-    in: {
-      param: z.input<ParamSchema>
-      json: z.input<JsonSchema>
-    }
-    out: {
-      param: z.output<ParamSchema>
-      json: z.output<JsonSchema>
-    }
+    in: In
+    out: Out
   }
 >

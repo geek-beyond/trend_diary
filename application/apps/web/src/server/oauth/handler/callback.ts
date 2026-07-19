@@ -5,7 +5,7 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase, type OAuthCallbackQuery } from '@trend-diary/domain/account'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedParamQueryContext } from '@/middleware/zod-validator'
+import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 import {
   OAUTH_COOKIE_OPTIONS,
@@ -16,7 +16,7 @@ import {
 import type { OAuthProviderParam } from '@/server/oauth/schema'
 
 export default async function oauthCallback(
-  c: ZodValidatedParamQueryContext<OAuthProviderParam, OAuthCallbackQuery>,
+  c: ZodValidatedContext<{ param: OAuthProviderParam; query: OAuthCallbackQuery }>,
 ) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const { provider } = c.req.valid('param')

@@ -10,7 +10,7 @@ import {
 } from '@trend-diary/domain/article/schema/query-schema'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
@@ -35,7 +35,7 @@ export type ArticleWithReadStatusResponse = ArticleResponse & {
 
 export type ArticleListResponse = OffsetPaginationResult<ArticleResponse>
 
-export default async function getArticles(c: ZodValidatedQueryContext<ApiQueryParams>) {
+export default async function getArticles(c: ZodValidatedContext<{ query: ApiQueryParams }>) {
   const transformedParams = c.req.valid('query')
   const logger = c.get(CONTEXT_KEY.APP_LOG)
 

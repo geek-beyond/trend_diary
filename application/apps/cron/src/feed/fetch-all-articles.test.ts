@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import TEST_ENV from '../test-helper/env'
 import { fetchAllArticles } from './fetch-all-articles'
 import { runScheduledFetch } from './fetch-articles'
+import { RssFetchError } from './rss-client'
 
 vi.mock('./fetch-articles', () => ({
   runScheduledFetch: vi.fn(),
@@ -62,6 +63,41 @@ describe('fetchAllArticles', () => {
       expect(sendMessageSpy).toHaveBeenCalledTimes(1)
       expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('media: hatena'))
       expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('error: feed error'))
+    })
+
+    it('RssFetchErrorの場合は診断情報をログとDiscord通知に含める', async () => {
+      const diagnostics = {
+        status: 429,
+        headers: { 'retry-after': '30', 'cf-mitigated': 'challenge' },
+        bodySnippet: 'Rate limited',
+      }
+      const fetchError = new RssFetchError('https://zenn.dev/feed', diagnostics)
+      runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
+        media === 'zenn' ? err(fetchError) : ok(1),
+      )
+      const errorLogger = new Logger('silent')
+      const errorSpy = vi.spyOn(errorLogger, 'error')
+      const discord = new DiscordWebhookClient(TEST_ENV.DISCORD_WEBHOOK_URL, errorLogger)
+      const sendMessageSpy = vi.spyOn(discord, 'sendMessage').mockResolvedValue(undefined)
+
+      await expect(
+        fetchAllArticles({
+          env: TEST_ENV,
+          logger: errorLogger,
+          discord,
+          cron: '0 * * * *',
+          scheduledTime: 4000,
+        }),
+      ).rejects.toThrow()
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ msg: 'cron media fetch failed', media: 'zenn', diagnostics }),
+        fetchError,
+      )
+      expect(sendMessageSpy).toHaveBeenCalledWith(
+        expect.stringContaining('headers: retry-after=30, cf-mitigated=challenge'),
+      )
+      expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('body: Rate limited'))
     })
   })
 

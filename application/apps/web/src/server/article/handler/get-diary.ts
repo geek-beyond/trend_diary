@@ -10,7 +10,7 @@ import type {
 import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
 import { toTodayJstDateString } from '@/common/locale/date'
-import CONTEXT_KEY from '@/middleware/context'
+import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 
@@ -77,7 +77,7 @@ interface DiaryRangeResponse {
 
 export default async function getDiary(c: ZodValidatedContext<[typeof diaryQueryValidator]>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!
+  const sessionUser = mustGet(c, CONTEXT_KEY.SESSION_USER)
   const query = c.req.valid('query')
   const todayJst = resolveTodayJst()
   const fromDate = query.from

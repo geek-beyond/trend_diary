@@ -84,7 +84,7 @@ describe('errorHandler', () => {
   describe('異常系', () => {
     // APP_LOG は request-logger が設定する契約。未設定での起動は契約違反として送出されることを担保する
     it('APP_LOG 未設定で呼び出された場合はエラーを送出すること', async () => {
-      await expect(errorHandler(new Error('boom'), buildContext())).rejects.toThrow('APP_LOG')
+      await expect(errorHandler(new Error('boom'), buildContext())).rejects.toThrow('appLog')
     })
   })
 })

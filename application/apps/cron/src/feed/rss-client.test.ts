@@ -48,16 +48,17 @@ describe('fetchRssFeed', () => {
       vi.useRealTimers()
 
       expect(result.isErr()).toBe(true)
-      if (result.isErr()) {
-        const { error } = result
-        expect(error).toBeInstanceOf(RssFetchError)
-        if (error instanceof RssFetchError) {
-          expect(error.diagnostics.status).toBe(429)
-          expect(error.diagnostics.headers['retry-after']).toBe('30')
-          expect(error.diagnostics.headers['cf-mitigated']).toBe('challenge')
-          expect(error.diagnostics.headers.server).toBe('cloudflare')
-          expect(error.diagnostics.bodySnippet).toBe('Rate limited by origin')
-        }
+      if (result.isErr() && result.error instanceof RssFetchError) {
+        expect(result.error.diagnostics).toEqual({
+          status: 429,
+          headers: {
+            'retry-after': '30',
+            'cf-ray': '8abc',
+            'cf-mitigated': 'challenge',
+            server: 'cloudflare',
+          },
+          bodySnippet: 'Rate limited by origin',
+        })
       }
     })
 

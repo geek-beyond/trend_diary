@@ -6,7 +6,7 @@ import useGithubLinkStatus from './use-github-link-status'
 
 const mockApiClient = {
   oauth: {
-    github: {
+    ':provider': {
       $get: vi.fn(),
     },
   },
@@ -23,7 +23,7 @@ describe('useGithubLinkStatus', () => {
 
   describe('正常系', () => {
     it('連携済みのレスポンスなら連携ありと判定する', async () => {
-      mockApiClient.oauth.github.$get.mockResolvedValue({
+      mockApiClient.oauth[':provider'].$get.mockResolvedValue({
         ok: true,
         json: async () => ({ linked: true }),
       })
@@ -36,7 +36,7 @@ describe('useGithubLinkStatus', () => {
     })
 
     it('未連携のレスポンスなら連携なしと判定する', async () => {
-      mockApiClient.oauth.github.$get.mockResolvedValue({
+      mockApiClient.oauth[':provider'].$get.mockResolvedValue({
         ok: true,
         json: async () => ({ linked: false }),
       })
@@ -44,7 +44,7 @@ describe('useGithubLinkStatus', () => {
       const { result } = renderHook(() => useGithubLinkStatus(), { wrapper: SwrTestWrapper })
 
       await waitFor(() => {
-        expect(mockApiClient.oauth.github.$get).toHaveBeenCalled()
+        expect(mockApiClient.oauth[':provider'].$get).toHaveBeenCalled()
       })
       expect(result.current.linked).toBe(false)
     })
@@ -52,12 +52,12 @@ describe('useGithubLinkStatus', () => {
 
   describe('準正常系', () => {
     it('取得に失敗したら連携なし扱いになる', async () => {
-      mockApiClient.oauth.github.$get.mockResolvedValue({ ok: false, status: 401 })
+      mockApiClient.oauth[':provider'].$get.mockResolvedValue({ ok: false, status: 401 })
 
       const { result } = renderHook(() => useGithubLinkStatus(), { wrapper: SwrTestWrapper })
 
       await waitFor(() => {
-        expect(mockApiClient.oauth.github.$get).toHaveBeenCalled()
+        expect(mockApiClient.oauth[':provider'].$get).toHaveBeenCalled()
       })
       expect(result.current.linked).toBe(false)
     })

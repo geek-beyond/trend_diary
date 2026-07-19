@@ -50,6 +50,21 @@ export type ZodValidatedParamContext<T, P extends string = ''> = ZodValidatedCon
   P
 >
 
+export type ZodValidatedParamQueryContext<P, Q, Path extends string = ''> = Context<
+  Env,
+  Path,
+  {
+    in: {
+      param: P
+      query: Q
+    }
+    out: {
+      param: P
+      query: Q
+    }
+  }
+>
+
 // param は transform でリクエスト時の型（z.input）と検証後の型（z.output）が異なりうるため、
 // Hono client の RPC 型推論にはスキーマから in / out を別々に導く必要がある
 export type ZodValidatedParamJsonContext<

@@ -1,3 +1,4 @@
+import type { OAuthProvider } from '@trend-diary/authentication'
 import type { Context } from 'hono'
 
 // OAuth完了後に戻す先。認可プロバイダへのリダイレクトを跨いで状態を保持するためCookieに載せる
@@ -24,6 +25,6 @@ export const OAUTH_COOKIE_OPTIONS = {
 
 // Supabaseの認可完了後にブラウザを戻すアプリ側のcallback URL。
 // 配信オリジンが環境ごとに異なるため、リクエストのオリジンから組み立てる
-export function buildGithubCallbackUrl(c: Context): string {
-  return `${new URL(c.req.url).origin}/api/oauth/github/callback`
+export function buildOAuthCallbackUrl(c: Context, provider: OAuthProvider): string {
+  return `${new URL(c.req.url).origin}/api/oauth/${provider}/callback`
 }

@@ -7,7 +7,7 @@ const GITHUB_LINK_STATUS_SWR_KEY = 'api/oauth/github'
 export default function useGithubLinkStatus() {
   const { data, isLoading, mutate } = useSWR(GITHUB_LINK_STATUS_SWR_KEY, async () => {
     const client = getApiClientForClient()
-    const res = await client.oauth.github.$get()
+    const res = await client.oauth[':provider'].$get({ param: { provider: 'github' } })
     if (!res.ok) return false
     const body: { linked: boolean } = await res.json()
     return body.linked

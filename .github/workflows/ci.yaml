@@ -27,8 +27,6 @@ defaults:
 jobs:
   changes:
     runs-on: ubuntu-latest
-    # mainへのpushは全ジョブ実行。PRは web/cron をCD用アクションから、web内の
-    # client/server 分割と schema は split ステップから受け取る
     outputs:
       web: ${{ steps.all.outputs.on || steps.deploy.outputs.web }}
       cron: ${{ steps.all.outputs.on || steps.deploy.outputs.cron }}
@@ -43,9 +41,10 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
+      # mainへのpushは差分を問わず全ジョブを実行する
       - name: 全実行の判定
         id: all
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: echo "on=true" >> "$GITHUB_OUTPUT"
 
       - name: デプロイ対象の検知
@@ -67,7 +66,7 @@ jobs:
           # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
           # web 変更(共通設定・ミドルウェア等)と共有コードは両方に影響するとみなす
           web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
-          shared='^application/packages/|^application/[^/]+$|^\.github/'
+          shared='^application/packages/|^application/[^/]+$'
 
           client=false; if web_changed_except '^application/apps/web/src/server/' || changed "$shared"; then client=true; fi
           server=false; if web_changed_except '^application/apps/web/src/client/' || changed "$shared"; then server=true; fi

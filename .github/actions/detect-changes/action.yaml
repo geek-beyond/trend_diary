@@ -34,7 +34,7 @@ runs:
         # パッケージ間の依存関係は追わず粗く判定する。デプロイは冪等で過剰実行の害がない
         # ため、厳密な選別より判定の単純さを優先する
         pkgs='^application/packages/'
-        root='^application/[^/]+$|^\.github/'
+        root='^application/[^/]+$'
 
         web=false;      if changed "^application/apps/web/|$pkgs|$root"; then web=true; fi
         cron=false;     if changed "^application/apps/cron/|$pkgs|$root"; then cron=true; fi

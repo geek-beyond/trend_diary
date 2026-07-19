@@ -10,10 +10,6 @@ const MAX_FETCH_ATTEMPTS = 3
 const RETRY_BASE_DELAY_MS = 1_000
 const RETRY_MAX_DELAY_MS = 30_000
 
-// INFO: UA を持たないリクエストは配信元に bot と見なされ 429/403 を返されやすいため、
-// 連絡先を含む識別可能な UA を付与してレート制限を避ける
-const RSS_USER_AGENT = 'trend-diary-cron/1.0 (+https://github.com/geek-beyond/trend_diary)'
-
 // 429 等の失敗要因を後から切り分けられるよう、配信元レスポンスから残す診断情報。
 export interface RssFetchDiagnostics {
   status: number
@@ -78,10 +74,7 @@ export function backoffDelayMs(attempt: number): number {
 
 async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], Error>> {
   const responseResult = await wrapAsyncCall(() =>
-    fetchWithTimeout(url, {
-      timeoutMs: FETCH_TIMEOUT_MS,
-      headers: { 'User-Agent': RSS_USER_AGENT },
-    }),
+    fetchWithTimeout(url, { timeoutMs: FETCH_TIMEOUT_MS }),
   )
   if (responseResult.isErr()) return err(responseResult.error)
 

@@ -1,4 +1,5 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
+import { ClientError } from '@trend-diary/common/errors'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase, type OAuthCallbackQuery } from '@trend-diary/domain/account'
@@ -47,11 +48,6 @@ export default async function githubCallback(c: ZodValidatedQueryContext<OAuthCa
   }
 
   const { id: authenticationId, email } = exchangeResult.value
-  // GitHub側のメール非公開などでメールを取得できないと新規登録できないため、認証失敗として元の画面へ戻す
-  if (!email) {
-    logger.warn('github oauth callback without email', { authenticationId })
-    return c.redirect(errorRedirect, 302)
-  }
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
@@ -59,6 +55,12 @@ export default async function githubCallback(c: ZodValidatedQueryContext<OAuthCa
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
   const result = await accountUseCase.resolveOrRegisterActiveUser(authenticationId, email, notifier)
   if (result.isErr()) {
+    // メール未取得での新規登録拒否などは、再試行で解消しうる認証失敗として元の画面へ戻す
+    if (result.error instanceof ClientError) {
+      logger.warn('github oauth login failed', { message: result.error.message })
+      return c.redirect(errorRedirect, 302)
+    }
+
     throw handleError(result.error, logger)
   }
 

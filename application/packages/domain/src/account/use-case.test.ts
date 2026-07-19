@@ -155,6 +155,27 @@ describe('AccountUseCase', () => {
       })
     })
 
+    describe('準正常系', () => {
+      it('既存ユーザーが無くemail未取得なら新規作成せずClientErrorを返す', async () => {
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(null))
+
+        const result = await useCase.resolveOrRegisterActiveUser(
+          'auth-user-id-123',
+          undefined,
+          notifierMock,
+        )
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ClientError)
+          if (result.error instanceof ClientError) {
+            expect(result.error.statusCode).toBe(400)
+          }
+        }
+        expect(commandMock.createActiveWithAuthenticationId).not.toHaveBeenCalled()
+      })
+    })
+
     describe('異常系', () => {
       it('ユーザー検索が失敗した場合はServerErrorを返し新規作成しない', async () => {
         queryMock.findActiveByAuthenticationId.mockResolvedValue(err(new Error('db down')))

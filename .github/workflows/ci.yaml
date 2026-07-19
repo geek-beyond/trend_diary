@@ -29,6 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       web: ${{ steps.detect.outputs.web }}
+      client: ${{ steps.detect.outputs.client }}
+      server: ${{ steps.detect.outputs.server }}
       cron: ${{ steps.detect.outputs.cron }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -96,7 +98,7 @@ jobs:
   client-test:
     name: unit-test (web client)
     needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' }}
+    if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
     # test_cov のカバレッジコメント投稿に必要
     permissions:
@@ -119,7 +121,7 @@ jobs:
   server-test:
     name: integration-test (web server)
     needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' }}
+    if: ${{ needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
     # test_cov のカバレッジコメント投稿に必要
     permissions:
@@ -149,7 +151,8 @@ jobs:
   component-test:
     name: integration-test (web component)
     needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' }}
+    # コンポーネントテストの対象はクライアントコードのため client で判定する
+    if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

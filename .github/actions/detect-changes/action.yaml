@@ -9,8 +9,14 @@ inputs:
 
 outputs:
   web:
-    description: web(＋共有コード)の変更有無。web のデプロイ・テスト・E2E の要否
+    description: web(＋共有コード)の変更有無。web のデプロイ・ビルド・E2E の要否
     value: ${{ steps.detect.outputs.web }}
+  client:
+    description: web クライアント(＋共有コード)の変更有無。クライアントのユニット・コンポーネントテストの要否
+    value: ${{ steps.detect.outputs.client }}
+  server:
+    description: web サーバー(＋共有コード)の変更有無。サーバー結合テストの要否
+    value: ${{ steps.detect.outputs.server }}
   cron:
     description: cron(＋共有コード)の変更有無。cron のデプロイとユニットテスト・スキーマ検査の要否
     value: ${{ steps.detect.outputs.cron }}
@@ -30,6 +36,7 @@ runs:
         set -euo pipefail
 
         if [[ -z "$BASE" ]]; then
+          files=''
           changed() { true; }
         else
           if ! git rev-parse -q --verify "${BASE}^{commit}" >/dev/null; then
@@ -46,13 +53,21 @@ runs:
         pkgs='^application/packages/'
         root='^application/[^/]+$|^\.github/'
 
+        # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
+        # web 変更(共通設定・ミドルウェア等)は両方に影響するとみなす
+        web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
+
         web=false;      if changed "^application/apps/web/|$pkgs|$root"; then web=true; fi
+        client=false;   if web_changed_except '^application/apps/web/src/server/' || changed "$pkgs|$root"; then client=true; fi
+        server=false;   if web_changed_except '^application/apps/web/src/client/' || changed "$pkgs|$root"; then server=true; fi
         cron=false;     if changed "^application/apps/cron/|$pkgs|$root"; then cron=true; fi
         database=false; if changed "^application/packages/datastore/migrations/"; then database=true; fi
 
         {
           echo "web=$web"
+          echo "client=$client"
+          echo "server=$server"
           echo "cron=$cron"
           echo "database=$database"
         } >> "$GITHUB_OUTPUT"
-        echo "web=$web cron=$cron database=$database"
+        echo "web=$web client=$client server=$server cron=$cron database=$database"

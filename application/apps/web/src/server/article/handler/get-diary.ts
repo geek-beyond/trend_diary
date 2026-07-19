@@ -143,11 +143,7 @@ function validateDiaryDateRange(fromDate: string, toDate: string, todayJst: stri
     })
   }
 
-  const earliestResult = addJstDays(todayJst, -(DIARY_DAYS - 1))
-  if (earliestResult.isErr()) {
-    throw new HTTPException(500, { message: 'Failed to resolve diary date range' })
-  }
-  const earliestDate = earliestResult.value
+  const earliestDate = addJstDays(todayJst, -(DIARY_DAYS - 1))
 
   const causes: { from?: string[]; to?: string[] } = {}
   if (fromDate < earliestDate) {

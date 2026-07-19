@@ -34,20 +34,13 @@ describe('Common Date Module', () => {
 
   describe('addJstDays', () => {
     it('JST基準で日付加算できること', () => {
-      const result = addJstDays('2024-01-01', -1)
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) {
-        expect(result.value).toBe('2023-12-31')
-      }
+      expect(addJstDays('2024-01-01', -1)).toBe('2023-12-31')
     })
 
-    it('不正な日付文字列の場合はfailureを返し、詳細メッセージを保持すること', () => {
+    // 検証済み・内部生成の文字列を渡す契約のため、不正な文字列は契約違反として送出する
+    it('不正な日付文字列の場合は契約違反として送出すること', () => {
       const invalidInput = 'invalid'
-      const result = addJstDays(invalidInput, 1)
-      expect(result.isErr()).toBe(true)
-      if (result.isErr()) {
-        expect(result.error.message).toBe(`不正な日付文字列です: ${invalidInput}`)
-      }
+      expect(() => addJstDays(invalidInput, 1)).toThrow(`Invalid date string: ${invalidInput}`)
     })
   })
 })

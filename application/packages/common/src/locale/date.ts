@@ -38,13 +38,19 @@ export const toJstDateString = (rawDate: Date): Result<string, Error> => {
   return ok(`${year}-${month}-${day}`)
 }
 
-export const addJstDays = (baseDateString: string, days: number): Result<string, Error> => {
+// 呼び出し元は検証済み・内部生成の日付文字列を渡す契約のため、失敗は Result で返さず
+// 契約違反として送出する（toJstDateString は外部入力の検証にも使うため Result のまま）
+export const addJstDays = (baseDateString: string, days: number): string => {
   const baseDate = toJstDate(baseDateString)
   if (Number.isNaN(baseDate.getTime())) {
-    return err(new Error(`不正な日付文字列です: ${baseDateString}`))
+    throw new Error(`Invalid date string: ${baseDateString}`)
   }
 
   // +09:00 固定の日時を UTC で日付加算すると、JST の暦日をずらした結果と一致する。
   baseDate.setUTCDate(baseDate.getUTCDate() + days)
-  return toJstDateString(baseDate)
+  const shifted = toJstDateString(baseDate)
+  if (shifted.isErr()) {
+    throw shifted.error
+  }
+  return shifted.value
 }

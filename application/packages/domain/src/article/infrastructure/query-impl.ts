@@ -736,12 +736,8 @@ export default class QueryImpl implements Query {
     let current = fromDateJst
     while (current <= toDateJst) {
       dates.push(current)
-      const next = addJstDays(current, 1)
-      // 失敗を握り潰すと欠けた日付リストを正常値として返してしまい、日記データが静かに欠落する
-      if (next.isErr()) {
-        return err(next.error)
-      }
-      current = next.value
+      // 両端は検証済みのため、途中の加算失敗は契約違反として addJstDays が送出する
+      current = addJstDays(current, 1)
     }
     return ok(dates)
   }

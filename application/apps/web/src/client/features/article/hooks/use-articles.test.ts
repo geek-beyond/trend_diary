@@ -87,14 +87,8 @@ const resolveJstDateString = (rawDate: Date): string => {
   return result.value
 }
 
-const resolveJstDateWithOffset = (baseDateString: string, days: number): string => {
-  const result = addJstDays(baseDateString, days)
-  if (result.isErr()) {
-    return baseDateString
-  }
-
-  return result.value
-}
+const resolveJstDateWithOffset = (baseDateString: string, days: number): string =>
+  addJstDays(baseDateString, days)
 
 // oxlint-disable-next-line typescript/no-explicit-any, typescript/consistent-type-assertions -- Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするため any と型アサーションを許可する
 const mockGetApiClientForClient = getApiClientForClient as MockedFunction<any>

@@ -75,11 +75,7 @@ const getTodayJst = () => {
 }
 
 const buildDates = (baseDate: string) =>
-  Array.from({ length: 7 }, (_, index) => {
-    const dateResult = addJstDays(baseDate, -(6 - index))
-    if (dateResult.isErr()) return baseDate
-    return dateResult.value
-  })
+  Array.from({ length: 7 }, (_, index) => addJstDays(baseDate, -(6 - index)))
 
 describe('useAnalytics', () => {
   beforeEach(() => {

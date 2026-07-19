@@ -9,11 +9,7 @@ export {
   UserAlreadyExistsError,
 } from './errors'
 export { OAuthClient } from './oauth-client'
-export {
-  type OAuthProvider,
-  oauthProviderParamSchema,
-  type OAuthProviderParam,
-} from './oauth-provider'
+export { OAUTH_PROVIDERS, type OAuthProvider } from './oauth-provider'
 export { PasskeyClient } from './passkey-client'
 export { PasswordAuthClient } from './password-auth-client'
 export { SessionClient } from './session-client'

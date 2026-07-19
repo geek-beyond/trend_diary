@@ -1,8 +1,9 @@
-import { authClientConfig, OAuthClient, type OAuthProviderParam } from '@trend-diary/authentication'
+import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedParamContext } from '@/middleware/zod-validator'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
+import type { OAuthProviderParam } from '@/server/oauth/schema'
 
 export default async function oauthStatus(c: ZodValidatedParamContext<OAuthProviderParam>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)

@@ -1,4 +1,4 @@
-import { authClientConfig, OAuthClient, type OAuthProviderParam } from '@trend-diary/authentication'
+import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
 import type { OAuthLoginQuery } from '@trend-diary/domain/account'
 import { deleteCookie, setCookie } from 'hono/cookie'
@@ -13,6 +13,7 @@ import {
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
 } from '@/server/oauth/redirect'
+import type { OAuthProviderParam } from '@/server/oauth/schema'
 
 export default async function oauthLogin(
   c: ZodValidatedParamQueryContext<OAuthProviderParam, OAuthLoginQuery>,

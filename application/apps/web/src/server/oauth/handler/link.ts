@@ -1,4 +1,4 @@
-import { authClientConfig, OAuthClient, type OAuthProviderParam } from '@trend-diary/authentication'
+import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { setCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedParamContext } from '@/middleware/zod-validator'
@@ -11,6 +11,7 @@ import {
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
 } from '@/server/oauth/redirect'
+import type { OAuthProviderParam } from '@/server/oauth/schema'
 
 export default async function oauthLink(c: ZodValidatedParamContext<OAuthProviderParam>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)

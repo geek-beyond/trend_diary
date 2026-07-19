@@ -1,4 +1,4 @@
-import { authClientConfig, OAuthClient, type OAuthProviderParam } from '@trend-diary/authentication'
+import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { ClientError } from '@trend-diary/common/errors'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
 import getRdbClient from '@trend-diary/datastore/rdb'
@@ -13,6 +13,7 @@ import {
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
 } from '@/server/oauth/redirect'
+import type { OAuthProviderParam } from '@/server/oauth/schema'
 
 export default async function oauthCallback(
   c: ZodValidatedParamQueryContext<OAuthProviderParam, OAuthCallbackQuery>,

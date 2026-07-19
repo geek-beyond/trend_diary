@@ -1,4 +1,3 @@
-import { oauthProviderParamSchema } from '@trend-diary/authentication'
 import { oauthCallbackQuerySchema, oauthLoginQuerySchema } from '@trend-diary/domain/account'
 import { Hono } from 'hono'
 import type { Env } from '@/env'
@@ -10,6 +9,7 @@ import oauthLink from './handler/link'
 import oauthLogin from './handler/login'
 import oauthStatus from './handler/status'
 import oauthUnlink from './handler/unlink'
+import { oauthProviderParamSchema } from './schema'
 
 const app = new Hono<Env>()
   // OAuth(未認証で可)。認可はSupabase経由でプロバイダへ委譲し、callbackでセッションを確立する。

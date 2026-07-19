@@ -28,10 +28,8 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      unit: ${{ steps.detect.outputs.unit }}
       web: ${{ steps.detect.outputs.web }}
       e2e: ${{ steps.detect.outputs.e2e }}
-      schema: ${{ steps.detect.outputs.schema }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -42,7 +40,6 @@ jobs:
           base: ${{ github.base_ref }}
 
   code-quality:
-    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -58,8 +55,6 @@ jobs:
         run: pnpm lint
 
   unit-test:
-    needs: changes
-    if: ${{ needs.changes.outputs.unit == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -79,8 +74,6 @@ jobs:
         run: pnpm --filter @trend-diary/${{ matrix.package }} test
 
   web-build:
-    needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -96,8 +89,6 @@ jobs:
 
   client-test:
     name: unit-test (web client)
-    needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
     # test_cov のカバレッジコメント投稿に必要
     permissions:
@@ -181,8 +172,6 @@ jobs:
         run: pnpm --filter @trend-diary/web test --project storybook --coverage
 
   schema:
-    needs: changes
-    if: ${{ needs.changes.outputs.schema == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

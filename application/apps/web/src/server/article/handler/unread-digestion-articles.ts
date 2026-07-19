@@ -3,7 +3,7 @@ import { createArticleUseCase } from '@trend-diary/domain/article'
 import { mediaListSchema } from '@trend-diary/domain/article/schema/query-schema'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
@@ -16,10 +16,10 @@ export const unreadDigestionQuerySchema = z.object({
   media: mediaListSchema,
 })
 
-type UnreadDigestionQuery = z.infer<typeof unreadDigestionQuerySchema>
+export const unreadDigestionQueryValidator = zodValidator('query', unreadDigestionQuerySchema)
 
 export default async function unreadDigestionArticles(
-  c: ZodValidatedContext<{ query: UnreadDigestionQuery }>,
+  c: ZodValidatedContext<[typeof unreadDigestionQueryValidator]>,
 ): Promise<Response> {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!

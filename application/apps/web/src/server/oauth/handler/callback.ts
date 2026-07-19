@@ -2,7 +2,7 @@ import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { ClientError } from '@trend-diary/common/errors'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase, type OAuthCallbackQuery } from '@trend-diary/domain/account'
+import { createAccountUseCase } from '@trend-diary/domain/account'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
@@ -13,10 +13,13 @@ import {
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
 } from '@/server/oauth/redirect'
-import type { OAuthProviderParam } from '@/server/oauth/schema'
+import type {
+  oauthCallbackQueryValidator,
+  oauthProviderParamValidator,
+} from '@/server/oauth/schema'
 
 export default async function oauthCallback(
-  c: ZodValidatedContext<{ param: OAuthProviderParam; query: OAuthCallbackQuery }>,
+  c: ZodValidatedContext<[typeof oauthProviderParamValidator, typeof oauthCallbackQueryValidator]>,
 ) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const { provider } = c.req.valid('param')

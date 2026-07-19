@@ -11,9 +11,11 @@ import {
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
 } from '@/server/oauth/redirect'
-import type { OAuthProviderParam } from '@/server/oauth/schema'
+import type { oauthProviderParamValidator } from '@/server/oauth/schema'
 
-export default async function oauthLink(c: ZodValidatedContext<{ param: OAuthProviderParam }>) {
+export default async function oauthLink(
+  c: ZodValidatedContext<[typeof oauthProviderParamValidator]>,
+) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const { provider } = c.req.valid('param')
 

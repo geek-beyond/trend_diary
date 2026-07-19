@@ -4,7 +4,7 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/account'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 
@@ -16,10 +16,10 @@ export const passkeyLoginVerifyInputSchema = z.object({
   ),
 })
 
-export type PasskeyLoginVerifyInput = z.infer<typeof passkeyLoginVerifyInputSchema>
+export const passkeyLoginVerifyValidator = zodValidator('json', passkeyLoginVerifyInputSchema)
 
 export default async function passkeyLoginVerify(
-  c: ZodValidatedContext<{ json: PasskeyLoginVerifyInput }>,
+  c: ZodValidatedContext<[typeof passkeyLoginVerifyValidator]>,
 ) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')

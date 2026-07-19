@@ -1,15 +1,17 @@
-import { oauthCallbackQuerySchema, oauthLoginQuerySchema } from '@trend-diary/domain/account'
 import { Hono } from 'hono'
 import type { Env } from '@/env'
 import { authenticator } from '@/middleware/authenticator'
 import rateLimiter from '@/middleware/rate-limiter'
-import zodValidator from '@/middleware/zod-validator'
 import oauthCallback from './handler/callback'
 import oauthLink from './handler/link'
 import oauthLogin from './handler/login'
 import oauthStatus from './handler/status'
 import oauthUnlink from './handler/unlink'
-import { oauthProviderParamSchema } from './schema'
+import {
+  oauthCallbackQueryValidator,
+  oauthLoginQueryValidator,
+  oauthProviderParamValidator,
+} from './schema'
 
 const app = new Hono<Env>()
   // OAuth(未認証で可)。認可はSupabase経由でプロバイダへ委譲し、callbackでセッションを確立する。
@@ -17,19 +19,19 @@ const app = new Hono<Env>()
   .get(
     '/:provider/login',
     rateLimiter,
-    zodValidator('param', oauthProviderParamSchema),
-    zodValidator('query', oauthLoginQuerySchema),
+    oauthProviderParamValidator,
+    oauthLoginQueryValidator,
     oauthLogin,
   )
   .get(
     '/:provider/callback',
     rateLimiter,
-    zodValidator('param', oauthProviderParamSchema),
-    zodValidator('query', oauthCallbackQuerySchema),
+    oauthProviderParamValidator,
+    oauthCallbackQueryValidator,
     oauthCallback,
   )
-  .get('/:provider/link', authenticator, zodValidator('param', oauthProviderParamSchema), oauthLink)
-  .get('/:provider', authenticator, zodValidator('param', oauthProviderParamSchema), oauthStatus)
-  .delete('/:provider', authenticator, zodValidator('param', oauthProviderParamSchema), oauthUnlink)
+  .get('/:provider/link', authenticator, oauthProviderParamValidator, oauthLink)
+  .get('/:provider', authenticator, oauthProviderParamValidator, oauthStatus)
+  .delete('/:provider', authenticator, oauthProviderParamValidator, oauthUnlink)
 
 export default app

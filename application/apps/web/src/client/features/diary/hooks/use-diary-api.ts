@@ -52,7 +52,8 @@ export default function useDiaryApi() {
           query: {
             from: date,
             to: date,
-            page,
+            // クエリはURL上文字列で送られるため、検証前の入力型（string）に合わせる
+            page: String(page),
           },
         },
         { init: { credentials: 'include' } },

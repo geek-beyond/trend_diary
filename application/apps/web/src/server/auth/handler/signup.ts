@@ -1,14 +1,15 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { type AuthInput, createAccountUseCase } from '@trend-diary/domain/account'
+import { createAccountUseCase } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import type { authInputValidator } from '@/server/auth/validators'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 import { verifyTurnstile } from '../captcha'
 
-export default async function signup(c: ZodValidatedContext<{ json: AuthInput }>) {
+export default async function signup(c: ZodValidatedContext<[typeof authInputValidator]>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 

@@ -1,5 +1,5 @@
 import { zValidator } from '@hono/zod-validator'
-import type { Context, ValidationTargets } from 'hono'
+import type { Context, Env as HonoEnv, Input, MiddlewareHandler, ValidationTargets } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { ZodSchema } from 'zod'
 import { z } from 'zod'
@@ -22,22 +22,34 @@ const zodValidator = <Target extends keyof ValidationTargets, T extends ZodSchem
 
 export default zodValidator
 
-// zodValidatorの型は自動推論が厳しかったため、何度も書きそうなベタガキを共通化
-type ValidatedFields = Partial<Record<keyof ValidationTargets, object>>
+// ルートに適用した zodValidator のチェーンから、検証済みハンドラーの Context を導出する。
+// 各 validator が持つ in / out（param の transform 等で両者が分かれる場合も含む）を統合するため、
+// ハンドラー側で対象と型のマップを手書きせず、適用した validator の型から一意に決まる
+type InferValidatorInput<V> =
+  V extends MiddlewareHandler<HonoEnv, string, infer I extends Input> ? I : never
 
-// 検証対象（query / param / json）→ 型のマップで in / out を指定する単一の汎用型。
-// transform でリクエスト時（z.input）と検証後（z.output）の型が分かれる場合のみ Out を明示する。
-// In 側は自己参照制約で値を object（undefined 抜き）に固定し、Out には In と同じキーを型で強制して
-// in / out のキー取り違え（例: In は param + json なのに Out が param のみ）を防ぐ
+type MergeIn<Validators extends readonly MiddlewareHandler[]> = Validators extends readonly [
+  infer Head,
+  ...infer Rest extends readonly MiddlewareHandler[],
+]
+  ? (InferValidatorInput<Head> extends { in: infer I } ? I : {}) & MergeIn<Rest>
+  : {}
+
+type MergeOut<Validators extends readonly MiddlewareHandler[]> = Validators extends readonly [
+  infer Head,
+  ...infer Rest extends readonly MiddlewareHandler[],
+]
+  ? (InferValidatorInput<Head> extends { out: infer O } ? O : {}) & MergeOut<Rest>
+  : {}
+
 export type ZodValidatedContext<
-  In extends ValidatedFields & { [K in keyof In]: object },
-  Out extends { [K in keyof In]: object } = In,
+  Validators extends readonly MiddlewareHandler[],
   Path extends string = '',
 > = Context<
   Env,
   Path,
   {
-    in: In
-    out: Out
+    in: MergeIn<Validators>
+    out: MergeOut<Validators>
   }
 >

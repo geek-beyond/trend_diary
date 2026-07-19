@@ -1,6 +1,6 @@
 import { fetchWithTimeout } from '@trend-diary/common/http'
 import { wrapAsyncCall } from '@trend-diary/common/result'
-import { err, ok, type Result } from 'neverthrow'
+import { err, type Result } from 'neverthrow'
 import Parser from 'rss-parser'
 
 // INFO: 外部RSSのハング時に無限待機しないよう1試行あたりのタイムアウトを設ける
@@ -9,7 +9,6 @@ const FETCH_TIMEOUT_MS = 30_000
 const MAX_FETCH_ATTEMPTS = 3
 const RETRY_BASE_DELAY_MS = 1_000
 const RETRY_MAX_DELAY_MS = 30_000
-const TOO_MANY_REQUESTS = 429
 
 // INFO: UA を持たないリクエストは配信元に bot と見なされ 429/403 を返されやすいため、
 // 連絡先を含む識別可能な UA を付与してレート制限を避ける
@@ -45,13 +44,6 @@ export class RssFetchError extends Error {
   }
 }
 
-// リトライ間隔の決定に必要な、失敗の内訳を表す。
-interface FetchFailure {
-  error: Error
-  // 429 応答が Retry-After で指定した待機時間（ミリ秒）。指定が無ければ undefined。
-  retryAfterMs?: number
-}
-
 async function collectDiagnostics(response: Response): Promise<RssFetchDiagnostics> {
   const headers: Record<string, string> = {}
   for (const name of DIAGNOSTIC_HEADER_NAMES) {
@@ -84,63 +76,27 @@ export function backoffDelayMs(attempt: number): number {
   return Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS)
 }
 
-// Retry-After は「delta-seconds（非負整数）」か「HTTP-date」の2形式を取り得るため、両方を待機ミリ秒へ正規化する。
-// HTTP-date は差分計算に基準時刻を要するが、クライアントとサーバの時刻ズレ（clock drift）を避けるため、
-// 呼び出し側がレスポンスの Date ヘッダを refDateStr として渡せるようにする。無い/不正なら Date.now() を使う。
-export function parseRetryAfterMs(
-  value: string | null | undefined,
-  refDateStr?: string | null,
-): number | undefined {
-  if (!value) return undefined
-  const trimmed = value.trim()
-
-  // delta-seconds は非負整数のみが有効
-  if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1_000
-  // 負値・小数など数値だが不正な指定は、Date.parse が緩く解釈するのを避けるため無視する
-  if (!Number.isNaN(Number(trimmed))) return undefined
-
-  const dateMs = Date.parse(trimmed)
-  if (Number.isNaN(dateMs)) return undefined
-
-  const refMs = refDateStr ? Date.parse(refDateStr) : Number.NaN
-  const nowMs = Number.isNaN(refMs) ? Date.now() : refMs
-  // 既に過去日付なら待機不要とみなし0へ丸める
-  return Math.max(0, dateMs - nowMs)
-}
-
-// サーバ指定の Retry-After があれば優先し、無ければ指数バックオフにフォールバックする。
-// いずれも実行時間の暴発を防ぐため上限でクランプする。
-export function retryDelayMs(attempt: number, retryAfterMs?: number): number {
-  if (retryAfterMs !== undefined) return Math.min(retryAfterMs, RETRY_MAX_DELAY_MS)
-  return backoffDelayMs(attempt)
-}
-
-async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], FetchFailure>> {
+async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], Error>> {
   const responseResult = await wrapAsyncCall(() =>
     fetchWithTimeout(url, {
       timeoutMs: FETCH_TIMEOUT_MS,
       headers: { 'User-Agent': RSS_USER_AGENT },
     }),
   )
-  if (responseResult.isErr()) return err({ error: responseResult.error })
+  if (responseResult.isErr()) return err(responseResult.error)
 
   const response = responseResult.value
   if (!response.ok) {
     const diagnostics = await collectDiagnostics(response)
-    const retryAfterMs =
-      response.status === TOO_MANY_REQUESTS
-        ? parseRetryAfterMs(diagnostics.headers['retry-after'], diagnostics.headers['date'])
-        : undefined
-    return err({ error: new RssFetchError(url, diagnostics), retryAfterMs })
+    return err(new RssFetchError(url, diagnostics))
   }
 
   const parser = new Parser<{ items: T[] }, T>()
-  const parsed = await wrapAsyncCall(async () => {
+  return wrapAsyncCall(async () => {
     const xml = await response.text()
     const feed = await parser.parseString(xml)
     return feed.items
   })
-  return parsed.mapErr((error) => ({ error }))
 }
 
 export async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
@@ -148,12 +104,12 @@ export async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> 
 
   for (let attempt = 0; attempt < MAX_FETCH_ATTEMPTS; attempt += 1) {
     const result = await fetchRssFeedOnce<T>(url)
-    if (result.isOk()) return ok(result.value)
+    if (result.isOk()) return result
 
-    lastError = result.error.error
+    lastError = result.error
     // INFO: 最終試行後は待機せず失敗を返す
     if (attempt < MAX_FETCH_ATTEMPTS - 1) {
-      await delay(retryDelayMs(attempt, result.error.retryAfterMs))
+      await delay(backoffDelayMs(attempt))
     }
   }
 

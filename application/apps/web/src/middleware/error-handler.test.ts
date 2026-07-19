@@ -16,10 +16,11 @@ interface FakeLogger {
   error: ReturnType<typeof vi.fn>
 }
 
-function buildContext(logger: FakeLogger): Context<Env> {
+function buildContext(logger?: FakeLogger): Context<Env> {
   // oxlint-disable-next-line typescript/no-restricted-types -- Hono の変数ストアを模す、任意値を保持する Map のため
   const store = new Map<string, unknown>()
-  store.set(CONTEXT_KEY.APP_LOG, logger)
+  // APP_LOG 未設定（契約違反）のケースを再現するため、logger 省略時はセットしない
+  if (logger) store.set(CONTEXT_KEY.APP_LOG, logger)
   // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
   return {
     get: (key: string) => store.get(key),
@@ -77,6 +78,13 @@ describe('errorHandler', () => {
       expect(res.status).toBe(500)
       expect(logger.error).toHaveBeenCalledWith('Unhandled error', expect.any(Error))
       expect(discordError).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('異常系', () => {
+    // APP_LOG は request-logger が設定する契約。未設定での起動は契約違反として送出されることを担保する
+    it('APP_LOG 未設定で呼び出された場合はエラーを送出すること', async () => {
+      await expect(errorHandler(new Error('boom'), buildContext())).rejects.toThrow('APP_LOG')
     })
   })
 })

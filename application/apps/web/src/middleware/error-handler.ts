@@ -13,6 +13,13 @@ interface RequestInfo {
 const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
 
+  // APP_LOG は request-logger が必ず設定する契約。未設定なら契約違反として送出し、握りつぶさない
+  if (!logger) {
+    throw new Error(
+      'APP_LOG が未設定のまま errorHandler が呼び出されました。request-logger が先に実行される必要があります',
+    )
+  }
+
   const requestInfo: RequestInfo = {
     url: c.req.url,
     method: c.req.method,

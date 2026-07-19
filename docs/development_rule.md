@@ -39,7 +39,7 @@ trend_diary/
 │   │   │   └── src/            # env / errors / locale / pagination / result / sanitization / types
 │   │   ├── domain/             # ドメイン層（集約・ユースケース・リポジトリIF・Zodスキーマ）
 │   │   │   └── src/
-│   │   │       ├── article/    # 記事集約（diary / media / use-case / repository / schema / infrastructure）
+│   │   │       ├── article/    # 記事集約（diary / media / use-case / port / schema / infrastructure）
 │   │   │       └── user/       # ユーザー集約
 │   │   ├── datastore/          # 永続化層
 │   │   │   ├── migrations/     # DBマイグレーション

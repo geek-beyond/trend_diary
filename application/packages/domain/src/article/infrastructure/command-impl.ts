@@ -9,7 +9,7 @@ import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { and, eq, exists, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import type { Command } from '../repository'
+import type { Command } from '../port'
 import type { ReadHistory } from '../schema/read-history-schema'
 import type { SkippedArticle } from '../schema/skipped-article-schema'
 

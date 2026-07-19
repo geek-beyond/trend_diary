@@ -6,7 +6,7 @@ import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { toDbId } from '@trend-diary/datastore/rdb/id'
 import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import type { Query } from '../repository'
+import type { Query } from '../port'
 import type { CurrentUser } from '../schema/active-user-schema'
 import { mapToActiveUser } from './mapper'
 

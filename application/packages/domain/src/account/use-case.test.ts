@@ -2,7 +2,7 @@ import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
-import type { Command, Notifier, Query } from './repository'
+import type { Command, Notifier, Query } from './port'
 import type { CurrentUser } from './schema/active-user-schema'
 import { AccountUseCase } from './use-case'
 

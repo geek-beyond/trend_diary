@@ -2,7 +2,7 @@ import { ServerError } from '@trend-diary/common/errors'
 import Logger from '@trend-diary/common/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
-import type { Notifier } from '../repository'
+import type { Notifier } from '../port'
 import CommandImpl from './command-impl'
 
 // INFO: Drizzleのinsert returningは「カラム順の配列」で行を返す

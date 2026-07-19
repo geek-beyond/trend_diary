@@ -1,6 +1,6 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
 import { err, ok, type Result } from 'neverthrow'
-import type { Command, Notifier, Query } from './repository'
+import type { Command, Notifier, Query } from './port'
 import type { CurrentUser } from './schema/active-user-schema'
 
 export class AccountUseCase {

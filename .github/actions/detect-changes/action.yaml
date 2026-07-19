@@ -69,10 +69,14 @@ runs:
         has() { grep -qx "$1" <<<"$names"; }
 
         # CI 側で対象を列挙せず、test:unit を定義したパッケージだけが matrix に載るようにする
-        packages=$(while read -r dir; do
-            [[ -z "$dir" ]] && continue
-            if jq -e '.scripts["test:unit"] != null' "${dir}/package.json" >/dev/null; then basename "$dir"; fi
-          done <<<"$dirs" | jq -Rnc '[inputs]')
+        items=""
+        while read -r dir; do
+          [[ -z "$dir" ]] && continue
+          if grep -q '"test:unit"' "${dir}/package.json"; then
+            items="${items}\"$(basename "$dir")\","
+          fi
+        done <<<"$dirs"
+        packages="[${items%,}]"
 
         web=false
         if has web; then web=true; fi

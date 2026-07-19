@@ -9,7 +9,7 @@ interface Props {
   redirectTo?: string
 }
 
-export default function GithubLoginButton({ label = 'GitHubでログイン', redirectTo }: Props) {
+export default function GithubAuthButton({ label = 'GitHubでログイン', redirectTo }: Props) {
   return (
     <Button asChild variant='outline' className='w-full'>
       {/* Cookieを確立するOAuth開始はSPA内遷移では成立しないため、reloadDocumentでドキュメントごと遷移する */}

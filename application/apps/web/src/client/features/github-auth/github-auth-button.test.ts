@@ -2,14 +2,14 @@ import { render, screen } from '@testing-library/react'
 import { createElement } from 'react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
-import GithubLoginButton from './github-login-button'
+import GithubAuthButton from './github-auth-button'
 
 // React RouterのLinkを使うため、Router配下で描画する
 function renderButton(props?: { label?: string; redirectTo?: string }) {
-  return render(createElement(MemoryRouter, null, createElement(GithubLoginButton, props)))
+  return render(createElement(MemoryRouter, null, createElement(GithubAuthButton, props)))
 }
 
-describe('GithubLoginButton', () => {
+describe('GithubAuthButton', () => {
   describe('正常系', () => {
     it('OAuth開始URLへのリンクとして描画する', () => {
       renderButton()

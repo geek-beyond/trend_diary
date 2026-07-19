@@ -1,5 +1,5 @@
 import { SignupForm, type SignupFormProps } from '@/client/features/authenticate/signup'
-import { GithubLoginButton } from '@/client/features/github-auth'
+import { GithubAuthButton } from '@/client/features/github-auth'
 import {
   Card,
   CardContent,
@@ -42,7 +42,7 @@ export default function SignupPage({
                 <span className='text-muted-foreground text-xs'>または</span>
                 <span className='bg-border h-px flex-1' />
               </div>
-              <GithubLoginButton label='GitHubで登録' />
+              <GithubAuthButton label='GitHubで登録' />
             </div>
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>

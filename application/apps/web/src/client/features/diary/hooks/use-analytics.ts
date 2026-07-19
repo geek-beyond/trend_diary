@@ -123,13 +123,7 @@ export default function useAnalytics() {
     void mutateDaily()
   }
 
-  const reads = data?.reads.data.map((read) => ({ ...read, readAt: new Date(read.readAt) })) ?? []
-  const normalizedSummaryRange =
-    summaryRangeData?.points ?? availableDates.map((date) => ({ date, read: 0, skip: 0 }))
-  const weeklySummary = sumSourceSummary(normalizedSummaryRange)
-  const weeklySources =
-    summaryRangeData?.weeklySources ?? ARTICLE_MEDIA.map((media) => ({ media, read: 0, skip: 0 }))
-  const dailySummary = data ? sumSourceSummary(data.sources) : { read: 0, skip: 0 }
+  const view = resolveDiaryView(data, summaryRangeData, availableDates, page)
 
   const updatePage = (nextPage: number) => {
     const nextParams = new URLSearchParams(searchParams)
@@ -157,18 +151,12 @@ export default function useAnalytics() {
 
   return {
     selectedDate,
-    summaryRange: normalizedSummaryRange,
-    weeklySummary,
-    dailySummary,
-    sources: data?.sources ?? weeklySources,
-    reads,
-    readPagination: data?.reads ?? {
-      data: [],
-      page,
-      totalPages: 0,
-      hasNext: false,
-      hasPrev: false,
-    },
+    summaryRange: view.summaryRange,
+    weeklySummary: view.weeklySummary,
+    dailySummary: view.dailySummary,
+    sources: view.sources,
+    reads: view.reads,
+    readPagination: view.readPagination,
     isLoading: isLoading || isSummaryLoading,
     hasError: !!summaryError || !!dailyError,
     retry,
@@ -176,6 +164,34 @@ export default function useAnalytics() {
     clearSelectedDate,
     toNextPage: () => updatePage(page + 1),
     toPrevPage: () => updatePage(page - 1),
+  }
+}
+
+// レスポンス未取得時は表示用の空データへフォールバックする
+function resolveDiaryView(
+  data: DiaryResponse | undefined,
+  summaryRangeData: SummaryRangeData | undefined,
+  availableDates: string[],
+  page: number,
+) {
+  const summaryRange =
+    summaryRangeData?.points ?? availableDates.map((date) => ({ date, read: 0, skip: 0 }))
+  const weeklySources =
+    summaryRangeData?.weeklySources ?? ARTICLE_MEDIA.map((media) => ({ media, read: 0, skip: 0 }))
+
+  return {
+    reads: data?.reads.data.map((read) => ({ ...read, readAt: new Date(read.readAt) })) ?? [],
+    summaryRange,
+    weeklySummary: sumSourceSummary(summaryRange),
+    dailySummary: data ? sumSourceSummary(data.sources) : { read: 0, skip: 0 },
+    sources: data?.sources ?? weeklySources,
+    readPagination: data?.reads ?? {
+      data: [],
+      page,
+      totalPages: 0,
+      hasNext: false,
+      hasPrev: false,
+    },
   }
 }
 

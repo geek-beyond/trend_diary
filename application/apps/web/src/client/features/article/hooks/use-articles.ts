@@ -130,6 +130,21 @@ const clearPageParam = (params: URLSearchParams): void => {
   params.delete('page')
 }
 
+interface ArticlesView {
+  articles: Article[]
+  page: number
+  limit: number
+  totalPages: number
+}
+
+// レスポンス未取得時は params の要求値へフォールバックする
+const resolveArticlesView = (data: ArticlesResponse | undefined, params: Params): ArticlesView => ({
+  articles: data?.data || [],
+  page: data?.page || params.page,
+  limit: data?.limit || params.limit,
+  totalPages: data?.totalPages || 1,
+})
+
 export default function useArticles(isLoggedIn = false) {
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
@@ -326,17 +341,17 @@ export default function useArticles(isLoggedIn = false) {
     setSearchParams(newParams)
   }
 
-  const resolvedPage = data?.page || params.page
+  const view = resolveArticlesView(data, params)
 
   return {
     date,
-    articles: data?.data || [],
+    articles: view.articles,
     updateArticleReadState,
-    page: resolvedPage,
-    prevPageHref: buildPagePath(resolvedPage - 1),
-    nextPageHref: buildPagePath(resolvedPage + 1),
-    limit: data?.limit || params.limit,
-    totalPages: data?.totalPages || 1,
+    page: view.page,
+    prevPageHref: buildPagePath(view.page - 1),
+    nextPageHref: buildPagePath(view.page + 1),
+    limit: view.limit,
+    totalPages: view.totalPages,
     isLoading,
     hasError: !!error,
     retry,

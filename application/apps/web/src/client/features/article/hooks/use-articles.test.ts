@@ -55,18 +55,25 @@ const generateFakeResponse = (
     totalPages: number
   }>,
 ) => {
-  const status = params?.status || 200
+  const {
+    status = 200,
+    articles = [],
+    page = 1,
+    limit = 20,
+    total = 0,
+    totalPages = 1,
+  } = params ?? {}
   return {
     status,
     ok: status >= 200 && status < 300,
     json: vi.fn().mockResolvedValue({
-      data: params?.articles || [],
-      page: params?.page || 1,
-      limit: params?.limit || 20,
-      total: params?.total || 0,
-      totalPages: params?.totalPages || 1,
-      hasNext: (params?.page || 1) < (params?.totalPages || 1),
-      hasPrev: (params?.page || 1) > 1,
+      data: articles,
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
     }),
   }
 }

@@ -4,7 +4,6 @@ import type { Env } from '@/env'
 const CONTEXT_KEY = {
   APP_LOG: 'appLog',
   SESSION_USER: 'sessionUser',
-  SESSION_ID: 'sessionId',
 } as const
 
 type ContextKey = (typeof CONTEXT_KEY)[keyof typeof CONTEXT_KEY]

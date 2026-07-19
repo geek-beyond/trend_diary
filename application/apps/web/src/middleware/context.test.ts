@@ -16,10 +16,10 @@ function buildContext(entries: Record<string, unknown>): Context<Env> {
 describe('mustGet', () => {
   describe('正常系', () => {
     it('指定キーの値が設定されていればその値を返すこと', () => {
-      const sessionId = 'session-123'
-      const c = buildContext({ [CONTEXT_KEY.SESSION_ID]: sessionId })
+      const sessionUser = { activeUserId: 1n, email: 'user@example.com' }
+      const c = buildContext({ [CONTEXT_KEY.SESSION_USER]: sessionUser })
 
-      expect(mustGet(c, CONTEXT_KEY.SESSION_ID)).toBe(sessionId)
+      expect(mustGet(c, CONTEXT_KEY.SESSION_USER)).toBe(sessionUser)
     })
   })
 
@@ -27,11 +27,11 @@ describe('mustGet', () => {
     // 契約上必ず存在するはずの値が未設定なら握りつぶさず送出することを担保する
     it.each([
       ['未設定（undefined）', {}],
-      ['null', { [CONTEXT_KEY.SESSION_ID]: null }],
+      ['null', { [CONTEXT_KEY.SESSION_USER]: null }],
     ])('%s の場合はどのキーか分かるエラーを送出すること', (_label, entries) => {
       const c = buildContext(entries)
 
-      expect(() => mustGet(c, CONTEXT_KEY.SESSION_ID)).toThrow(CONTEXT_KEY.SESSION_ID)
+      expect(() => mustGet(c, CONTEXT_KEY.SESSION_USER)).toThrow(CONTEXT_KEY.SESSION_USER)
     })
   })
 })

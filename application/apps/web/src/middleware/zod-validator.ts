@@ -26,10 +26,12 @@ export default zodValidator
 type ValidatedFields = Partial<Record<keyof ValidationTargets, object>>
 
 // 検証対象（query / param / json）→ 型のマップで in / out を指定する単一の汎用型。
-// transform でリクエスト時（z.input）と検証後（z.output）の型が分かれる場合のみ Out を明示する
+// transform でリクエスト時（z.input）と検証後（z.output）の型が分かれる場合のみ Out を明示する。
+// In 側は自己参照制約で値を object（undefined 抜き）に固定し、Out には In と同じキーを型で強制して
+// in / out のキー取り違え（例: In は param + json なのに Out が param のみ）を防ぐ
 export type ZodValidatedContext<
-  In extends ValidatedFields,
-  Out extends ValidatedFields = In,
+  In extends ValidatedFields & { [K in keyof In]: object },
+  Out extends { [K in keyof In]: object } = In,
   Path extends string = '',
 > = Context<
   Env,

@@ -1,5 +1,5 @@
 name: Detect Changes
-description: 変更パスから CI ジョブ・CD デプロイの実行要否フラグを算出する
+description: 変更パスから CD 各デプロイの実行要否フラグを算出する
 
 inputs:
   base:
@@ -9,16 +9,10 @@ inputs:
 
 outputs:
   web:
-    description: web(＋共有コード)の変更有無。web のデプロイ・ビルド・E2E の要否
+    description: web(＋共有コード)の変更有無。web デプロイの要否
     value: ${{ steps.detect.outputs.web }}
-  client:
-    description: web クライアント(＋共有コード)の変更有無。クライアントのユニット・コンポーネントテストの要否
-    value: ${{ steps.detect.outputs.client }}
-  server:
-    description: web サーバー(＋共有コード)の変更有無。サーバー結合テストの要否
-    value: ${{ steps.detect.outputs.server }}
   cron:
-    description: cron(＋共有コード)の変更有無。cron のデプロイとユニットテスト・スキーマ検査の要否
+    description: cron(＋共有コード)の変更有無。cron デプロイの要否
     value: ${{ steps.detect.outputs.cron }}
   database:
     description: マイグレーションの変更有無。D1 適用の要否
@@ -36,7 +30,6 @@ runs:
         set -euo pipefail
 
         if [[ -z "$BASE" ]]; then
-          files=''
           changed() { true; }
         else
           if ! git rev-parse -q --verify "${BASE}^{commit}" >/dev/null; then
@@ -48,26 +41,18 @@ runs:
           changed() { grep -qE "$1" <<<"$files"; }
         fi
 
-        # パッケージ間の依存関係は追わず粗く判定する。過剰実行になるのは軽量なテストと
-        # 冪等なデプロイだけなので、厳密な選別より判定の単純さを優先する
+        # パッケージ間の依存関係は追わず粗く判定する。デプロイは冪等で過剰実行の害がない
+        # ため、厳密な選別より判定の単純さを優先する
         pkgs='^application/packages/'
         root='^application/[^/]+$|^\.github/'
 
-        # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
-        # web 変更(共通設定・ミドルウェア等)は両方に影響するとみなす
-        web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
-
         web=false;      if changed "^application/apps/web/|$pkgs|$root"; then web=true; fi
-        client=false;   if web_changed_except '^application/apps/web/src/server/' || changed "$pkgs|$root"; then client=true; fi
-        server=false;   if web_changed_except '^application/apps/web/src/client/' || changed "$pkgs|$root"; then server=true; fi
         cron=false;     if changed "^application/apps/cron/|$pkgs|$root"; then cron=true; fi
         database=false; if changed "^application/packages/datastore/migrations/"; then database=true; fi
 
         {
           echo "web=$web"
-          echo "client=$client"
-          echo "server=$server"
           echo "cron=$cron"
           echo "database=$database"
         } >> "$GITHUB_OUTPUT"
-        echo "web=$web client=$client server=$server cron=$cron database=$database"
+        echo "web=$web cron=$cron database=$database"

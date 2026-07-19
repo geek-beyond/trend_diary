@@ -28,18 +28,58 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
+      unit: ${{ steps.detect.outputs.unit }}
       web: ${{ steps.detect.outputs.web }}
       client: ${{ steps.detect.outputs.client }}
       server: ${{ steps.detect.outputs.server }}
-      cron: ${{ steps.detect.outputs.cron }}
+      e2e: ${{ steps.detect.outputs.e2e }}
+      schema: ${{ steps.detect.outputs.schema }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - id: detect
-        uses: ./.github/actions/detect-changes
-        with:
-          base: ${{ github.base_ref }}
+      - name: 変更パスの検知
+        id: detect
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$BASE" ]]; then
+            files=''
+            changed() { true; }
+          else
+            # ツリー差分しか取らないため shallow で足りる
+            git fetch --no-tags --depth=1 origin "$BASE"
+            files=$(git diff --name-only FETCH_HEAD HEAD)
+            changed() { grep -qE "$1" <<<"$files"; }
+          fi
+
+          # パッケージ間の依存関係は追わず粗く判定する。過剰実行になるのは軽量なテストだけ
+          # なので、厳密な選別より判定の単純さを優先する
+          pkgs='^application/packages/'
+          root='^application/[^/]+$|^\.github/'
+
+          # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
+          # web 変更(共通設定・ミドルウェア等)は両方に影響するとみなす
+          web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
+
+          unit=false;   if changed "^application/apps/cron/|$pkgs|$root"; then unit=true; fi
+          web=false;    if changed "^application/apps/web/|$pkgs|$root"; then web=true; fi
+          client=false; if web_changed_except '^application/apps/web/src/server/' || changed "$pkgs|$root"; then client=true; fi
+          server=false; if web_changed_except '^application/apps/web/src/client/' || changed "$pkgs|$root"; then server=true; fi
+          e2e=false;    if changed "^application/e2e/" || [[ "$web" == "true" ]]; then e2e=true; fi
+          schema=false; if changed "^application/packages/datastore/|$root"; then schema=true; fi
+
+          {
+            echo "unit=$unit"
+            echo "web=$web"
+            echo "client=$client"
+            echo "server=$server"
+            echo "e2e=$e2e"
+            echo "schema=$schema"
+          } >> "$GITHUB_OUTPUT"
+          echo "unit=$unit web=$web client=$client server=$server e2e=$e2e schema=$schema"
 
   code-quality:
     needs: changes
@@ -59,8 +99,7 @@ jobs:
 
   unit-test:
     needs: changes
-    # cron の変更有無は「web 以外のアプリコード＋共有コードの変更」と一致するため使い回す
-    if: ${{ needs.changes.outputs.cron == 'true' }}
+    if: ${{ needs.changes.outputs.unit == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -184,8 +223,7 @@ jobs:
 
   schema:
     needs: changes
-    # datastore は共有コードに含まれるため cron の変更有無で足りる
-    if: ${{ needs.changes.outputs.cron == 'true' }}
+    if: ${{ needs.changes.outputs.schema == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -210,13 +248,15 @@ jobs:
   e2e:
     name: E2E
     needs: [changes, unit-test, client-test, server-test, component-test, web-build]
-    if: ${{ !cancelled() && !failure() && needs.changes.outputs.web == 'true' }}
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.e2e == 'true' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: develop
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          # PRの差分実行(--only-changed)がベースブランチとの比較に全履歴を要するため取得する
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Supabaseのセットアップ
@@ -240,11 +280,17 @@ jobs:
           EDGE_CACHE_DISABLED=true
           EOF
 
+      # --only-changed は import 依存でテストを選ぶが、E2Eは apps/web を import しないため web の変更を拾えない。web変更のあるPRと main への push は全実行し、それ以外(e2eのみの変更)は差分実行する
       - name: E2Eテストの実行
+        env:
+          WEB_CHANGED: ${{ needs.changes.outputs.web }}
         run: |
           args=(--fail-on-flaky-tests)
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             args+=(--reporter=github,html)
+            if [[ "$WEB_CHANGED" != "true" ]]; then
+              args+=(--only-changed=origin/"$GITHUB_BASE_REF" --pass-with-no-tests)
+            fi
           fi
           pnpm --filter @trend-diary/e2e test "${args[@]}"
 

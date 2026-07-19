@@ -67,9 +67,9 @@ const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => {
 
 const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => {
   const fromDateResult = addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset])
-  if (fromDateResult.isErr()) {
-    return { from: todayJstDateString, to: todayJstDateString }
-  }
+  // 入力は内部生成の日付文字列と定数のため、失敗は契約違反。今日1日の範囲に
+  // 黙って縮退させるとプリセットと異なる検索結果が正常に見えてしまうので送出する
+  if (fromDateResult.isErr()) throw fromDateResult.error
 
   return {
     from: fromDateResult.value,
@@ -79,9 +79,8 @@ const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: st
 
 const getTodayJstDateString = (baseDate: Date): string => {
   const todayJstDateResult = toJstDateString(baseDate)
-  if (todayJstDateResult.isErr()) {
-    return baseDate.toISOString().slice(0, 10)
-  }
+  // UTC 日付へ縮退させると JST 深夜帯に「今日」が前日へずれたままクエリが組まれるため送出する
+  if (todayJstDateResult.isErr()) throw todayJstDateResult.error
 
   return todayJstDateResult.value
 }

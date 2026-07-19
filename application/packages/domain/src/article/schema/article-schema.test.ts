@@ -3,7 +3,7 @@ import { articleSchema, articleWithReadStatusSchema } from './article-schema'
 describe('記事スキーマ', () => {
   const validArticle = {
     articleId: BigInt(123456789),
-    media: 'news',
+    media: 'qiita',
     title: 'Test Article',
     author: 'John Doe',
     description: 'This is a test article description.',
@@ -45,36 +45,21 @@ describe('記事スキーマ', () => {
   })
 
   describe('media のバリデーション', () => {
-    it('境界値の文字列を受け入れること', () => {
+    // 書き込み経路は ARTICLE_MEDIA しか投入しない契約のため、enum で表明する
+    it.each([['qiita'], ['zenn'], ['hatena']])('enum値 %s を受け入れること', (media) => {
       expect(() => {
         articleSchema.parse({
           ...validArticle,
-          media: 'a'.repeat(10),
+          media,
         })
       }).not.toThrow()
     })
 
-    it('無効な文字列を拒否すること', () => {
+    it.each([['news'], [''], [123], [true]])('enum外の値 %s を拒否すること', (media) => {
       expect(() => {
         articleSchema.parse({
           ...validArticle,
-          media: 'a'.repeat(11),
-        })
-      }).toThrow()
-    })
-
-    it('String型でないmediaを拒否すること', () => {
-      expect(() => {
-        articleSchema.parse({
-          ...validArticle,
-          media: 123,
-        })
-      }).toThrow()
-
-      expect(() => {
-        articleSchema.parse({
-          ...validArticle,
-          media: true,
+          media,
         })
       }).toThrow()
     })
@@ -243,7 +228,7 @@ describe('記事スキーマ', () => {
 describe('既読情報付き記事スキーマ', () => {
   const validArticleWithReadStatus = {
     articleId: BigInt(123456789),
-    media: 'news',
+    media: 'qiita',
     title: 'Test Article',
     author: 'John Doe',
     description: 'This is a test article description.',

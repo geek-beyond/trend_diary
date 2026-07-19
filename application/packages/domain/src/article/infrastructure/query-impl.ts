@@ -595,6 +595,10 @@ export default class QueryImpl implements Query {
   }
 
   private static mapRawArticle(row: RawArticleRow): Article {
+    // DBのmediaカラムは任意文字列のため、未知の値＝データ破損をクライアントへ静かに配信しないよう検証する
+    if (!isArticleMedia(row.media)) {
+      throw new Error(`Article row has unknown media: ${row.media}`)
+    }
     return {
       articleId: fromDbId(row.articleId),
       media: row.media,

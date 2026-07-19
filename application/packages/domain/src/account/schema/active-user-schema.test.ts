@@ -9,7 +9,7 @@ describe('ActiveUserスキーマ', () => {
         userId: 2n,
         email: 'test@example.com',
         displayName: 'テストユーザー',
-        authenticationId: null,
+        authenticationId: '550e8400-e29b-41d4-a716-446655440000',
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -40,17 +40,36 @@ describe('ActiveUserスキーマ', () => {
   })
 
   describe('準正常系', () => {
-    it('オプションフィールドなしでも検証に成功する', () => {
+    it('オプションフィールド（displayName）なしでも検証に成功する', () => {
       const minimalData = {
         activeUserId: 1n,
         userId: 2n,
         email: 'test@example.com',
+        authenticationId: '550e8400-e29b-41d4-a716-446655440000',
         createdAt: new Date(),
         updatedAt: new Date(),
       }
 
       const result = activeUserSchema.safeParse(minimalData)
       expect(result.success).toBe(true)
+    })
+
+    // DB では NOT NULL のため、authenticationId の欠落は契約違反として拒否する
+    it.each([
+      ['未設定', undefined],
+      ['null', null],
+    ])('authenticationIdが%sでは検証に失敗する', (_label, authenticationId) => {
+      const invalidData = {
+        activeUserId: 1n,
+        userId: 2n,
+        email: 'test@example.com',
+        authenticationId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      const result = activeUserSchema.safeParse(invalidData)
+      expect(result.success).toBe(false)
     })
   })
 

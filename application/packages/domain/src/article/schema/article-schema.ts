@@ -1,5 +1,6 @@
 import { createdAt } from '@trend-diary/common/schemas'
 import { z } from 'zod'
+import { ARTICLE_MEDIA } from '../media'
 
 // 各フィールドの最大長。cron の切り詰めとスキーマ検証を同一のソースに依存させ、
 // 保存される実データがスキーマ検証を必ず満たすようにする
@@ -13,7 +14,8 @@ export const ARTICLE_MAX_LENGTH = {
 
 export const articleSchema = z.object({
   articleId: z.bigint(),
-  media: z.string().max(ARTICLE_MAX_LENGTH.media),
+  // DB 上は任意文字列だが、書き込み経路は ARTICLE_MEDIA しか投入しない契約のため enum で表明する
+  media: z.enum(ARTICLE_MEDIA),
   title: z.string().max(ARTICLE_MAX_LENGTH.title),
   author: z.string().max(ARTICLE_MAX_LENGTH.author),
   description: z.string().max(ARTICLE_MAX_LENGTH.description),

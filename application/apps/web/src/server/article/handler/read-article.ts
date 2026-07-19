@@ -39,7 +39,12 @@ export const articleIdParamSchema = z.object({
     .string()
     .min(1)
     .regex(/^\d+$/, { message: 'article_id must be a valid number' })
-    .transform((val) => BigInt(val)),
+    .transform((val) => BigInt(val))
+    // DB の ID は safe integer 範囲が契約。範囲外は存在し得ない ID のため、
+    // toDbId の RangeError（500 と障害通知）に化けさせずクライアントエラーに倒す
+    .refine((val) => val <= BigInt(Number.MAX_SAFE_INTEGER), {
+      message: 'article_id is out of range',
+    }),
 })
 
 export type ArticleIdParam = z.output<typeof articleIdParamSchema>

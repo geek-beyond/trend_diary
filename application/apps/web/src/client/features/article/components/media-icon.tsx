@@ -3,14 +3,11 @@ import { type ArticleMedia, isArticleMedia } from '@trend-diary/domain/article/m
 export type MediaType = ArticleMedia
 type IconSize = 'sm' | 'md'
 
-const FALLBACK_MEDIA: MediaType = 'zenn'
-
 export function toMediaType(media: string): MediaType {
   if (isArticleMedia(media)) return media
-  // 未知の media は握りつぶすとデータ不整合が埋もれるため、フォールバック時に検知できるようにする
-  // oxlint-disable-next-line no-console -- 想定外の media を運用で気付けるようにする
-  console.warn(`未知の media "${media}" を検出したため ${FALLBACK_MEDIA} にフォールバックしました`)
-  return FALLBACK_MEDIA
+  // 未知の media は DB データ破損＝契約違反。別媒体のアイコンに化けさせると
+  // 誤表示が正常に見えて発見が遅れるため送出する
+  throw new Error(`Unknown article media: ${media}`)
 }
 
 const mediaConfig: Record<MediaType, { iconImage: string; altText: string }> = {

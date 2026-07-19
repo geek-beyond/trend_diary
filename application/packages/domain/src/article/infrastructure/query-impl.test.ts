@@ -361,6 +361,28 @@ describe('QueryImpl', () => {
         expect(result.error.message).toBe('unread digestion failed')
       }
     })
+
+    // DB の media カラムは任意文字列のため、未知の値＝データ破損は補完せず契約違反として送出する
+    it('未知の media を含む行は契約違反として送出する', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({
+        rows: [
+          {
+            articleId: 1,
+            media: 'unknown-media',
+            title: 't',
+            author: 'a',
+            description: 'd',
+            url: 'https://example.com/unread',
+            createdAt: '2026-03-07T00:00:00.000Z',
+            total: 1,
+          },
+        ],
+      })
+
+      await expect(queryImpl.getUnreadDigestionArticles(10n, '2026-03-07')).rejects.toThrow(
+        'Article row has unknown media',
+      )
+    })
   })
 
   describe('getDailyDiary', () => {

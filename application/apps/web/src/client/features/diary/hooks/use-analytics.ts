@@ -26,7 +26,9 @@ interface SummaryRangeData {
 const buildAvailableDates = (todayJst: string) =>
   Array.from({ length: DIARY_DAYS }, (_, index) => {
     const dateResult = addJstDays(todayJst, -(DIARY_DAYS - 1 - index))
-    if (dateResult.isErr()) return todayJst
+    // 入力は内部生成の日付文字列のため、失敗は契約違反。todayJst で補完すると
+    // 日付軸に重複が混入しグラフ集計が静かに壊れるので送出する
+    if (dateResult.isErr()) throw dateResult.error
     return dateResult.value
   })
 

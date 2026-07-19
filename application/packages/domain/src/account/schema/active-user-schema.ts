@@ -6,7 +6,8 @@ export const activeUserSchema = z.object({
   userId: z.bigint().positive(),
   email: z.string().email().max(320), // RFC 5322の最大長
   displayName: z.string().max(64).optional().nullable(), // オプションで最大長64文字
-  authenticationId: z.string().uuid().optional().nullable(), // Supabase AuthenticationユーザーID
+  // Supabase AuthenticationユーザーID。DB では NOT NULL のため必須で表明する
+  authenticationId: z.string().uuid(),
   createdAt,
   updatedAt,
 })

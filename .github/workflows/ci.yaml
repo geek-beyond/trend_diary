@@ -28,18 +28,61 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.detect.outputs.packages }}
-      web: ${{ steps.detect.outputs.web }}
-      e2e: ${{ steps.detect.outputs.e2e }}
-      schema: ${{ steps.detect.outputs.schema }}
+      web: ${{ steps.all.outputs.on || steps.deploy.outputs.web }}
+      cron: ${{ steps.all.outputs.on || steps.deploy.outputs.cron }}
+      client: ${{ steps.all.outputs.on || steps.split.outputs.client }}
+      server: ${{ steps.all.outputs.on || steps.split.outputs.server }}
+      schema: ${{ steps.all.outputs.on || steps.split.outputs.schema }}
+      e2e: ${{ steps.all.outputs.on || steps.split.outputs.e2e }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          fetch-depth: 0
-      - id: detect
+          # HEAD~1 との差分を取るため直前のコミットも取得する
+          fetch-depth: 2
+          persist-credentials: false
+
+      # mainへのpush、またはCI設定(.github)の変更は差分を問わず全ジョブを実行する
+      # (CDはこのアクションの検知対象に.githubを含めないためデプロイは走らない)
+      - name: 全実行の判定
+        id: all
+        run: |
+          if [[ "$GITHUB_REF" == 'refs/heads/main' ]] || git diff --name-only HEAD~1 HEAD | grep -qE '^\.github/'; then
+            echo "on=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: デプロイ対象の検知
+        id: deploy
+        if: ${{ steps.all.outputs.on != 'true' }}
         uses: ./.github/actions/detect-changes
         with:
-          base: ${{ github.base_ref }}
+          # PRのHEADはマージコミットのため、第一親(HEAD~1)がベース先端になる
+          base: HEAD~1
+
+      - name: web内テストと schema の細分化
+        id: split
+        if: ${{ steps.all.outputs.on != 'true' }}
+        run: |
+          set -euo pipefail
+
+          files=$(git diff --name-only HEAD~1 HEAD)
+          changed() { grep -qE "$1" <<<"$files"; }
+          # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
+          # web 変更(共通設定・ミドルウェア等)と共有コードは両方に影響するとみなす
+          web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
+          shared='^application/packages/|^application/[^/]+$'
+
+          client=false; if web_changed_except '^application/apps/web/src/server/' || changed "$shared"; then client=true; fi
+          server=false; if web_changed_except '^application/apps/web/src/client/' || changed "$shared"; then server=true; fi
+          schema=false; if changed '^application/packages/datastore/'; then schema=true; fi
+          e2e=false;    if changed '^application/e2e/' || [[ "${{ steps.deploy.outputs.web }}" == 'true' ]]; then e2e=true; fi
+
+          {
+            echo "client=$client"
+            echo "server=$server"
+            echo "schema=$schema"
+            echo "e2e=$e2e"
+          } >> "$GITHUB_OUTPUT"
+          echo "client=$client server=$server schema=$schema e2e=$e2e"
 
   code-quality:
     needs: changes
@@ -59,12 +102,13 @@ jobs:
 
   unit-test:
     needs: changes
-    if: ${{ needs.changes.outputs.packages != '[]' }}
+    if: ${{ needs.changes.outputs.cron == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package: ${{ fromJSON(needs.changes.outputs.packages) }}
+        # web は client/server/component の専用ジョブ、e2e は E2E ジョブで実行するため含めない
+        package: [authentication, common, cron, datastore, domain, notification]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -96,7 +140,7 @@ jobs:
   client-test:
     name: unit-test (web client)
     needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' }}
+    if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
     # test_cov のカバレッジコメント投稿に必要
     permissions:
@@ -119,7 +163,7 @@ jobs:
   server-test:
     name: integration-test (web server)
     needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' }}
+    if: ${{ needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
     # test_cov のカバレッジコメント投稿に必要
     permissions:
@@ -149,7 +193,7 @@ jobs:
   component-test:
     name: integration-test (web component)
     needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' }}
+    if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

@@ -41,7 +41,7 @@ export default function LoginPage({
                 <span className='bg-border h-px flex-1' />
               </div>
               <PasskeyLoginButton redirectTo={redirectTo} />
-              <GithubAuthButton redirectTo={redirectTo} />
+              <GithubAuthButton label='GitHubでログイン' redirectTo={redirectTo} />
             </div>
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>

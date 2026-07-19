@@ -46,18 +46,16 @@ export class AccountUseCase {
   ): Promise<Result<CurrentUser, ClientError | ServerError>> {
     const resolved = await this.resolveActiveUser(authenticationId)
 
-    // 既存ユーザーの解決成功、または未登録(404)以外の失敗はそのまま返す。
     // 既存ユーザーは認証IDだけで特定できるため、メール未取得でもログインを許可する
     if (resolved.isOk() || !(resolved.error instanceof ClientError)) {
       return resolved
     }
 
-    // 未登録なら新規登録へ。メールが無ければ登録できないため認証失敗として扱う
+    // 新規登録にはメールが必須で、GitHub側で取得できないと登録できない
     if (!email) {
       return err(new ClientError('Email is required for registration', 400))
     }
 
-    // アプリ側ユーザーが未作成の初回GitHubログインは、ここで作成して新規登録として扱う
     return this.userCommand.createActiveWithAuthenticationId(email, authenticationId, notifier)
   }
 }

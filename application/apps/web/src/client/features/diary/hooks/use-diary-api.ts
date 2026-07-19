@@ -7,7 +7,7 @@ export interface DiarySource {
   skip: number
 }
 
-export interface DiaryReadItemResponse {
+interface DiaryReadItemResponse {
   readHistoryId: string
   articleId: string
   media: ArticleMedia

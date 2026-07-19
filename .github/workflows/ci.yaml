@@ -100,6 +100,10 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # 未使用の export / ファイル / 依存を検出し、残っていれば fail させる（cross-module のため lint では拾えない）
+      - name: Knip
+        run: pnpm knip
+
   unit-test:
     needs: changes
     if: ${{ needs.changes.outputs.cron == 'true' }}

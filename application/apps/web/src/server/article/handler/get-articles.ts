@@ -29,8 +29,6 @@ export type ApiQueryParams = z.infer<typeof apiArticleQuerySchema>
 
 export const apiArticleQueryValidator = zodValidator('query', apiArticleQuerySchema)
 
-export type { ArticleResponse }
-
 export type ArticleWithReadStatusResponse = ArticleResponse & {
   isRead: boolean
 }

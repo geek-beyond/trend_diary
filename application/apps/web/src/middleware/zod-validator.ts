@@ -28,18 +28,13 @@ export default zodValidator
 type InferValidatorInput<V> =
   V extends MiddlewareHandler<HonoEnv, string, infer I extends Input> ? I : never
 
-type MergeIn<Validators extends readonly MiddlewareHandler[]> = Validators extends readonly [
-  infer Head,
-  ...infer Rest extends readonly MiddlewareHandler[],
-]
-  ? (InferValidatorInput<Head> extends { in: infer I } ? I : {}) & MergeIn<Rest>
-  : {}
-
-type MergeOut<Validators extends readonly MiddlewareHandler[]> = Validators extends readonly [
-  infer Head,
-  ...infer Rest extends readonly MiddlewareHandler[],
-]
-  ? (InferValidatorInput<Head> extends { out: infer O } ? O : {}) & MergeOut<Rest>
+// チェーン内の各 validator の in / out を Dir で切り替えて畳み込む
+type MergeValidatedInput<
+  Validators extends readonly MiddlewareHandler[],
+  Dir extends 'in' | 'out',
+> = Validators extends readonly [infer Head, ...infer Rest extends readonly MiddlewareHandler[]]
+  ? (InferValidatorInput<Head> extends { [K in Dir]: infer T } ? T : {}) &
+      MergeValidatedInput<Rest, Dir>
   : {}
 
 export type ZodValidatedContext<
@@ -49,7 +44,7 @@ export type ZodValidatedContext<
   Env,
   Path,
   {
-    in: MergeIn<Validators>
-    out: MergeOut<Validators>
+    in: MergeValidatedInput<Validators, 'in'>
+    out: MergeValidatedInput<Validators, 'out'>
   }
 >

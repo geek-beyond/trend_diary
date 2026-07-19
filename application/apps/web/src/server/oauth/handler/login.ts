@@ -1,25 +1,28 @@
-import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
+import { authClientConfig, OAuthClient, type OAuthProviderParam } from '@trend-diary/authentication'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
 import type { OAuthLoginQuery } from '@trend-diary/domain/account'
 import { deleteCookie, setCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import type { ZodValidatedParamQueryContext } from '@/middleware/zod-validator'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 import {
-  buildGithubCallbackUrl,
+  buildOAuthCallbackUrl,
   OAUTH_COOKIE_OPTIONS,
   OAUTH_FLOW,
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
 } from '@/server/oauth/redirect'
 
-export default async function githubLogin(c: ZodValidatedQueryContext<OAuthLoginQuery>) {
+export default async function oauthLogin(
+  c: ZodValidatedParamQueryContext<OAuthProviderParam, OAuthLoginQuery>,
+) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
+  const { provider } = c.req.valid('param')
   const { redirect } = c.req.valid('query')
 
   const oauthClient = new OAuthClient(authClientConfig(c))
-  const result = await oauthClient.startAuthorization('github', buildGithubCallbackUrl(c))
+  const result = await oauthClient.startAuthorization(provider, buildOAuthCallbackUrl(c, provider))
   if (result.isErr()) throw handleError(toAuthError(result.error), logger)
 
   setCookie(c, OAUTH_FLOW_COOKIE, OAUTH_FLOW.login, OAUTH_COOKIE_OPTIONS)

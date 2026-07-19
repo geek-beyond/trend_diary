@@ -8,7 +8,13 @@ export {
   UnexpectedAuthError,
   UserAlreadyExistsError,
 } from './errors'
-export { OAuthClient, type OAuthProvider } from './oauth-client'
+export { OAuthClient } from './oauth-client'
+export {
+  OAUTH_PROVIDERS,
+  type OAuthProvider,
+  oauthProviderParamSchema,
+  type OAuthProviderParam,
+} from './oauth-provider'
 export { PasskeyClient } from './passkey-client'
 export { PasswordAuthClient } from './password-auth-client'
 export { SessionClient } from './session-client'

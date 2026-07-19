@@ -11,7 +11,9 @@ export default function useGithubUnlink() {
     setIsSubmitting(true)
     const client = getApiClientForClient()
 
-    const result = await wrapAsyncCall(() => client.oauth.github.$delete())
+    const result = await wrapAsyncCall(() =>
+      client.oauth[':provider'].$delete({ param: { provider: 'github' } }),
+    )
     setIsSubmitting(false)
 
     if (result.isErr() || !result.value.ok) {

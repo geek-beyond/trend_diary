@@ -1,14 +1,13 @@
 import type { OAuthResponse, User, UserIdentity } from '@supabase/supabase-js'
 import { err, ok, type Result } from 'neverthrow'
 import { type AuthError, UnexpectedAuthError } from './errors'
+import type { OAuthProvider } from './oauth-provider'
 import {
   type AuthClientConfig,
   createBackendClient,
   type SupabaseAuthClient,
 } from './supabase-client'
 import { callSupabase } from './supabase-result'
-
-export type OAuthProvider = 'github'
 
 export class OAuthClient {
   private readonly client: SupabaseAuthClient

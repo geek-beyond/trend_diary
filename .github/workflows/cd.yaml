@@ -35,9 +35,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     outputs:
-      web: ${{ steps.detect.outputs.web }}
-      cron: ${{ steps.detect.outputs.cron }}
-      database: ${{ steps.detect.outputs.database }}
+      web: ${{ steps.manual.outputs.web || steps.detect.outputs.web }}
+      cron: ${{ steps.manual.outputs.cron || steps.detect.outputs.cron }}
+      database: ${{ steps.manual.outputs.database || steps.detect.outputs.database }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -46,53 +46,19 @@ jobs:
           # ひとつ前のコミットとの差分を取るため
           fetch-depth: 2
           persist-credentials: false
-      - id: detect
+      - name: 手動実行の対象指定
+        id: manual
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
-          EVENT: ${{ github.event_name }}
           DEPLOY_TYPE: ${{ github.event.inputs.deploy_type }}
-        run: |
-          set -euo pipefail
+        run: echo "${DEPLOY_TYPE}=true" >> "$GITHUB_OUTPUT"
 
-          web=false
-          cron=false
-          database=false
-
-          if [[ "$EVENT" == "workflow_dispatch" ]]; then
-            case "$DEPLOY_TYPE" in
-              web) web=true ;;
-              cron) cron=true ;;
-              database) database=true ;;
-            esac
-          else
-            files=$(git diff --name-only HEAD~1 HEAD)
-
-            # web と cron が共通で依存するパッケージとルート設定(変わると両方を再デプロイ)
-            shared='application/packages/(common|datastore|domain|notification)/|application/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|tsconfig\.json)$'
-
-            if grep -qE "application/apps/web/|$shared" <<<"$files"; then web=true; fi
-            if grep -qE "application/apps/cron/|$shared" <<<"$files"; then cron=true; fi
-            if grep -qE 'application/packages/datastore/migrations/' <<<"$files"; then database=true; fi
-          fi
-
-          {
-            echo "web=$web"
-            echo "cron=$cron"
-            echo "database=$database"
-          } >> "$GITHUB_OUTPUT"
-          echo "デプロイ対象: web=$web cron=$cron database=$database"
-
-          {
-            echo "## CD デプロイ対象"
-            if [[ "$web" == "false" && "$cron" == "false" && "$database" == "false" ]]; then
-              echo "デプロイ対象なし（スキップ）"
-            else
-              echo "| リソース | デプロイ |"
-              echo "| --- | --- |"
-              echo "| web | $web |"
-              echo "| cron | $cron |"
-              echo "| database | $database |"
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+      - id: detect
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: ./.github/actions/detect-changes
+        with:
+          # CIを通過したコミットとその直前との差分をデプロイ対象にする
+          base: HEAD~1
 
   web:
     needs: changes

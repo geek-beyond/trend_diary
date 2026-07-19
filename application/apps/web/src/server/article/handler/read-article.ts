@@ -3,7 +3,7 @@ import { createArticleUseCase } from '@trend-diary/domain/article'
 import { DIARY_DAYS } from '@trend-diary/domain/article/diary'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedParamJsonContext } from '@/middleware/zod-validator'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 
 const MS_PER_MINUTE = 60 * 1000
@@ -44,10 +44,13 @@ export const articleIdParamSchema = z.object({
 
 export type ArticleIdParam = z.output<typeof articleIdParamSchema>
 
+export const articleIdParamValidator = zodValidator('param', articleIdParamSchema)
+export const createReadHistoryJsonValidator = zodValidator('json', createReadHistoryApiSchema)
+
 // param + json の同時指定ではファクトリーの戻り値型を Hono client が解決できず json が欠落するため、
 // 従来パターンで検証済みコンテキストを明示し、c.json の TypedResponse で RPC 型推論を保つ
 export default async function readArticle(
-  c: ZodValidatedParamJsonContext<typeof articleIdParamSchema, typeof createReadHistoryApiSchema>,
+  c: ZodValidatedContext<[typeof articleIdParamValidator, typeof createReadHistoryJsonValidator]>,
 ) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const user = c.get(CONTEXT_KEY.SESSION_USER)

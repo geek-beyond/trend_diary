@@ -2,7 +2,7 @@ import type { RegistrationResponseJSON } from '@simplewebauthn/browser'
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 
@@ -14,10 +14,10 @@ export const passkeyRegisterVerifyInputSchema = z.object({
   ),
 })
 
-export type PasskeyRegisterVerifyInput = z.infer<typeof passkeyRegisterVerifyInputSchema>
+export const passkeyRegisterVerifyValidator = zodValidator('json', passkeyRegisterVerifyInputSchema)
 
 export default async function passkeyRegisterVerify(
-  c: ZodValidatedContext<PasskeyRegisterVerifyInput>,
+  c: ZodValidatedContext<[typeof passkeyRegisterVerifyValidator]>,
 ) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')

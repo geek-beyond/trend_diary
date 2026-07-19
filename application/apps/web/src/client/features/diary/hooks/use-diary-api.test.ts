@@ -86,7 +86,8 @@ describe('useDiaryApi', () => {
           query: {
             from: targetDate,
             to: targetDate,
-            page: 2,
+            // クエリはURL上文字列で送られるため、検証前の入力型（string）で渡す
+            page: '2',
           },
         },
         { init: { credentials: 'include' } },

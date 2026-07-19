@@ -224,6 +224,50 @@ describe('fetchZennArticles', () => {
       expect((await findByUrl('https://zenn.dev/u/articles/ok')).title).toBe('Zenn正常')
     })
   })
+
+  describe('異常系', () => {
+    it('配信元に bot 判定されないよう識別可能な User-Agent を付与する', async () => {
+      stubFeed(buildZennRss([]))
+
+      await fetchZennArticles(cronEnv, logger)
+
+      const [, options] = fetchMock.mock.calls[0] ?? []
+      expect(options?.headers?.['User-Agent']).toBe(
+        'trend-diary-cron/1.0 (+https://github.com/geek-beyond/trend_diary)',
+      )
+    })
+
+    it('429 応答はリトライ対象とし、回復後は成功する', async () => {
+      vi.useFakeTimers()
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 429,
+          headers: new Headers({ 'retry-after': '1' }),
+        })
+        .mockResolvedValueOnce(
+          rssResponse(
+            buildZennRss([
+              {
+                title: 'Zenn記事',
+                author: 'zenn_creator',
+                content: 'Zenn本文',
+                url: 'https://zenn.dev/u/articles/retry',
+              },
+            ]),
+          ),
+        )
+
+      const promise = fetchZennArticles(cronEnv, logger)
+      await vi.runAllTimersAsync()
+      const result = await promise
+      vi.useRealTimers()
+
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(result.isOk()).toBe(true)
+      expect((await findByUrl('https://zenn.dev/u/articles/retry')).title).toBe('Zenn記事')
+    })
+  })
 })
 
 describe('fetchHatenaArticles', () => {

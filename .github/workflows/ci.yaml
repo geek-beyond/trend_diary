@@ -85,8 +85,8 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "client=$client server=$server schema=$schema e2e=$e2e"
 
-      # 単体テストは web client も含め単一マトリクスで回す。実行対象のフラグに応じて
-      # entry を組み立て、パッケージは filter・web client は test_cov の target を持たせる
+      # web client も含め単体テストを単一マトリクスに集約するため、実行対象のフラグから
+      # entry を動的に構築する
       - name: 単体テストのマトリクス構築
         id: matrix
         run: |
@@ -138,8 +138,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # web は client のみ単体テスト。server/component は結合テストの専用ジョブ、
-        # e2e は E2E ジョブで実行するため含めない。entry は changes ジョブが動的に構築する
+        # web は client のみ単体テスト。server/component は結合テスト、e2e は E2E の
+        # 専用ジョブで実行するためこのマトリクスには含めない
         include: ${{ fromJSON(needs.changes.outputs.unit_matrix) }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -151,11 +151,11 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: パッケージのテスト
-        if: ${{ matrix.filter != '' }}
+        if: ${{ matrix.filter }}
         run: pnpm --filter ${{ matrix.filter }} test
 
       - name: web クライアントのテスト
-        if: ${{ matrix.target != '' }}
+        if: ${{ matrix.target }}
         uses: ./.github/actions/test_cov
         with:
           target: ${{ matrix.target }}

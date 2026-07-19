@@ -10,13 +10,13 @@ import {
 } from '@trend-diary/domain/article/schema/query-schema'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 const readStatusEnum = z.enum(['0', '1'])
 
-export const apiArticleQuerySchema = baseArticleSearchSchema
+const apiArticleQuerySchema = baseArticleSearchSchema
   .extend({
     read_status: readStatusEnum.optional(),
   })
@@ -27,6 +27,8 @@ export const apiArticleQuerySchema = baseArticleSearchSchema
 
 export type ApiQueryParams = z.infer<typeof apiArticleQuerySchema>
 
+export const apiArticleQueryValidator = zodValidator('query', apiArticleQuerySchema)
+
 export type { ArticleResponse }
 
 export type ArticleWithReadStatusResponse = ArticleResponse & {
@@ -35,7 +37,9 @@ export type ArticleWithReadStatusResponse = ArticleResponse & {
 
 export type ArticleListResponse = OffsetPaginationResult<ArticleResponse>
 
-export default async function getArticles(c: ZodValidatedQueryContext<ApiQueryParams>) {
+export default async function getArticles(
+  c: ZodValidatedContext<[typeof apiArticleQueryValidator]>,
+) {
   const transformedParams = c.req.valid('query')
   const logger = c.get(CONTEXT_KEY.APP_LOG)
 

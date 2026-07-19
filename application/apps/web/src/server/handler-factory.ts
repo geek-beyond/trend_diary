@@ -26,7 +26,7 @@
  * 従来パターン例:
  * ```typescript
  * export default async function updateRole(
- *   c: ZodValidatedParamJsonContext<z.infer<typeof paramSchema>, z.infer<typeof jsonSchema>>,
+ *   c: ZodValidatedContext<[typeof paramValidator, typeof jsonValidator]>,
  * ) {
  *   const logger = c.get(CONTEXT_KEY.APP_LOG)
  *   const { id } = c.req.valid('param')

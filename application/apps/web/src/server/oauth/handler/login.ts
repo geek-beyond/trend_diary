@@ -1,9 +1,8 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
-import type { OAuthLoginQuery } from '@trend-diary/domain/account'
 import { deleteCookie, setCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedParamQueryContext } from '@/middleware/zod-validator'
+import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 import {
@@ -13,10 +12,10 @@ import {
   OAUTH_FLOW_COOKIE,
   OAUTH_REDIRECT_COOKIE,
 } from '@/server/oauth/redirect'
-import type { OAuthProviderParam } from '@/server/oauth/schema'
+import type { oauthLoginQueryValidator, oauthProviderParamValidator } from '@/server/oauth/schema'
 
 export default async function oauthLogin(
-  c: ZodValidatedParamQueryContext<OAuthProviderParam, OAuthLoginQuery>,
+  c: ZodValidatedContext<[typeof oauthProviderParamValidator, typeof oauthLoginQueryValidator]>,
 ) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const { provider } = c.req.valid('param')

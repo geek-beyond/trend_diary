@@ -1,12 +1,14 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { ClientError } from '@trend-diary/common/errors'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedParamContext } from '@/middleware/zod-validator'
+import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
-import type { OAuthProviderParam } from '@/server/oauth/schema'
+import type { oauthProviderParamValidator } from '@/server/oauth/schema'
 
-export default async function oauthUnlink(c: ZodValidatedParamContext<OAuthProviderParam>) {
+export default async function oauthUnlink(
+  c: ZodValidatedContext<[typeof oauthProviderParamValidator]>,
+) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const { provider } = c.req.valid('param')
 

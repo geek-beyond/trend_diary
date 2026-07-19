@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { backoffDelayMs, parseRetryAfterMs, retryDelayMs } from './rss-client'
+import {
+  backoffDelayMs,
+  fetchRssFeed,
+  parseRetryAfterMs,
+  RssFetchError,
+  retryDelayMs,
+} from './rss-client'
+
+const fetchMock = vi.fn()
+vi.stubGlobal('fetch', fetchMock)
 
 describe('backoffDelayMs', () => {
   describe('正常系', () => {
@@ -84,6 +93,67 @@ describe('retryDelayMs', () => {
 
     it('retryAfterMs が上限を超える場合は上限(30,000ms)へクランプする', () => {
       expect(retryDelayMs(0, 120_000)).toBe(30_000)
+    })
+  })
+})
+
+describe('fetchRssFeed', () => {
+  beforeEach(() => {
+    fetchMock.mockReset()
+  })
+
+  describe('異常系', () => {
+    it('非ok応答は RssFetchError として status・診断ヘッダ・本文先頭を残す', async () => {
+      vi.useFakeTimers()
+      fetchMock.mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: new Headers({
+          'retry-after': '30',
+          'cf-ray': '8abc',
+          'cf-mitigated': 'challenge',
+          server: 'cloudflare',
+        }),
+        text: async () => 'Rate limited by origin',
+      })
+
+      const promise = fetchRssFeed('https://zenn.dev/feed')
+      await vi.runAllTimersAsync()
+      const result = await promise
+      vi.useRealTimers()
+
+      expect(result.isErr()).toBe(true)
+      if (result.isErr()) {
+        const { error } = result
+        expect(error).toBeInstanceOf(RssFetchError)
+        if (error instanceof RssFetchError) {
+          expect(error.diagnostics.status).toBe(429)
+          expect(error.diagnostics.headers['retry-after']).toBe('30')
+          expect(error.diagnostics.headers['cf-mitigated']).toBe('challenge')
+          expect(error.diagnostics.headers.server).toBe('cloudflare')
+          expect(error.diagnostics.bodySnippet).toBe('Rate limited by origin')
+        }
+      }
+    })
+
+    it('本文が上限を超える場合は先頭のみを残す', async () => {
+      vi.useFakeTimers()
+      fetchMock.mockResolvedValue({
+        ok: false,
+        status: 503,
+        headers: new Headers({ server: 'cloudflare' }),
+        text: async () => 'x'.repeat(600),
+      })
+
+      const promise = fetchRssFeed('https://zenn.dev/feed')
+      await vi.runAllTimersAsync()
+      const result = await promise
+      vi.useRealTimers()
+
+      expect(result.isErr()).toBe(true)
+      if (result.isErr() && result.error instanceof RssFetchError) {
+        expect(result.error.diagnostics.bodySnippet).toBe(`${'x'.repeat(500)}…`)
+      }
     })
   })
 })

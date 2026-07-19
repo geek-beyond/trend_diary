@@ -15,11 +15,64 @@ const TOO_MANY_REQUESTS = 429
 // 連絡先を含む識別可能な UA を付与してレート制限を避ける
 const RSS_USER_AGENT = 'trend-diary-cron/1.0 (+https://github.com/geek-beyond/trend_diary)'
 
+// 429 等の失敗要因を後から切り分けられるよう、配信元レスポンスから残す診断情報。
+export interface RssFetchDiagnostics {
+  status: number
+  headers: Record<string, string>
+  bodySnippet?: string
+}
+
+// レート制限の切り分けに有用なヘッダ（待機指示・CDN の緩和情報・応答時刻など）に絞って残す。
+const DIAGNOSTIC_HEADER_NAMES = [
+  'retry-after',
+  'date',
+  'server',
+  'cf-ray',
+  'cf-mitigated',
+  'cf-cache-status',
+] as const
+// 本文全体はチャレンジページ等で肥大し得るため、原因把握に足る先頭のみ残す。
+const BODY_SNIPPET_MAX_LENGTH = 500
+
+// status だけでは 429 の原因を追えないため、レスポンスの診断情報を保持したエラーで通知・ログへ橋渡しする。
+export class RssFetchError extends Error {
+  readonly diagnostics: RssFetchDiagnostics
+
+  constructor(url: string, diagnostics: RssFetchDiagnostics) {
+    super(`Failed to fetch rss feed: ${url}, status=${diagnostics.status}`)
+    this.name = 'RssFetchError'
+    this.diagnostics = diagnostics
+  }
+}
+
 // リトライ間隔の決定に必要な、失敗の内訳を表す。
 interface FetchFailure {
   error: Error
   // 429 応答が Retry-After で指定した待機時間（ミリ秒）。指定が無ければ undefined。
   retryAfterMs?: number
+}
+
+async function collectDiagnostics(response: Response): Promise<RssFetchDiagnostics> {
+  const headers: Record<string, string> = {}
+  for (const name of DIAGNOSTIC_HEADER_NAMES) {
+    const value = response.headers?.get(name)
+    if (value !== null && value !== undefined) headers[name] = value
+  }
+
+  const bodySnippet = await readBodySnippet(response)
+  return { status: response.status, headers, ...(bodySnippet ? { bodySnippet } : {}) }
+}
+
+async function readBodySnippet(response: Response): Promise<string | undefined> {
+  if (typeof response.text !== 'function') return undefined
+
+  // 本文取得自体が失敗しても診断材料を欠くだけに留め、失敗通知そのものは継続させる
+  const result = await wrapAsyncCall(() => response.text())
+  if (result.isErr()) return undefined
+
+  const text = result.value.trim()
+  if (text === '') return undefined
+  return text.length > BODY_SNIPPET_MAX_LENGTH ? `${text.slice(0, BODY_SNIPPET_MAX_LENGTH)}…` : text
 }
 
 function delay(ms: number): Promise<void> {
@@ -73,14 +126,12 @@ async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], FetchFailur
 
   const response = responseResult.value
   if (!response.ok) {
+    const diagnostics = await collectDiagnostics(response)
     const retryAfterMs =
       response.status === TOO_MANY_REQUESTS
-        ? parseRetryAfterMs(response.headers?.get('retry-after'), response.headers?.get('date'))
+        ? parseRetryAfterMs(diagnostics.headers['retry-after'], diagnostics.headers['date'])
         : undefined
-    return err({
-      error: new Error(`Failed to fetch rss feed: ${url}, status=${response.status}`),
-      retryAfterMs,
-    })
+    return err({ error: new RssFetchError(url, diagnostics), retryAfterMs })
   }
 
   const parser = new Parser<{ items: T[] }, T>()

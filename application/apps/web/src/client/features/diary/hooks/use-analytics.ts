@@ -123,7 +123,7 @@ export default function useAnalytics() {
     void mutateDaily()
   }
 
-  const view = resolveDiaryView(data, summaryRangeData, availableDates, page)
+  const view = resolveOrFallback(data, summaryRangeData, availableDates, page)
 
   const updatePage = (nextPage: number) => {
     const nextParams = new URLSearchParams(searchParams)
@@ -167,7 +167,7 @@ export default function useAnalytics() {
   }
 }
 
-function resolveDiaryView(
+function resolveOrFallback(
   data: DiaryResponse | undefined,
   summaryRangeData: SummaryRangeData | undefined,
   availableDates: string[],

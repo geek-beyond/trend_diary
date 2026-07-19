@@ -45,22 +45,20 @@ jobs:
           set -euo pipefail
 
           if [[ -z "$BASE" ]]; then
-            files=''
             changed() { true; }
+            web_changed_except() { true; }
           else
             # ツリー差分しか取らないため shallow で足りる
             git fetch --no-tags --depth=1 origin "$BASE"
             files=$(git diff --name-only FETCH_HEAD HEAD)
             changed() { grep -qE "$1" <<<"$files"; }
+            # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
+            # web 変更(共通設定・ミドルウェア等)は両方に影響するとみなす
+            web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
           fi
 
           # フラグは変更エリアの事実だけを返し、どのジョブを動かすかは各ジョブの if 側で組み合わせる。
           # パッケージ間の依存関係は追わず、共有コードの変更は shared として利用側すべてに影響させる
-
-          # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
-          # web 変更(共通設定・ミドルウェア等)は両方に影響するとみなす
-          web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
-
           client=false; if web_changed_except '^application/apps/web/src/server/'; then client=true; fi
           server=false; if web_changed_except '^application/apps/web/src/client/'; then server=true; fi
           cron=false;   if changed "^application/apps/cron/"; then cron=true; fi

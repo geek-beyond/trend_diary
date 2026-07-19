@@ -114,4 +114,81 @@ describe('AccountUseCase', () => {
       })
     })
   })
+
+  describe('resolveOrRegisterActiveUser', () => {
+    describe('正常系', () => {
+      it('認証IDに紐づく既存ユーザーが見つかればそのまま返し新規作成しない', async () => {
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(mockActiveUser))
+
+        const result = await useCase.resolveOrRegisterActiveUser(
+          'auth-user-id-123',
+          'test@example.com',
+          notifierMock,
+        )
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toEqual(mockActiveUser)
+        }
+        expect(commandMock.createActiveWithAuthenticationId).not.toHaveBeenCalled()
+      })
+
+      it('既存ユーザーが無ければ初回ログインとして新規作成して返す', async () => {
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(null))
+        commandMock.createActiveWithAuthenticationId.mockResolvedValue(ok(mockActiveUser))
+
+        const result = await useCase.resolveOrRegisterActiveUser(
+          'auth-user-id-123',
+          'test@example.com',
+          notifierMock,
+        )
+
+        expect(result.isOk()).toBe(true)
+        if (result.isOk()) {
+          expect(result.value).toEqual(mockActiveUser)
+        }
+        expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
+          'test@example.com',
+          'auth-user-id-123',
+          notifierMock,
+        )
+      })
+    })
+
+    describe('異常系', () => {
+      it('ユーザー検索が失敗した場合はServerErrorを返し新規作成しない', async () => {
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(err(new Error('db down')))
+
+        const result = await useCase.resolveOrRegisterActiveUser(
+          'auth-user-id-123',
+          'test@example.com',
+          notifierMock,
+        )
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+        expect(commandMock.createActiveWithAuthenticationId).not.toHaveBeenCalled()
+      })
+
+      it('新規作成が失敗した場合はServerErrorを返す', async () => {
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(ok(null))
+        commandMock.createActiveWithAuthenticationId.mockResolvedValue(
+          err(new ServerError('create failed')),
+        )
+
+        const result = await useCase.resolveOrRegisterActiveUser(
+          'auth-user-id-123',
+          'test@example.com',
+          notifierMock,
+        )
+
+        expect(result.isErr()).toBe(true)
+        if (result.isErr()) {
+          expect(result.error).toBeInstanceOf(ServerError)
+        }
+      })
+    })
+  })
 })

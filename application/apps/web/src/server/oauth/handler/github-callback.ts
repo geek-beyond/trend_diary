@@ -1,8 +1,8 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
-import { ClientError } from '@trend-diary/common/errors'
 import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase, type OAuthCallbackQuery } from '@trend-diary/domain/account'
+import { DiscordWebhookClient } from '@trend-diary/notification'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
@@ -46,17 +46,19 @@ export default async function githubCallback(c: ZodValidatedQueryContext<OAuthCa
     return c.redirect(errorRedirect, 302)
   }
 
+  const { id: authenticationId, email } = exchangeResult.value
+  // GitHub側のメール非公開などでメールを取得できないと新規登録できないため、認証失敗として元の画面へ戻す
+  if (!email) {
+    logger.warn('github oauth callback without email', { authenticationId })
+    return c.redirect(errorRedirect, 302)
+  }
+
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
-  const result = await accountUseCase.resolveActiveUser(exchangeResult.value.id)
+  // 連携済みなら既存ユーザーを解決し、未連携の初回ログインは新規登録として扱う
+  const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
+  const result = await accountUseCase.resolveOrRegisterActiveUser(authenticationId, email, notifier)
   if (result.isErr()) {
-    // GitHubログインは既存ユーザーの認証手段としてのみ許可する。連携済みアプリユーザーが無ければ
-    // 新規登録させず、再試行で解消しうる認証失敗(404)として元の画面へ戻す
-    if (result.error instanceof ClientError) {
-      logger.warn('github oauth login failed', { message: result.error.message })
-      return c.redirect(errorRedirect, 302)
-    }
-
     throw handleError(result.error, logger)
   }
 

@@ -38,4 +38,23 @@ export class AccountUseCase {
 
     return ok(activeUserResult.value)
   }
+
+  async resolveOrRegisterActiveUser(
+    authenticationId: string,
+    email: string,
+    notifier: Notifier,
+  ): Promise<Result<CurrentUser, ServerError>> {
+    const activeUserResult = await this.userQuery.findActiveByAuthenticationId(authenticationId)
+
+    if (activeUserResult.isErr()) {
+      return err(new ServerError(activeUserResult.error))
+    }
+
+    if (activeUserResult.value) {
+      return ok(activeUserResult.value)
+    }
+
+    // アプリ側ユーザーが未作成の初回GitHubログインは、ここで作成して新規登録として扱う
+    return this.userCommand.createActiveWithAuthenticationId(email, authenticationId, notifier)
+  }
 }

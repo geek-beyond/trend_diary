@@ -100,6 +100,10 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # cross-module の未使用 export は lint / tsc では検出できないため
+      - name: Knip
+        run: pnpm knip
+
   unit-test:
     needs: changes
     if: ${{ needs.changes.outputs.cron == 'true' }}

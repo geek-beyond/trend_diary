@@ -5,6 +5,7 @@
     "dev": "pnpm --filter @trend-diary/web dev",
     "build": "pnpm --filter @trend-diary/web build",
     "lint": "oxlint && oxfmt --check && pnpm -r typecheck",
+    "knip": "knip",
     "check": "oxlint && oxfmt --check",
     "check:fix": "oxlint --fix && oxfmt",
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
@@ -12,6 +13,7 @@
     "supabase:stop": "supabase stop"
   },
   "devDependencies": {
+    "knip": "^6.27.0",
     "oxfmt": "^0.58.0",
     "oxlint": "^1.73.0",
     "typescript": "^7.0.2"

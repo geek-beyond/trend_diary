@@ -7,7 +7,7 @@ export interface MenuItem {
   icon: React.ElementType
 }
 
-export const menuItems: MenuItem[] = [
+const menuItems: MenuItem[] = [
   {
     title: 'トレンド記事',
     url: '/trends',

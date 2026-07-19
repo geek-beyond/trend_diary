@@ -12,7 +12,7 @@ export interface SessionUser {
 }
 
 // Cloudflare Workers の Rate Limiting バインディングの型（workers-typesに含まれないため定義する）
-export interface RateLimiter {
+interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>
 }
 

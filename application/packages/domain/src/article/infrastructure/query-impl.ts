@@ -1,3 +1,4 @@
+import { assert } from '@trend-diary/common/contract'
 import { ServerError } from '@trend-diary/common/errors'
 import { addJstDays, toJstDate } from '@trend-diary/common/locale/date'
 import type { OffsetPaginationResult } from '@trend-diary/common/pagination'
@@ -638,21 +639,21 @@ export default class QueryImpl implements Query {
     for (const row of rows) {
       if (row.rowKind === 'source') {
         const { sourceType, count } = row
-        if (sourceType === null || count === null) {
-          throw new Error(`Diary source row must have sourceType and count (media: ${row.media})`)
-        }
+        assert(
+          sourceType !== null && count !== null,
+          `Diary source row must have sourceType and count (media: ${row.media})`,
+        )
         sourceRows.push({ sourceType, media: row.media, count })
       } else {
         const { readHistoryId, articleId, title, url, readAt } = row
-        if (
-          readHistoryId === null ||
-          articleId === null ||
-          title === null ||
-          url === null ||
-          readAt === null
-        ) {
-          throw new Error(`Diary read row must have all read columns (media: ${row.media})`)
-        }
+        assert(
+          readHistoryId !== null &&
+            articleId !== null &&
+            title !== null &&
+            url !== null &&
+            readAt !== null,
+          `Diary read row must have all read columns (media: ${row.media})`,
+        )
         readsRows.push({ readHistoryId, articleId, media: row.media, title, url, readAt })
       }
     }

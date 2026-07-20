@@ -7,6 +7,7 @@
     "lint": "oxlint && oxfmt --check && import-lint && pnpm -r typecheck",
     "import-lint": "import-lint",
     "knip": "knip",
+    "similarity": "similarity-ts apps packages --no-types --threshold 0.9 --exclude '**/components/shadcn/**' --exclude '**/components/customized/**' --exclude '**/migrations/**' --fail-on-duplicates",
     "check": "oxlint && oxfmt --check",
     "check:fix": "oxlint --fix && oxfmt",
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",

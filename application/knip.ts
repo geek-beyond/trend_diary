@@ -6,9 +6,10 @@ import type { KnipConfig } from 'knip'
 const config: KnipConfig = {
   workspaces: {
     // ルート package.json のスクリプトが呼ぶ、依存ではなくグローバル前提の CLI。
-    // typecheck は `pnpm -r typecheck`、supabase は Supabase CLI で、いずれも npm 依存ではない。
+    // typecheck は `pnpm -r typecheck`、supabase は Supabase CLI、similarity-ts は
+    // CI が prebuilt バイナリで供給する Rust 製 CLI で、いずれも npm 依存ではない。
     '.': {
-      ignoreBinaries: ['typecheck', 'supabase'],
+      ignoreBinaries: ['typecheck', 'supabase', 'similarity-ts'],
     },
     'apps/web': {
       // vite の devServer プラグインが読む dev サーバのエントリ。plugin 設定からは追えないため明示する。

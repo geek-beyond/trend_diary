@@ -1,0 +1,40 @@
+name: Setup similarity-ts Composite Action
+description: 'similarity-ts の prebuilt バイナリを取得して PATH に載せる Composite Action'
+
+inputs:
+  version:
+    description: 'similarity-ts のバージョン（GitHub Releases のタグ）'
+    required: true
+    default: '0.5.0'
+
+runs:
+  using: 'composite'
+  steps:
+    # 数MBの単一バイナリのため、キャッシュの復元/保存より毎回ダウンロードする方が単純で速い
+    - name: similarity-ts の取得
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        RUNNER_OS: ${{ runner.os }}
+        RUNNER_ARCH: ${{ runner.arch }}
+      run: |
+        set -euo pipefail
+        # CI は Linux x86_64 のランナーでのみ実行するため、そのバイナリだけを対象とする
+        if [[ "${RUNNER_OS}-${RUNNER_ARCH}" != "Linux-X64" ]]; then
+          echo "::error::未対応のプラットフォームです: ${RUNNER_OS} ${RUNNER_ARCH}"
+          exit 1
+        fi
+        asset="similarity-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+        url="https://github.com/mizchi/similarity/releases/download/v${VERSION}/${asset}"
+        dest="${RUNNER_TEMP}/similarity-ts"
+        tmp="$(mktemp -d)"
+        curl -fsSL "$url" -o "$tmp/${asset}"
+        tar -xzf "$tmp/${asset}" -C "$tmp"
+        # アーカイブは複数バイナリ(py/rs 等)を含むため similarity-ts のみ取り出す
+        bin="$(find "$tmp" -type f -name similarity-ts | head -n 1)"
+        if [[ -z "$bin" ]]; then
+          echo "::error::アーカイブ内に similarity-ts が見つかりません: $url"
+          exit 1
+        fi
+        install -D -m 0755 "$bin" "$dest/similarity-ts"
+        echo "$dest" >> "$GITHUB_PATH"

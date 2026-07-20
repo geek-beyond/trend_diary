@@ -76,30 +76,26 @@ describe('DiscordWebhookClient', () => {
     })
 
     describe('準正常系', () => {
-      it('Webhook URLが空文字の場合は何もしない', async () => {
-        const client = new DiscordWebhookClient('', createMockLogger())
-
-        await client.send({ content: 'test' })
-
-        expect(mockFetch).not.toHaveBeenCalled()
-      })
-
-      // 型上は string 必須だが、Workers 実行時は secret 未設定で undefined が渡り得るため担保する
-      it('Webhook URLが実行時にundefinedの場合も何もしない', async () => {
-        // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 型上あり得ないが実行時に起こり得る未設定を再現するため。undefined は string と重ならず二重アサーションが避けられない
-        const client = new DiscordWebhookClient(undefined as unknown as string, createMockLogger())
-
-        await client.send({ content: 'test' })
-
-        expect(mockFetch).not.toHaveBeenCalled()
-      })
-
-      it('Webhook URLが未設定の場合は警告ログを記録する', async () => {
+      // 通知が使えない環境でもアプリ本体は止めない意図的な縮退。無音にはせず警告ログで検知可能にする
+      it('Webhook URLが空文字の場合は送信せず警告ログを記録する', async () => {
         const logger = createMockLogger()
         const client = new DiscordWebhookClient('', logger)
 
         await client.send({ content: 'test' })
 
+        expect(mockFetch).not.toHaveBeenCalled()
+        expect(logger.warn).toHaveBeenCalledTimes(1)
+      })
+
+      // 型上は string 必須だが、Workers 実行時は secret 未設定で undefined が渡り得るため担保する
+      it('Webhook URLが実行時にundefinedの場合も送信せず警告ログを記録する', async () => {
+        const logger = createMockLogger()
+        // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 型上あり得ないが実行時に起こり得る未設定を再現するため。undefined は string と重ならず二重アサーションが避けられない
+        const client = new DiscordWebhookClient(undefined as unknown as string, logger)
+
+        await client.send({ content: 'test' })
+
+        expect(mockFetch).not.toHaveBeenCalled()
         expect(logger.warn).toHaveBeenCalledTimes(1)
       })
 

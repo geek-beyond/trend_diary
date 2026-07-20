@@ -1,0 +1,26 @@
+{
+  "skill_name": "pr-description",
+  "evals": [
+    {
+      "id": 0,
+      "name": "refactor-non-bug-improvement",
+      "prompt": "trend_diary リポジトリで PR を作ろうとしています。変更内容: ページネーションのオフセット計算が web と cron に重複していたので、`@trend-diary/common/pagination` に `calcOffset(page, limit)` を切り出して両方から使うようにしました。ロジック自体は変えていません。関連 Issue は #942 です。この PR の説明本文を書いてください（本文だけでよいです）。",
+      "expected_output": "バグ以外の改善テンプレートの見出し（概要/課題/修正内容）に沿い、課題と方針だけに絞った簡潔な本文。変更ファイル列挙・確認手順の羅列・受け入れ基準チェックはなし。Issue #942 への参照あり。日本語＋敬語。",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "bugfix-with-repro",
+      "prompt": "trend_diary で PR を作ります。バグ修正: 未ログインで記事一覧に read_status=0 を渡すと 500 になっていました。原因は SQL の既読判定サブクエリに active_user_id が未束縛のまま渡り、bind パラメータ不足で D1 が例外を投げていたことです。未ログイン時はサブクエリ自体をスキップするよう直しました。再現は「ログアウト状態で GET /api/articles?read_status=0」。Issue #955。PR の説明本文を書いてください（本文だけでよいです）。",
+      "expected_output": "バグフィックステンプレートの見出しに沿い、要因の詳細・再現手順・修正方針を記載。変更ファイル列挙や『テスト green』の羅列はなし。Issue #955 参照。日本語＋敬語。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "feature-with-screenshot-note",
+      "prompt": "trend_diary で新機能の PR を作ります。ダイアリー画面に、直近7日間の読了数を棒グラフで表示する週次サマリーを追加しました。Recharts を使い、Storybook のストーリーとインタラクションテストも追加済みです。close するのは #900。PR の説明本文を書いてください（本文だけでよいです）。",
+      "expected_output": "機能開発テンプレートの見出しに沿い、取り組んだこと（課題/方針）に絞る。動作確認としてスクリーンショットや Storybook の UI テストに触れる（diff から読めない証跡）。変更ファイル列挙はなし。close #900 参照。日本語＋敬語。",
+      "files": []
+    }
+  ]
+}

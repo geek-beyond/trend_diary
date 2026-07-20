@@ -1,20 +1,9 @@
-import { createArticleUseCase } from '@trend-diary/domain/article'
-import {
-  type AuthenticatedRequestContext,
-  createAuthenticatedApiHandler,
-} from '@/server/handler-factory'
-import type { ArticleIdParam } from './read-article'
+import { createArticleActionHandler } from '../article-action'
 
-export default createAuthenticatedApiHandler({
-  createUseCase: createArticleUseCase,
-  execute: async (useCase, context: AuthenticatedRequestContext<ArticleIdParam>) => {
-    return useCase.deleteAllReadHistory(context.user.activeUserId, context.param.article_id)
-  },
-  transform: () => ({ message: '記事を未読にしました' }),
+export default createArticleActionHandler({
+  execute: (useCase, activeUserId, articleId) =>
+    useCase.deleteAllReadHistory(activeUserId, articleId),
+  message: '記事を未読にしました',
   logMessage: 'Read history deleted successfully',
-  logPayload: (_result, context) => ({
-    activeUserId: context.user.activeUserId,
-    articleId: context.param.article_id,
-  }),
   statusCode: 200,
 })

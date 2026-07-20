@@ -1,14 +1,3 @@
-/**
- * 認証成功後にアプリのアカウント(CurrentUser)を解決するハンドラーを生成するファクトリー。
- * 「認証クライアント生成 → 認証ステップ → アカウント解決 → ロギング → レスポンス」を担う
- * (login / signup / passkey login verify)。アカウントを伴わない経路は auth-handler.ts。
- *
- * @note
- * - 認証ステップの err には toAuthError を適用する。一方 resolveAccount の err はドメイン由来のため
- *   toAuthError を通さず handleError にそのまま渡す(変換の非対称を契約として明示する)。
- * - レスポンスは respond コールバックが c.json / c.body を直接返す(Hono RPC のレスポンス型推論を保つため)。
- * - 成功ログは任意の log コールバックに委ねる。
- */
 import { type AuthError } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/account'
@@ -36,6 +25,7 @@ interface AccountConfig<TClient, TJson, TAuthOutput, TAccountOutput, TResponse e
   respond: (c: Context<Env>, output: TAccountOutput) => TResponse
 }
 
+// respond で c.json/c.body を直接返すのは Hono RPC のレスポンス型推論をハンドラーごとに保つため
 export function createAccountHandler<
   TClient,
   TJson,
@@ -47,15 +37,13 @@ export function createAccountHandler<
 ): (c: Context<Env>) => Promise<TResponse> {
   return async (c: Context<Env>): Promise<TResponse> => {
     const ctx = buildContext<TJson>(c)
-
     const client = config.createClient(c)
     const authResult = await config.authenticate(client, ctx)
     if (authResult.isErr()) handleError(toAuthError(authResult.error), ctx.logger)
-
     const accountUseCase = createAccountUseCase(getRdbClient(c.env.DB))
     const accountResult = await config.resolveAccount(accountUseCase, authResult.value, ctx)
+    // resolveAccount の err はドメイン由来のため toAuthError を通さない
     if (accountResult.isErr()) handleError(accountResult.error, ctx.logger)
-
     if (config.log) config.log(accountResult.value, ctx)
     return config.respond(c, accountResult.value)
   }

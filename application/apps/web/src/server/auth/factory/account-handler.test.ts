@@ -4,8 +4,7 @@ import { err, ok } from 'neverthrow'
 import mountAuthHandler from '@/test/helper/mount-auth-handler'
 import { createAccountHandler } from './account-handler'
 
-// resolveAccount 経路は createAccountUseCase(getRdbClient(...)) を構築するため実体依存を切る。
-// resolveAccount コールバック自身が結果を返すので use-case の中身は空で十分。
+// resolveAccount 自身が結果を返すため、use-case 構築の実体依存(rdb / account)は切る
 vi.mock('@trend-diary/datastore/rdb', () => ({ default: vi.fn(() => ({})) }))
 vi.mock('@trend-diary/domain/account', () => ({ createAccountUseCase: vi.fn(() => ({})) }))
 

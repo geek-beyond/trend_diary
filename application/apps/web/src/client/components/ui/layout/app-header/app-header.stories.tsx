@@ -3,7 +3,7 @@ import { expect } from 'storybook/test'
 import { vi } from 'vitest'
 import AppHeader from './index'
 
-vi.mock('@/client/features/sessions/use-logout', () => ({
+vi.mock('@/client/features/logout/use-logout', () => ({
   default: vi.fn(() => ({
     handleLogout: vi.fn(),
     isLoading: false,

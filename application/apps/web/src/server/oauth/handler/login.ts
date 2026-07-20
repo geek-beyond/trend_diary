@@ -1,5 +1,5 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
-import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
+import { resolveLoginRedirectTarget } from '@trend-diary/std/sanitization'
 import { deleteCookie, setCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'

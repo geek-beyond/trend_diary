@@ -1,5 +1,5 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
-import { fetchWithTimeout } from '@trend-diary/common/http'
+import { fetchWithTimeout } from '@trend-diary/runtime/http'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { notifySessionExpired } from '@/client/entities/auth'
 import getApiClientForClient from '@/client/infrastructure/api'
 

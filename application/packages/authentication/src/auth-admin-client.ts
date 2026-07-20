@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { assert } from '@trend-diary/common/contract'
+import { assert } from '@trend-diary/std/contract'
 
 export interface AuthAdminConfig {
   url: string

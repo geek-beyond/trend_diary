@@ -1,4 +1,4 @@
-import { wrapAsyncCall } from '@trend-diary/common/result'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import type { Result } from 'neverthrow'
 
 // Drizzle はドライバ例外を DrizzleQueryError でラップし元例外を cause に格納する。

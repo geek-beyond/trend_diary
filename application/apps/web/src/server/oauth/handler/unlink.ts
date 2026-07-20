@@ -1,5 +1,5 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
-import { ClientError } from '@trend-diary/common/errors'
+import { ClientError } from '@trend-diary/std/errors'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import toAuthError from '@/server/error/auth-error'

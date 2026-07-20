@@ -1,4 +1,4 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { err, ok, type Result } from 'neverthrow'
 import type { Command, Notifier, Query } from './port'
 import type { CurrentUser } from './schema/active-user-schema'

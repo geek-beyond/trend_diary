@@ -1,4 +1,4 @@
-import { createdAt, updatedAt } from '@trend-diary/common/schemas'
+import { createdAt, updatedAt } from '@trend-diary/std/schemas'
 import { z } from 'zod'
 
 export const activeUserSchema = z.object({

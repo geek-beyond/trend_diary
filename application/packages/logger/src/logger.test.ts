@@ -80,6 +80,35 @@ describe('Logger', () => {
     expect(entry).toMatchObject({ requestId: 'abc', message: 'hello', foo: 'bar' })
   })
 
+  it('debugで文字列メッセージにError引数を渡すとerrに整形される', async () => {
+    const logger = new Logger('debug')
+    const { logs, restore } = StdTestHelper.captureStdout(vi)
+
+    logger.with({ requestId: 'abc' }).debug('boom happened', new Error('boom'))
+
+    restore()
+
+    const [entry] = parseLogObjects(logs)
+    expect(entry).toMatchObject({
+      requestId: 'abc',
+      msg: 'boom happened',
+      level: 'debug',
+      err: expect.objectContaining({ type: 'Error', message: 'boom' }),
+    })
+  })
+
+  it('warnで文字列メッセージに付加オブジェクトをマージする', async () => {
+    const logger = new Logger('debug')
+    const { logs, restore } = StdTestHelper.captureStdout(vi)
+
+    logger.with({ requestId: 'abc' }).warn('processed', { count: 3 })
+
+    restore()
+
+    const [entry] = parseLogObjects(logs)
+    expect(entry).toMatchObject({ requestId: 'abc', msg: 'processed', level: 'warn', count: 3 })
+  })
+
   it('errorはerrプロパティに整形された例外を含める', async () => {
     const logger = new Logger('debug')
     const { logs, restore } = StdTestHelper.captureStdout(vi)
@@ -94,6 +123,38 @@ describe('Logger', () => {
     expect(entry).toMatchObject({
       requestId: 'abc',
       msg: 'failed',
+      level: 'error',
+      err: expect.objectContaining({ type: 'Error', message: 'boom' }),
+    })
+  })
+
+  it('errorはError以外の値もErrorへ正規化する', async () => {
+    const logger = new Logger('debug')
+    const { logs, restore } = StdTestHelper.captureStdout(vi)
+
+    logger.with({}).error('failed', 'boom-string')
+
+    restore()
+
+    const [entry] = parseLogObjects(logs)
+    expect(entry).toMatchObject({
+      msg: 'failed',
+      level: 'error',
+      err: expect.objectContaining({ type: 'Error', message: 'boom-string' }),
+    })
+  })
+
+  it('errorはオブジェクトメッセージにもerrをマージする', async () => {
+    const logger = new Logger('debug')
+    const { logs, restore } = StdTestHelper.captureStdout(vi)
+
+    logger.with({}).error({ event: 'failure' }, new Error('boom'))
+
+    restore()
+
+    const [entry] = parseLogObjects(logs)
+    expect(entry).toMatchObject({
+      event: 'failure',
       level: 'error',
       err: expect.objectContaining({ type: 'Error', message: 'boom' }),
     })

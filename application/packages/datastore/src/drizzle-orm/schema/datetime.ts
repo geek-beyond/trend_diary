@@ -1,4 +1,4 @@
-import { assert } from '@trend-diary/common/contract'
+import { assert } from '@trend-diary/std/contract'
 import { customType } from 'drizzle-orm/sqlite-core'
 
 // 既存D1本番データには（Prisma時代に書き込まれた）ISO-8601 文字列、CURRENT_TIMESTAMP 由来の

@@ -2,7 +2,7 @@ import {
   type PublicKeyCredentialCreationOptionsJSON,
   startRegistration,
 } from '@simplewebauthn/browser'
-import { wrapAsyncCall } from '@trend-diary/common/result'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PASSKEY_MESSAGES } from '@/client/features/passkey/model'

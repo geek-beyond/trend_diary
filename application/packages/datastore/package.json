@@ -15,7 +15,8 @@
     "db:check": "drizzle-kit check"
   },
   "dependencies": {
-    "@trend-diary/common": "workspace:*",
+    "@trend-diary/logger": "workspace:*",
+    "@trend-diary/std": "workspace:*",
     "drizzle-orm": "catalog:",
     "neverthrow": "catalog:"
   },

@@ -35,8 +35,10 @@ trend_diary/
 │   │   └── cron/                # 定期実行ジョブ（Cloudflare Workers）
 │   ├── e2e/                     # E2Eテスト（Playwright: pom / scenario / helper。デプロイ物ではないため apps/ とは別階層）
 │   ├── packages/               # 各 app から共有されるライブラリ（@trend-diary/*）
-│   │   ├── common/             # 全パッケージ共通基盤（エラー・ロガー・結果型・環境変数・i18n等）
-│   │   │   └── src/            # env / errors / locale / pagination / result / sanitization / types
+│   │   ├── std/                # 純粋な共通基盤（どの層からも利用可・infra非依存）
+│   │   │   └── src/            # contract / errors / locale / pagination / result / sanitization / schemas / types
+│   │   ├── logger/             # Pinoベースの構造化ロガー
+│   │   ├── runtime/            # 実行環境に触れる道具（env: Workers bindings / http: fetchWithTimeout）
 │   │   ├── domain/             # ドメイン層（集約・ユースケース・ポートIF・Zodスキーマ）
 │   │   │   └── src/
 │   │   │       ├── article/    # 記事集約（diary / media / use-case / port / schema / infrastructure）

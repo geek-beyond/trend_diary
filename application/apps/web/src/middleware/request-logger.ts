@@ -1,4 +1,4 @@
-import Logger from '@trend-diary/common/logger'
+import Logger from '@trend-diary/logger'
 import { createMiddleware } from 'hono/factory'
 import { v4 as uuidv4 } from 'uuid'
 import type { Env } from '../env'

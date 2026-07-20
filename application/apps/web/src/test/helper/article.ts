@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker'
-import { toJstDateString } from '@trend-diary/common/locale/date'
 import { articles, readHistories, skippedArticles } from '@trend-diary/datastore/drizzle-orm/schema'
 import { fromDbId, toDbId, toDbIds } from '@trend-diary/datastore/rdb/id'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
+import { toJstDateString } from '@trend-diary/std/locale/date'
 import { and, count, eq, inArray } from 'drizzle-orm'
 import { testRdb as rdb } from './rdb'
 

@@ -1,4 +1,4 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { verifyTurnstile } from './captcha'
 

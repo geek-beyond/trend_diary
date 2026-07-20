@@ -1,4 +1,4 @@
-import { AssertionError } from '@trend-diary/common/contract'
+import { AssertionError } from '@trend-diary/std/contract'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { Env } from '@/env'

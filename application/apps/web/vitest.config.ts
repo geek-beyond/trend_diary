@@ -62,7 +62,11 @@ export default defineConfig(() => {
               'vaul',
               'neverthrow',
               'zod',
+              'swr',
               'swr/mutation',
+              // sessions スライスの use-login が swr(useSWRConfig) 経由で参照する CJS shim を
+              // 事前バンドルし、ブラウザテストでの名前付きエクスポート interop 崩れを防ぐ
+              'use-sync-external-store/shim',
               'hono/client',
               'storybook/test',
               'storybook/preview-api',

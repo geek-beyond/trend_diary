@@ -1,3 +1,5 @@
 export { resolveLoginRedirectTarget } from '@trend-diary/std/sanitization'
 export { default as LoginForm, type LoginFormProps } from './ui/login-form'
+export { default as LogoutButton } from './logout-button'
+export { default as SidebarLogoutButton } from './sidebar-logout-button'
 export { default as useLogin } from './use-login'

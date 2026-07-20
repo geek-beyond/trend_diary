@@ -27,7 +27,6 @@ runs:
         asset="similarity-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
         url="https://github.com/mizchi/similarity/releases/download/v${VERSION}/${asset}"
         dest="${RUNNER_TEMP}/similarity-ts"
-        mkdir -p "$dest"
         tmp="$(mktemp -d)"
         curl -fsSL "$url" -o "$tmp/${asset}"
         tar -xzf "$tmp/${asset}" -C "$tmp"
@@ -37,5 +36,5 @@ runs:
           echo "::error::アーカイブ内に similarity-ts が見つかりません: $url"
           exit 1
         fi
-        install -m 0755 "$bin" "$dest/similarity-ts"
+        install -D -m 0755 "$bin" "$dest/similarity-ts"
         echo "$dest" >> "$GITHUB_PATH"

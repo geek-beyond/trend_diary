@@ -6,16 +6,16 @@ import { assertCaptchaVerified, verifyTurnstile } from './captcha'
 
 const fetchMock = vi.fn()
 
+beforeEach(() => {
+  vi.stubGlobal('fetch', fetchMock)
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.clearAllMocks()
+})
+
 describe('verifyTurnstile', () => {
-  beforeEach(() => {
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-    vi.clearAllMocks()
-  })
-
   describe('正常系', () => {
     it('siteverifyがsuccess:trueを返す場合は許可する', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: true })))
@@ -81,15 +81,6 @@ describe('verifyTurnstile', () => {
 
 describe('assertCaptchaVerified', () => {
   const logger = new Logger('silent')
-
-  beforeEach(() => {
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-    vi.clearAllMocks()
-  })
 
   describe('正常系', () => {
     it('secret未設定のときは検証を行わず解決する', async () => {

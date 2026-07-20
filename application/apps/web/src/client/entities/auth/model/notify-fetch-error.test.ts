@@ -1,4 +1,4 @@
-import { ClientError } from '@trend-diary/common/errors'
+import { ClientError } from '@trend-diary/std/errors'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { dismissFetchError, FETCH_ERROR_MESSAGE, notifyFetchError } from './notify-fetch-error'

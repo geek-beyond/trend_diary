@@ -1,5 +1,5 @@
-import { ClientError, ExternalServiceError, ServerError } from '@trend-diary/common/errors'
-import Logger from '@trend-diary/common/logger'
+import Logger from '@trend-diary/logger'
+import { ClientError, ExternalServiceError, ServerError } from '@trend-diary/std/errors'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it, vi } from 'vitest'
 import { handleError } from './handle-error'

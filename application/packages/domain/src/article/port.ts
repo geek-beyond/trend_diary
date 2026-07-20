@@ -1,6 +1,6 @@
-import type { NotFoundError, ServerError } from '@trend-diary/common/errors'
-import type { OffsetPaginationResult } from '@trend-diary/common/pagination'
-import type { Nullable } from '@trend-diary/common/types/utility'
+import type { NotFoundError, ServerError } from '@trend-diary/std/errors'
+import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
+import type { Nullable } from '@trend-diary/std/types/utility'
 import { type Result } from 'neverthrow'
 import type { ArticleMedia } from './media'
 import type {

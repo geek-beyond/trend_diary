@@ -6,7 +6,7 @@ import {
   PasskeyVerificationError,
   UserAlreadyExistsError,
 } from '@trend-diary/authentication'
-import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/common/errors'
+import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/std/errors'
 
 // 認証パッケージのカスタムエラーは HTTP を知らないため、common エラーへの変換はハンドラ層の責務とする。
 // メッセージは元のエラーをそのまま引き継ぎ、対応表に無いものはサーバ起因として ServerError に倒す。

@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { ClientError } from '@trend-diary/common/errors'
-import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
+import { ClientError } from '@trend-diary/std/errors'
+import { addJstDays, toJstDateString } from '@trend-diary/std/locale/date'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { toast } from 'sonner'

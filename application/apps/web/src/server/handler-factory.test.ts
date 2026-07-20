@@ -1,4 +1,4 @@
-import { ClientError, NotFoundError } from '@trend-diary/common/errors'
+import { ClientError, NotFoundError } from '@trend-diary/std/errors'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { err, ok, type Result } from 'neverthrow'

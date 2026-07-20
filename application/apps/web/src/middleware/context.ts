@@ -1,4 +1,4 @@
-import { assertNonNull } from '@trend-diary/common/contract'
+import { assertNonNull } from '@trend-diary/std/contract'
 import type { Context } from 'hono'
 import type { Env } from '@/env'
 

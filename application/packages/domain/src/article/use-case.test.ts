@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker'
-import { NotFoundError, ServerError } from '@trend-diary/common/errors'
-import type { OffsetPaginationResult } from '@trend-diary/common/pagination'
+import { NotFoundError, ServerError } from '@trend-diary/std/errors'
+import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import { err, ok } from 'neverthrow'
 import { mockDeep } from 'vitest-mock-extended'
 import type { Command, Query } from './port'

@@ -7,7 +7,7 @@ import {
   UnexpectedAuthError,
   UserAlreadyExistsError,
 } from '@trend-diary/authentication'
-import { ClientError, ServerError } from '@trend-diary/common/errors'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import toAuthError from './auth-error'
 
 describe('toAuthError', () => {

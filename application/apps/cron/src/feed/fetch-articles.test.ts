@@ -1,5 +1,5 @@
-import Logger from '@trend-diary/common/logger'
 import { articles } from '@trend-diary/datastore/schema'
+import Logger from '@trend-diary/logger'
 import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'

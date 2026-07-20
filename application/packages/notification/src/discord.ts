@@ -1,5 +1,5 @@
-import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout } from '@trend-diary/common/http'
-import type { LoggerType } from '@trend-diary/common/logger'
+import type { LoggerType } from '@trend-diary/logger'
+import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout } from '@trend-diary/runtime/http'
 
 export interface DiscordEmbedField {
   name: string

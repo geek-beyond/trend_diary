@@ -1,5 +1,5 @@
-import { fetchWithTimeout } from '@trend-diary/common/http'
-import { wrapAsyncCall } from '@trend-diary/common/result'
+import { fetchWithTimeout } from '@trend-diary/runtime/http'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import { err, type Result } from 'neverthrow'
 import Parser from 'rss-parser'
 

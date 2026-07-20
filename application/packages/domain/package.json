@@ -13,8 +13,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@trend-diary/common": "workspace:*",
     "@trend-diary/datastore": "workspace:*",
+    "@trend-diary/logger": "workspace:*",
+    "@trend-diary/std": "workspace:*",
     "drizzle-orm": "catalog:",
     "neverthrow": "catalog:",
     "zod": "catalog:"

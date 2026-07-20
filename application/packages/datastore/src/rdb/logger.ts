@@ -1,4 +1,4 @@
-import AppLogger, { type LogLevel } from '@trend-diary/common/logger'
+import AppLogger, { type LogLevel } from '@trend-diary/logger'
 import type { Logger as DrizzleLogger } from 'drizzle-orm'
 import { maskQueryParams } from './mask'
 

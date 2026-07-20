@@ -1,4 +1,4 @@
-import { wrapAsyncCall } from '@trend-diary/common/result'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import { useState } from 'react'
 import { z } from 'zod'
 import { AUTH_ERROR_MESSAGES } from '../lib/error-message'

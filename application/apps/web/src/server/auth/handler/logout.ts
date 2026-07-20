@@ -1,7 +1,7 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
-import { createAuthHandler } from '../factory/auth-handler'
+import { createClientHandler } from '../factory/client-handler'
 
-export default createAuthHandler({
+export default createClientHandler({
   createClient: (c) => new PasswordAuthClient(authClientConfig(c)),
   authenticate: (client) => client.signOut(),
   log: (_result, ctx) => ctx.logger.info('logout success'),

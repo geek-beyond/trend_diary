@@ -12,13 +12,13 @@ import type { Env } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator from '@/middleware/zod-validator'
 import mountAuthHandler from '@/test/helper/mount-auth-handler'
-import { createAuthHandler } from './auth-handler'
+import { createClientHandler } from './client-handler'
 import type { AuthHandlerContext } from './context'
 
-describe('createAuthHandler', () => {
+describe('createClientHandler', () => {
   describe('正常系', () => {
     it('認証出力を respond に渡して JSON レスポンスを返すこと', async () => {
-      const handler = createAuthHandler({
+      const handler = createClientHandler({
         createClient: () => ({}),
         authenticate: () => Promise.resolve(ok({ items: [1, 2] })),
         respond: (c, output) => c.json({ count: output.items.length }, 200),
@@ -32,7 +32,7 @@ describe('createAuthHandler', () => {
 
     it('log コールバックに認証出力を渡して呼ぶこと', async () => {
       const log = vi.fn()
-      const handler = createAuthHandler({
+      const handler = createClientHandler({
         createClient: () => ({}),
         authenticate: () => Promise.resolve(ok({ id: 'auth-1' })),
         log,
@@ -46,7 +46,7 @@ describe('createAuthHandler', () => {
     })
 
     it('respond が 204 を返すとボディなしになること(log 未指定)', async () => {
-      const handler = createAuthHandler({
+      const handler = createClientHandler({
         createClient: () => ({}),
         authenticate: () => Promise.resolve(ok(null)),
         respond: (c) => c.body(null, 204),
@@ -59,7 +59,7 @@ describe('createAuthHandler', () => {
     })
 
     it('検証済み json を ctx.json として respond まで通すこと', async () => {
-      const handler = createAuthHandler({
+      const handler = createClientHandler({
         createClient: () => ({}),
         authenticate: (_client, ctx: AuthHandlerContext<{ email: string }>) =>
           Promise.resolve(ok({ email: ctx.json.email })),
@@ -96,7 +96,7 @@ describe('createAuthHandler', () => {
     ])(
       '認証ステップの $name は toAuthError で $status に変換されること',
       async ({ error, status }) => {
-        const handler = createAuthHandler({
+        const handler = createClientHandler({
           createClient: () => ({}),
           authenticate: () => Promise.resolve(err(error)),
           respond: (c) => c.json({}, 200),
@@ -109,7 +109,7 @@ describe('createAuthHandler', () => {
     )
 
     it('authenticate が送出した例外(captcha 等)はそのまま応答へ伝播すること', async () => {
-      const handler = createAuthHandler({
+      const handler = createClientHandler({
         createClient: () => ({}),
         authenticate: () => Promise.reject(new HTTPException(403, { message: 'captcha' })),
         respond: (c) => c.json({}, 200),
@@ -123,7 +123,7 @@ describe('createAuthHandler', () => {
 
   describe('異常系', () => {
     it('対応表に無い AuthError は ServerError 相当の 500 になること', async () => {
-      const handler = createAuthHandler({
+      const handler = createClientHandler({
         createClient: () => ({}),
         authenticate: () => Promise.resolve(err(new UnexpectedAuthError('boom'))),
         respond: (c) => c.json({}, 200),

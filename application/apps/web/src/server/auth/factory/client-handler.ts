@@ -6,7 +6,7 @@ import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 import { type AuthHandlerContext, buildContext } from './context'
 
-interface AuthConfig<TClient, TJson, TAuthOutput, TResponse extends Response> {
+interface ClientConfig<TClient, TJson, TAuthOutput, TResponse extends Response> {
   createClient: (c: Context<Env>) => TClient
   authenticate: (
     client: TClient,
@@ -17,8 +17,8 @@ interface AuthConfig<TClient, TJson, TAuthOutput, TResponse extends Response> {
 }
 
 // respond で c.json/c.body を直接返すのは Hono RPC のレスポンス型推論をハンドラーごとに保つため
-export function createAuthHandler<TClient, TJson, TAuthOutput, TResponse extends Response>(
-  config: AuthConfig<TClient, TJson, TAuthOutput, TResponse>,
+export function createClientHandler<TClient, TJson, TAuthOutput, TResponse extends Response>(
+  config: ClientConfig<TClient, TJson, TAuthOutput, TResponse>,
 ): (c: Context<Env>) => Promise<TResponse> {
   return async (c: Context<Env>): Promise<TResponse> => {
     const ctx = buildContext<TJson>(c)

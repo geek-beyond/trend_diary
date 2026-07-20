@@ -1,8 +1,8 @@
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import { ok } from 'neverthrow'
-import { createAuthHandler } from '../factory/auth-handler'
+import { createClientHandler } from '../factory/client-handler'
 
-export default createAuthHandler({
+export default createClientHandler({
   createClient: (c) => new PasskeyClient(authClientConfig(c)),
   // トグルOFFは「パスキーを使わない」状態にすることなので、登録済みを全て削除する
   authenticate: async (client) => {

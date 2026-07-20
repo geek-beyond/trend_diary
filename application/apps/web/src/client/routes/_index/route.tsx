@@ -1,5 +1,5 @@
 import type { MetaFunction } from 'react-router'
-import { useSession } from '@/client/entities/auth'
+import { useSession } from '@/client/entities/session'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import TopPage from './page'
 

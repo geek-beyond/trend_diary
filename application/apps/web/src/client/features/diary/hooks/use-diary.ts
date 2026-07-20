@@ -4,7 +4,7 @@ import { toJstDateString } from '@trend-diary/std/locale/date'
 import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/std/pagination/schema'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
-import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
+import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/session'
 import { sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi from './use-diary-api'
 

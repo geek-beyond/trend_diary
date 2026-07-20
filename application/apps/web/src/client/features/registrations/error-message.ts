@@ -1,4 +1,4 @@
-import { AUTH_ERROR_MESSAGES, resolveCommonAuthErrorMessage } from '@/client/entities/auth'
+import { AUTH_ERROR_MESSAGES, resolveCommonAuthErrorMessage } from '@/client/entities/session'
 
 const SIGNUP_ALREADY_EXISTS_ERROR_MESSAGE = 'このメールアドレスは既に使用されています'
 

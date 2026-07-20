@@ -6,7 +6,7 @@ import {
   notifyErrorUnlessSessionExpired,
   notifyFetchError,
   TOAST_ID,
-} from '@/client/entities/auth'
+} from '@/client/entities/session'
 import { isAllMediaSelected, type SelectedMedia, useReadArticle } from '@/client/features/article'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useCompletionCelebration from './use-completion-celebration'

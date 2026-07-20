@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
-import { useSession } from '@/client/entities/auth'
+import { useSession } from '@/client/entities/session'
 
 export default function ProtectedLayout() {
   const { isLoggedIn, isLoading } = useSession()

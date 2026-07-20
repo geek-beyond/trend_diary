@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import type { MockedFunction } from 'vitest'
-import { SESSION_SWR_KEY } from '@/client/entities/auth'
+import { SESSION_SWR_KEY } from '@/client/entities/session'
 import { buildFormData } from '@/client/test/helper/form-data'
 import getApiClientForClient from '@/infrastructure/api'
 import useLogin from './use-login'

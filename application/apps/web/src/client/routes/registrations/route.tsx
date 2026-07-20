@@ -1,5 +1,5 @@
 import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
-import { resolveTurnstileSiteKey } from '@/client/entities/auth'
+import { resolveTurnstileSiteKey } from '@/client/entities/session'
 import { useSignup } from '@/client/features/registrations'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import { appLoadContext } from '@/load-context'

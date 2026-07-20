@@ -1,4 +1,4 @@
-import { AUTH_ERROR_MESSAGES } from '@/client/entities/auth'
+import { AUTH_ERROR_MESSAGES } from '@/client/entities/session'
 import { resolveLoginErrorMessage } from './error-message'
 
 describe('resolveLoginErrorMessage', () => {

@@ -1,4 +1,4 @@
-import { AUTH_ERROR_MESSAGES, resolveCommonAuthErrorMessage } from '@/client/entities/auth'
+import { AUTH_ERROR_MESSAGES, resolveCommonAuthErrorMessage } from '@/client/entities/session'
 
 const INVALID_LOGIN_CREDENTIALS_ERROR_MESSAGE = 'メールアドレスまたはパスワードが正しくありません'
 

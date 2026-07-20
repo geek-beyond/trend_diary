@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router'
 import { useSWRConfig } from 'swr'
-import { SESSION_SWR_KEY, useAuthSubmit } from '@/client/entities/auth'
+import { SESSION_SWR_KEY, useAuthSubmit } from '@/client/entities/session'
 import getApiClientForClient from '@/client/infrastructure/api'
 import { resolveLoginErrorMessage } from './error-message'
 

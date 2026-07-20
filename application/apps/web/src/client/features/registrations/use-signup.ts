@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router'
-import { useAuthSubmit } from '@/client/entities/auth'
+import { useAuthSubmit } from '@/client/entities/session'
 import getApiClientForClient from '@/client/infrastructure/api'
 import { resolveSignupErrorMessage } from './error-message'
 

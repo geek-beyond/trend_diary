@@ -4,7 +4,7 @@ import {
   useLoaderData,
   useSearchParams,
 } from 'react-router'
-import { resolveTurnstileSiteKey } from '@/client/entities/auth'
+import { resolveTurnstileSiteKey } from '@/client/entities/session'
 import { GITHUB_AUTH_MESSAGES, useOAuthError } from '@/client/features/github-auth'
 import { resolveLoginRedirectTarget, useLogin } from '@/client/features/sessions'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'

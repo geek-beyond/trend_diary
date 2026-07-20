@@ -9,7 +9,6 @@ import type {
 } from '@trend-diary/domain/article/schema/diary-schema'
 import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
-import { toTodayJstDateString } from '@/common/locale/date'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
@@ -78,7 +77,7 @@ export default async function getDiary(c: ZodValidatedContext<[typeof diaryQuery
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const sessionUser = mustGet(c, CONTEXT_KEY.SESSION_USER)
   const query = c.req.valid('query')
-  const todayJst = toTodayJstDateString()
+  const todayJst = toJstDateString(new Date())
   const fromDate = query.from
   const toDate = query.to
 

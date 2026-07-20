@@ -1,9 +1,7 @@
-import { toJstDate, toJstDateString } from '@trend-diary/common/locale'
+import { toJstDate } from '@trend-diary/common/locale'
 import { z } from 'zod'
 
 const dateSchema = z.union([z.string().datetime(), z.date()])
-
-export const toTodayJstDateString = (): string => toJstDateString(new Date())
 
 export const toJaDateString = (value: string | Date): string => {
   const parseResult = dateSchema.safeParse(value)

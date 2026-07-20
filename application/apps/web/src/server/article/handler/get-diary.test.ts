@@ -35,8 +35,6 @@ interface DiaryRangeResponse {
   }
 }
 
-const getTodayJst = () => toJstDateString(new Date())
-
 function toJstDateTime(date: string, time: string) {
   return new Date(`${date}T${time}+09:00`)
 }
@@ -83,7 +81,7 @@ describe('GET /api/articles/diary (単日詳細)', () => {
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
 
   beforeEach(async () => {
-    todayJst = getTodayJst()
+    todayJst = toJstDateString(new Date())
     const { userId, authenticationId } = await userHelper.create(
       'diary-test@example.com',
       'Test@password123',
@@ -215,7 +213,7 @@ describe('GET /api/articles/diary', () => {
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
 
   beforeEach(async () => {
-    todayJst = getTodayJst()
+    todayJst = toJstDateString(new Date())
     const { userId, authenticationId } = await userHelper.create(
       'diary-test-range@example.com',
       'Test@password123',

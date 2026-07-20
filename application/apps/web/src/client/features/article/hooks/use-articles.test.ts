@@ -78,11 +78,6 @@ const generateFakeResponse = (
   }
 }
 
-const resolveJstDateString = (rawDate: Date): string => toJstDateString(rawDate)
-
-const resolveJstDateWithOffset = (baseDateString: string, days: number): string =>
-  addJstDays(baseDateString, days)
-
 // oxlint-disable-next-line typescript/no-explicit-any, typescript/consistent-type-assertions -- Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするため any と型アサーションを許可する
 const mockGetApiClientForClient = getApiClientForClient as MockedFunction<any>
 
@@ -359,8 +354,8 @@ describe('useArticles', () => {
       })
       mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
 
-      const today = resolveJstDateString(new Date())
-      const last7daysFrom = resolveJstDateWithOffset(today, -6)
+      const today = toJstDateString(new Date())
+      const last7daysFrom = addJstDays(today, -6)
       const { result } = setupHook([`/?from=${last7daysFrom}&to=${today}`])
 
       await waitFor(() => {
@@ -389,9 +384,9 @@ describe('useArticles', () => {
       })
       mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
 
-      const today = resolveJstDateString(new Date())
-      const customFrom = resolveJstDateWithOffset(today, -4)
-      const customTo = resolveJstDateWithOffset(today, -1)
+      const today = toJstDateString(new Date())
+      const customFrom = addJstDays(today, -4)
+      const customTo = addJstDays(today, -1)
       const { result } = setupHook([`/?from=${customFrom}&to=${customTo}`])
 
       await waitFor(() => {
@@ -439,8 +434,8 @@ describe('useArticles', () => {
         })
       })
 
-      const today = resolveJstDateString(new Date())
-      const last7daysFrom = resolveJstDateWithOffset(today, -6)
+      const today = toJstDateString(new Date())
+      const last7daysFrom = addJstDays(today, -6)
 
       await waitFor(() => {
         expect(mockApiClient.articles.$get).toHaveBeenLastCalledWith(
@@ -460,8 +455,8 @@ describe('useArticles', () => {
     })
 
     it('todayプリセットを適用するとselectedDatePresetがtodayになる', async () => {
-      const today = resolveJstDateString(new Date())
-      const last7daysFrom = resolveJstDateWithOffset(today, -6)
+      const today = toJstDateString(new Date())
+      const last7daysFrom = addJstDays(today, -6)
       const initialResponse = generateFakeResponse({
         page: 2,
         totalPages: 3,

@@ -1,11 +1,11 @@
-import { addJstDays } from '@trend-diary/common/locale/date'
+import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
 import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagination/schema'
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
 import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
-import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
+import { sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi, {
   type DiaryRangeItemResponse,
   type DiaryResponse,
@@ -30,7 +30,7 @@ export default function useAnalytics() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { fetchDiary, fetchDiaryRange } = useDiaryApi()
 
-  const todayJst = getTodayJst()
+  const todayJst = toJstDateString(new Date())
 
   const availableDates = buildAvailableDates(todayJst)
   const dateParam = searchParams.get('date')

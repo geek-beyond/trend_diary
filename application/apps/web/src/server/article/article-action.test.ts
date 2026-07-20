@@ -1,6 +1,6 @@
 import { ClientError, NotFoundError } from '@trend-diary/std/errors'
 import { HTTPException } from 'hono/http-exception'
-import { err, ok } from 'neverthrow'
+import { err, ok, type Result } from 'neverthrow'
 import type { SessionUser } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
 import { type ArticleActionContext, createArticleActionHandler } from './article-action'
@@ -37,7 +37,12 @@ function buildContext(options: BuildContextOptions = {}): {
       method: 'POST',
       routePath: '/api/articles/:article_id/skip',
     },
-    body: (data: BodyInit | null, status: number) => new Response(data, { status }),
+    // oxlint-disable-next-line typescript/no-restricted-types -- Hono の c.json を模すモックで、任意の JSON 値を受けるため
+    json: (data: unknown, status: number) =>
+      new Response(JSON.stringify(data), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
   } as unknown as ArticleActionContext
   return { c, logger }
@@ -49,23 +54,33 @@ const sessionUser: SessionUser = {
   email: 'user@example.com',
 }
 
+function baseConfig<TOutput>(result: Result<TOutput, Error>) {
+  return {
+    execute: () => Promise.resolve(result),
+    statusCode: 200 as const,
+  }
+}
+
 describe('createArticleActionHandler', () => {
   describe('正常系', () => {
-    it('成功時は 204 No Content をボディなしで返すこと', async () => {
-      const handler = createArticleActionHandler(() => Promise.resolve(ok(undefined)))
+    it('成功時は statusCode 付きでボディ null を返すこと', async () => {
+      const handler = createArticleActionHandler({
+        ...baseConfig(ok(undefined)),
+        statusCode: 201,
+      })
 
       const { c } = buildContext({ user: sessionUser })
       const res = await handler(c)
 
-      expect(res.status).toBe(204)
-      expect(await res.text()).toBe('')
+      expect(res.status).toBe(201)
+      expect(await res.json()).toBeNull()
     })
 
     it('セッションユーザーの activeUserId と検証済み article_id を execute に渡すこと', async () => {
       const execute = vi.fn((_useCase: object, _activeUserId: bigint, _articleId: bigint) =>
         Promise.resolve(ok(undefined)),
       )
-      const handler = createArticleActionHandler(execute)
+      const handler = createArticleActionHandler({ ...baseConfig(ok(undefined)), execute })
 
       const { c } = buildContext({ user: sessionUser })
       await handler(c)
@@ -74,7 +89,7 @@ describe('createArticleActionHandler', () => {
     })
 
     it('ルート情報と activeUserId・articleId を info ログに出すこと', async () => {
-      const handler = createArticleActionHandler(() => Promise.resolve(ok(undefined)))
+      const handler = createArticleActionHandler(baseConfig(ok(undefined)))
 
       const { c, logger } = buildContext({ user: sessionUser })
       await handler(c)
@@ -96,7 +111,7 @@ describe('createArticleActionHandler', () => {
     ])(
       'execute が $name を返すと handleError で変換した HTTPException を投げること',
       async ({ error, status }) => {
-        const handler = createArticleActionHandler(() => Promise.resolve(err(error)))
+        const handler = createArticleActionHandler(baseConfig(err(error)))
 
         const { c } = buildContext({ user: sessionUser })
         // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
@@ -111,7 +126,7 @@ describe('createArticleActionHandler', () => {
   describe('異常系', () => {
     // authenticator が先行適用される契約のため、未設定は 401 に偽装せず契約違反として送出する
     it('SESSION_USER が未設定なら契約違反エラーを投げること', async () => {
-      const handler = createArticleActionHandler(() => Promise.resolve(ok(undefined)))
+      const handler = createArticleActionHandler(baseConfig(ok(undefined)))
 
       const { c } = buildContext()
 

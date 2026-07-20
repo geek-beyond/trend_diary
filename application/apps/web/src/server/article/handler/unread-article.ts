@@ -1,5 +1,7 @@
 import { createArticleActionHandler } from '../article-action'
 
-export default createArticleActionHandler((useCase, activeUserId, articleId) =>
-  useCase.deleteAllReadHistory(activeUserId, articleId),
-)
+export default createArticleActionHandler({
+  execute: (useCase, activeUserId, articleId) =>
+    useCase.deleteAllReadHistory(activeUserId, articleId),
+  statusCode: 200,
+})

@@ -12,8 +12,8 @@ export default defineConfig({
         // D1 を要する薄い factory で、単体では計測に不向き。cron の統合テストで担保する
         'src/rdb/client.ts',
         // drizzle のテーブル定義は宣言的で実行分岐を持たないため計測対象外とする
-        'src/drizzle-orm/schema/article.ts',
-        'src/drizzle-orm/schema/user.ts',
+        'src/schema/article.ts',
+        'src/schema/user.ts',
       ],
     }),
   },

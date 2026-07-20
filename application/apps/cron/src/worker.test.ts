@@ -1,5 +1,5 @@
 import type { ExecutionContext, ScheduledController } from '@cloudflare/workers-types'
-import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
+import { articles } from '@trend-diary/datastore/schema'
 import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'

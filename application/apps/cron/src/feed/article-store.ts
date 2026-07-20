@@ -1,5 +1,5 @@
-import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
 import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
+import { articles } from '@trend-diary/datastore/schema'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { ARTICLE_MAX_LENGTH } from '@trend-diary/domain/article/schema/article-schema'
 import { err, ok, type Result } from 'neverthrow'

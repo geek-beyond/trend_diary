@@ -53,7 +53,7 @@ export default async function getArticles(
     activeUserId,
   )
   if (result.isErr()) {
-    throw handleError(result.error, logger)
+    handleError(result.error, logger)
   }
 
   const paginationResult = result.value

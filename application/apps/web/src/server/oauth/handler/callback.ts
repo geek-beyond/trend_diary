@@ -70,7 +70,7 @@ export default async function oauthCallback(
     return c.redirect(redirectTarget, 302)
   }
   if (!(resolved.error instanceof ClientError)) {
-    throw handleError(resolved.error, logger)
+    handleError(resolved.error, logger)
   }
 
   // 未連携の初回ログインは新規登録として扱う。メール未取得では登録できないため認証失敗として戻す
@@ -82,7 +82,7 @@ export default async function oauthCallback(
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
   const registered = await accountUseCase.registerActiveUser(email, authenticationId, notifier)
   if (registered.isErr()) {
-    throw handleError(registered.error, logger)
+    handleError(registered.error, logger)
   }
 
   logger.info('oauth signup success', { provider, activeUserId: registered.value.activeUserId })

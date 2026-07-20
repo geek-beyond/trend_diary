@@ -190,7 +190,7 @@ function executeHandlerLogic<
 
     // 2. エラーハンドリング
     if (result.isErr()) {
-      throw handleError(result.error, context.logger)
+      handleError(result.error, context.logger)
     }
 
     // 3. ロギング

@@ -23,7 +23,7 @@ export default async function oauthLogin(
 
   const oauthClient = new OAuthClient(authClientConfig(c))
   const result = await oauthClient.startAuthorization(provider, buildOAuthCallbackUrl(c, provider))
-  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
+  if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   setCookie(c, OAUTH_FLOW_COOKIE, OAUTH_FLOW.login, OAUTH_COOKIE_OPTIONS)
 

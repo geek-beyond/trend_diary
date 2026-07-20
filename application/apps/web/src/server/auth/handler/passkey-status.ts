@@ -10,7 +10,7 @@ export default async function passkeyStatus(c: Context<Env>) {
 
   const passkeyClient = new PasskeyClient(authClientConfig(c))
   const result = await passkeyClient.list()
-  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
+  if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   return c.json({ hasPasskey: result.value.length > 0 }, 200)
 }

@@ -4,12 +4,14 @@ import { createAccountUseCase } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import { assertCaptchaVerified } from '@/server/auth/captcha'
 import type { authInputValidator } from '@/server/auth/validators'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
-import { assertCaptchaVerified } from '../captcha'
 
-export default async function signup(c: ZodValidatedContext<[typeof authInputValidator]>) {
+export default async function createRegistration(
+  c: ZodValidatedContext<[typeof authInputValidator]>,
+) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
@@ -36,7 +38,7 @@ export default async function signup(c: ZodValidatedContext<[typeof authInputVal
   )
   if (result.isErr()) handleError(result.error, logger)
 
-  logger.info('signup success', { activeUserId: result.value.activeUserId })
+  logger.info('registration created', { activeUserId: result.value.activeUserId })
 
   return c.json({}, 201)
 }

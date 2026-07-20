@@ -8,7 +8,7 @@ export default function useSignup(turnstileSiteKey?: string) {
 
   return useAuthSubmit({
     turnstileSiteKey,
-    request: (json) => getApiClientForClient().auth.signup.$post({ json }),
+    request: (json) => getApiClientForClient().registrations.$post({ json }),
     resolveErrorMessage: resolveSignupErrorMessage,
     onSuccess: () => navigate('/login'),
   })

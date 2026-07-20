@@ -3,15 +3,15 @@ import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/account'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import { assertCaptchaVerified } from '@/server/auth/captcha'
 import type { authInputValidator } from '@/server/auth/validators'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
-import { assertCaptchaVerified } from '../captcha'
 
-// 暫定: 認証ハンドラの契約由来の構造一致（signup / passkeyLoginVerify との類似）を
+// 暫定: 認証ハンドラの契約由来の構造一致（registrations の create / passkeyLoginVerify との類似）を
 // 共通化で解消するまで検出を抑制する。恒久対応は #1015
 // similarity-ignore
-export default async function login(c: ZodValidatedContext<[typeof authInputValidator]>) {
+export default async function createSession(c: ZodValidatedContext<[typeof authInputValidator]>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
@@ -28,7 +28,7 @@ export default async function login(c: ZodValidatedContext<[typeof authInputVali
   const result = await accountUseCase.resolveActiveUser(user.id)
   if (result.isErr()) handleError(result.error, logger)
 
-  logger.info('login success', { activeUserId: result.value.activeUserId })
+  logger.info('session created', { activeUserId: result.value.activeUserId })
 
   return c.json(
     {

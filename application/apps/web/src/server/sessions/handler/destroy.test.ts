@@ -3,10 +3,10 @@ import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
 async function requestLogout() {
-  return apiRequest('/api/auth/logout', { method: 'DELETE', contentTypeJson: true })
+  return apiRequest('/api/sessions', { method: 'DELETE', contentTypeJson: true })
 }
 
-describe('DELETE /api/auth/logout', () => {
+describe('DELETE /api/sessions', () => {
   const TEST_EMAIL = 'logout-test@example.com'
   const TEST_PASSWORD = 'Test@password123'
   const createdIds: CleanUpIds = { userIds: [], authIds: [] }

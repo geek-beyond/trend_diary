@@ -10,12 +10,12 @@ vi.mock('react-router', () => ({
 }))
 
 const apiCallMock = vi.fn()
-const logoutDeleteMock = vi.fn()
+const sessionDeleteMock = vi.fn()
 
 vi.mock('@/client/infrastructure/create-swr-fetcher', () => ({
   default: () => ({
     apiCall: apiCallMock,
-    client: { auth: { logout: { $delete: logoutDeleteMock } } },
+    client: { sessions: { $delete: sessionDeleteMock } },
   }),
 }))
 

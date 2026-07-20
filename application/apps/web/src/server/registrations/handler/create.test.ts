@@ -1,23 +1,23 @@
 import { apiRequest } from '@/test/helper/request'
 import * as userHelper from '@/test/helper/user'
 
-async function requestSignup(body: string) {
-  return apiRequest('/api/auth/signup', { method: 'POST', body, contentTypeJson: true })
+async function requestRegistration(body: string) {
+  return apiRequest('/api/registrations', { method: 'POST', body, contentTypeJson: true })
 }
 
-describe('POST /api/auth/signup', () => {
+describe('POST /api/registrations', () => {
   let emailSequence = 0
   const nextEmail = (prefix: string) => {
     emailSequence += 1
     return `${prefix}+${Date.now()}-${emailSequence}@test.com`
   }
 
-  // signup APIで使用するメールのパターン
+  // 登録APIで使用するメールのパターン
   const SIGNUP_TEST_EMAIL_PATTERN = '@test.com'
   const DUPLICATE_EMAIL_PATTERN = 'duplicate@example.com'
 
   beforeEach(async () => {
-    // signup APIで直接作成されたユーザーをクリーンアップ
+    // 登録APIで直接作成されたユーザーをクリーンアップ
     await userHelper.cleanUpByEmailPattern(SIGNUP_TEST_EMAIL_PATTERN)
     await userHelper.cleanUpByEmailPattern(DUPLICATE_EMAIL_PATTERN)
   })
@@ -27,9 +27,9 @@ describe('POST /api/auth/signup', () => {
     await userHelper.cleanUpByEmailPattern(DUPLICATE_EMAIL_PATTERN)
   })
 
-  it('正常系: signupが成功する', async () => {
+  it('正常系: 登録が成功する', async () => {
     const email = nextEmail('signup')
-    const res = await requestSignup(JSON.stringify({ email, password: 'Test@password123' }))
+    const res = await requestRegistration(JSON.stringify({ email, password: 'Test@password123' }))
 
     expect(res.status).toBe(201)
     const body: Record<string, never> = await res.json()
@@ -56,7 +56,7 @@ describe('POST /api/auth/signup', () => {
 
     testCases.forEach((testCase) => {
       it(testCase.name, async () => {
-        const res = await requestSignup(JSON.stringify(testCase.input))
+        const res = await requestRegistration(JSON.stringify(testCase.input))
         expect(res.status).toBe(testCase.status)
       })
     })
@@ -65,11 +65,15 @@ describe('POST /api/auth/signup', () => {
       const email = nextEmail('duplicate')
 
       // 1回目の登録
-      const res1 = await requestSignup(JSON.stringify({ email, password: 'Test@password123' }))
+      const res1 = await requestRegistration(
+        JSON.stringify({ email, password: 'Test@password123' }),
+      )
       expect(res1.status).toBe(201)
 
       // 2回目の登録
-      const res2 = await requestSignup(JSON.stringify({ email, password: 'Test@password123' }))
+      const res2 = await requestRegistration(
+        JSON.stringify({ email, password: 'Test@password123' }),
+      )
       expect(res2.status).toBe(409)
     })
   })

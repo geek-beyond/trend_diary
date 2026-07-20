@@ -2,8 +2,6 @@ import { Hono } from 'hono'
 import type { Env } from '@/env'
 import { authenticator } from '@/middleware/authenticator'
 import rateLimiter from '@/middleware/rate-limiter'
-import login from './handler/login'
-import logout from './handler/logout'
 import me from './handler/me'
 import passkeyDisable from './handler/passkey-disable'
 import passkeyLoginStart from './handler/passkey-login-start'
@@ -13,13 +11,8 @@ import passkeyRegisterVerify, {
   passkeyRegisterVerifyValidator,
 } from './handler/passkey-register-verify'
 import passkeyStatus from './handler/passkey-status'
-import signup from './handler/signup'
-import { authInputValidator } from './validators'
 
 const app = new Hono<Env>()
-  .post('/signup', rateLimiter, authInputValidator, signup)
-  .post('/login', rateLimiter, authInputValidator, login)
-  .delete('/logout', logout)
   .get('/me', authenticator, me)
   // passkey認証(未認証で可)。ブラウザのWebAuthn ceremonyを挟むためstart/verifyの2段構え
   .post('/passkey/login/start', rateLimiter, passkeyLoginStart)

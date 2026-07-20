@@ -13,10 +13,8 @@ vi.mock('react-router', async (importOriginal) => {
 })
 
 const mockApiClient = {
-  auth: {
-    signup: {
-      $post: vi.fn(),
-    },
+  registrations: {
+    $post: vi.fn(),
   },
 }
 
@@ -29,11 +27,11 @@ describe('useSignup', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetApiClientForClient.mockReturnValue(mockApiClient)
-    mockApiClient.auth.signup.$post.mockResolvedValue({ ok: true, status: 201 })
+    mockApiClient.registrations.$post.mockResolvedValue({ ok: true, status: 201 })
   })
 
   describe('正常系', () => {
-    it('フォームの値をJSONボディとしてPOST /api/auth/signupへ送る', async () => {
+    it('フォームの値をJSONボディとしてPOST /api/registrationsへ送る', async () => {
       const { result } = renderHook(() => useSignup('site-key'))
 
       await act(async () => {
@@ -42,7 +40,7 @@ describe('useSignup', () => {
         )
       })
 
-      expect(mockApiClient.auth.signup.$post).toHaveBeenCalledWith({
+      expect(mockApiClient.registrations.$post).toHaveBeenCalledWith({
         json: { ...validForm, captchaToken: 'captcha-token' },
       })
     })
@@ -68,7 +66,7 @@ describe('useSignup', () => {
       })
 
       expect(result.current.errors).toBeDefined()
-      expect(mockApiClient.auth.signup.$post).not.toHaveBeenCalled()
+      expect(mockApiClient.registrations.$post).not.toHaveBeenCalled()
     })
 
     it('CAPTCHA有効時にトークンなしで送信した場合はformErrorを設定しAPIを呼ばない', async () => {
@@ -79,7 +77,7 @@ describe('useSignup', () => {
       })
 
       expect(result.current.formError).toBe('セキュリティ認証を完了してください。')
-      expect(mockApiClient.auth.signup.$post).not.toHaveBeenCalled()
+      expect(mockApiClient.registrations.$post).not.toHaveBeenCalled()
     })
 
     it.each([
@@ -93,7 +91,7 @@ describe('useSignup', () => {
     ])(
       'APIが$statusを返した場合はformError「$expected」を設定する',
       async ({ status, expected }) => {
-        mockApiClient.auth.signup.$post.mockResolvedValue({ ok: false, status })
+        mockApiClient.registrations.$post.mockResolvedValue({ ok: false, status })
         const { result } = renderHook(() => useSignup())
 
         await act(async () => {
@@ -108,7 +106,7 @@ describe('useSignup', () => {
 
   describe('異常系', () => {
     it('API呼び出しで例外が発生した場合は汎用エラーメッセージを設定する', async () => {
-      mockApiClient.auth.signup.$post.mockRejectedValue(new Error('network error'))
+      mockApiClient.registrations.$post.mockRejectedValue(new Error('network error'))
       const { result } = renderHook(() => useSignup())
 
       await act(async () => {

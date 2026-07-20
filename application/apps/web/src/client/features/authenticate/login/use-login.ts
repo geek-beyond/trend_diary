@@ -10,7 +10,7 @@ export default function useLogin(turnstileSiteKey?: string, redirectTo?: string)
 
   return useAuthSubmit({
     turnstileSiteKey,
-    request: (json) => getApiClientForClient().auth.login.$post({ json }),
+    request: (json) => getApiClientForClient().sessions.$post({ json }),
     resolveErrorMessage: resolveLoginErrorMessage,
     onSuccess: async () => {
       // mutate(key)は購読中のuseSWRがないと再検証されず、遷移先ページのProtectedLayoutが

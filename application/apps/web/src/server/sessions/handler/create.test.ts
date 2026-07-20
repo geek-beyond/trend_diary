@@ -3,10 +3,10 @@ import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
 async function requestLogin(body: string) {
-  return apiRequest('/api/auth/login', { method: 'POST', body, contentTypeJson: true })
+  return apiRequest('/api/sessions', { method: 'POST', body, contentTypeJson: true })
 }
 
-describe('POST /api/auth/login', () => {
+describe('POST /api/sessions', () => {
   const TEST_EMAIL = 'login-test@example.com'
   const TEST_PASSWORD = 'Test@password123'
   const createdIds: CleanUpIds = { userIds: [], authIds: [] }

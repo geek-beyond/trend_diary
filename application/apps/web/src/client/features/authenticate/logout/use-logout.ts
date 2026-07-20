@@ -8,9 +8,9 @@ export default function useLogout() {
   const { client, apiCall } = createSWRFetcher()
 
   const { trigger, isMutating } = useSWRMutation(
-    'auth/logout',
+    'sessions/destroy',
     async () => {
-      return apiCall(() => client.auth.logout.$delete())
+      return apiCall(() => client.sessions.$delete())
     },
     {
       onSuccess: () => {

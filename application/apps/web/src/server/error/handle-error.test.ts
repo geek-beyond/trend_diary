@@ -14,36 +14,51 @@ const createLoggerWithSpies = () => {
   }
 }
 
+// handleError は never を返して throw するため、投げられた値を捕捉して検証する
+// oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
+const captureThrow = (fn: () => never): unknown => {
+  try {
+    fn()
+    return undefined
+  } catch (e) {
+    return e
+  }
+}
+
 describe('handleError', () => {
-  it('ClientErrorをHTTPExceptionに変換してwarnログを出す', () => {
+  it('ClientErrorをHTTPExceptionに変換して投げつつwarnログを出す', () => {
     const { logger, warn, error: errorSpy } = createLoggerWithSpies()
     const error = new ClientError('invalid query', 422)
 
-    const result = handleError(error, logger)
+    const thrown = captureThrow(() => handleError(error, logger))
 
-    expect(result).toBeInstanceOf(HTTPException)
-    expect(result.status).toBe(422)
-    expect(result.message).toBe('invalid query')
+    expect(thrown).toBeInstanceOf(HTTPException)
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- instanceof で確認済みのため
+    const httpException = thrown as HTTPException
+    expect(httpException.status).toBe(422)
+    expect(httpException.message).toBe('invalid query')
     expect(warn).toHaveBeenCalledTimes(1)
     expect(warn).toHaveBeenCalledWith('client error', error)
     expect(errorSpy).not.toHaveBeenCalled()
   })
 
-  it('ServerErrorをHTTPExceptionに変換してerrorログを出す', () => {
+  it('ServerErrorをHTTPExceptionに変換して投げつつerrorログを出す', () => {
     const { logger, warn, error: errorSpy } = createLoggerWithSpies()
     const error = new ServerError(new Error('db down'), 503)
 
-    const result = handleError(error, logger)
+    const thrown = captureThrow(() => handleError(error, logger))
 
-    expect(result).toBeInstanceOf(HTTPException)
-    expect(result.status).toBe(503)
-    expect(result.message).toBe('db down')
+    expect(thrown).toBeInstanceOf(HTTPException)
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- instanceof で確認済みのため
+    const httpException = thrown as HTTPException
+    expect(httpException.status).toBe(503)
+    expect(httpException.message).toBe('db down')
     expect(errorSpy).toHaveBeenCalledTimes(1)
     expect(errorSpy).toHaveBeenCalledWith('internal server error', error)
     expect(warn).not.toHaveBeenCalled()
   })
 
-  it('ExternalServiceErrorをHTTPExceptionに変換して詳細情報を含むerrorログを出す', () => {
+  it('ExternalServiceErrorをHTTPExceptionに変換して投げつつ詳細情報を含むerrorログを出す', () => {
     const { logger, warn, error: errorSpy } = createLoggerWithSpies()
     const originalError = new ServerError('ActiveUser creation failed')
     const serviceError = new ServerError('Supabase Auth deletion failed')
@@ -55,11 +70,13 @@ describe('handleError', () => {
       context,
     )
 
-    const result = handleError(error, logger)
+    const thrown = captureThrow(() => handleError(error, logger))
 
-    expect(result).toBeInstanceOf(HTTPException)
-    expect(result.status).toBe(500)
-    expect(result.message).toBe('Failed to delete Supabase Auth user during compensation')
+    expect(thrown).toBeInstanceOf(HTTPException)
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- instanceof で確認済みのため
+    const httpException = thrown as HTTPException
+    expect(httpException.status).toBe(500)
+    expect(httpException.message).toBe('Failed to delete Supabase Auth user during compensation')
     expect(errorSpy).toHaveBeenCalledTimes(1)
     expect(errorSpy).toHaveBeenCalledWith(
       {
@@ -79,15 +96,17 @@ describe('handleError', () => {
     expect(warn).not.toHaveBeenCalled()
   })
 
-  it('未知のエラーはHTTPException(500)としてerrorログを出す', () => {
+  it('未知のエラーはHTTPException(500)として投げつつerrorログを出す', () => {
     const { logger, warn, error: errorSpy } = createLoggerWithSpies()
     const error = new Error('boom')
 
-    const result = handleError(error, logger)
+    const thrown = captureThrow(() => handleError(error, logger))
 
-    expect(result).toBeInstanceOf(HTTPException)
-    expect(result.status).toBe(500)
-    expect(result.message).toBe('unknown error')
+    expect(thrown).toBeInstanceOf(HTTPException)
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- instanceof で確認済みのため
+    const httpException = thrown as HTTPException
+    expect(httpException.status).toBe(500)
+    expect(httpException.message).toBe('unknown error')
     expect(errorSpy).toHaveBeenCalledTimes(1)
     expect(errorSpy).toHaveBeenCalledWith('unknown error', error)
     expect(warn).not.toHaveBeenCalled()

@@ -21,7 +21,7 @@ export default async function oauthLink(
 
   const oauthClient = new OAuthClient(authClientConfig(c))
   const result = await oauthClient.startLink(provider, buildOAuthCallbackUrl(c, provider))
-  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
+  if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   // 連携は設定画面から始まる操作のため、完了後は設定画面へ戻す
   setCookie(c, OAUTH_FLOW_COOKIE, OAUTH_FLOW.link, OAUTH_COOKIE_OPTIONS)

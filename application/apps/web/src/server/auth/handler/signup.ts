@@ -17,12 +17,12 @@ export default async function signup(c: ZodValidatedContext<[typeof authInputVal
   // secret未設定の環境ではCAPTCHAを無効とみなす
   if (captchaSecret) {
     const captchaResult = await verifyTurnstile(captchaSecret, valid.captchaToken)
-    if (captchaResult.isErr()) throw handleError(captchaResult.error, logger)
+    if (captchaResult.isErr()) handleError(captchaResult.error, logger)
   }
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const userResult = await authClient.signUp({ email: valid.email, password: valid.password })
-  if (userResult.isErr()) throw handleError(toAuthError(userResult.error), logger)
+  if (userResult.isErr()) handleError(toAuthError(userResult.error), logger)
 
   const user = userResult.value
 
@@ -39,7 +39,7 @@ export default async function signup(c: ZodValidatedContext<[typeof authInputVal
     user.id,
     notifier,
   )
-  if (result.isErr()) throw handleError(result.error, logger)
+  if (result.isErr()) handleError(result.error, logger)
 
   logger.info('signup success', { activeUserId: result.value.activeUserId })
 

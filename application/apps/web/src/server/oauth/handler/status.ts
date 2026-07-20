@@ -13,7 +13,7 @@ export default async function oauthStatus(
 
   const oauthClient = new OAuthClient(authClientConfig(c))
   const result = await oauthClient.listIdentities()
-  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
+  if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   const linked = result.value.some((identity) => identity.provider === provider)
 

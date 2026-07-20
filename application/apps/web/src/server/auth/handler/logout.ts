@@ -9,7 +9,7 @@ export default async function logout(c: Context) {
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const result = await authClient.signOut()
-  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
+  if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   logger.info('logout success')
 

@@ -4,11 +4,11 @@ import { HTTPException } from 'hono/http-exception'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
 // oxlint-disable-next-line typescript/no-restricted-types -- throwされる値は任意の型を取り得るため、エラーハンドラの入力は事前に型を確定できないため
-export function handleError(error: unknown, logger: LoggerType): HTTPException {
+export function handleError(error: unknown, logger: LoggerType): never {
   if (error instanceof ClientError) {
     logger.warn('client error', error)
     // oxlint-disable-next-line typescript/consistent-type-assertions -- statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
-    return new HTTPException(error.statusCode as ContentfulStatusCode, {
+    throw new HTTPException(error.statusCode as ContentfulStatusCode, {
       message: error.message,
     })
   }
@@ -30,7 +30,7 @@ export function handleError(error: unknown, logger: LoggerType): HTTPException {
       error,
     )
     // oxlint-disable-next-line typescript/consistent-type-assertions -- statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
-    return new HTTPException(error.statusCode as ContentfulStatusCode, {
+    throw new HTTPException(error.statusCode as ContentfulStatusCode, {
       message: error.message,
     })
   }
@@ -38,13 +38,13 @@ export function handleError(error: unknown, logger: LoggerType): HTTPException {
   if (error instanceof ServerError) {
     logger.error('internal server error', error)
     // oxlint-disable-next-line typescript/consistent-type-assertions -- statusCodeは任意のnumberを取り得るため、Honoが要求するContentfulStatusCodeへ実行時に絞り込めず型アサーションが避けられないため
-    return new HTTPException(error.statusCode as ContentfulStatusCode, {
+    throw new HTTPException(error.statusCode as ContentfulStatusCode, {
       message: error.message,
     })
   }
 
   logger.error('unknown error', error)
-  return new HTTPException(500, {
+  throw new HTTPException(500, {
     message: 'unknown error',
   })
 }

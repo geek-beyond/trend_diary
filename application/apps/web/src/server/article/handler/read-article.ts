@@ -66,7 +66,7 @@ export default async function readArticle(
 
   const result = await useCase.createReadHistory(user.activeUserId, article_id, new Date(read_at))
   if (result.isErr()) {
-    throw handleError(result.error, logger)
+    handleError(result.error, logger)
   }
 
   logger.info({

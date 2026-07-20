@@ -25,14 +25,12 @@ export default function ThemeToggle() {
 }
 
 const emptySubscribe = () => () => {}
+const getHydratedSnapshot = () => true
+const getHydratedServerSnapshot = () => false
 
 // クライアントでハイドレーション済みかを返す。SSR と初回レンダーでは false、マウント後に true になる。
 // server/client でスナップショットを出し分けることで、マウント検知の setState（Effect 内の同期 setState）を
 // 使わずにハイドレーション不一致を避けられる
 function useHydrated() {
-  return useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  )
+  return useSyncExternalStore(emptySubscribe, getHydratedSnapshot, getHydratedServerSnapshot)
 }

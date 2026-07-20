@@ -1,3 +1,5 @@
+import { assert } from '@trend-diary/common/contract'
+
 export const ARTICLE_MEDIA = ['qiita', 'zenn', 'hatena'] as const
 
 export type ArticleMedia = (typeof ARTICLE_MEDIA)[number]
@@ -17,7 +19,5 @@ export function isArticleMedia(value: string): value is ArticleMedia {
 // DBのmediaカラムは任意文字列のため、未知の値＝データ破損は補完せず契約違反として送出する。
 // 検証＋送出の定型を読み取り経路ごとに手書きすると、経路間で検証の有無が非対称になりやすいため集約する
 export function assertArticleMedia(value: string, subject: string): asserts value is ArticleMedia {
-  if (!isArticleMedia(value)) {
-    throw new Error(`${subject} has unknown media: ${value}`)
-  }
+  assert(isArticleMedia(value), `${subject} has unknown media: ${value}`)
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { UnexpectedAuthError } from './errors'
-import { authClientConfig, type AuthRequestContext } from './supabase-client'
+import { UnexpectedAuthError } from '../errors'
+import { authClientConfig, type AuthRequestContext } from './client'
 
 // Cookie の入出力とバックエンド生成は実 Supabase(supa-emu)を要するため web 統合テストで担保する。
 // ここでは Supabase を起動せず検証できる authClientConfig の組み立てのみを対象にする。

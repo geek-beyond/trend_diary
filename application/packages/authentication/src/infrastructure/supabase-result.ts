@@ -1,6 +1,6 @@
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { err, ok, type Result } from 'neverthrow'
-import { type AuthError, UnexpectedAuthError } from './errors'
+import { type AuthError, UnexpectedAuthError } from '../errors'
 
 type SupabaseData<TResponse> = TResponse extends { error: null; data: infer TData } ? TData : never
 

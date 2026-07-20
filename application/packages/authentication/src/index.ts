@@ -13,4 +13,8 @@ export { OAUTH_PROVIDERS, type OAuthProvider } from './oauth/provider'
 export { PasskeyClient } from './passkey/client'
 export { PasswordAuthClient } from './password/client'
 export { SessionClient } from './session/client'
-export { type AuthClientConfig, authClientConfig, type AuthRequestContext } from './supabase-client'
+export {
+  type AuthClientConfig,
+  authClientConfig,
+  type AuthRequestContext,
+} from './infrastructure/supabase-client'

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import { ALL_MEDIA, type SelectedMedia, useReadArticle } from '@/client/features/article'
 import type * as UseArticlesModule from '@/client/features/article/hooks/use-articles'
+import { completionPendingStorage } from '@/client/features/inbox/model/completion-pending-storage'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 import useUnreadDigestion, { type Article } from './use-unread-digestion'
 
@@ -201,6 +202,21 @@ describe('useUnreadDigestion', () => {
     await act(async () => {
       document.dispatchEvent(new Event('visibilitychange'))
     })
+
+    await waitFor(() => {
+      expect(result.current.isJustCompleted).toBe(true)
+    })
+  })
+
+  it('保留中のままタブが可視でマウントすると復帰時の完了演出フラグが立つ', async () => {
+    // 非表示中に最後の1件を消化して保留になった後、可視状態で再マウントされた状況を再現する
+    completionPendingStorage.set(true)
+    mockUnreadDigestionGet.mockResolvedValue({
+      data: [],
+      total: 0,
+    })
+
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
     await waitFor(() => {
       expect(result.current.isJustCompleted).toBe(true)

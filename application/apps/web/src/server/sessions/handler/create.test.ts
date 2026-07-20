@@ -2,7 +2,7 @@ import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
-async function requestLogin(body: string) {
+async function requestSessionCreation(body: string) {
   return apiRequest('/api/sessions', { method: 'POST', body, contentTypeJson: true })
 }
 
@@ -25,7 +25,9 @@ describe('POST /api/sessions', () => {
   })
 
   it('正常系: ログインに成功する', async () => {
-    const res = await requestLogin(JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }))
+    const res = await requestSessionCreation(
+      JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }),
+    )
 
     expect(res.status).toBe(200)
     const body: { displayName: string | null } = await res.json()
@@ -62,7 +64,7 @@ describe('POST /api/sessions', () => {
 
     testCases.forEach((testCase) => {
       it(testCase.name, async () => {
-        const res = await requestLogin(JSON.stringify(testCase.input))
+        const res = await requestSessionCreation(JSON.stringify(testCase.input))
         expect(res.status).toBe(testCase.status)
       })
     })

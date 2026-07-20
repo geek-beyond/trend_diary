@@ -2,7 +2,7 @@ import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
-async function requestLogout() {
+async function requestSessionDeletion() {
   return apiRequest('/api/sessions', { method: 'DELETE', contentTypeJson: true })
 }
 
@@ -25,14 +25,14 @@ describe('DELETE /api/sessions', () => {
   })
 
   it('正常系: ログアウトに成功する', async () => {
-    const res = await requestLogout()
+    const res = await requestSessionDeletion()
     expect(res.status).toBe(204)
   })
 
   it('準正常系: ログインしていない状態でもエラーにならない', async () => {
     // ログアウト後に再度ログアウト
     await userHelper.logout()
-    const res = await requestLogout()
+    const res = await requestSessionDeletion()
     // ログインしていなくても204を返す（冪等性）
     expect(res.status).toBe(204)
   })

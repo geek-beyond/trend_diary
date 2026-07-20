@@ -54,8 +54,8 @@
  * - deletePermission.ts（動的パス + $delete）
  */
 
-import type { LoggerType } from '@trend-diary/common/logger'
 import getRdbClient, { type RdbClient } from '@trend-diary/datastore/rdb'
+import type { LoggerType } from '@trend-diary/logger'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode, StatusCode } from 'hono/utils/http-status'
 import { type Result } from 'neverthrow'
@@ -190,7 +190,7 @@ function executeHandlerLogic<
 
     // 2. エラーハンドリング
     if (result.isErr()) {
-      throw handleError(result.error, context.logger)
+      handleError(result.error, context.logger)
     }
 
     // 3. ロギング

@@ -1,5 +1,5 @@
-import { ServerError } from '@trend-diary/common/errors'
-import Logger from '@trend-diary/common/logger'
+import Logger from '@trend-diary/logger'
+import { ServerError } from '@trend-diary/std/errors'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import type { Notifier } from '../port'

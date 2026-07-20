@@ -1,4 +1,4 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'

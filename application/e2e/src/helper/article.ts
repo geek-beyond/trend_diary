@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker'
-import { toJstDateString } from '@trend-diary/common/locale/date'
 import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbIds } from '@trend-diary/datastore/rdb/id'
 import { articles, readHistories, skippedArticles } from '@trend-diary/datastore/schema'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
+import { toJstDateString } from '@trend-diary/std/locale/date'
 import { inArray } from 'drizzle-orm'
 
 function getTodayJstNoon(): Date {

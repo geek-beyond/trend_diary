@@ -1,4 +1,4 @@
-import { wrapAsyncCall } from '@trend-diary/common/result'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import { err, ok, type Result } from 'neverthrow'
 import { type AuthError, UnexpectedAuthError } from '../errors'
 

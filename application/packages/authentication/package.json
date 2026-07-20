@@ -19,7 +19,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.2",
-    "@trend-diary/common": "workspace:*",
+    "@trend-diary/std": "workspace:*",
     "neverthrow": "catalog:"
   },
   "devDependencies": {

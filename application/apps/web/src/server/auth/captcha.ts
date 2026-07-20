@@ -1,5 +1,5 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
-import { wrapAsyncCall } from '@trend-diary/common/result'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import { err, ok, type Result } from 'neverthrow'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'

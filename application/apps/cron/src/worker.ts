@@ -1,4 +1,4 @@
-import Logger from '@trend-diary/common/logger'
+import Logger from '@trend-diary/logger'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import type { CronEnv } from './env'
 import { fetchAllArticles } from './feed/fetch-all-articles'

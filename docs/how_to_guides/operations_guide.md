@@ -4,7 +4,7 @@
 
 ## ログレベル方針
 
-構造化ログには Pino ベースの共通ロガー（`application/packages/common/src/logger.ts`）を使用する。レベルは `trace` / `debug` / `info` / `warn` / `error` / `fatal` / `silent` を取りうる。
+構造化ログには Pino ベースの共通ロガー（`application/packages/logger/src/logger.ts`）を使用する。レベルは `trace` / `debug` / `info` / `warn` / `error` / `fatal` / `silent` を取りうる。
 
 ### 方針
 

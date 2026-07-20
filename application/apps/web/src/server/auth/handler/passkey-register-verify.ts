@@ -27,7 +27,7 @@ export default async function passkeyRegisterVerify(
     challengeId: valid.challengeId,
     credential: valid.credential,
   })
-  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
+  if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   logger.info('passkey registration success', { passkeyId: result.value.id })
 

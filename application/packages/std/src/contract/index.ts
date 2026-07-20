@@ -1,4 +1,4 @@
-// 契約違反の識別子。@trend-diary/common はクライアント（ブラウザ）からもインポートされるため、
+// 契約違反の識別子。@trend-diary/std はクライアント（ブラウザ）からもインポートされるため、
 // node:assert に依存するとブラウザバンドルでビルドが壊れる。環境非依存の自前クラスとする。
 // invariant 系ライブラリは本番でメッセージを潰す設計のため採用しない
 export class AssertionError extends Error {

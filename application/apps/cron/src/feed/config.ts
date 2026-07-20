@@ -1,4 +1,4 @@
-import extractTrimmed from '@trend-diary/common/sanitization'
+import extractTrimmed from '@trend-diary/std/sanitization'
 import { z } from 'zod'
 
 export const FEED_URL = {

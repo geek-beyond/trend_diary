@@ -1,5 +1,5 @@
-import Logger from '@trend-diary/common/logger'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
+import Logger from '@trend-diary/logger'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

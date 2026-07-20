@@ -3,7 +3,6 @@ import { type Context, Hono } from 'hono'
 import type { Env } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
 
-// 手動 Context モック(型アサーション)を避け、実 Hono で本番同等の経路を通すための単体テスト用ヘルパ
 export default function mountAuthHandler(handler: (c: Context<Env>) => Promise<Response>) {
   const app = new Hono<Env>()
   const logger = new Logger('silent')

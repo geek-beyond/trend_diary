@@ -1,12 +1,8 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/account'
 import { z } from 'zod'
-import CONTEXT_KEY from '@/middleware/context'
-import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
+import zodValidator from '@/middleware/zod-validator'
+import { type AuthHandlerContext, createAuthHandler } from '../auth-handler-factory'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
 export const passkeyLoginVerifyInputSchema = z.object({
@@ -18,30 +14,17 @@ export const passkeyLoginVerifyInputSchema = z.object({
 
 export const passkeyLoginVerifyValidator = zodValidator('json', passkeyLoginVerifyInputSchema)
 
-export default async function passkeyLoginVerify(
-  c: ZodValidatedContext<[typeof passkeyLoginVerifyValidator]>,
-) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const valid = c.req.valid('json')
+type PasskeyLoginVerifyInput = z.infer<typeof passkeyLoginVerifyInputSchema>
 
-  const passkeyClient = new PasskeyClient(authClientConfig(c))
-  const userResult = await passkeyClient.verifyAuthentication({
-    challengeId: valid.challengeId,
-    credential: valid.credential,
-  })
-  if (userResult.isErr()) handleError(toAuthError(userResult.error), logger)
-
-  const rdb = getRdbClient(c.env.DB)
-  const accountUseCase = createAccountUseCase(rdb)
-  const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
-  if (activeUserResult.isErr()) handleError(activeUserResult.error, logger)
-
-  logger.info('passkey login success', { activeUserId: activeUserResult.value.activeUserId })
-
-  return c.json(
-    {
-      displayName: activeUserResult.value.displayName,
-    },
-    200,
-  )
-}
+export default createAuthHandler({
+  createClient: (ctx) => new PasskeyClient(authClientConfig(ctx.c)),
+  authenticate: (client, ctx: AuthHandlerContext<PasskeyLoginVerifyInput>) =>
+    client.verifyAuthentication({
+      challengeId: ctx.json.challengeId,
+      credential: ctx.json.credential,
+    }),
+  resolveAccount: (accountUseCase, user) => accountUseCase.resolveActiveUser(user.id),
+  logMessage: 'passkey login success',
+  logPayload: (currentUser) => ({ activeUserId: currentUser.activeUserId }),
+  respond: (c, currentUser) => c.json({ displayName: currentUser.displayName }, 200),
+})

@@ -1,16 +1,9 @@
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
-import type { Context } from 'hono'
-import type { Env } from '@/env'
-import CONTEXT_KEY from '@/middleware/context'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
+import { createAuthHandler } from '../auth-handler-factory'
 
-export default async function passkeyLoginStart(c: Context<Env>) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
-
-  const passkeyClient = new PasskeyClient(authClientConfig(c))
-  const result = await passkeyClient.startAuthentication()
-  if (result.isErr()) handleError(toAuthError(result.error), logger)
-
-  return c.json({ challengeId: result.value.challenge_id, options: result.value.options }, 200)
-}
+export default createAuthHandler({
+  createClient: (ctx) => new PasskeyClient(authClientConfig(ctx.c)),
+  authenticate: (client) => client.startAuthentication(),
+  respond: (c, started) =>
+    c.json({ challengeId: started.challenge_id, options: started.options }, 200),
+})

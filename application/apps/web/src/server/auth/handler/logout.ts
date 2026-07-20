@@ -1,17 +1,9 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
-import type { Context } from 'hono'
-import CONTEXT_KEY from '@/middleware/context'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
+import { createAuthHandler } from '../auth-handler-factory'
 
-export default async function logout(c: Context) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
-
-  const authClient = new PasswordAuthClient(authClientConfig(c))
-  const result = await authClient.signOut()
-  if (result.isErr()) handleError(toAuthError(result.error), logger)
-
-  logger.info('logout success')
-
-  return c.body(null, 204)
-}
+export default createAuthHandler({
+  createClient: (ctx) => new PasswordAuthClient(authClientConfig(ctx.c)),
+  authenticate: (client) => client.signOut(),
+  logMessage: 'logout success',
+  respond: (c) => c.body(null, 204),
+})

@@ -1,39 +1,16 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/account'
-import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import type { authInputValidator } from '@/server/auth/validators'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
+import type { AuthInput } from '@trend-diary/domain/account'
+import { type AuthHandlerContext, createAuthHandler } from '../auth-handler-factory'
 import { assertCaptchaVerified } from '../captcha'
 
-// 暫定: 認証ハンドラの契約由来の構造一致（signup / passkeyLoginVerify との類似）を
-// 共通化で解消するまで検出を抑制する。恒久対応は #1015
-// similarity-ignore
-export default async function login(c: ZodValidatedContext<[typeof authInputValidator]>) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const valid = c.req.valid('json')
-
-  await assertCaptchaVerified(c.env.TURNSTILE_SECRET_KEY, valid.captchaToken, logger)
-
-  const authClient = new PasswordAuthClient(authClientConfig(c))
-  const loginResult = await authClient.signIn({ email: valid.email, password: valid.password })
-  if (loginResult.isErr()) handleError(toAuthError(loginResult.error), logger)
-
-  const user = loginResult.value
-
-  const rdb = getRdbClient(c.env.DB)
-  const accountUseCase = createAccountUseCase(rdb)
-  const result = await accountUseCase.resolveActiveUser(user.id)
-  if (result.isErr()) handleError(result.error, logger)
-
-  logger.info('login success', { activeUserId: result.value.activeUserId })
-
-  return c.json(
-    {
-      displayName: result.value.displayName,
-    },
-    200,
-  )
-}
+export default createAuthHandler({
+  beforeAuthenticate: (ctx: AuthHandlerContext<AuthInput>) =>
+    assertCaptchaVerified(ctx.c.env.TURNSTILE_SECRET_KEY, ctx.json.captchaToken, ctx.logger),
+  createClient: (ctx) => new PasswordAuthClient(authClientConfig(ctx.c)),
+  authenticate: (client, ctx: AuthHandlerContext<AuthInput>) =>
+    client.signIn({ email: ctx.json.email, password: ctx.json.password }),
+  resolveAccount: (accountUseCase, user) => accountUseCase.resolveActiveUser(user.id),
+  logMessage: 'login success',
+  logPayload: (currentUser) => ({ activeUserId: currentUser.activeUserId }),
+  respond: (c, currentUser) => c.json({ displayName: currentUser.displayName }, 200),
+})

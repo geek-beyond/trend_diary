@@ -128,27 +128,11 @@ describe('Logger', () => {
     })
   })
 
-  it('errorはError以外の値もErrorへ正規化する', async () => {
-    const logger = new Logger('debug')
-    const { logs, restore } = StdTestHelper.captureStdout(vi)
-
-    logger.with({}).error('failed', 'boom-string')
-
-    restore()
-
-    const [entry] = parseLogObjects(logs)
-    expect(entry).toMatchObject({
-      msg: 'failed',
-      level: 'error',
-      err: expect.objectContaining({ type: 'Error', message: 'boom-string' }),
-    })
-  })
-
   it('errorはオブジェクトメッセージにもerrをマージする', async () => {
-    const logger = new Logger('debug')
     const { logs, restore } = StdTestHelper.captureStdout(vi)
+    const logger = new Logger('debug')
 
-    logger.with({}).error({ event: 'failure' }, new Error('boom'))
+    logger.error({ event: 'failure' }, new Error('boom'))
 
     restore()
 

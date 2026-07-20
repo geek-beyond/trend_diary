@@ -1,9 +1,9 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import { z } from 'zod'
-import zodValidator from '@/middleware/zod-validator'
-import { createAccountHandler } from '../factory/account-handler'
-import type { AuthHandlerContext } from '../factory/context'
+import CONTEXT_KEY from '@/middleware/context'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
+import { respondActiveUser } from '../respond-active-user'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
 export const passkeyLoginVerifyInputSchema = z.object({
@@ -15,17 +15,20 @@ export const passkeyLoginVerifyInputSchema = z.object({
 
 export const passkeyLoginVerifyValidator = zodValidator('json', passkeyLoginVerifyInputSchema)
 
-type PasskeyLoginVerifyInput = z.infer<typeof passkeyLoginVerifyInputSchema>
+export default async function passkeyLoginVerify(
+  c: ZodValidatedContext<[typeof passkeyLoginVerifyValidator]>,
+) {
+  const logger = c.get(CONTEXT_KEY.APP_LOG)
+  const valid = c.req.valid('json')
 
-export default createAccountHandler({
-  createClient: (c) => new PasskeyClient(authClientConfig(c)),
-  authenticate: (client, ctx: AuthHandlerContext<PasskeyLoginVerifyInput>) =>
-    client.verifyAuthentication({
-      challengeId: ctx.json.challengeId,
-      credential: ctx.json.credential,
+  const passkeyClient = new PasskeyClient(authClientConfig(c))
+  return respondActiveUser(
+    c,
+    logger,
+    await passkeyClient.verifyAuthentication({
+      challengeId: valid.challengeId,
+      credential: valid.credential,
     }),
-  resolveAccount: (accountUseCase, user) => accountUseCase.resolveActiveUser(user.id),
-  log: (currentUser, ctx) =>
-    ctx.logger.info('passkey login success', { activeUserId: currentUser.activeUserId }),
-  respond: (c, currentUser) => c.json({ displayName: currentUser.displayName }, 200),
-})
+    'passkey login success',
+  )
+}

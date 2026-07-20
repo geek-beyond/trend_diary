@@ -1,9 +1,12 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
-import { createClientHandler } from '../factory/client-handler'
+import type { Context } from 'hono'
+import CONTEXT_KEY from '@/middleware/context'
+import { unwrapAuth } from '../unwrap-auth'
 
-export default createClientHandler({
-  createClient: (c) => new PasswordAuthClient(authClientConfig(c)),
-  authenticate: (client) => client.signOut(),
-  log: (_result, ctx) => ctx.logger.info('logout success'),
-  respond: (c) => c.body(null, 204),
-})
+export default async function logout(c: Context) {
+  const logger = c.get(CONTEXT_KEY.APP_LOG)
+  const authClient = new PasswordAuthClient(authClientConfig(c))
+  unwrapAuth(await authClient.signOut(), logger)
+  logger.info('logout success')
+  return c.body(null, 204)
+}

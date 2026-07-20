@@ -1,6 +1,5 @@
-import { ok } from 'neverthrow'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { formatSummaryDateTick, toJaDateString, toJaTimeString, toTodayJstDateString } from './date'
+import { describe, expect, it } from 'vitest'
+import { formatSummaryDateTick, toJaDateString, toJaTimeString } from './date'
 
 describe('Web Locale Module', () => {
   describe('toJaDateString', () => {
@@ -44,22 +43,6 @@ describe('Web Locale Module', () => {
     it('無効なDateオブジェクトの場合、空文字を返すこと', () => {
       const result = toJaTimeString(new Date('invalid-date-string'))
       expect(result).toBe('')
-    })
-  })
-
-  describe('toTodayJstDateString', () => {
-    beforeEach(() => {
-      vi.useFakeTimers()
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
-    it('現在時刻をJSTのYYYY-MM-DD形式に変換できること', () => {
-      vi.setSystemTime(new Date('2024-01-01T23:30:00Z'))
-
-      expect(toTodayJstDateString()).toEqual(ok('2024-01-02'))
     })
   })
 

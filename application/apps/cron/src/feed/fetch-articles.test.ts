@@ -470,7 +470,13 @@ describe('fetchHatenaArticles', () => {
 
     it('レスポンスが ok でない場合もリトライ対象とし、最終的に err を返す', async () => {
       vi.useFakeTimers()
-      fetchMock.mockResolvedValue({ ok: false, status: 500 })
+      // 実 Response の契約（headers・text が必ず存在する）に合わせたモックにする
+      fetchMock.mockResolvedValue({
+        ok: false,
+        status: 500,
+        headers: new Headers(),
+        text: async () => '',
+      })
 
       const promise = fetchHatenaArticles(cronEnv, logger)
       await vi.runAllTimersAsync()

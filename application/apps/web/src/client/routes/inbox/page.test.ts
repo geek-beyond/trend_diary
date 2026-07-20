@@ -71,18 +71,6 @@ describe('InboxPage', () => {
     expect(screen.getByRole('button', { name: '後で' })).toBeInTheDocument()
   })
 
-  it('未知のメディアの記事でもタイトルを表示できる', () => {
-    const article = buildArticle({
-      articleId: 'a2',
-      media: 'unknown',
-      title: '未知メディアの記事',
-      url: 'https://example.com/a2',
-    })
-    renderInboxPage(buildProps({ article, remainingCount: 1 }))
-
-    expect(screen.getByText('未知メディアの記事')).toBeInTheDocument()
-  })
-
   it('取得エラー時は本文を表示しない（エラーの案内と再試行はトーストに集約する）', () => {
     renderInboxPage(buildProps({ hasError: true, remainingCount: 3 }))
 

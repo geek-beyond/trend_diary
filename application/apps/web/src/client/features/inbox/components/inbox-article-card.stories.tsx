@@ -62,19 +62,6 @@ export const ZennArticle: Story = {
   },
 }
 
-// isArticleMedia に該当しないメディアは zenn にフォールバックする分岐を検証する
-export const UnknownMediaFallsBackToZenn: Story = {
-  args: {
-    article: generateArticle({ media: 'unknown-media' }),
-  },
-  play: async ({ canvas, step }) => {
-    await step('未知のメディアは zenn アイコンにフォールバックすることを確認', async () => {
-      const mediaIcon = canvas.getByRole('img')
-      await expect(mediaIcon).toHaveAttribute('src', '/images/zenn-icon.svg')
-    })
-  },
-}
-
 export const SkipInteraction: Story = {
   play: async ({ canvas, args, step }) => {
     await step('スキップボタンクリックで onSkip が呼ばれることを確認', async () => {

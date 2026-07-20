@@ -7,8 +7,7 @@ import { and, count, eq, inArray } from 'drizzle-orm'
 import { testRdb as rdb } from './rdb'
 
 function getTodayJstNoon(): Date {
-  const todayJstResult = toJstDateString(new Date())
-  const todayJst = todayJstResult.isErr() ? '1970-01-01' : todayJstResult.value
+  const todayJst = toJstDateString(new Date())
   // INFO: trends APIは日付フィルタをJSTで評価するため、E2EデータもJST当日内に固定する
   return new Date(`${todayJst}T12:00:00+09:00`)
 }

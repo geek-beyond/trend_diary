@@ -49,7 +49,10 @@ export async function storeArticles(
   }
 
   const [firstArticle] = uniqueNormalized
-  if (firstArticle === undefined) return ok(0)
+  // items 非空なら重複除去後も必ず1件残る。到達したら不変条件の破れなので0件成功に偽装せず送出する
+  if (firstArticle === undefined) {
+    throw new Error('uniqueNormalized must not be empty when items exist')
+  }
   // スキーマ変更に追従できるよう、チャンクサイズは1行のカラム数から動的に算出する
   const chunkSize = Math.floor(
     (MAX_BIND_PARAMETERS * BIND_PARAMETER_USAGE_RATIO) / Object.keys(firstArticle).length,

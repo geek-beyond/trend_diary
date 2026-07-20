@@ -9,7 +9,7 @@ import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { eq, type SQL, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { ARTICLE_MEDIA, type ArticleMedia } from '../media'
+import { ARTICLE_MEDIA, type ArticleMedia, assertArticleMedia } from '../media'
 import type { Query } from '../port'
 import type {
   Article,
@@ -595,6 +595,7 @@ export default class QueryImpl implements Query {
   }
 
   private static mapRawArticle(row: RawArticleRow): Article {
+    assertArticleMedia(row.media, 'Article row')
     return {
       articleId: fromDbId(row.articleId),
       media: row.media,
@@ -607,11 +608,11 @@ export default class QueryImpl implements Query {
   }
 
   private static mapRawDiaryReadItem(row: RawDiaryReadRow): DiaryReadItem {
+    assertArticleMedia(row.media, 'Diary read row')
     return {
       readHistoryId: fromDbId(row.readHistoryId),
       articleId: fromDbId(row.articleId),
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- DBのmediaカラムは登録時にArticleMediaへ制約済みのため安全に絞り込めます
-      media: row.media as ArticleMedia,
+      media: row.media,
       title: row.title,
       url: row.url,
       readAt: normalizeDateTime(row.readAt),
@@ -632,20 +633,27 @@ export default class QueryImpl implements Query {
     const sourceRows: RawDiaryTypedSourceRow[] = []
     const readsRows: RawDiaryReadRow[] = []
 
+    // UNION ALL の SELECT 句が rowKind ごとに必須カラムを非 NULL で構築する契約のため、
+    // NULL 混入はクエリ・スキーマの破綻を意味する。黙殺すると日記データが静かに欠落するので送出する
     for (const row of rows) {
       if (row.rowKind === 'source') {
-        if (row.sourceType !== null) {
-          sourceRows.push({ sourceType: row.sourceType, media: row.media, count: row.count ?? 0 })
+        const { sourceType, count } = row
+        if (sourceType === null || count === null) {
+          throw new Error(`Diary source row must have sourceType and count (media: ${row.media})`)
         }
-      } else if (row.readHistoryId !== null && row.articleId !== null && row.readAt !== null) {
-        readsRows.push({
-          readHistoryId: row.readHistoryId,
-          articleId: row.articleId,
-          media: row.media,
-          title: row.title ?? '',
-          url: row.url ?? '',
-          readAt: row.readAt,
-        })
+        sourceRows.push({ sourceType, media: row.media, count })
+      } else {
+        const { readHistoryId, articleId, title, url, readAt } = row
+        if (
+          readHistoryId === null ||
+          articleId === null ||
+          title === null ||
+          url === null ||
+          readAt === null
+        ) {
+          throw new Error(`Diary read row must have all read columns (media: ${row.media})`)
+        }
+        readsRows.push({ readHistoryId, articleId, media: row.media, title, url, readAt })
       }
     }
 
@@ -688,9 +696,16 @@ export default class QueryImpl implements Query {
     return rows.reduce((sum, row) => sum + Number(row.count), 0)
   }
 
+  // 出力は ARTICLE_MEDIA の走査で組み立てるため、未知の media を黙って捨てると
+  // summary と sources の集計が静かに食い違う。契約外の media は Map 構築時に顕在化させる
+  private static toDiaryCountEntry(row: RawDiarySourceRow): [ArticleMedia, number] {
+    assertArticleMedia(row.media, 'Diary source row')
+    return [row.media, Number(row.count)]
+  }
+
   private static mergeDiarySources(readRows: RawDiarySourceRow[], skipRows: RawDiarySourceRow[]) {
-    const readMap = new Map<string, number>(readRows.map((row) => [row.media, Number(row.count)]))
-    const skipMap = new Map<string, number>(skipRows.map((row) => [row.media, Number(row.count)]))
+    const readMap = new Map(readRows.map(QueryImpl.toDiaryCountEntry))
+    const skipMap = new Map(skipRows.map(QueryImpl.toDiaryCountEntry))
 
     return ARTICLE_MEDIA.map((media) => ({
       media,
@@ -715,12 +730,8 @@ export default class QueryImpl implements Query {
     let current = fromDateJst
     while (current <= toDateJst) {
       dates.push(current)
-      const next = addJstDays(current, 1)
-      // 失敗を握り潰すと欠けた日付リストを正常値として返してしまい、日記データが静かに欠落する
-      if (next.isErr()) {
-        return err(next.error)
-      }
-      current = next.value
+      // 両端は検証済みのため、途中の加算失敗は契約違反として addJstDays が送出する
+      current = addJstDays(current, 1)
     }
     return ok(dates)
   }

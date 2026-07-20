@@ -33,6 +33,5 @@ export interface Env {
   Variables: {
     [CONTEXT_KEY.APP_LOG]: LoggerType
     [CONTEXT_KEY.SESSION_USER]: SessionUser
-    [CONTEXT_KEY.SESSION_ID]: string
   }
 }

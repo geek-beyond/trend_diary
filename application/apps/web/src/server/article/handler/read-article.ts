@@ -1,8 +1,9 @@
 import getRdbClient from '@trend-diary/datastore/rdb'
+import { isWithinDbIdRange } from '@trend-diary/datastore/rdb/id'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { DIARY_DAYS } from '@trend-diary/domain/article/diary'
 import { z } from 'zod'
-import CONTEXT_KEY from '@/middleware/context'
+import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { handleError } from '@/server/error/handle-error'
 
@@ -39,7 +40,10 @@ export const articleIdParamSchema = z.object({
     .string()
     .min(1)
     .regex(/^\d+$/, { message: 'article_id must be a valid number' })
-    .transform((val) => BigInt(val)),
+    .transform((val) => BigInt(val))
+    // 範囲外は存在し得ない ID のため、toDbId の RangeError（500 と障害通知）に化けさせず
+    // クライアントエラーに倒す。境界の定義は toDbId と共通の isWithinDbIdRange に集約されている
+    .refine(isWithinDbIdRange, { message: 'article_id is out of range' }),
 })
 
 export type ArticleIdParam = z.output<typeof articleIdParamSchema>
@@ -52,8 +56,8 @@ export const createReadHistoryJsonValidator = zodValidator('json', createReadHis
 export default async function readArticle(
   c: ZodValidatedContext<[typeof articleIdParamValidator, typeof createReadHistoryJsonValidator]>,
 ) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const user = c.get(CONTEXT_KEY.SESSION_USER)
+  const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
+  const user = mustGet(c, CONTEXT_KEY.SESSION_USER)
   const { article_id } = c.req.valid('param')
   const { read_at } = c.req.valid('json')
 

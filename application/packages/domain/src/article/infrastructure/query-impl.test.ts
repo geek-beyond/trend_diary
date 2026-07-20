@@ -361,6 +361,28 @@ describe('QueryImpl', () => {
         expect(result.error.message).toBe('unread digestion failed')
       }
     })
+
+    // DB の media カラムは任意文字列のため、未知の値＝データ破損は補完せず契約違反として送出する
+    it('未知の media を含む行は契約違反として送出する', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({
+        rows: [
+          {
+            articleId: 1,
+            media: 'unknown-media',
+            title: 't',
+            author: 'a',
+            description: 'd',
+            url: 'https://example.com/unread',
+            createdAt: '2026-03-07T00:00:00.000Z',
+            total: 1,
+          },
+        ],
+      })
+
+      await expect(queryImpl.getUnreadDigestionArticles(10n, '2026-03-07')).rejects.toThrow(
+        'Article row has unknown media',
+      )
+    })
   })
 
   describe('getDailyDiary', () => {
@@ -434,6 +456,76 @@ describe('QueryImpl', () => {
         expect(result.error.message).toBe('daily diary failed')
       }
     })
+
+    // UNION ALL が rowKind ごとに必須カラムを非 NULL で返す契約の破れは、
+    // デフォルト値で補完せず契約違反として送出することを担保する
+    const contractViolationCases = [
+      {
+        name: 'source行のsourceTypeがNULL',
+        row: { rowKind: 'source', sourceType: null, media: 'qiita', count: 2 },
+        expectedMessage: 'Diary source row must have sourceType and count',
+      },
+      {
+        name: 'source行のcountがNULL',
+        row: { rowKind: 'source', sourceType: 'read', media: 'qiita', count: null },
+        expectedMessage: 'Diary source row must have sourceType and count',
+      },
+      {
+        name: 'read行のtitleがNULL',
+        row: {
+          rowKind: 'read',
+          readHistoryId: 10,
+          articleId: 1,
+          media: 'qiita',
+          title: null,
+          url: 'https://example.com/go-error-handling',
+          readAt: '2026-03-07T03:00:00.000Z',
+        },
+        expectedMessage: 'Diary read row must have all read columns',
+      },
+      {
+        name: 'read行のreadHistoryIdがNULL',
+        row: {
+          rowKind: 'read',
+          readHistoryId: null,
+          articleId: 1,
+          media: 'qiita',
+          title: 'Go error handling',
+          url: 'https://example.com/go-error-handling',
+          readAt: '2026-03-07T03:00:00.000Z',
+        },
+        expectedMessage: 'Diary read row must have all read columns',
+      },
+      {
+        name: 'source行のmediaが未知',
+        row: { rowKind: 'source', sourceType: 'read', media: 'unknown-media', count: 2 },
+        expectedMessage: 'Diary source row has unknown media',
+      },
+      {
+        name: 'read行のmediaが未知',
+        row: {
+          rowKind: 'read',
+          readHistoryId: 10,
+          articleId: 1,
+          media: 'unknown-media',
+          title: 'Go error handling',
+          url: 'https://example.com/go-error-handling',
+          readAt: '2026-03-07T03:00:00.000Z',
+        },
+        expectedMessage: 'Diary read row has unknown media',
+      },
+    ]
+
+    it.each(contractViolationCases)(
+      '$name の行は契約違反として送出する',
+      async ({ row, expectedMessage }) => {
+        mockRdbExecutor.mockResolvedValueOnce({ rows: [row] })
+
+        await expect(queryImpl.getDailyDiary(10n, '2026-03-07', 1, 10)).rejects.toThrow(
+          expectedMessage,
+        )
+      },
+    )
   })
 
   describe('getDailyDiaryRange', () => {
@@ -483,6 +575,17 @@ describe('QueryImpl', () => {
       if (result.isErr()) {
         expect(result.error.message).toBe('daily diary range failed')
       }
+    })
+
+    // 未知の media を黙って捨てると summary と sources の集計が静かに食い違うため送出する
+    it('未知の media を含む行は契約違反として送出する', async () => {
+      mockRdbExecutor.mockResolvedValueOnce({
+        rows: [{ sourceType: 'read', date: '2026-03-06', media: 'unknown-media', count: 2 }],
+      })
+
+      await expect(queryImpl.getDailyDiaryRange(10n, '2026-03-06', '2026-03-07')).rejects.toThrow(
+        'Diary source row has unknown media',
+      )
     })
   })
 

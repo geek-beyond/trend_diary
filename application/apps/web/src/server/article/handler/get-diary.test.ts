@@ -35,12 +35,6 @@ interface DiaryRangeResponse {
   }
 }
 
-const getTodayJst = () => {
-  const result = toJstDateString(new Date())
-  if (result.isErr()) throw result.error
-  return result.value
-}
-
 function toJstDateTime(date: string, time: string) {
   return new Date(`${date}T${time}+09:00`)
 }
@@ -87,7 +81,7 @@ describe('GET /api/articles/diary (単日詳細)', () => {
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
 
   beforeEach(async () => {
-    todayJst = getTodayJst()
+    todayJst = toJstDateString(new Date())
     const { userId, authenticationId } = await userHelper.create(
       'diary-test@example.com',
       'Test@password123',
@@ -187,35 +181,26 @@ describe('GET /api/articles/diary (単日詳細)', () => {
   })
 
   it('7日範囲外の日付は422', async () => {
-    const tooOldDateResult = addJstDays(todayJst, -7)
-    if (tooOldDateResult.isErr()) throw tooOldDateResult.error
+    const tooOldDate = addJstDays(todayJst, -7)
 
     const response = await requestDiaryRange(
-      `from=${tooOldDateResult.value}&to=${tooOldDateResult.value}&page=1`,
+      `from=${tooOldDate}&to=${tooOldDate}&page=1`,
       authCookies,
     )
     expect(response.status).toBe(422)
   })
 
   it('未来日付は422', async () => {
-    const tomorrowResult = addJstDays(todayJst, 1)
-    if (tomorrowResult.isErr()) throw tomorrowResult.error
+    const tomorrow = addJstDays(todayJst, 1)
 
-    const response = await requestDiaryRange(
-      `from=${tomorrowResult.value}&to=${tomorrowResult.value}&page=1`,
-      authCookies,
-    )
+    const response = await requestDiaryRange(`from=${tomorrow}&to=${tomorrow}&page=1`, authCookies)
     expect(response.status).toBe(422)
   })
 
   it('page指定時にfromとtoが異なる場合は422', async () => {
-    const yesterdayResult = addJstDays(todayJst, -1)
-    if (yesterdayResult.isErr()) throw yesterdayResult.error
+    const yesterday = addJstDays(todayJst, -1)
 
-    const response = await requestDiaryRange(
-      `from=${yesterdayResult.value}&to=${todayJst}&page=1`,
-      authCookies,
-    )
+    const response = await requestDiaryRange(`from=${yesterday}&to=${todayJst}&page=1`, authCookies)
     expect(response.status).toBe(422)
   })
 })
@@ -228,7 +213,7 @@ describe('GET /api/articles/diary', () => {
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
 
   beforeEach(async () => {
-    todayJst = getTodayJst()
+    todayJst = toJstDateString(new Date())
     const { userId, authenticationId } = await userHelper.create(
       'diary-test-range@example.com',
       'Test@password123',
@@ -276,10 +261,9 @@ describe('GET /api/articles/diary', () => {
   })
 
   it('指定期間のダイアリー集計を取得できる', async () => {
-    const fromResult = addJstDays(todayJst, -6)
-    if (fromResult.isErr()) throw fromResult.error
+    const from = addJstDays(todayJst, -6)
 
-    const response = await requestDiaryRange(`from=${fromResult.value}&to=${todayJst}`, authCookies)
+    const response = await requestDiaryRange(`from=${from}&to=${todayJst}`, authCookies)
 
     expect(response.status).toBe(200)
     const json: DiaryRangeResponse = await response.json()
@@ -298,18 +282,16 @@ describe('GET /api/articles/diary', () => {
   })
 
   it('from > to は422', async () => {
-    const fromResult = addJstDays(todayJst, -1)
-    if (fromResult.isErr()) throw fromResult.error
+    const from = addJstDays(todayJst, -1)
 
-    const response = await requestDiaryRange(`from=${todayJst}&to=${fromResult.value}`, authCookies)
+    const response = await requestDiaryRange(`from=${todayJst}&to=${from}`, authCookies)
     expect(response.status).toBe(422)
   })
 
   it('7日範囲外の期間は422', async () => {
-    const fromResult = addJstDays(todayJst, -7)
-    if (fromResult.isErr()) throw fromResult.error
+    const from = addJstDays(todayJst, -7)
 
-    const response = await requestDiaryRange(`from=${fromResult.value}&to=${todayJst}`, authCookies)
+    const response = await requestDiaryRange(`from=${from}&to=${todayJst}`, authCookies)
     expect(response.status).toBe(422)
   })
 
@@ -321,18 +303,16 @@ describe('GET /api/articles/diary', () => {
   })
 
   it('未来日付を含む期間は422', async () => {
-    const toResult = addJstDays(todayJst, 1)
-    if (toResult.isErr()) throw toResult.error
+    const to = addJstDays(todayJst, 1)
 
-    const response = await requestDiaryRange(`from=${todayJst}&to=${toResult.value}`, authCookies)
+    const response = await requestDiaryRange(`from=${todayJst}&to=${to}`, authCookies)
     expect(response.status).toBe(422)
   })
 
   it('未認証時は401', async () => {
-    const fromResult = addJstDays(todayJst, -6)
-    if (fromResult.isErr()) throw fromResult.error
+    const from = addJstDays(todayJst, -6)
 
-    const response = await requestDiaryRange(`from=${fromResult.value}&to=${todayJst}`)
+    const response = await requestDiaryRange(`from=${from}&to=${todayJst}`)
     expect(response.status).toBe(401)
   })
 })

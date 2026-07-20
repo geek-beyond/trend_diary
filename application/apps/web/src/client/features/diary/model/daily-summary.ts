@@ -1,17 +1,6 @@
-import { toTodayJstDateString } from '@/common/locale/date'
-
 interface SourceSummary {
   read: number
   skip: number
-}
-
-export function getTodayJst(): string {
-  const result = toTodayJstDateString()
-  // 失敗するのは Intl が壊れた異常環境のみで通常は起きないため、握りつぶさずエラーバウンダリに委ねる
-  if (result.isErr()) {
-    throw result.error
-  }
-  return result.value
 }
 
 export function sumSourceSummary(sources: SourceSummary[]): SourceSummary {

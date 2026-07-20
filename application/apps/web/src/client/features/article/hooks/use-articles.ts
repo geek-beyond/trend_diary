@@ -65,26 +65,10 @@ const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => {
   return selected.length > 0 ? selected : ALL_MEDIA
 }
 
-const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => {
-  const fromDateResult = addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset])
-  if (fromDateResult.isErr()) {
-    return { from: todayJstDateString, to: todayJstDateString }
-  }
-
-  return {
-    from: fromDateResult.value,
-    to: todayJstDateString,
-  }
-}
-
-const getTodayJstDateString = (baseDate: Date): string => {
-  const todayJstDateResult = toJstDateString(baseDate)
-  if (todayJstDateResult.isErr()) {
-    return baseDate.toISOString().slice(0, 10)
-  }
-
-  return todayJstDateResult.value
-}
+const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => ({
+  from: addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset]),
+  to: todayJstDateString,
+})
 
 const parseDatePreset = (
   fromParam: string | null,
@@ -137,7 +121,7 @@ export default function useArticles(isLoggedIn = false) {
   const { client, apiCall } = createSWRFetcher()
 
   const date = new Date()
-  const todayJstDateString = getTodayJstDateString(date)
+  const todayJstDateString = toJstDateString(date)
 
   const pageParam = searchParams.get('page')
   const limitParam = searchParams.get('limit')

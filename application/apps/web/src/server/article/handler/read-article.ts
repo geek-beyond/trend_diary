@@ -57,7 +57,7 @@ export const createReadHistoryJsonValidator = zodValidator('json', createReadHis
 export default async function readArticle(
   c: ZodValidatedContext<[typeof articleIdParamValidator, typeof createReadHistoryJsonValidator]>,
 ) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
+  const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
   const user = mustGet(c, CONTEXT_KEY.SESSION_USER)
   const { article_id } = c.req.valid('param')
   const { read_at } = c.req.valid('json')

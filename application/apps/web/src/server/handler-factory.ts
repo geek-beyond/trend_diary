@@ -263,7 +263,7 @@ export function createSimpleApiHandler<
   TResponse = TOutput,
 >(config: SimpleHandlerConfig<TUseCase, TContext, TOutput, TResponse>) {
   return async (c: Context<Env>): Promise<Response> => {
-    const logger = c.get(CONTEXT_KEY.APP_LOG)
+    const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
     const rdb = getRdbClient(c.env.DB)
 
     const context = buildRequestContext<TContext>(extractValidatedData(c), undefined, logger)
@@ -311,7 +311,7 @@ export function createAuthenticatedApiHandler<
   TResponse = TOutput,
 >(config: AuthenticatedHandlerConfig<TUseCase, TContext, TOutput, TResponse>) {
   return async (c: Context<Env>): Promise<Response> => {
-    const logger = c.get(CONTEXT_KEY.APP_LOG)
+    const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
     const rdb = getRdbClient(c.env.DB)
 
     // authenticator が先行適用される契約のため、未設定は 401 に偽装せず契約違反として顕在化させる

@@ -10,7 +10,7 @@ describe('toMediaType', () => {
   describe('異常系', () => {
     // 未知の media は DB データ破損＝契約違反のため、別媒体のアイコンに化けさせず送出する
     it('未知の media は契約違反として送出すること', () => {
-      expect(() => toMediaType('unknown-media')).toThrow('Unknown article media')
+      expect(() => toMediaType('unknown-media')).toThrow('has unknown media')
     })
   })
 })

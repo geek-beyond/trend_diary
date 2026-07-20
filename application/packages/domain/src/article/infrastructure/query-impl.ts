@@ -9,7 +9,7 @@ import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { eq, type SQL, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { ARTICLE_MEDIA, type ArticleMedia, isArticleMedia } from '../media'
+import { ARTICLE_MEDIA, type ArticleMedia, assertArticleMedia } from '../media'
 import type { Query } from '../port'
 import type {
   Article,
@@ -595,10 +595,7 @@ export default class QueryImpl implements Query {
   }
 
   private static mapRawArticle(row: RawArticleRow): Article {
-    // DBのmediaカラムは任意文字列のため、未知の値＝データ破損をクライアントへ静かに配信しないよう検証する
-    if (!isArticleMedia(row.media)) {
-      throw new Error(`Article row has unknown media: ${row.media}`)
-    }
+    assertArticleMedia(row.media, 'Article row')
     return {
       articleId: fromDbId(row.articleId),
       media: row.media,
@@ -611,10 +608,7 @@ export default class QueryImpl implements Query {
   }
 
   private static mapRawDiaryReadItem(row: RawDiaryReadRow): DiaryReadItem {
-    // DBのmediaカラムは任意文字列のため、型アサーションで偽装せず実行時に契約を検証する
-    if (!isArticleMedia(row.media)) {
-      throw new Error(`Diary read row has unknown media: ${row.media}`)
-    }
+    assertArticleMedia(row.media, 'Diary read row')
     return {
       readHistoryId: fromDbId(row.readHistoryId),
       articleId: fromDbId(row.articleId),
@@ -702,16 +696,16 @@ export default class QueryImpl implements Query {
     return rows.reduce((sum, row) => sum + Number(row.count), 0)
   }
 
+  // 出力は ARTICLE_MEDIA の走査で組み立てるため、未知の media を黙って捨てると
+  // summary と sources の集計が静かに食い違う。契約外の media は Map 構築時に顕在化させる
+  private static toDiaryCountEntry(row: RawDiarySourceRow): [ArticleMedia, number] {
+    assertArticleMedia(row.media, 'Diary source row')
+    return [row.media, Number(row.count)]
+  }
+
   private static mergeDiarySources(readRows: RawDiarySourceRow[], skipRows: RawDiarySourceRow[]) {
-    // 出力は ARTICLE_MEDIA の走査で組み立てるため、未知の media を黙って捨てると
-    // summary と sources の集計が静かに食い違う。契約外の media はここで顕在化させる
-    for (const row of [...readRows, ...skipRows]) {
-      if (!isArticleMedia(row.media)) {
-        throw new Error(`Diary source row has unknown media: ${row.media}`)
-      }
-    }
-    const readMap = new Map<string, number>(readRows.map((row) => [row.media, Number(row.count)]))
-    const skipMap = new Map<string, number>(skipRows.map((row) => [row.media, Number(row.count)]))
+    const readMap = new Map(readRows.map(QueryImpl.toDiaryCountEntry))
+    const skipMap = new Map(skipRows.map(QueryImpl.toDiaryCountEntry))
 
     return ARTICLE_MEDIA.map((media) => ({
       media,

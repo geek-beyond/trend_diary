@@ -1,13 +1,12 @@
-import { type ArticleMedia, isArticleMedia } from '@trend-diary/domain/article/media'
+import { type ArticleMedia, assertArticleMedia } from '@trend-diary/domain/article/media'
 
 export type MediaType = ArticleMedia
 type IconSize = 'sm' | 'md'
 
 export function toMediaType(media: string): MediaType {
-  if (isArticleMedia(media)) return media
-  // 未知の media は DB データ破損＝契約違反。別媒体のアイコンに化けさせると
-  // 誤表示が正常に見えて発見が遅れるため送出する
-  throw new Error(`Unknown article media: ${media}`)
+  // 別媒体のアイコンに化けさせると誤表示が正常に見えて発見が遅れるため、フォールバックせず送出する
+  assertArticleMedia(media, 'Article')
+  return media
 }
 
 const mediaConfig: Record<MediaType, { iconImage: string; altText: string }> = {

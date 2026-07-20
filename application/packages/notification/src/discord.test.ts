@@ -76,9 +76,18 @@ describe('DiscordWebhookClient', () => {
     })
 
     describe('準正常系', () => {
-      // undefined は型契約（webhookUrl: string）で禁止したため、未設定は空文字のみが表現できる
       it('Webhook URLが空文字の場合は何もしない', async () => {
         const client = new DiscordWebhookClient('', createMockLogger())
+
+        await client.send({ content: 'test' })
+
+        expect(mockFetch).not.toHaveBeenCalled()
+      })
+
+      // 型上は string 必須だが、Workers 実行時は secret 未設定で undefined が渡り得るため担保する
+      it('Webhook URLが実行時にundefinedの場合も何もしない', async () => {
+        // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 型上あり得ないが実行時に起こり得る未設定を再現するため。undefined は string と重ならず二重アサーションが避けられない
+        const client = new DiscordWebhookClient(undefined as unknown as string, createMockLogger())
 
         await client.send({ content: 'test' })
 

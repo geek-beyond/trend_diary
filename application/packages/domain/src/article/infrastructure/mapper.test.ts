@@ -1,4 +1,4 @@
-import type { Article as RdbArticle } from '@trend-diary/datastore/drizzle-orm/schema'
+import type { Article as RdbArticle } from '@trend-diary/datastore/schema'
 import { describe, expect, it } from 'vitest'
 import fromRdbToArticle from './mapper'
 

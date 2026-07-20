@@ -1,3 +1,4 @@
+import { assertNonNull } from '@trend-diary/common/contract'
 import type { Context } from 'hono'
 import type { Env } from '@/env'
 
@@ -14,9 +15,7 @@ export function mustGet<K extends ContextKey>(
   key: K,
 ): NonNullable<Env['Variables'][K]> {
   const value = c.get(key)
-  if (value === null || value === undefined) {
-    throw new Error(`Context value for "${key}" is required but was not set`)
-  }
+  assertNonNull(value, `Context value "${key}"`)
   return value
 }
 

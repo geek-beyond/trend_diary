@@ -16,19 +16,19 @@ export default async function login(c: ZodValidatedContext<[typeof authInputVali
   // secret未設定の環境ではCAPTCHAを無効とみなす
   if (captchaSecret) {
     const captchaResult = await verifyTurnstile(captchaSecret, valid.captchaToken)
-    if (captchaResult.isErr()) throw handleError(captchaResult.error, logger)
+    if (captchaResult.isErr()) handleError(captchaResult.error, logger)
   }
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const loginResult = await authClient.signIn({ email: valid.email, password: valid.password })
-  if (loginResult.isErr()) throw handleError(toAuthError(loginResult.error), logger)
+  if (loginResult.isErr()) handleError(toAuthError(loginResult.error), logger)
 
   const user = loginResult.value
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
   const result = await accountUseCase.resolveActiveUser(user.id)
-  if (result.isErr()) throw handleError(result.error, logger)
+  if (result.isErr()) handleError(result.error, logger)
 
   logger.info('login success', { activeUserId: result.value.activeUserId })
 

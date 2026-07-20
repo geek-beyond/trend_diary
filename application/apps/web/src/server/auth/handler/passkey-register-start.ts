@@ -10,7 +10,7 @@ export default async function passkeyRegisterStart(c: Context<Env>) {
 
   const passkeyClient = new PasskeyClient(authClientConfig(c))
   const result = await passkeyClient.startRegistration()
-  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
+  if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   return c.json({ challengeId: result.value.challenge_id, options: result.value.options }, 200)
 }

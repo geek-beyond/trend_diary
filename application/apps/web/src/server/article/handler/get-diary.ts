@@ -94,7 +94,7 @@ export default async function getDiary(c: ZodValidatedContext<[typeof diaryQuery
       DIARY_READ_LIMIT,
     )
     if (detailResult.isErr()) {
-      throw handleError(detailResult.error, logger)
+      handleError(detailResult.error, logger)
     }
 
     const response = toDiaryDetailResponse(detailResult.value)
@@ -110,7 +110,7 @@ export default async function getDiary(c: ZodValidatedContext<[typeof diaryQuery
 
   const result = await useCase.getDailyDiaryRange(sessionUser.activeUserId, fromDate, toDate)
   if (result.isErr()) {
-    throw handleError(result.error, logger)
+    handleError(result.error, logger)
   }
   const response = toDiaryResponse(result.value)
   logger.info('daily diary range retrieved successfully', {

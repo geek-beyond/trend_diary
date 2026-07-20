@@ -29,12 +29,12 @@ export default async function passkeyLoginVerify(
     challengeId: valid.challengeId,
     credential: valid.credential,
   })
-  if (userResult.isErr()) throw handleError(toAuthError(userResult.error), logger)
+  if (userResult.isErr()) handleError(toAuthError(userResult.error), logger)
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
   const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
-  if (activeUserResult.isErr()) throw handleError(activeUserResult.error, logger)
+  if (activeUserResult.isErr()) handleError(activeUserResult.error, logger)
 
   logger.info('passkey login success', { activeUserId: activeUserResult.value.activeUserId })
 

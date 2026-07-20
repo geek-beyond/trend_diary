@@ -1,6 +1,8 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
+import type { LoggerType } from '@trend-diary/common/logger'
 import { wrapAsyncCall } from '@trend-diary/common/result'
 import { err, ok, type Result } from 'neverthrow'
+import { handleError } from '@/server/error/handle-error'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
@@ -33,4 +35,19 @@ export async function verifyTurnstile(
   }
 
   return ok(undefined)
+}
+
+/**
+ * CAPTCHAを検証し、失敗時は HTTPException を送出する。
+ * secret未設定の環境ではCAPTCHAを無効とみなす。
+ */
+export async function assertCaptchaVerified(
+  secret: string | undefined,
+  token: string | undefined,
+  logger: LoggerType,
+): Promise<void> {
+  if (!secret) return
+
+  const result = await verifyTurnstile(secret, token)
+  if (result.isErr()) throw handleError(result.error, logger)
 }

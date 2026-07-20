@@ -1,6 +1,8 @@
 import { ClientError, ServerError } from '@trend-diary/common/errors'
+import Logger from '@trend-diary/common/logger'
+import { HTTPException } from 'hono/http-exception'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { verifyTurnstile } from './captcha'
+import { assertCaptchaVerified, verifyTurnstile } from './captcha'
 
 const fetchMock = vi.fn()
 
@@ -73,6 +75,43 @@ describe('verifyTurnstile', () => {
       if (result.isErr()) {
         expect(result.error).toBeInstanceOf(ServerError)
       }
+    })
+  })
+})
+
+describe('assertCaptchaVerified', () => {
+  const logger = new Logger('silent')
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.clearAllMocks()
+  })
+
+  describe('正常系', () => {
+    it('secret未設定のときは検証を行わず解決する', async () => {
+      await expect(assertCaptchaVerified(undefined, 'token', logger)).resolves.toBeUndefined()
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it('検証に成功したときは解決する', async () => {
+      fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: true })))
+
+      await expect(assertCaptchaVerified('secret', 'valid-token', logger)).resolves.toBeUndefined()
+    })
+  })
+
+  describe('準正常系', () => {
+    it('検証に失敗したときはHTTPException(403)を送出する', async () => {
+      fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: false })))
+
+      const promise = assertCaptchaVerified('secret', 'invalid-token', logger)
+
+      await expect(promise).rejects.toBeInstanceOf(HTTPException)
+      await expect(promise).rejects.toMatchObject({ status: 403 })
     })
   })
 })

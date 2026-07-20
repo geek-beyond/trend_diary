@@ -2,6 +2,7 @@ import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react
 import { resolveTurnstileSiteKey } from '@/client/entities/auth'
 import { useSignup } from '@/client/features/authenticate/signup'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
+import { appLoadContext } from '@/load-context'
 import SignupPage from './page'
 
 export const meta: MetaFunction = ({ matches, location }) =>
@@ -16,7 +17,7 @@ export const meta: MetaFunction = ({ matches, location }) =>
   )
 
 export function loader({ context }: LoaderFunctionArgs) {
-  return { turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null }
+  return { turnstileSiteKey: resolveTurnstileSiteKey(context.get(appLoadContext)) ?? null }
 }
 
 export default function Signup() {

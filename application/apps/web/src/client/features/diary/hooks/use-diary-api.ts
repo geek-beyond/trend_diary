@@ -7,7 +7,7 @@ export interface DiarySource {
   skip: number
 }
 
-export interface DiaryReadItemResponse {
+interface DiaryReadItemResponse {
   readHistoryId: string
   articleId: string
   media: ArticleMedia
@@ -52,7 +52,8 @@ export default function useDiaryApi() {
           query: {
             from: date,
             to: date,
-            page,
+            // クエリはURL上文字列で送られるため、検証前の入力型（string）に合わせる
+            page: page.toString(),
           },
         },
         { init: { credentials: 'include' } },

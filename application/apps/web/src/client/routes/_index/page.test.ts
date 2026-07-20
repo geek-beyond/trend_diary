@@ -8,6 +8,12 @@ function renderTopPage(isLoggedIn: boolean) {
 }
 
 describe('TopPage', () => {
+  it('スクリーンリーダー向けに本文を main ランドマークとして公開する', () => {
+    renderTopPage(false)
+
+    expect(screen.getByRole('main')).toBeInTheDocument()
+  })
+
   describe('未ログイン時', () => {
     it('ヘッダーにログイン・アカウント作成の導線を表示しメニューは表示しない', () => {
       renderTopPage(false)

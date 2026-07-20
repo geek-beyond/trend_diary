@@ -1,15 +1,15 @@
-import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
+import { isArticleMedia } from '@trend-diary/domain/article/media'
+import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
+import { addJstDays, toJstDateString } from '@trend-diary/std/locale/date'
 import {
   DEFAULT_LIMIT,
   DEFAULT_MOBILE_LIMIT,
   DEFAULT_PAGE,
   offsetPaginationMobileSchema,
   offsetPaginationSchema,
-} from '@trend-diary/common/pagination/schema'
-import { wrapAsyncCall } from '@trend-diary/common/result'
-import { isArticleMedia } from '@trend-diary/domain/article/media'
-import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
-import { useSearchParams } from 'react-router'
+} from '@trend-diary/std/pagination/schema'
+import { wrapAsyncCall } from '@trend-diary/std/result'
+import { useLocation, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 import { useIsMobile } from '@/client/components/shadcn/hooks/use-mobile'
@@ -65,26 +65,10 @@ const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => {
   return selected.length > 0 ? selected : ALL_MEDIA
 }
 
-const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => {
-  const fromDateResult = addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset])
-  if (fromDateResult.isErr()) {
-    return { from: todayJstDateString, to: todayJstDateString }
-  }
-
-  return {
-    from: fromDateResult.value,
-    to: todayJstDateString,
-  }
-}
-
-const getTodayJstDateString = (baseDate: Date): string => {
-  const todayJstDateResult = toJstDateString(baseDate)
-  if (todayJstDateResult.isErr()) {
-    return baseDate.toISOString().slice(0, 10)
-  }
-
-  return todayJstDateResult.value
-}
+const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: string) => ({
+  from: addJstDays(todayJstDateString, -DATE_PRESET_MAP[datePreset]),
+  to: todayJstDateString,
+})
 
 const parseDatePreset = (
   fromParam: string | null,
@@ -117,13 +101,27 @@ const applyDatePresetToSearchParams = (
   params.set('to', to)
 }
 
+// page=1 は既定ページのためクエリから除き URL を素にする。1 より大きいときだけ page を持たせる
+const applyPageToSearchParams = (params: URLSearchParams, targetPage: number) => {
+  if (targetPage > 1) {
+    params.set('page', targetPage.toString())
+  } else {
+    params.delete('page')
+  }
+}
+
+const clearPageParam = (params: URLSearchParams): void => {
+  params.delete('page')
+}
+
 export default function useArticles(isLoggedIn = false) {
   const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
   const isMobile = useIsMobile()
   const { client, apiCall } = createSWRFetcher()
 
   const date = new Date()
-  const todayJstDateString = getTodayJstDateString(date)
+  const todayJstDateString = toJstDateString(date)
 
   const pageParam = searchParams.get('page')
   const limitParam = searchParams.get('limit')
@@ -151,14 +149,7 @@ export default function useArticles(isLoggedIn = false) {
   }
 
   const dateRange = getDateRangeByPreset(params.datePreset, todayJstDateString)
-  const query = {
-    to: dateRange.to,
-    from: dateRange.from,
-    page: params.page,
-    limit: params.limit,
-    ...(!isAllMediaSelected(params.media) && { media: params.media }),
-    ...(params.readStatus === 'unread' && isLoggedIn && { read_status: '0' as const }),
-  }
+  const query = buildArticlesQuery(params, dateRange, isLoggedIn)
 
   const swrKey = ['api/articles', query]
   const { data, error, isLoading, mutate } = useSWR<ArticlesResponse>(
@@ -254,18 +245,19 @@ export default function useArticles(isLoggedIn = false) {
 
   const handlePageChange = (newPage: number) => {
     const newParams = new URLSearchParams(searchParams)
-    if (newPage > 1) {
-      newParams.set('page', newPage.toString())
-    } else {
-      newParams.delete('page')
-    }
+    applyPageToSearchParams(newParams, newPage)
 
     setSearchParams(newParams)
   }
 
-  const clearPageParam = (params: URLSearchParams) => {
-    params.delete('page')
-    return params
+  // 検索エンジンがページ送りをたどれるよう、前へ／次へに実体のある href を持たせるためのリンク先を組み立てる。
+  // SPA 遷移（setSearchParams）後の URL と一致するよう、handlePageChange と同じ page 付与ルールを使う
+  const buildPagePath = (targetPage: number) => {
+    const newParams = new URLSearchParams(searchParams)
+    applyPageToSearchParams(newParams, targetPage)
+
+    const queryString = newParams.toString()
+    return queryString ? `${location.pathname}?${queryString}` : location.pathname
   }
 
   const toPreviousPage = (currentPage: number) => {
@@ -311,13 +303,17 @@ export default function useArticles(isLoggedIn = false) {
     setSearchParams(newParams)
   }
 
+  const view = resolveOrFallback(data, params)
+
   return {
     date,
-    articles: data?.data || [],
+    articles: view.articles,
     updateArticleReadState,
-    page: data?.page || params.page,
-    limit: data?.limit || params.limit,
-    totalPages: data?.totalPages || 1,
+    page: view.page,
+    prevPageHref: buildPagePath(view.page - 1),
+    nextPageHref: buildPagePath(view.page + 1),
+    limit: view.limit,
+    totalPages: view.totalPages,
     isLoading,
     hasError: !!error,
     retry,
@@ -329,5 +325,36 @@ export default function useArticles(isLoggedIn = false) {
     selectedMedia: params.media,
     selectedReadStatus: params.readStatus,
     selectedDatePreset: params.datePreset,
+  }
+}
+
+function buildArticlesQuery(
+  params: Params,
+  dateRange: { from: string; to: string },
+  isLoggedIn: boolean,
+) {
+  return {
+    to: dateRange.to,
+    from: dateRange.from,
+    page: params.page,
+    limit: params.limit,
+    ...(!isAllMediaSelected(params.media) && { media: params.media }),
+    ...(params.readStatus === 'unread' && isLoggedIn && { read_status: '0' as const }),
+  }
+}
+
+interface ArticlesView {
+  articles: Article[]
+  page: number
+  limit: number
+  totalPages: number
+}
+
+function resolveOrFallback(data: ArticlesResponse | undefined, params: Params): ArticlesView {
+  return {
+    articles: data?.data || [],
+    page: data?.page || params.page,
+    limit: data?.limit || params.limit,
+    totalPages: data?.totalPages || 1,
   }
 }

@@ -1,27 +1,42 @@
-import { handleError } from '@trend-diary/common/errors'
+import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { type AuthInput, createAuthUseCase } from '@trend-diary/domain/user'
+import { createAccountUseCase } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import type { authInputValidator } from '@/server/auth/validators'
+import toAuthError from '@/server/error/auth-error'
+import { handleError } from '@/server/error/handle-error'
+import { assertCaptchaVerified } from '../captcha'
 
-export default async function signup(c: ZodValidatedContext<AuthInput>) {
+export default async function signup(c: ZodValidatedContext<[typeof authInputValidator]>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
-  const client = createSupabaseAuthClient(c)
+  await assertCaptchaVerified(c.env.TURNSTILE_SECRET_KEY, valid.captchaToken, logger)
+
+  const authClient = new PasswordAuthClient(authClientConfig(c))
+  const userResult = await authClient.signUp({ email: valid.email, password: valid.password })
+  if (userResult.isErr()) handleError(toAuthError(userResult.error), logger)
+
+  const user = userResult.value
+
+  // ロールバック不能な認証ユーザー作成が成功したときだけ、アカウント作成のドメイン処理を呼ぶ
+  // NOTE: ここで失敗すると認証側に孤児ユーザーが残る。同期補償(認証ユーザーの削除)はSupabaseの
+  // 管理者権限(service_role)を要するが、サインアップ経路(anonクライアント)にadmin権限を持たせる
+  // べきではないため行わない。対応候補は service_role を持つ別cronで未紐付けの認証ユーザーを定期
+  // クリーンアップするなど。別イシューで再設計する。
   const rdb = getRdbClient(c.env.DB)
-  const useCase = createAuthUseCase(client, rdb, c.env.TURNSTILE_SECRET_KEY)
-
+  const accountUseCase = createAccountUseCase(rdb)
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
-  const result = await useCase.signup(valid.email, valid.password, notifier, valid.captchaToken)
-  if (result.isErr()) {
-    throw handleError(result.error, logger)
-  }
+  const result = await accountUseCase.registerActiveUser(
+    user.email ?? valid.email,
+    user.id,
+    notifier,
+  )
+  if (result.isErr()) handleError(result.error, logger)
 
-  const { activeUser } = result.value
-  logger.info('signup success', { activeUserId: activeUser.activeUserId })
+  logger.info('signup success', { activeUserId: result.value.activeUserId })
 
   return c.json({}, 201)
 }

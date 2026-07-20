@@ -1,11 +1,3 @@
-import { handleError } from '@trend-diary/common/errors'
-import {
-  addJstDays,
-  toJstDate,
-  toJstDateString,
-  toTodayJstDateString,
-} from '@trend-diary/common/locale/date'
-import { MAX_PAGE } from '@trend-diary/common/pagination'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
@@ -13,10 +5,13 @@ import type {
   DailyDiary,
   DailyDiaryRangeItem,
 } from '@trend-diary/domain/article/schema/diary-schema'
+import { addJstDays, toJstDate, toJstDateString } from '@trend-diary/std/locale/date'
+import { MAX_PAGE } from '@trend-diary/std/pagination'
 import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
-import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import CONTEXT_KEY, { mustGet } from '@/middleware/context'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
+import { handleError } from '@/server/error/handle-error'
 
 const DATE_STRING_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const DIARY_DATE_MESSAGE = 'date must be a valid JST date'
@@ -27,8 +22,7 @@ const diaryDateSchema = z
     const parsed = toJstDate(inputDate)
     if (Number.isNaN(parsed.getTime())) return false
 
-    const normalized = toJstDateString(parsed)
-    return !normalized.isErr() && normalized.value === inputDate
+    return toJstDateString(parsed) === inputDate
   }, DIARY_DATE_MESSAGE)
 
 export const diaryQuerySchema = z
@@ -48,7 +42,7 @@ export const diaryQuerySchema = z
     },
   )
 
-type DiaryQuery = z.infer<typeof diaryQuerySchema>
+export const diaryQueryValidator = zodValidator('query', diaryQuerySchema)
 
 interface DiaryRangeResponse {
   data: Array<{
@@ -79,11 +73,11 @@ interface DiaryRangeResponse {
   }
 }
 
-export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) {
+export default async function getDiary(c: ZodValidatedContext<[typeof diaryQueryValidator]>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!
+  const sessionUser = mustGet(c, CONTEXT_KEY.SESSION_USER)
   const query = c.req.valid('query')
-  const todayJst = resolveTodayJst()
+  const todayJst = toJstDateString(new Date())
   const fromDate = query.from
   const toDate = query.to
 
@@ -100,7 +94,7 @@ export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) 
       DIARY_READ_LIMIT,
     )
     if (detailResult.isErr()) {
-      throw handleError(detailResult.error, logger)
+      handleError(detailResult.error, logger)
     }
 
     const response = toDiaryDetailResponse(detailResult.value)
@@ -116,7 +110,7 @@ export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) 
 
   const result = await useCase.getDailyDiaryRange(sessionUser.activeUserId, fromDate, toDate)
   if (result.isErr()) {
-    throw handleError(result.error, logger)
+    handleError(result.error, logger)
   }
   const response = toDiaryResponse(result.value)
   logger.info('daily diary range retrieved successfully', {
@@ -129,14 +123,6 @@ export default async function getDiary(c: ZodValidatedQueryContext<DiaryQuery>) 
   return c.json(response, 200)
 }
 
-function resolveTodayJst(): string {
-  const todayResult = toTodayJstDateString()
-  if (todayResult.isErr()) {
-    throw new HTTPException(500, { message: 'Failed to resolve JST date' })
-  }
-  return todayResult.value
-}
-
 function validateDiaryDateRange(fromDate: string, toDate: string, todayJst: string) {
   if (fromDate > toDate) {
     throw new HTTPException(422, {
@@ -147,11 +133,7 @@ function validateDiaryDateRange(fromDate: string, toDate: string, todayJst: stri
     })
   }
 
-  const earliestResult = addJstDays(todayJst, -(DIARY_DAYS - 1))
-  if (earliestResult.isErr()) {
-    throw new HTTPException(500, { message: 'Failed to resolve diary date range' })
-  }
-  const earliestDate = earliestResult.value
+  const earliestDate = addJstDays(todayJst, -(DIARY_DAYS - 1))
 
   const causes: { from?: string[]; to?: string[] } = {}
   if (fromDate < earliestDate) {

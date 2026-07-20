@@ -1,4 +1,5 @@
-import type { MetaFunction } from 'react-router'
+import { type MetaFunction } from 'react-router'
+import { GITHUB_AUTH_MESSAGES, useOAuthError } from '@/client/features/github-auth'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import SettingsPage from './page'
 
@@ -13,5 +14,7 @@ export const meta: MetaFunction = ({ matches, location }) =>
   )
 
 export default function SettingsRoute() {
+  useOAuthError(GITHUB_AUTH_MESSAGES.linkFailed)
+
   return <SettingsPage />
 }

@@ -14,10 +14,11 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@trend-diary/common": "workspace:*"
+    "@trend-diary/logger": "workspace:*",
+    "@trend-diary/runtime": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",

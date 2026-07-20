@@ -10,6 +10,9 @@ vi.mock('@/client/features/passkey/passkey-toggle', () => ({
 vi.mock('@/client/features/theme/theme-toggle', () => ({
   default: () => createElement('div', { 'data-testid': 'theme-toggle' }),
 }))
+vi.mock('@/client/features/github-auth/github-link-toggle', () => ({
+  default: () => createElement('div', { role: 'switch', 'aria-label': 'GitHub連携を有効にする' }),
+}))
 
 describe('SettingsPage', () => {
   it('テーマ設定セクションを表示する', () => {
@@ -23,5 +26,11 @@ describe('SettingsPage', () => {
     render(createElement(SettingsPage))
 
     expect(screen.getByRole('switch', { name: 'パスキーを有効にする' })).toBeInTheDocument()
+  })
+
+  it('GitHub連携トグルを表示する', () => {
+    render(createElement(SettingsPage))
+
+    expect(screen.getByRole('switch', { name: 'GitHub連携を有効にする' })).toBeInTheDocument()
   })
 })

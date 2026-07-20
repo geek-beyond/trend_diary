@@ -1,20 +1,33 @@
-import { handleError } from '@trend-diary/common/errors'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAuthUseCase, type PasskeyVerifyInput } from '@trend-diary/domain/user'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
+import type { RegistrationResponseJSON } from '@simplewebauthn/browser'
+import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
+import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
+import toAuthError from '@/server/error/auth-error'
+import { handleError } from '@/server/error/handle-error'
 
-export default async function passkeyRegisterVerify(c: ZodValidatedContext<PasskeyVerifyInput>) {
+// 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは登録 ceremony 結果を素通しする
+export const passkeyRegisterVerifyInputSchema = z.object({
+  challengeId: z.string().min(1),
+  credential: z.custom<RegistrationResponseJSON>(
+    (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
+  ),
+})
+
+export const passkeyRegisterVerifyValidator = zodValidator('json', passkeyRegisterVerifyInputSchema)
+
+export default async function passkeyRegisterVerify(
+  c: ZodValidatedContext<[typeof passkeyRegisterVerifyValidator]>,
+) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
-  const client = createSupabaseAuthClient(c)
-  const rdb = getRdbClient(c.env.DB)
-  const useCase = createAuthUseCase(client, rdb)
-
-  const result = await useCase.verifyPasskeyRegistration(valid)
-  if (result.isErr()) throw handleError(result.error, logger)
+  const passkeyClient = new PasskeyClient(authClientConfig(c))
+  const result = await passkeyClient.verifyRegistration({
+    challengeId: valid.challengeId,
+    credential: valid.credential,
+  })
+  if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   logger.info('passkey registration success', { passkeyId: result.value.id })
 

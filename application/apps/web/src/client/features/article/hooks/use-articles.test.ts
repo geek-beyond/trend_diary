@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
+import { addJstDays, toJstDateString } from '@trend-diary/std/locale/date'
 import type { ReactNode } from 'react'
 import { createElement } from 'react'
 import { MemoryRouter } from 'react-router'
@@ -55,38 +55,27 @@ const generateFakeResponse = (
     totalPages: number
   }>,
 ) => {
-  const status = params?.status || 200
+  const {
+    status = 200,
+    articles = [],
+    page = 1,
+    limit = 20,
+    total = 0,
+    totalPages = 1,
+  } = params ?? {}
   return {
     status,
     ok: status >= 200 && status < 300,
     json: vi.fn().mockResolvedValue({
-      data: params?.articles || [],
-      page: params?.page || 1,
-      limit: params?.limit || 20,
-      total: params?.total || 0,
-      totalPages: params?.totalPages || 1,
-      hasNext: (params?.page || 1) < (params?.totalPages || 1),
-      hasPrev: (params?.page || 1) > 1,
+      data: articles,
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
     }),
   }
-}
-
-const resolveJstDateString = (rawDate: Date): string => {
-  const result = toJstDateString(rawDate)
-  if (result.isErr()) {
-    return '1970-01-01'
-  }
-
-  return result.value
-}
-
-const resolveJstDateWithOffset = (baseDateString: string, days: number): string => {
-  const result = addJstDays(baseDateString, days)
-  if (result.isErr()) {
-    return baseDateString
-  }
-
-  return result.value
 }
 
 // oxlint-disable-next-line typescript/no-explicit-any, typescript/consistent-type-assertions -- Hono client を返す関数のモックで、ネストした実型に合わせず一部のみをモックするため any と型アサーションを許可する
@@ -365,8 +354,8 @@ describe('useArticles', () => {
       })
       mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
 
-      const today = resolveJstDateString(new Date())
-      const last7daysFrom = resolveJstDateWithOffset(today, -6)
+      const today = toJstDateString(new Date())
+      const last7daysFrom = addJstDays(today, -6)
       const { result } = setupHook([`/?from=${last7daysFrom}&to=${today}`])
 
       await waitFor(() => {
@@ -395,9 +384,9 @@ describe('useArticles', () => {
       })
       mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
 
-      const today = resolveJstDateString(new Date())
-      const customFrom = resolveJstDateWithOffset(today, -4)
-      const customTo = resolveJstDateWithOffset(today, -1)
+      const today = toJstDateString(new Date())
+      const customFrom = addJstDays(today, -4)
+      const customTo = addJstDays(today, -1)
       const { result } = setupHook([`/?from=${customFrom}&to=${customTo}`])
 
       await waitFor(() => {
@@ -445,8 +434,8 @@ describe('useArticles', () => {
         })
       })
 
-      const today = resolveJstDateString(new Date())
-      const last7daysFrom = resolveJstDateWithOffset(today, -6)
+      const today = toJstDateString(new Date())
+      const last7daysFrom = addJstDays(today, -6)
 
       await waitFor(() => {
         expect(mockApiClient.articles.$get).toHaveBeenLastCalledWith(
@@ -466,8 +455,8 @@ describe('useArticles', () => {
     })
 
     it('todayプリセットを適用するとselectedDatePresetがtodayになる', async () => {
-      const today = resolveJstDateString(new Date())
-      const last7daysFrom = resolveJstDateWithOffset(today, -6)
+      const today = toJstDateString(new Date())
+      const last7daysFrom = addJstDays(today, -6)
       const initialResponse = generateFakeResponse({
         page: 2,
         totalPages: 3,
@@ -598,6 +587,37 @@ describe('useArticles', () => {
         },
         { init: { credentials: 'include' } },
       )
+    })
+
+    it('前へ・次へのリンク先(href)が前後のページを指す（検索エンジンがたどれるようにする）', async () => {
+      mockApiClient.articles.$get.mockResolvedValue(
+        generateFakeResponse({ page: 2, totalPages: 3 }),
+      )
+
+      const { result } = setupHook(['/?page=2'])
+
+      await waitFor(() => {
+        expect(result.current.page).toBe(2)
+      })
+
+      // page=1 は既定ページのため href からは page を落として素の URL にする
+      expect(result.current.prevPageHref).toBe('/')
+      expect(result.current.nextPageHref).toBe('/?page=3')
+    })
+
+    it('リンク先(href)は page 以外の絞り込みクエリを保持する', async () => {
+      mockApiClient.articles.$get.mockResolvedValue(
+        generateFakeResponse({ page: 2, totalPages: 3 }),
+      )
+
+      const { result } = setupHook(['/?media=qiita&page=2'])
+
+      await waitFor(() => {
+        expect(result.current.page).toBe(2)
+      })
+
+      expect(result.current.prevPageHref).toBe('/?media=qiita')
+      expect(result.current.nextPageHref).toBe('/?media=qiita&page=3')
     })
   })
 

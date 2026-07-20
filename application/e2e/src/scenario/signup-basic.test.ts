@@ -51,6 +51,7 @@ test.describe('新規登録・ログイン後の記事詳細閲覧シナリオ',
     }
 
     await authPage.waitForLoginPage()
+    await authPage.expectGithubLoginVisible()
 
     await authPage.submitLogin(email, password)
     await authPage.waitForTrendsPage()

@@ -16,6 +16,7 @@ const readFlag = Result.fromThrowable(() => window.sessionStorage.getItem(Storag
 
 export const completionPendingStorage = {
   set(pending: boolean) {
+    // ストレージ無効環境では完了フラグを永続化しないだけでよい（意図的な縮退）ため、失敗の Result は破棄する
     writeFlag(pending)
   },
   has() {

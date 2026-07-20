@@ -5,6 +5,14 @@ import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 import { articleIdParamSchema, createReadHistoryApiSchema } from './read-article'
 
+async function requestReadArticle(articleId: string, cookies: string, readAt?: string) {
+  return apiRequest(`/api/articles/${articleId}/read`, {
+    method: 'POST',
+    cookies,
+    json: { read_at: readAt || faker.date.recent().toISOString() },
+  })
+}
+
 describe('API ReadHistoryスキーマ', () => {
   describe('createReadHistoryApiSchema', () => {
     const MS_PER_MINUTE = 60 * 1000
@@ -81,6 +89,24 @@ describe('API ReadHistoryスキーマ', () => {
         articleIdParamSchema.parse({})
       }).toThrow()
     })
+
+    // DB の ID は safe integer 範囲が契約。範囲外を toDbId の RangeError（500 と障害通知）に
+    // 化けさせず、バリデーションエラーとして拒否する
+    it('safe integer を超える値を拒否すること', () => {
+      const overMax = (BigInt(Number.MAX_SAFE_INTEGER) + 1n).toString()
+
+      expect(() => {
+        articleIdParamSchema.parse({ article_id: overMax })
+      }).toThrow('article_id is out of range')
+    })
+
+    it('safe integer 上限ちょうどの値は受け入れること', () => {
+      const max = BigInt(Number.MAX_SAFE_INTEGER).toString()
+
+      const result = articleIdParamSchema.parse({ article_id: max })
+
+      expect(result.article_id).toBe(BigInt(Number.MAX_SAFE_INTEGER))
+    })
   })
 })
 
@@ -90,14 +116,6 @@ describe('POST /api/articles/:article_id/read', () => {
   let authCookies: string
   const createdArticleIds: bigint[] = []
   const createdUserIds: CleanUpIds = { userIds: [], authIds: [] }
-
-  async function requestReadArticle(articleId: string, cookies: string, readAt?: string) {
-    return apiRequest(`/api/articles/${articleId}/read`, {
-      method: 'POST',
-      cookies,
-      json: { read_at: readAt || faker.date.recent().toISOString() },
-    })
-  }
 
   beforeEach(async () => {
     // アカウント作成・ログイン

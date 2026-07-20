@@ -1,27 +1,46 @@
-import { handleError } from '@trend-diary/common/errors'
+import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
+import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAuthUseCase, type PasskeyVerifyInput } from '@trend-diary/domain/user'
-import { createSupabaseAuthClient } from '@/infrastructure/supabase'
+import { createAccountUseCase } from '@trend-diary/domain/account'
+import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedContext } from '@/middleware/zod-validator'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
+import toAuthError from '@/server/error/auth-error'
+import { handleError } from '@/server/error/handle-error'
 
-export default async function passkeyLoginVerify(c: ZodValidatedContext<PasskeyVerifyInput>) {
+// 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
+export const passkeyLoginVerifyInputSchema = z.object({
+  challengeId: z.string().min(1),
+  credential: z.custom<AuthenticationResponseJSON>(
+    (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
+  ),
+})
+
+export const passkeyLoginVerifyValidator = zodValidator('json', passkeyLoginVerifyInputSchema)
+
+export default async function passkeyLoginVerify(
+  c: ZodValidatedContext<[typeof passkeyLoginVerifyValidator]>,
+) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
-  const client = createSupabaseAuthClient(c)
+  const passkeyClient = new PasskeyClient(authClientConfig(c))
+  const userResult = await passkeyClient.verifyAuthentication({
+    challengeId: valid.challengeId,
+    credential: valid.credential,
+  })
+  if (userResult.isErr()) handleError(toAuthError(userResult.error), logger)
+
   const rdb = getRdbClient(c.env.DB)
-  const useCase = createAuthUseCase(client, rdb)
+  const accountUseCase = createAccountUseCase(rdb)
+  const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
+  if (activeUserResult.isErr()) handleError(activeUserResult.error, logger)
 
-  const result = await useCase.verifyPasskeyLogin(valid)
-  if (result.isErr()) throw handleError(result.error, logger)
-
-  const { activeUser } = result.value
-  logger.info('passkey login success', { activeUserId: activeUser.activeUserId })
+  logger.info('passkey login success', { activeUserId: activeUserResult.value.activeUserId })
 
   return c.json(
     {
-      displayName: activeUser.displayName,
+      displayName: activeUserResult.value.displayName,
     },
     200,
   )

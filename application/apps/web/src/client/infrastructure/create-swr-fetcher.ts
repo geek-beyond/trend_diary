@@ -1,5 +1,5 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
-import { fetchWithTimeout } from '@trend-diary/common/http'
+import { fetchWithTimeout } from '@trend-diary/runtime/http'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { notifySessionExpired } from '@/client/entities/auth'
 import getApiClientForClient from '@/client/infrastructure/api'
 
@@ -33,8 +33,8 @@ const fetcher = async <T>(url: string): Promise<T> => {
   return response.safeJson<T>()
 }
 
-const apiCall = async <T>(apiCall: () => Promise<ApiCallResponse>): Promise<T | null> => {
-  const response = await apiCall()
+const apiCall = async <T>(request: () => Promise<ApiCallResponse>): Promise<T | null> => {
+  const response = await request()
 
   if (!response.ok) {
     throw toHttpError(response.status, response.statusText)
@@ -50,7 +50,7 @@ const apiCall = async <T>(apiCall: () => Promise<ApiCallResponse>): Promise<T | 
 }
 
 // fetcher / apiCall はモジュールスコープで定義済み、client も getApiClientForClient 側でシングルトン化されているため、軽量なオブジェクトリテラルを返すだけでよい
-export const createSWRFetcher = () => ({
+const createSWRFetcher = () => ({
   fetcher,
   apiCall,
   client: getApiClientForClient(),

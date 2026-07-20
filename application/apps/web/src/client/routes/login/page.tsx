@@ -1,4 +1,5 @@
 import { LoginForm, type LoginFormProps } from '@/client/features/authenticate/login'
+import { GithubAuthButton } from '@/client/features/github-auth'
 import { PasskeyLoginButton } from '@/client/features/passkey'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
@@ -20,7 +21,7 @@ export default function LoginPage({
   return (
     <div className='min-h-screen bg-gradient-to-br from-muted to-background'>
       <LandingHeader />
-      <div className='flex min-h-[calc(100vh-180px)] items-center justify-center p-4'>
+      <main className='flex min-h-[calc(100vh-180px)] items-center justify-center p-4'>
         <Card className='flex w-full max-w-md flex-col'>
           <CardHeader className='space-y-1'>
             <CardTitle className='text-2xl font-bold'>ログイン</CardTitle>
@@ -40,6 +41,7 @@ export default function LoginPage({
                 <span className='bg-border h-px flex-1' />
               </div>
               <PasskeyLoginButton redirectTo={redirectTo} />
+              <GithubAuthButton label='GitHubでログイン' redirectTo={redirectTo} />
             </div>
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>
@@ -51,7 +53,7 @@ export default function LoginPage({
             </div>
           </CardFooter>
         </Card>
-      </div>
+      </main>
       <Footer />
     </div>
   )

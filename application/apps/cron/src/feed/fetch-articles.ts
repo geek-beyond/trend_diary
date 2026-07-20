@@ -1,5 +1,5 @@
-import type Logger from '@trend-diary/common/logger'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
+import type Logger from '@trend-diary/logger'
 import { err, type Result } from 'neverthrow'
 import type { FetchEnv } from '../env'
 import { storeArticles } from './article-store'

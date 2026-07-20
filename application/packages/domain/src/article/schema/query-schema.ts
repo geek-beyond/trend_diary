@@ -1,4 +1,4 @@
-import { offsetPaginationSchema } from '@trend-diary/common/pagination'
+import { offsetPaginationSchema } from '@trend-diary/std/pagination'
 import { z } from 'zod'
 import { ARTICLE_MEDIA } from '../media'
 

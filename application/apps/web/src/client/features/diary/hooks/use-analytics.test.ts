@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { ClientError } from '@trend-diary/common/errors'
-import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
+import { ClientError } from '@trend-diary/std/errors'
+import { addJstDays, toJstDateString } from '@trend-diary/std/locale/date'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { toast } from 'sonner'
@@ -68,18 +68,8 @@ const buildRangeItemResponse = (
   ],
 })
 
-const getTodayJst = () => {
-  const result = toJstDateString(new Date())
-  if (result.isErr()) return '1970-01-01'
-  return result.value
-}
-
 const buildDates = (baseDate: string) =>
-  Array.from({ length: 7 }, (_, index) => {
-    const dateResult = addJstDays(baseDate, -(6 - index))
-    if (dateResult.isErr()) return baseDate
-    return dateResult.value
-  })
+  Array.from({ length: 7 }, (_, index) => addJstDays(baseDate, -(6 - index)))
 
 describe('useAnalytics', () => {
   beforeEach(() => {
@@ -105,7 +95,7 @@ describe('useAnalytics', () => {
       expect(fetchDiaryRange).toHaveBeenCalledTimes(1)
     })
 
-    const expectedDates = buildDates(getTodayJst())
+    const expectedDates = buildDates(toJstDateString(new Date()))
     expect(fetchDiaryRange).toHaveBeenCalledWith(expectedDates[0], expectedDates[6])
     expect(result.current.selectedDate).toBeNull()
     expect(result.current.summaryRange).toHaveLength(7)
@@ -115,7 +105,7 @@ describe('useAnalytics', () => {
   })
 
   it('選択日の1ページ目は日次集計を表示する', async () => {
-    const targetDate = buildDates(getTodayJst())[5]
+    const targetDate = buildDates(toJstDateString(new Date()))[5]
     const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
       const dates = buildDates(to).filter((date) => date >= from)
       return Promise.resolve(
@@ -145,7 +135,7 @@ describe('useAnalytics', () => {
   })
 
   it('選択日の2ページ目以降は日次APIを再取得する', async () => {
-    const targetDate = buildDates(getTodayJst())[5]
+    const targetDate = buildDates(toJstDateString(new Date()))[5]
 
     const fetchDiary = vi.fn().mockResolvedValue({
       ...buildDailyResponse(targetDate, 2, 1),
@@ -175,7 +165,7 @@ describe('useAnalytics', () => {
   })
 
   it('selectDateで日付を選ぶと選択日の1ページ目を取得する', async () => {
-    const targetDate = buildDates(getTodayJst())[4]
+    const targetDate = buildDates(toJstDateString(new Date()))[4]
     const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
       const dates = buildDates(to).filter((date) => date >= from)
       return Promise.resolve(dates.map((date) => buildRangeItemResponse(date, 1, 0)))
@@ -201,7 +191,7 @@ describe('useAnalytics', () => {
   })
 
   it('clearSelectedDateで選択を解除すると日付未選択の状態に戻る', async () => {
-    const targetDate = buildDates(getTodayJst())[4]
+    const targetDate = buildDates(toJstDateString(new Date()))[4]
     const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
       const dates = buildDates(to).filter((date) => date >= from)
       return Promise.resolve(dates.map((date) => buildRangeItemResponse(date, 1, 0)))
@@ -226,7 +216,7 @@ describe('useAnalytics', () => {
   })
 
   it('選択日でtoNextPageを呼ぶと次ページの日次APIを取得する', async () => {
-    const targetDate = buildDates(getTodayJst())[4]
+    const targetDate = buildDates(toJstDateString(new Date()))[4]
     const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
       const dates = buildDates(to).filter((date) => date >= from)
       return Promise.resolve(dates.map((date) => buildRangeItemResponse(date, 1, 0)))
@@ -273,7 +263,7 @@ describe('useAnalytics', () => {
     })
 
     it('選択日の日次取得に失敗するとエラーのトーストを表示する', async () => {
-      const targetDate = buildDates(getTodayJst())[5]
+      const targetDate = buildDates(toJstDateString(new Date()))[5]
       const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
         const dates = buildDates(to).filter((date) => date >= from)
         return Promise.resolve(dates.map((date) => buildRangeItemResponse(date, 1, 0)))

@@ -1,10 +1,11 @@
-import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/common/pagination/schema'
 import { DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
+import { toJstDateString } from '@trend-diary/std/locale/date'
+import { DEFAULT_PAGE, offsetPaginationSchema } from '@trend-diary/std/pagination/schema'
 import { useSearchParams } from 'react-router'
 import useSWR from 'swr'
 import { dismissFetchError, notifyFetchError, TOAST_ID } from '@/client/entities/auth'
-import { getTodayJst, sumSourceSummary } from '@/client/features/diary/model/daily-summary'
+import { sumSourceSummary } from '@/client/features/diary/model/daily-summary'
 import useDiaryApi from './use-diary-api'
 
 interface DiaryReadItem {
@@ -21,7 +22,7 @@ const emptySources = ARTICLE_MEDIA.map((media) => ({ media, read: 0, skip: 0 }))
 export default function useDiary() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { fetchDiary } = useDiaryApi()
-  const todayJst = getTodayJst()
+  const todayJst = toJstDateString(new Date())
 
   const pageParam = searchParams.get('page')
   const parseResult = offsetPaginationSchema.safeParse({

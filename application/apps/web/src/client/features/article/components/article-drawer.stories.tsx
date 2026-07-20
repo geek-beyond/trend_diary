@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { toJaDateString } from '@trend-diary/common/locale'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import type { Article } from '@/client/features/article/hooks/use-articles'
+import { toJaDateString } from '@/common/locale/date'
 import ArticleDrawer from './article-drawer'
 
 const defaultArticle: Article = {
@@ -23,6 +23,17 @@ const generateArticle = (params?: Partial<Article>): Article => ({
   ...defaultArticle,
   ...params,
 })
+
+const getDescriptionElement = () => {
+  const description = document.body.querySelector<HTMLElement>(
+    "[data-slot='drawer-content-description-content']",
+  )
+  expect(description).not.toBeNull()
+  if (!description) {
+    throw new Error('description element not found')
+  }
+  return description
+}
 
 const meta: Meta<typeof ArticleDrawer> = {
   component: ArticleDrawer,
@@ -94,17 +105,6 @@ export const LongDescriptionToggle: Story = {
     }),
   },
   play: async ({ step }) => {
-    const getDescriptionElement = () => {
-      const description = document.body.querySelector<HTMLElement>(
-        "[data-slot='drawer-content-description-content']",
-      )
-      expect(description).not.toBeNull()
-      if (!description) {
-        throw new Error('description element not found')
-      }
-      return description
-    }
-
     await step('初期表示で続きを読むボタンが表示されることを確認', async () => {
       const toggle = within(document.body).getByRole('button', { name: '続きを読む' })
       await expect(toggle).toBeInTheDocument()

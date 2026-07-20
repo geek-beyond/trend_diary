@@ -1,4 +1,4 @@
-import { NotFoundError, ServerError } from '@trend-diary/common/errors'
+import { NotFoundError, ServerError } from '@trend-diary/std/errors'
 import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import CommandImpl from './command-impl'

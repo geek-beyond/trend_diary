@@ -1,7 +1,9 @@
-import type { WorkerBindings } from '@trend-diary/common/env'
-import type { LoggerType } from '@trend-diary/common/logger'
-import type { Nullable } from '@trend-diary/common/types/utility'
+import type { LoggerType } from '@trend-diary/logger'
+import type { WorkerBindings } from '@trend-diary/runtime/env'
+import type { Nullable } from '@trend-diary/std/types/utility'
 import type CONTEXT_KEY from './middleware/context'
+
+// AppLoadContext の型は load-context.ts で定義する（v8 で react-router の同名 interface が撤去されたため）
 
 export interface SessionUser {
   activeUserId: bigint
@@ -10,7 +12,7 @@ export interface SessionUser {
 }
 
 // Cloudflare Workers の Rate Limiting バインディングの型（workers-typesに含まれないため定義する）
-export interface RateLimiter {
+interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>
 }
 
@@ -31,12 +33,5 @@ export interface Env {
   Variables: {
     [CONTEXT_KEY.APP_LOG]: LoggerType
     [CONTEXT_KEY.SESSION_USER]: SessionUser
-    [CONTEXT_KEY.SESSION_ID]: string
-  }
-}
-
-declare module 'react-router' {
-  interface AppLoadContext {
-    cloudflare: { env: Env['Bindings'] }
   }
 }

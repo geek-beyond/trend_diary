@@ -1,28 +1,28 @@
-import type { Article as RdbArticle } from '@trend-diary/datastore/drizzle-orm/schema'
+import type { Article as RdbArticle } from '@trend-diary/datastore/schema'
 import { describe, expect, it } from 'vitest'
 import fromRdbToArticle from './mapper'
 
-describe('fromRdbToArticle', () => {
-  // テストデータ作成ヘルパー
-  // スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
-  // テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
-  const createMockRdbArticle = (
-    overrides: Partial<Record<keyof RdbArticle, string | number | bigint | Date | null>> = {},
-  ): RdbArticle => {
-    const rdbArticle = {
-      articleId: 1n,
-      media: 'Qiita',
-      title: 'TypeScriptの型安全性について',
-      author: '山田太郎',
-      description: 'TypeScriptの型安全性に関する解説記事です',
-      url: 'https://example.com/article/1',
-      createdAt: new Date('2024-01-15T09:30:00Z'),
-      ...overrides,
-    }
-    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
-    return rdbArticle as unknown as RdbArticle
+// テストデータ作成ヘルパー
+// スキーマ上のID列は number 型だが、mapper が bigint を透過することを検証するため
+// テストでは意図的に bigint 値を注入する。そのため override は unknown を許容する
+const createMockRdbArticle = (
+  overrides: Partial<Record<keyof RdbArticle, string | number | bigint | Date | null>> = {},
+): RdbArticle => {
+  const rdbArticle = {
+    articleId: 1n,
+    media: 'qiita',
+    title: 'TypeScriptの型安全性について',
+    author: '山田太郎',
+    description: 'TypeScriptの型安全性に関する解説記事です',
+    url: 'https://example.com/article/1',
+    createdAt: new Date('2024-01-15T09:30:00Z'),
+    ...overrides,
   }
+  // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ID列の宣言型(number)に対し bigint のテスト値を注入するため、型システムの迂回が避けられないためです
+  return rdbArticle as unknown as RdbArticle
+}
 
+describe('fromRdbToArticle', () => {
   describe('基本動作', () => {
     it('標準的なArticleデータで全フィールドが正確にマッピングされること', () => {
       // Arrange
@@ -111,23 +111,15 @@ describe('fromRdbToArticle', () => {
       const stringConstraintTestCases = [
         {
           name: '空文字列での境界値処理',
-          media: '',
+          media: 'qiita',
           title: '',
           author: '',
           description: '',
           url: '',
         },
         {
-          name: 'media最大長(10文字)での境界値処理',
-          media: 'A'.repeat(10),
-          title: '通常のタイトル',
-          author: '通常の著者',
-          description: '通常の説明',
-          url: 'https://example.com',
-        },
-        {
           name: 'title最大長(100文字)での境界値処理',
-          media: 'Qiita',
+          media: 'qiita',
           title: 'あ'.repeat(100),
           author: '通常の著者',
           description: '通常の説明',
@@ -135,7 +127,7 @@ describe('fromRdbToArticle', () => {
         },
         {
           name: 'author最大長(30文字)での境界値処理',
-          media: 'Qiita',
+          media: 'qiita',
           title: '通常のタイトル',
           author: 'A'.repeat(30),
           description: '通常の説明',
@@ -143,7 +135,7 @@ describe('fromRdbToArticle', () => {
         },
         {
           name: 'description最大長(1024文字)での境界値処理',
-          media: 'Qiita',
+          media: 'qiita',
           title: '通常のタイトル',
           author: '通常の著者',
           description: 'あ'.repeat(1024),
@@ -151,7 +143,7 @@ describe('fromRdbToArticle', () => {
         },
         {
           name: '非常に長いURL(10000文字)での処理',
-          media: 'Qiita',
+          media: 'qiita',
           title: '通常のタイトル',
           author: '通常の著者',
           description: '通常の説明',
@@ -159,7 +151,7 @@ describe('fromRdbToArticle', () => {
         },
         {
           name: '現実的な日本語記事データでの処理',
-          media: 'Qiita',
+          media: 'qiita',
           title: 'TypeScriptの型安全性について',
           author: '山田太郎',
           description:
@@ -242,13 +234,11 @@ describe('fromRdbToArticle', () => {
 
   describe('例外・制約違反', () => {
     describe('データ一貫性とマッピング精度テスト', () => {
-      it('特殊文字を含むmediaとurlが正確にマッピングされること', () => {
+      it('特殊文字を含むurlが正確にマッピングされること', () => {
         // Arrange
-        const specialMedia = 'Qiita-Tech.io'
         const specialUrl =
           'https://qiita.com/users/test+tag/items/article-title_123?page=1&sort=popular#section-1'
         const rdbArticle = createMockRdbArticle({
-          media: specialMedia,
           url: specialUrl,
         })
 
@@ -256,17 +246,24 @@ describe('fromRdbToArticle', () => {
         const result = fromRdbToArticle(rdbArticle)
 
         // Assert
-        expect(result.media).toBe(specialMedia)
         expect(result.url).toBe(specialUrl)
         // 特殊文字が保持されることを確認
-        expect(result.media).toContain('-')
-        expect(result.media).toContain('.')
         expect(result.url).toContain('+')
         expect(result.url).toContain('?')
         expect(result.url).toContain('&')
         expect(result.url).toContain('#')
         expect(result.url).toContain('_')
       })
+
+      // DB の media カラムは任意文字列のため、未知の値＝データ破損は補完せず契約違反として送出する
+      it.each([[''], ['news'], ['Qiita']])(
+        '未知の media %j は契約違反として送出すること',
+        (media) => {
+          const rdbArticle = createMockRdbArticle({ media })
+
+          expect(() => fromRdbToArticle(rdbArticle)).toThrow('Article row has unknown media')
+        },
+      )
 
       it('日本語・絵文字を含むtitleとdescriptionが正確にマッピングされること', () => {
         // Arrange

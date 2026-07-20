@@ -1,4 +1,4 @@
-import type { WorkerBindings } from '@trend-diary/common/env'
+import type { WorkerBindings } from '@trend-diary/runtime/env'
 
 export type FetchEnv = Pick<WorkerBindings, 'DB' | 'LOG_LEVEL'>
 

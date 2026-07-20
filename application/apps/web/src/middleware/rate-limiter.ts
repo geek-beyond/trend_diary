@@ -1,7 +1,7 @@
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 import type { Env } from '../env'
-import CONTEXT_KEY from './context'
+import CONTEXT_KEY, { mustGet } from './context'
 
 // IP単位でブルートフォース・大量試行を抑止するため、認証系エンドポイントに適用する
 const rateLimiter = createMiddleware<Env>(async (c, next) => {
@@ -28,7 +28,7 @@ const rateLimiter = createMiddleware<Env>(async (c, next) => {
 
     // 認証エンドポイントでは無制限なブルートフォースを許す方が危険なため、Rate Limiting API障害時は
     // フェイルオープンせずフェイルセーフ（503）に倒す。障害の継続はこのerrorログとerrorHandlerの5xx通知で検知する
-    c.get(CONTEXT_KEY.APP_LOG)?.error(
+    mustGet(c, CONTEXT_KEY.APP_LOG).error(
       {
         msg: 'rate limiter unavailable, failing closed',
         event: 'rate_limiter_fail_closed',

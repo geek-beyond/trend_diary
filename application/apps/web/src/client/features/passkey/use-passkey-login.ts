@@ -1,6 +1,8 @@
-import { startAuthentication } from '@simplewebauthn/browser'
-import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser'
-import { wrapAsyncCall } from '@trend-diary/common/result'
+import {
+  type PublicKeyCredentialRequestOptionsJSON,
+  startAuthentication,
+} from '@simplewebauthn/browser'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useSWRConfig } from 'swr'
@@ -32,8 +34,10 @@ export default function usePasskeyLogin(redirectTo?: string) {
 
     const { challengeId, options } = startResult.value
 
-    // options は Supabase SDK の型。ブラウザ WebAuthn ライブラリの同名 JSON 型とは別宣言で微差があるため境界で寄せる
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- Supabase と @simplewebauthn の WebAuthn 型は別宣言で構造が僅かに異なり、ライブラリ境界での単一アサーションが避けられないため
+    // Supabaseとceremonyライブラリ(@simplewebauthn)は同じW3CのWebAuthn JSON型を各自宣言しており、
+    // hintsのunion幅だけが異なる(Supabaseは将来の追加値に備え`(string & {})`まで広い)。実行時の値は
+    // 完全に同一で変換は不要なため、受け側が要求する狭い型へ境界で単一アサーションする
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- 上記のとおり値は同一・宣言のみ相違
     const optionsJSON = options as PublicKeyCredentialRequestOptionsJSON
     const ceremonyResult = await wrapAsyncCall(() => startAuthentication({ optionsJSON }))
     if (ceremonyResult.isErr()) {
@@ -43,12 +47,9 @@ export default function usePasskeyLogin(redirectTo?: string) {
       return
     }
 
-    // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- 真正性はSupabaseが検証するため、ブラウザWebAuthn APIの型境界で受けるだけのため
-    const credential = ceremonyResult.value as unknown as Record<string, unknown>
-
     const verifyResult = await wrapAsyncCall(() =>
       client.auth.passkey.login.verify.$post({
-        json: { challengeId, credential },
+        json: { challengeId, credential: ceremonyResult.value },
       }),
     )
     if (verifyResult.isErr() || !verifyResult.value.ok) {

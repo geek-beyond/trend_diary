@@ -73,18 +73,18 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
     setQueue(data.data)
   }
 
-  const { isJustCompleted, notifyConsumed } = useCompletionCelebration({
-    remaining,
+  const { isJustCompleted, notifyCompleted } = useCompletionCelebration({
     queueLength: queue.length,
-    batchToken: data,
   })
 
   const currentArticle = queue[0] ?? null
 
   const consumeCurrent = () => {
-    notifyConsumed()
+    // 残り1件の消化で0件になる＝完了演出の発火条件。操作起因であることをこの場で確定させる
+    const willComplete = remaining <= 1
     setRemaining((prev) => Math.max(0, prev - 1))
     setQueue((prev) => prev.slice(1))
+    if (willComplete) notifyCompleted()
   }
 
   // 取得状態はSWRのisValidatingで持つので、失敗・同一応答でもローディングに固定化しない

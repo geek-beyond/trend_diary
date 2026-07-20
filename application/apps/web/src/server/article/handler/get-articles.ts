@@ -1,6 +1,3 @@
-import { handleError } from '@trend-diary/common/errors'
-import type { OffsetPaginationResult } from '@trend-diary/common/pagination'
-import { offsetPaginationSchema } from '@trend-diary/common/pagination'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import type { QueryParams } from '@trend-diary/domain/article'
 import { createArticleUseCase } from '@trend-diary/domain/article'
@@ -9,14 +6,17 @@ import {
   DATE_RANGE_ERROR_MESSAGE,
   dateRangeRefine,
 } from '@trend-diary/domain/article/schema/query-schema'
+import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
+import { offsetPaginationSchema } from '@trend-diary/std/pagination'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
+import { handleError } from '@/server/error/handle-error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 const readStatusEnum = z.enum(['0', '1'])
 
-export const apiArticleQuerySchema = baseArticleSearchSchema
+const apiArticleQuerySchema = baseArticleSearchSchema
   .extend({
     read_status: readStatusEnum.optional(),
   })
@@ -27,7 +27,7 @@ export const apiArticleQuerySchema = baseArticleSearchSchema
 
 export type ApiQueryParams = z.infer<typeof apiArticleQuerySchema>
 
-export type { ArticleResponse }
+export const apiArticleQueryValidator = zodValidator('query', apiArticleQuerySchema)
 
 export type ArticleWithReadStatusResponse = ArticleResponse & {
   isRead: boolean
@@ -35,7 +35,9 @@ export type ArticleWithReadStatusResponse = ArticleResponse & {
 
 export type ArticleListResponse = OffsetPaginationResult<ArticleResponse>
 
-export default async function getArticles(c: ZodValidatedQueryContext<ApiQueryParams>) {
+export default async function getArticles(
+  c: ZodValidatedContext<[typeof apiArticleQueryValidator]>,
+) {
   const transformedParams = c.req.valid('query')
   const logger = c.get(CONTEXT_KEY.APP_LOG)
 
@@ -51,7 +53,7 @@ export default async function getArticles(c: ZodValidatedQueryContext<ApiQueryPa
     activeUserId,
   )
   if (result.isErr()) {
-    throw handleError(result.error, logger)
+    handleError(result.error, logger)
   }
 
   const paginationResult = result.value

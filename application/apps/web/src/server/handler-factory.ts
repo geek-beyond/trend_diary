@@ -26,7 +26,7 @@
  * 従来パターン例:
  * ```typescript
  * export default async function updateRole(
- *   c: ZodValidatedParamJsonContext<z.infer<typeof paramSchema>, z.infer<typeof jsonSchema>>,
+ *   c: ZodValidatedContext<[typeof paramValidator, typeof jsonValidator]>,
  * ) {
  *   const logger = c.get(CONTEXT_KEY.APP_LOG)
  *   const { id } = c.req.valid('param')
@@ -54,15 +54,14 @@
  * - deletePermission.ts（動的パス + $delete）
  */
 
-import { handleError } from '@trend-diary/common/errors'
-import type { LoggerType } from '@trend-diary/common/logger'
 import getRdbClient, { type RdbClient } from '@trend-diary/datastore/rdb'
+import type { LoggerType } from '@trend-diary/logger'
 import type { Context } from 'hono'
-import { HTTPException } from 'hono/http-exception'
 import type { ContentfulStatusCode, StatusCode } from 'hono/utils/http-status'
 import { type Result } from 'neverthrow'
 import type { Env, SessionUser } from '@/env'
-import CONTEXT_KEY from '@/middleware/context'
+import CONTEXT_KEY, { mustGet } from '@/middleware/context'
+import { handleError } from '@/server/error/handle-error'
 
 // コンテキストの型定義
 // oxlint-disable-next-line typescript/no-restricted-types -- ハンドラ側で具象型を指定するまでの既定値で、任意形状を受け入れる必要があるため
@@ -98,9 +97,6 @@ interface ValidatedRequestData {
 // Hono clientの型推論はミドルウェアのバリデーション結果を静的に解決できないため、
 // 検証済みデータの取り出しはこのヘルパーに型ハックを閉じ込めて一元管理する
 function extractValidatedData(c: Context<Env>): ValidatedRequestData {
-  if (!c.req.valid) {
-    return { param: undefined, json: undefined, query: undefined }
-  }
   // valid は内部で this（c.req）を参照するメソッドのため、変数へ取り出すとレシーバが外れて壊れる。
   // bind でレシーバを固定する。ジェネリックな Context では引数型が never に潰れるため呼び出しキーの型のみ補う。
   // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ジェネリックな Context では valid() の引数型が never に潰れ検証キーの型を補うアサーションが避けられず、戻り値も検証前の未確定な値となるため
@@ -194,7 +190,7 @@ function executeHandlerLogic<
 
     // 2. エラーハンドリング
     if (result.isErr()) {
-      throw handleError(result.error, context.logger)
+      handleError(result.error, context.logger)
     }
 
     // 3. ロギング
@@ -267,7 +263,7 @@ export function createSimpleApiHandler<
   TResponse = TOutput,
 >(config: SimpleHandlerConfig<TUseCase, TContext, TOutput, TResponse>) {
   return async (c: Context<Env>): Promise<Response> => {
-    const logger = c.get(CONTEXT_KEY.APP_LOG)
+    const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
     const rdb = getRdbClient(c.env.DB)
 
     const context = buildRequestContext<TContext>(extractValidatedData(c), undefined, logger)
@@ -315,14 +311,11 @@ export function createAuthenticatedApiHandler<
   TResponse = TOutput,
 >(config: AuthenticatedHandlerConfig<TUseCase, TContext, TOutput, TResponse>) {
   return async (c: Context<Env>): Promise<Response> => {
-    const logger = c.get(CONTEXT_KEY.APP_LOG)
+    const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
     const rdb = getRdbClient(c.env.DB)
 
-    // 認証チェック
-    const user = c.get(CONTEXT_KEY.SESSION_USER)
-    if (!user) {
-      throw new HTTPException(401, { message: 'Unauthorized' })
-    }
+    // authenticator が先行適用される契約のため、未設定は 401 に偽装せず契約違反として顕在化させる
+    const user = mustGet(c, CONTEXT_KEY.SESSION_USER)
 
     const authenticatedContext = buildRequestContext<TContext>(
       extractValidatedData(c),

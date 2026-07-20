@@ -1,15 +1,11 @@
-import { NotFoundError, ServerError } from '@trend-diary/common/errors'
-import {
-  articles,
-  normalizeDateTime,
-  readHistories,
-} from '@trend-diary/datastore/drizzle-orm/schema'
 import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
+import { articles, normalizeDateTime, readHistories } from '@trend-diary/datastore/schema'
+import { NotFoundError, ServerError } from '@trend-diary/std/errors'
 import { and, eq, exists, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import type { Command } from '../repository'
+import type { Command } from '../port'
 import type { ReadHistory } from '../schema/read-history-schema'
 import type { SkippedArticle } from '../schema/skipped-article-schema'
 

@@ -1,5 +1,5 @@
 import { zValidator } from '@hono/zod-validator'
-import type { Context, ValidationTargets } from 'hono'
+import type { Context, Env as HonoEnv, Input, MiddlewareHandler, ValidationTargets } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { ZodSchema } from 'zod'
 import { z } from 'zod'
@@ -22,51 +22,29 @@ const zodValidator = <Target extends keyof ValidationTargets, T extends ZodSchem
 
 export default zodValidator
 
-// zodValidatorの型は自動推論が厳しかったため、何度も書きそうなベタガキを共通化
-type ZodValidatedContextBase<T, K extends keyof ValidationTargets, P extends string = ''> = Context<
-  Env,
-  P,
-  {
-    in: {
-      [Key in K]: T
-    }
-    out: {
-      [Key in K]: T
-    }
-  }
->
+// ルートに適用した zodValidator のチェーンから、検証済みハンドラーの Context を導出する。
+// 各 validator が持つ in / out（param の transform 等で両者が分かれる場合も含む）を統合するため、
+// ハンドラー側で対象と型のマップを手書きせず、適用した validator の型から一意に決まる
+type InferValidatorInput<V> =
+  V extends MiddlewareHandler<HonoEnv, string, infer I extends Input> ? I : never
 
-export type ZodValidatedContext<T, P extends string = ''> = ZodValidatedContextBase<T, 'json', P>
+// チェーン内の各 validator の in / out を Dir で切り替えて畳み込む
+type MergeValidatedInput<
+  Validators extends readonly MiddlewareHandler[],
+  Dir extends 'in' | 'out',
+> = Validators extends readonly [infer Head, ...infer Rest extends readonly MiddlewareHandler[]]
+  ? (InferValidatorInput<Head> extends { [K in Dir]: infer T } ? T : {}) &
+      MergeValidatedInput<Rest, Dir>
+  : {}
 
-export type ZodValidatedQueryContext<T, P extends string = ''> = ZodValidatedContextBase<
-  T,
-  'query',
-  P
->
-
-export type ZodValidatedParamContext<T, P extends string = ''> = ZodValidatedContextBase<
-  T,
-  'param',
-  P
->
-
-// param は transform でリクエスト時の型（z.input）と検証後の型（z.output）が異なりうるため、
-// Hono client の RPC 型推論にはスキーマから in / out を別々に導く必要がある
-export type ZodValidatedParamJsonContext<
-  ParamSchema extends ZodSchema,
-  JsonSchema extends ZodSchema,
-  P extends string = '',
+export type ZodValidatedContext<
+  Validators extends readonly MiddlewareHandler[],
+  Path extends string = '',
 > = Context<
   Env,
-  P,
+  Path,
   {
-    in: {
-      param: z.input<ParamSchema>
-      json: z.input<JsonSchema>
-    }
-    out: {
-      param: z.output<ParamSchema>
-      json: z.output<JsonSchema>
-    }
+    in: MergeValidatedInput<Validators, 'in'>
+    out: MergeValidatedInput<Validators, 'out'>
   }
 >

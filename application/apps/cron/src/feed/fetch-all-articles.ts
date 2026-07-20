@@ -1,10 +1,11 @@
-import type Logger from '@trend-diary/common/logger'
-import { wrapAsyncCall } from '@trend-diary/common/result'
 import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/media'
+import type Logger from '@trend-diary/logger'
 import type { DiscordWebhookClient } from '@trend-diary/notification'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import { err, type Result } from 'neverthrow'
 import type { CronEnv } from '../env'
 import { runScheduledFetch } from './fetch-articles'
+import { RssFetchError, type RssFetchDiagnostics } from './rss-client'
 
 export interface FetchAllArticlesParams {
   env: CronEnv
@@ -18,6 +19,21 @@ interface MediaFetchOutcome {
   media: ArticleMedia
   result: Result<number, Error>
   durationMs: number
+}
+
+// 診断情報を通知本文へ簡潔に併記し、Discord からでも 429 等の一次切り分けを可能にする。
+function formatDiagnostics(diagnostics: RssFetchDiagnostics): string {
+  const lines: string[] = []
+
+  const headerEntries = Object.entries(diagnostics.headers)
+  if (headerEntries.length > 0) {
+    lines.push(`headers: ${headerEntries.map(([name, value]) => `${name}=${value}`).join(', ')}`)
+  }
+  if (diagnostics.bodySnippet) {
+    lines.push(`body: ${diagnostics.bodySnippet}`)
+  }
+
+  return lines.length > 0 ? `\n${lines.join('\n')}` : ''
 }
 
 export async function fetchAllArticles({
@@ -55,9 +71,15 @@ export async function fetchAllArticles({
     if (result.isErr()) {
       failedCount += 1
       const error = result.error
-      logger.error({ msg: 'cron media fetch failed', media, durationMs }, error)
+      // 429 等は status だけでは原因を追えないため、配信元レスポンスの診断情報を併せて残す
+      const diagnostics = error instanceof RssFetchError ? error.diagnostics : undefined
+      logger.error(
+        { msg: 'cron media fetch failed', media, durationMs, ...(diagnostics && { diagnostics }) },
+        error,
+      )
+      const detail = diagnostics ? formatDiagnostics(diagnostics) : ''
       await discord.sendMessage(
-        `[trend-diary cron] fetch failed\ncron: ${cron}\nmedia: ${media}\nerror: ${error.message}`,
+        `[trend-diary cron] fetch failed\ncron: ${cron}\nmedia: ${media}\nerror: ${error.message}${detail}`,
       )
       continue
     }

@@ -5,17 +5,18 @@
   "type": "module",
   "exports": {
     "./rdb": "./src/rdb/index.ts",
-    "./drizzle-orm/schema": "./src/drizzle-orm/schema/index.ts",
+    "./schema": "./src/schema/index.ts",
     "./*": "./src/*.ts"
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check"
   },
   "dependencies": {
-    "@trend-diary/common": "workspace:*",
+    "@trend-diary/logger": "workspace:*",
+    "@trend-diary/std": "workspace:*",
     "drizzle-orm": "catalog:",
     "neverthrow": "catalog:"
   },

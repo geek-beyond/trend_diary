@@ -4,7 +4,10 @@
   "scripts": {
     "dev": "pnpm --filter @trend-diary/web dev",
     "build": "pnpm --filter @trend-diary/web build",
-    "lint": "oxlint && oxfmt --check && pnpm -r typecheck",
+    "lint": "oxlint && oxfmt --check && import-lint && pnpm -r typecheck",
+    "import-lint": "import-lint",
+    "knip": "knip",
+    "similarity": "similarity-ts apps packages --no-types --threshold 0.9 --exclude '**/components/shadcn/**' --exclude '**/components/customized/**' --exclude '**/migrations/**' --fail-on-duplicates",
     "check": "oxlint && oxfmt --check",
     "check:fix": "oxlint --fix && oxfmt",
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
@@ -12,13 +15,14 @@
     "supabase:stop": "supabase stop"
   },
   "devDependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260629.1",
-    "oxfmt": "^0.57.0",
-    "oxlint": "^1.72.0",
-    "typescript": "^5.9.3"
+    "@import-lint/cli": "0.1.6",
+    "knip": "^6.27.0",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0",
+    "typescript": "^7.0.2"
   },
   "engines": {
-    "node": "^20.19.0 || >=22.13.0"
+    "node": ">=22.22.0"
   },
   "packageManager": "pnpm@11.5.1"
 }

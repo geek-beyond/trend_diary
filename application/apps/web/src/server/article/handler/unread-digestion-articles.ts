@@ -1,10 +1,10 @@
-import { handleError } from '@trend-diary/common/errors'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { mediaListSchema } from '@trend-diary/domain/article/schema/query-schema'
 import { z } from 'zod'
-import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedQueryContext } from '@/middleware/zod-validator'
+import CONTEXT_KEY, { mustGet } from '@/middleware/context'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
+import { handleError } from '@/server/error/handle-error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 interface UnreadDigestionArticlesResponse {
@@ -12,24 +12,24 @@ interface UnreadDigestionArticlesResponse {
   total: number
 }
 
-export const unreadDigestionQuerySchema = z.object({
+const unreadDigestionQuerySchema = z.object({
   media: mediaListSchema,
 })
 
-type UnreadDigestionQuery = z.infer<typeof unreadDigestionQuerySchema>
+export const unreadDigestionQueryValidator = zodValidator('query', unreadDigestionQuerySchema)
 
 export default async function unreadDigestionArticles(
-  c: ZodValidatedQueryContext<UnreadDigestionQuery>,
+  c: ZodValidatedContext<[typeof unreadDigestionQueryValidator]>,
 ): Promise<Response> {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const sessionUser = c.get(CONTEXT_KEY.SESSION_USER)!
+  const sessionUser = mustGet(c, CONTEXT_KEY.SESSION_USER)
   const query = c.req.valid('query')
 
   const rdb = getRdbClient(c.env.DB)
   const useCase = createArticleUseCase(rdb)
   const result = await useCase.getUnreadDigestionArticles(sessionUser.activeUserId, query.media)
   if (result.isErr()) {
-    throw handleError(result.error, logger)
+    handleError(result.error, logger)
   }
 
   const response: UnreadDigestionArticlesResponse = {

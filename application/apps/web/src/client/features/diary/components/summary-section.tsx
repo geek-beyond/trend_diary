@@ -1,5 +1,5 @@
-import { toJaDateString, toJstDate } from '@trend-diary/common/locale/date'
 import { ARTICLE_MEDIA_LABELS } from '@trend-diary/domain/article/media'
+import { toJstDate } from '@trend-diary/std/locale/date'
 import {
   Table,
   TableBody,
@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/client/components/shadcn/table'
 import type { Source, Summary } from '@/client/features/diary/model/types'
+import { toJaDateString } from '@/common/locale/date'
 
 interface Props {
   sources: Source[]

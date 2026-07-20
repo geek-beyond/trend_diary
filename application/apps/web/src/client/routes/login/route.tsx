@@ -6,7 +6,9 @@ import {
 } from 'react-router'
 import { resolveTurnstileSiteKey } from '@/client/entities/auth'
 import { resolveLoginRedirectTarget, useLogin } from '@/client/features/authenticate/login'
+import { GITHUB_AUTH_MESSAGES, useOAuthError } from '@/client/features/github-auth'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
+import { appLoadContext } from '@/load-context'
 import LoginPage from './page'
 
 export const meta: MetaFunction = ({ matches, location }) =>
@@ -22,7 +24,7 @@ export const meta: MetaFunction = ({ matches, location }) =>
 
 export function loader({ context }: LoaderFunctionArgs) {
   return {
-    turnstileSiteKey: resolveTurnstileSiteKey(context) ?? null,
+    turnstileSiteKey: resolveTurnstileSiteKey(context.get(appLoadContext)) ?? null,
   }
 }
 
@@ -34,6 +36,8 @@ export default function Login() {
     turnstileSiteKey ?? undefined,
     redirectTo,
   )
+
+  useOAuthError(GITHUB_AUTH_MESSAGES.loginFailed)
 
   return (
     <LoginPage

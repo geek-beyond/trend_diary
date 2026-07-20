@@ -1,7 +1,7 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { toast } from 'sonner'
 import { describe, expect, it, vi } from 'vitest'
-import { createSWRFetcher } from './create-swr-fetcher'
+import createSWRFetcher from './create-swr-fetcher'
 
 global.fetch = vi.fn()
 

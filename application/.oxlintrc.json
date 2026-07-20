@@ -15,6 +15,7 @@
     "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }],
     "typescript/consistent-type-imports": "error",
     "typescript/consistent-type-definitions": ["error", "interface"],
+    "unicorn/consistent-function-scoping": "error",
     "typescript/no-explicit-any": "error",
     "typescript/no-restricted-types": [
       "error",
@@ -28,6 +29,7 @@
     ],
     "no-console": "warn",
     "no-var": "error",
+    "complexity": ["error", 10],
     "eqeqeq": ["error", "always", { "null": "ignore" }],
     "no-unused-vars": [
       "error",
@@ -35,5 +37,11 @@
     ],
     "react/react-in-jsx-scope": "off",
     "jsx-a11y/prefer-tag-over-role": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/components/shadcn/**"],
+      "rules": { "complexity": "off" }
+    }
+  ]
 }

@@ -46,8 +46,6 @@ export const articleIdParamSchema = z.object({
     .refine(isWithinDbIdRange, { message: 'article_id is out of range' }),
 })
 
-export type ArticleIdParam = z.output<typeof articleIdParamSchema>
-
 export const articleIdParamValidator = zodValidator('param', articleIdParamSchema)
 export const createReadHistoryJsonValidator = zodValidator('json', createReadHistoryApiSchema)
 

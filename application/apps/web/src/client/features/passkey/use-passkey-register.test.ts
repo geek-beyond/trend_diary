@@ -11,8 +11,8 @@ vi.mock('@simplewebauthn/browser', () => ({ startRegistration: startRegistration
 
 const mockApiClient = {
   passkey: {
-    register: {
-      $post: vi.fn(),
+    registration: {
+      options: { $post: vi.fn() },
       verify: { $post: vi.fn() },
     },
   },
@@ -25,12 +25,12 @@ describe('usePasskeyRegister', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetApiClientForClient.mockReturnValue(mockApiClient)
-    mockApiClient.passkey.register.$post.mockResolvedValue({
+    mockApiClient.passkey.registration.options.$post.mockResolvedValue({
       ok: true,
       json: async () => ({ challengeId: 'challenge-1', options: {} }),
     })
     startRegistrationMock.mockResolvedValue({ id: 'credential-1' })
-    mockApiClient.passkey.register.verify.$post.mockResolvedValue({ ok: true, status: 201 })
+    mockApiClient.passkey.registration.verify.$post.mockResolvedValue({ ok: true, status: 201 })
   })
 
   describe('正常系', () => {
@@ -49,7 +49,7 @@ describe('usePasskeyRegister', () => {
 
   describe('準正常系', () => {
     it('startが非OKならfalseを返し登録失敗トーストを出す', async () => {
-      mockApiClient.passkey.register.$post.mockResolvedValue({ ok: false, status: 500 })
+      mockApiClient.passkey.registration.options.$post.mockResolvedValue({ ok: false, status: 500 })
       const { result } = renderHook(() => usePasskeyRegister())
 
       let returned: boolean | undefined
@@ -75,7 +75,7 @@ describe('usePasskeyRegister', () => {
     })
 
     it('verifyが非OKならfalseを返し登録失敗トーストを出す', async () => {
-      mockApiClient.passkey.register.verify.$post.mockResolvedValue({ ok: false, status: 400 })
+      mockApiClient.passkey.registration.verify.$post.mockResolvedValue({ ok: false, status: 400 })
       const { result } = renderHook(() => usePasskeyRegister())
 
       let returned: boolean | undefined

@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { passkeyRegisterVerifyInputSchema } from './register-verify'
+import { passkeyAuthenticationVerifyInputSchema } from './authentication-verify'
 
-describe('passkeyRegisterVerifyInputSchema', () => {
-  const registrationCredential = {
+describe('passkeyAuthenticationVerifyInputSchema', () => {
+  const authenticationCredential = {
     id: 'cred-id',
     rawId: 'cred-id',
-    response: { clientDataJSON: 'client-data', attestationObject: 'attestation' },
+    response: { clientDataJSON: 'client-data', authenticatorData: 'auth-data', signature: 'sig' },
     clientExtensionResults: {},
     type: 'public-key',
   }
 
   describe('正常系', () => {
     it('challengeIdとcredentialオブジェクトを持つ入力を検証できる', () => {
-      const result = passkeyRegisterVerifyInputSchema.safeParse({
+      const result = passkeyAuthenticationVerifyInputSchema.safeParse({
         challengeId: 'challenge-1',
-        credential: registrationCredential,
+        credential: authenticationCredential,
       })
       expect(result.success).toBe(true)
     })
@@ -24,11 +24,11 @@ describe('passkeyRegisterVerifyInputSchema', () => {
     const invalidTestCases = [
       {
         name: 'challengeIdが空文字の場合は検証に失敗する',
-        input: { challengeId: '', credential: registrationCredential },
+        input: { challengeId: '', credential: authenticationCredential },
       },
       {
         name: 'challengeIdが欠落している場合は検証に失敗する',
-        input: { credential: registrationCredential },
+        input: { credential: authenticationCredential },
       },
       {
         name: 'credentialがオブジェクトでない場合は検証に失敗する',
@@ -49,7 +49,7 @@ describe('passkeyRegisterVerifyInputSchema', () => {
     ]
 
     it.each(invalidTestCases)('$name', ({ input }) => {
-      const result = passkeyRegisterVerifyInputSchema.safeParse(input)
+      const result = passkeyAuthenticationVerifyInputSchema.safeParse(input)
       expect(result.success).toBe(false)
     })
   })

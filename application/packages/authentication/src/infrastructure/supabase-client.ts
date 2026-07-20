@@ -1,5 +1,5 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
-import { UnexpectedAuthError } from './errors'
+import { UnexpectedAuthError } from '../errors'
 
 export interface AuthClientConfig {
   url: string

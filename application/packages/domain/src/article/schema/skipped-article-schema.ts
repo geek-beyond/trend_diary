@@ -1,4 +1,4 @@
-import { createdAt } from '@trend-diary/common/schemas'
+import { createdAt } from '@trend-diary/std/schemas'
 import { z } from 'zod'
 
 export const skippedArticleSchema = z.object({

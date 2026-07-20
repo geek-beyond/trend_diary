@@ -1,5 +1,5 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
-import Logger from '@trend-diary/common/logger'
+import Logger from '@trend-diary/logger'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { HTTPException } from 'hono/http-exception'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { assertCaptchaVerified, verifyTurnstile } from './captcha'

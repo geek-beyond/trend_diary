@@ -1,4 +1,4 @@
-import { assert } from '@trend-diary/common/contract'
+import { assert } from '@trend-diary/std/contract'
 
 export const ARTICLE_MEDIA = ['qiita', 'zenn', 'hatena'] as const
 

@@ -1,13 +1,11 @@
 {
-  "name": "@trend-diary/common",
+  "name": "@trend-diary/std",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": {
     "./contract": "./src/contract/index.ts",
-    "./env": "./src/env/index.ts",
     "./errors": "./src/errors/index.ts",
-    "./http": "./src/http/index.ts",
     "./locale": "./src/locale/index.ts",
     "./pagination": "./src/pagination/index.ts",
     "./result": "./src/result/index.ts",
@@ -20,11 +18,9 @@
   },
   "dependencies": {
     "neverthrow": "catalog:",
-    "pino": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:",
     "vitest": "catalog:"
   }

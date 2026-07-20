@@ -29,7 +29,7 @@ export default async function unreadDigestionArticles(
   const useCase = createArticleUseCase(rdb)
   const result = await useCase.getUnreadDigestionArticles(sessionUser.activeUserId, query.media)
   if (result.isErr()) {
-    throw handleError(result.error, logger)
+    handleError(result.error, logger)
   }
 
   const response: UnreadDigestionArticlesResponse = {

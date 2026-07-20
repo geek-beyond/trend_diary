@@ -1,4 +1,4 @@
-import { addJstDays, toJstDateString } from '@trend-diary/common/locale/date'
+import { addJstDays, toJstDateString } from '@trend-diary/std/locale/date'
 import { z } from 'zod'
 import * as articleHelper from '@/test/helper/article'
 import { apiRequest } from '@/test/helper/request'

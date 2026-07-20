@@ -1,4 +1,4 @@
-import type { LoggerType } from '@trend-diary/common/logger'
+import type { LoggerType } from '@trend-diary/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiscordNotifier, DiscordWebhookClient } from './discord'
 

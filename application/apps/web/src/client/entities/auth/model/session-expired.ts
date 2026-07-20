@@ -1,4 +1,4 @@
-import { ClientError } from '@trend-diary/common/errors'
+import { ClientError } from '@trend-diary/std/errors'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
 import { TOAST_ID } from './toast-id'

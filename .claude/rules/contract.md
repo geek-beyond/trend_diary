@@ -9,10 +9,10 @@ paths:
 
 ## 契約違反はアサートする
 
-- 契約違反をデフォルト値補完（`?? x` / `|| x`）・optional chaining（`?.`）・黙殺スキップ（if で除外・continue）で通さず、`@trend-diary/common/contract` の `assert` / `assertNonNull` で送出する（手書きの `if (...) throw new Error(...)` は使わない）
+- 契約違反をデフォルト値補完（`?? x` / `|| x`）・optional chaining（`?.`）・黙殺スキップ（if で除外・continue）で通さず、`@trend-diary/std/contract` の `assert` / `assertNonNull` で送出する（手書きの `if (...) throw new Error(...)` は使わない）
   - `assert(condition, message)`: 不変条件の表明。`asserts condition` で以降のコードに narrowing が効く
   - `assertNonNull(value, name)`: 非 null 契約の表明。値を `NonNullable` へ絞る。Context 値専用の `mustGet` はこれを土台にした薄いラッパー
-  - 契約違反は `assert` が送出する専用の `AssertionError`（`@trend-diary/common/contract`）で識別する。`errorHandler`（`apps/web/src/middleware/error-handler.ts`）が「contract violation」として明示ログ＋5xx 通知する。`common` はクライアントからもインポートされるため `node:assert` に依存せず自前定義する（`invariant` 系は本番でメッセージを潰すため不採用）
+  - 契約違反は `assert` が送出する専用の `AssertionError`（`@trend-diary/std/contract`）で識別する。`errorHandler`（`apps/web/src/middleware/error-handler.ts`）が「contract violation」として明示ログ＋5xx 通知する。`std` はクライアントからもインポートされるため `node:assert` に依存せず自前定義する（`invariant` 系は本番でメッセージを潰すため不採用）
   - 理由: 握りつぶすとデータ破損や配線ミスが正常値のふりをして下流へ静かに伝播し、発見が遅れる。即座に落として errorHandler の 5xx 通知で検知する方が安全
   - エラーメッセージは英語で書く（診断出力に表示される開発者向けメッセージのため）
 - 契約違反（サーバ側の配線ミス）をクライアントエラー（401 / 404 / 422 等）に偽装しない

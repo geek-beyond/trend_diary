@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "pnpm --filter @trend-diary/web dev",
     "build": "pnpm --filter @trend-diary/web build",
-    "lint": "oxlint && oxfmt --check && pnpm -r typecheck",
+    "lint": "oxlint && oxfmt --check && import-lint && pnpm -r typecheck",
+    "import-lint": "import-lint",
     "knip": "knip",
     "similarity": "similarity-ts apps packages --no-types --threshold 0.9 --exclude '**/components/shadcn/**' --exclude '**/components/customized/**' --exclude '**/migrations/**' --fail-on-duplicates",
     "check": "oxlint && oxfmt --check",
@@ -14,6 +15,7 @@
     "supabase:stop": "supabase stop"
   },
   "devDependencies": {
+    "@import-lint/cli": "0.1.6",
     "knip": "^6.27.0",
     "oxfmt": "^0.58.0",
     "oxlint": "^1.73.0",

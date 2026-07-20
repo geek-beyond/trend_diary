@@ -1,4 +1,4 @@
-import type { OffsetPaginationResult } from '@trend-diary/common/pagination'
+import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import { z } from 'zod'
 import { ARTICLE_MEDIA } from '../media'
 

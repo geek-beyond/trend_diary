@@ -1,5 +1,3 @@
-import { addJstDays, toJstDate, toJstDateString } from '@trend-diary/common/locale/date'
-import { MAX_PAGE } from '@trend-diary/common/pagination'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { DIARY_DAYS, DIARY_READ_LIMIT } from '@trend-diary/domain/article/diary'
@@ -7,6 +5,8 @@ import type {
   DailyDiary,
   DailyDiaryRangeItem,
 } from '@trend-diary/domain/article/schema/diary-schema'
+import { addJstDays, toJstDate, toJstDateString } from '@trend-diary/std/locale/date'
+import { MAX_PAGE } from '@trend-diary/std/pagination'
 import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
@@ -94,7 +94,7 @@ export default async function getDiary(c: ZodValidatedContext<[typeof diaryQuery
       DIARY_READ_LIMIT,
     )
     if (detailResult.isErr()) {
-      throw handleError(detailResult.error, logger)
+      handleError(detailResult.error, logger)
     }
 
     const response = toDiaryDetailResponse(detailResult.value)
@@ -110,7 +110,7 @@ export default async function getDiary(c: ZodValidatedContext<[typeof diaryQuery
 
   const result = await useCase.getDailyDiaryRange(sessionUser.activeUserId, fromDate, toDate)
   if (result.isErr()) {
-    throw handleError(result.error, logger)
+    handleError(result.error, logger)
   }
   const response = toDiaryResponse(result.value)
   logger.info('daily diary range retrieved successfully', {

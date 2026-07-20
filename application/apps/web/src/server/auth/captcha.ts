@@ -1,6 +1,6 @@
-import { ClientError, ServerError } from '@trend-diary/common/errors'
-import type { LoggerType } from '@trend-diary/common/logger'
-import { wrapAsyncCall } from '@trend-diary/common/result'
+import type { LoggerType } from '@trend-diary/logger'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import { err, ok, type Result } from 'neverthrow'
 import { handleError } from '@/server/error/handle-error'
 
@@ -49,5 +49,5 @@ export async function assertCaptchaVerified(
   if (!secret) return
 
   const result = await verifyTurnstile(secret, token)
-  if (result.isErr()) throw handleError(result.error, logger)
+  if (result.isErr()) handleError(result.error, logger)
 }

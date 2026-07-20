@@ -9,9 +9,6 @@ import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 import { assertCaptchaVerified } from '../captcha'
 
-// login と構造が並行だが、signIn/signUp・後続のドメイン処理・レスポンスが別物で、
-// 共通化するとかえって過剰な抽象になるため、重複検出の対象からは意図的に除外する
-// similarity-ignore
 export default async function signup(c: ZodValidatedContext<[typeof authInputValidator]>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
@@ -20,7 +17,7 @@ export default async function signup(c: ZodValidatedContext<[typeof authInputVal
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const userResult = await authClient.signUp({ email: valid.email, password: valid.password })
-  if (userResult.isErr()) throw handleError(toAuthError(userResult.error), logger)
+  if (userResult.isErr()) handleError(toAuthError(userResult.error), logger)
 
   const user = userResult.value
 
@@ -37,7 +34,7 @@ export default async function signup(c: ZodValidatedContext<[typeof authInputVal
     user.id,
     notifier,
   )
-  if (result.isErr()) throw handleError(result.error, logger)
+  if (result.isErr()) handleError(result.error, logger)
 
   logger.info('signup success', { activeUserId: result.value.activeUserId })
 

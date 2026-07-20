@@ -1,4 +1,4 @@
-import { toJstDate } from '@trend-diary/common/locale'
+import { toJstDate } from '@trend-diary/std/locale'
 import { z } from 'zod'
 
 const dateSchema = z.union([z.string().datetime(), z.date()])

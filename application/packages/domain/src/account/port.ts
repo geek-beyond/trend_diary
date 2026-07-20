@@ -1,5 +1,5 @@
-import type { ServerError } from '@trend-diary/common/errors'
-import type { Nullable } from '@trend-diary/common/types/utility'
+import type { ServerError } from '@trend-diary/std/errors'
+import type { Nullable } from '@trend-diary/std/types/utility'
 import { type Result } from 'neverthrow'
 import type { CurrentUser } from './schema/active-user-schema'
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach } from 'vitest'
-import { AuthAdminClient } from './auth-admin-client'
+import { AuthAdminClient } from './client'
 
 const CONFIG = { url: 'http://127.0.0.1:54321', serviceRoleKey: 'dummy-service-role-key' }
 

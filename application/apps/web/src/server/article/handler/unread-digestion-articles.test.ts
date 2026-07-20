@@ -1,6 +1,6 @@
-import { ServerError } from '@trend-diary/common/errors'
 import type * as ArticleModule from '@trend-diary/domain/article'
 import { createArticleUseCase } from '@trend-diary/domain/article'
+import { ServerError } from '@trend-diary/std/errors'
 import { err } from 'neverthrow'
 import { vi } from 'vitest'
 import * as articleHelper from '@/test/helper/article'

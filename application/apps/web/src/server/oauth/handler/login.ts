@@ -1,5 +1,5 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
-import { resolveLoginRedirectTarget } from '@trend-diary/common/sanitization'
+import { resolveLoginRedirectTarget } from '@trend-diary/std/sanitization'
 import { deleteCookie, setCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
@@ -23,7 +23,7 @@ export default async function oauthLogin(
 
   const oauthClient = new OAuthClient(authClientConfig(c))
   const result = await oauthClient.startAuthorization(provider, buildOAuthCallbackUrl(c, provider))
-  if (result.isErr()) throw handleError(toAuthError(result.error), logger)
+  if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   setCookie(c, OAUTH_FLOW_COOKIE, OAUTH_FLOW.login, OAUTH_COOKIE_OPTIONS)
 

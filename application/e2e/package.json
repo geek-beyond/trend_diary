@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.2",
-    "@trend-diary/common": "workspace:*",
     "@trend-diary/datastore": "workspace:*",
     "@trend-diary/domain": "workspace:*",
+    "@trend-diary/std": "workspace:*",
     "drizzle-orm": "catalog:",
     "wrangler": "catalog:"
   },

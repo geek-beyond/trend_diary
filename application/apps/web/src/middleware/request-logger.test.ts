@@ -5,7 +5,7 @@ import CONTEXT_KEY from './context'
 import requestLogger from './request-logger'
 
 const { loggerCtor } = vi.hoisted(() => ({ loggerCtor: vi.fn() }))
-vi.mock('@trend-diary/common/logger', () => ({
+vi.mock('@trend-diary/logger', () => ({
   default: class {
     constructor(level: string) {
       loggerCtor(level)

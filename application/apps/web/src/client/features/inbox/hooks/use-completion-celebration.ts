@@ -1,60 +1,38 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { completionPendingStorage } from '@/client/features/inbox/model/completion-pending-storage'
-import useDocumentVisibility from './use-document-visibility'
 
 const CompletionDisplayDurationMs = 2500
 
 interface Params {
-  remaining: number
   queueLength: number
-  // 新しいバッチを取得したことを判別するための参照。変化したらデータ起因の0件とみなす
-  // oxlint-disable-next-line typescript/no-restricted-types -- 変化の有無だけを見る opaque トークンで、中身の型に依存しないため
-  batchToken: unknown
 }
 
 // 未読を消化しきった瞬間だけ完了演出を出すためのフック。
-// 「操作で消化した」事実は actionConsumedRef が持ち、それが立つのは表示中の記事を
-// 消化した時＝直前まで remaining>0 だった時に限る。データ起因の0件では立てない。
-export default function useCompletionCelebration({ remaining, queueLength, batchToken }: Params) {
+// 完了は「操作で最後の1件を消化した」ときにだけ起こすべきなので、notifyCompleted で保留状態にし、
+// 「可視・キュー空・保留中」が揃ったフレームでレンダー中に一度だけ演出を立てる。
+export default function useCompletionCelebration({ queueLength }: Params) {
   const [isJustCompleted, setIsJustCompleted] = useState(false)
-  const actionConsumedRef = useRef(false)
+  // 保留は sessionStorage を初期値に持ち、以降は state を正とする。リロード・再マウントをまたいで復帰時再生を保つ
+  const [isPending, setIsPending] = useState(() => completionPendingStorage.has())
   const visibilityState = useDocumentVisibility()
 
-  // 表示中の記事を操作で消化したことを伝える。完了演出の発火条件になる
-  const notifyConsumed = () => {
-    actionConsumedRef.current = true
+  // 操作で残り0になった瞬間に呼ぶ。復帰時再生に備えて保留状態にする
+  const notifyCompleted = () => {
+    setIsPending(true)
   }
 
-  useEffect(() => {
-    // 新しいバッチ取得でリセットし、データ起因の0件で演出が出ないようにする
-    actionConsumedRef.current = false
-  }, [batchToken])
-
-  useEffect(() => {
-    const reachedZeroByAction = remaining === 0 && actionConsumedRef.current
-    const shouldPlayCompletion =
-      reachedZeroByAction || (remaining === 0 && completionPendingStorage.has())
-
-    if (shouldPlayCompletion && visibilityState === 'visible') {
-      setIsJustCompleted(true)
-      completionPendingStorage.set(false)
-    } else if (reachedZeroByAction) {
-      // 操作直後にタブが非表示（別タブで読了等）なら、復帰時に演出を再生するため保留にする
-      completionPendingStorage.set(true)
-    }
-
-    actionConsumedRef.current = false
-  }, [remaining, visibilityState])
-
-  useEffect(() => {
-    // タブ復帰時、保留中の完了演出を再生する
-    if (visibilityState !== 'visible') return
-    if (queueLength !== 0) return
-    if (!completionPendingStorage.has()) return
-
+  // 可視・キュー空・保留中が揃ったら演出を立てる。isPending が false へ収束するため無限ループにならない。
+  // 可視状態は useSyncExternalStore で購読しているので、タブ復帰でも既に可視なマウントでも同じ経路で再生できる。
+  // Effect 内の同期 setState（cascading render）を避けるため、レンダー中の収束する setState で判定する
+  if (isPending && queueLength === 0 && visibilityState === 'visible') {
+    setIsPending(false)
     setIsJustCompleted(true)
-    completionPendingStorage.set(false)
-  }, [visibilityState, queueLength])
+  }
+
+  // 保留状態を sessionStorage に同期する（外部システムとの同期は Effect が本来の用途）
+  useEffect(() => {
+    completionPendingStorage.set(isPending)
+  }, [isPending])
 
   useEffect(() => {
     if (!isJustCompleted) return
@@ -68,5 +46,25 @@ export default function useCompletionCelebration({ remaining, queueLength, batch
     }
   }, [isJustCompleted])
 
-  return { isJustCompleted, notifyConsumed }
+  return { isJustCompleted, notifyCompleted }
+}
+
+const subscribeVisibility = (onStoreChange: () => void) => {
+  document.addEventListener('visibilitychange', onStoreChange)
+  return () => {
+    document.removeEventListener('visibilitychange', onStoreChange)
+  }
+}
+
+const getVisibilitySnapshot = (): DocumentVisibilityState => document.visibilityState
+
+// SSR とハイドレーション初回は hidden 扱いにし、可視依存の演出がハイドレーション不一致を起こさないようにする
+const getVisibilityServerSnapshot = (): DocumentVisibilityState => 'hidden'
+
+function useDocumentVisibility() {
+  return useSyncExternalStore(
+    subscribeVisibility,
+    getVisibilitySnapshot,
+    getVisibilityServerSnapshot,
+  )
 }

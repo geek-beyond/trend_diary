@@ -48,10 +48,10 @@ describe('passkey認証', () => {
 
   // 認証検証には事前に登録済みpasskeyが要るため、登録 ceremony を通すヘルパ
   async function registerPasskey(cookies: string) {
-    const registerStart = await post('/api/auth/passkey/register/start', undefined, cookies)
+    const registerStart = await post('/api/passkey/register/start', undefined, cookies)
     const registerStartBody: { challengeId: string } = await registerStart.json()
     return post(
-      '/api/auth/passkey/register/verify',
+      '/api/passkey/register/verify',
       { challengeId: registerStartBody.challengeId, credential: { id: CREDENTIAL_ID } },
       cookies,
     )
@@ -62,7 +62,7 @@ describe('passkey認証', () => {
       it('登録開始に成功すると200でchallengeIdを返す', async () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
-        const res = await post('/api/auth/passkey/register/start', undefined, cookies)
+        const res = await post('/api/passkey/register/start', undefined, cookies)
         expect(res.status).toBe(200)
         const body: { challengeId: string } = await res.json()
         expect(typeof body.challengeId).toBe('string')
@@ -72,7 +72,7 @@ describe('passkey認証', () => {
 
     describe('準正常系', () => {
       it('未ログインでは401を返す', async () => {
-        const res = await post('/api/auth/passkey/register/start')
+        const res = await post('/api/passkey/register/start')
         expect(res.status).toBe(401)
       })
     })
@@ -85,7 +85,7 @@ describe('passkey認証', () => {
           throw new Error('supabase connection failed')
         })
 
-        const res = await post('/api/auth/passkey/register/start', undefined, cookies)
+        const res = await post('/api/passkey/register/start', undefined, cookies)
         expect(res.status).toBe(500)
       })
     })
@@ -106,7 +106,7 @@ describe('passkey認証', () => {
 
     describe('準正常系', () => {
       it('未ログインでは401を返す', async () => {
-        const res = await post('/api/auth/passkey/register/verify', {
+        const res = await post('/api/passkey/register/verify', {
           challengeId: 'challenge-1',
           credential: { id: CREDENTIAL_ID },
         })
@@ -117,7 +117,7 @@ describe('passkey認証', () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
         const res = await post(
-          '/api/auth/passkey/register/verify',
+          '/api/passkey/register/verify',
           { credential: { id: CREDENTIAL_ID } },
           cookies,
         )
@@ -128,7 +128,7 @@ describe('passkey認証', () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
         const res = await post(
-          '/api/auth/passkey/register/verify',
+          '/api/passkey/register/verify',
           { challengeId: 'nonexistent-challenge', credential: { id: CREDENTIAL_ID } },
           cookies,
         )
@@ -145,7 +145,7 @@ describe('passkey認証', () => {
         })
 
         const res = await post(
-          '/api/auth/passkey/register/verify',
+          '/api/passkey/register/verify',
           { challengeId: 'challenge-1', credential: { id: CREDENTIAL_ID } },
           cookies,
         )
@@ -161,11 +161,11 @@ describe('passkey認証', () => {
         await registerPasskey(cookies)
 
         // 認証: start(未認証で可) → verify(未認証で可) → セッション確立
-        const loginStart = await post('/api/auth/passkey/login/start')
+        const loginStart = await post('/api/passkey/login/start')
         expect(loginStart.status).toBe(200)
         const loginStartBody: { challengeId: string } = await loginStart.json()
 
-        const res = await post('/api/auth/passkey/login/verify', {
+        const res = await post('/api/passkey/login/verify', {
           challengeId: loginStartBody.challengeId,
           credential: { id: CREDENTIAL_ID },
         })
@@ -177,10 +177,10 @@ describe('passkey認証', () => {
 
     describe('準正常系', () => {
       it('未登録の資格情報では401を返す', async () => {
-        const loginStart = await post('/api/auth/passkey/login/start')
+        const loginStart = await post('/api/passkey/login/start')
         const loginStartBody: { challengeId: string } = await loginStart.json()
 
-        const res = await post('/api/auth/passkey/login/verify', {
+        const res = await post('/api/passkey/login/verify', {
           challengeId: loginStartBody.challengeId,
           credential: { id: 'never-registered-credential' },
         })
@@ -188,7 +188,7 @@ describe('passkey認証', () => {
       })
 
       it('存在しないchallengeIdでは401を返す', async () => {
-        const res = await post('/api/auth/passkey/login/verify', {
+        const res = await post('/api/passkey/login/verify', {
           challengeId: 'nonexistent-challenge',
           credential: { id: CREDENTIAL_ID },
         })
@@ -196,7 +196,7 @@ describe('passkey認証', () => {
       })
 
       it('challengeId欠落では422を返す', async () => {
-        const res = await post('/api/auth/passkey/login/verify', {
+        const res = await post('/api/passkey/login/verify', {
           credential: { id: CREDENTIAL_ID },
         })
         expect(res.status).toBe(422)
@@ -210,7 +210,7 @@ describe('passkey認証', () => {
           throw new Error('supabase connection failed')
         })
 
-        const res = await post('/api/auth/passkey/login/verify', {
+        const res = await post('/api/passkey/login/verify', {
           challengeId: 'challenge-1',
           credential: { id: CREDENTIAL_ID },
         })
@@ -225,26 +225,26 @@ describe('passkey認証', () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
         await registerPasskey(cookies)
 
-        const registered = await req('GET', '/api/auth/passkey', cookies)
+        const registered = await req('GET', '/api/passkey', cookies)
         expect(registered.status).toBe(200)
         expect(await registered.json()).toEqual({ hasPasskey: true })
 
-        const disabled = await req('DELETE', '/api/auth/passkey', cookies)
+        const disabled = await req('DELETE', '/api/passkey', cookies)
         expect(disabled.status).toBe(204)
 
-        const afterDisable = await req('GET', '/api/auth/passkey', cookies)
+        const afterDisable = await req('GET', '/api/passkey', cookies)
         expect(await afterDisable.json()).toEqual({ hasPasskey: false })
       })
     })
 
     describe('準正常系', () => {
       it('未ログインで状態を取得すると401を返す', async () => {
-        const res = await req('GET', '/api/auth/passkey')
+        const res = await req('GET', '/api/passkey')
         expect(res.status).toBe(401)
       })
 
       it('未ログインで無効化すると401を返す', async () => {
-        const res = await req('DELETE', '/api/auth/passkey')
+        const res = await req('DELETE', '/api/passkey')
         expect(res.status).toBe(401)
       })
     })
@@ -257,7 +257,7 @@ describe('passkey認証', () => {
           throw new Error('supabase connection failed')
         })
 
-        const res = await req('GET', '/api/auth/passkey', cookies)
+        const res = await req('GET', '/api/passkey', cookies)
         expect(res.status).toBe(500)
       })
     })

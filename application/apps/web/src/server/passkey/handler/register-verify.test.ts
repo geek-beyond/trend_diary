@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { passkeyRegisterVerifyInputSchema } from './passkey-register-verify'
+import { passkeyRegisterVerifyInputSchema } from './register-verify'
 
 describe('passkeyRegisterVerifyInputSchema', () => {
   const registrationCredential = {

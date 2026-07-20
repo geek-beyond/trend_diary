@@ -16,7 +16,7 @@ export default function usePasskeyRegister() {
     const client = getApiClientForClient()
 
     const startResult = await wrapAsyncCall(async () => {
-      const res = await client.auth.passkey.register.start.$post()
+      const res = await client.passkey.register.start.$post()
       if (!res.ok) throw new Error('passkey register start failed')
       return res.json()
     })
@@ -41,7 +41,7 @@ export default function usePasskeyRegister() {
     }
 
     const verifyResult = await wrapAsyncCall(() =>
-      client.auth.passkey.register.verify.$post({
+      client.passkey.register.verify.$post({
         json: { challengeId, credential: ceremonyResult.value },
       }),
     )

@@ -11,7 +11,7 @@ export default function usePasskeyDisable() {
     setIsSubmitting(true)
     const client = getApiClientForClient()
 
-    const result = await wrapAsyncCall(() => client.auth.passkey.$delete())
+    const result = await wrapAsyncCall(() => client.passkey.$delete())
     setIsSubmitting(false)
 
     if (result.isErr() || !result.value.ok) {

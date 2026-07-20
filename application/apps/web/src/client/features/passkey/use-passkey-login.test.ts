@@ -20,12 +20,10 @@ vi.mock('swr', () => ({ useSWRConfig: () => ({ mutate: mutateMock }) }))
 vi.mock('@simplewebauthn/browser', () => ({ startAuthentication: startAuthenticationMock }))
 
 const mockApiClient = {
-  auth: {
-    passkey: {
-      login: {
-        start: { $post: vi.fn() },
-        verify: { $post: vi.fn() },
-      },
+  passkey: {
+    login: {
+      start: { $post: vi.fn() },
+      verify: { $post: vi.fn() },
     },
   },
 }
@@ -37,12 +35,12 @@ describe('usePasskeyLogin', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetApiClientForClient.mockReturnValue(mockApiClient)
-    mockApiClient.auth.passkey.login.start.$post.mockResolvedValue({
+    mockApiClient.passkey.login.start.$post.mockResolvedValue({
       ok: true,
       json: async () => ({ challengeId: 'challenge-1', options: {} }),
     })
     startAuthenticationMock.mockResolvedValue({ id: 'credential-1' })
-    mockApiClient.auth.passkey.login.verify.$post.mockResolvedValue({ ok: true, status: 200 })
+    mockApiClient.passkey.login.verify.$post.mockResolvedValue({ ok: true, status: 200 })
   })
 
   describe('正常系', () => {
@@ -71,7 +69,7 @@ describe('usePasskeyLogin', () => {
 
   describe('準正常系', () => {
     it('startが非OKならログイン失敗を表示し遷移しない', async () => {
-      mockApiClient.auth.passkey.login.start.$post.mockResolvedValue({ ok: false, status: 500 })
+      mockApiClient.passkey.login.start.$post.mockResolvedValue({ ok: false, status: 500 })
       const { result } = renderHook(() => usePasskeyLogin())
 
       await act(async () => {
@@ -95,7 +93,7 @@ describe('usePasskeyLogin', () => {
     })
 
     it('verifyが非OKならログイン失敗を表示し遷移しない', async () => {
-      mockApiClient.auth.passkey.login.verify.$post.mockResolvedValue({ ok: false, status: 401 })
+      mockApiClient.passkey.login.verify.$post.mockResolvedValue({ ok: false, status: 401 })
       const { result } = renderHook(() => usePasskeyLogin())
 
       await act(async () => {

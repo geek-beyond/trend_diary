@@ -7,8 +7,7 @@ import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/me
 import { inArray } from 'drizzle-orm'
 
 function getTodayJstNoon(): Date {
-  const todayJstResult = toJstDateString(new Date())
-  const todayJst = todayJstResult.isErr() ? '1970-01-01' : todayJstResult.value
+  const todayJst = toJstDateString(new Date())
   // trends API は日付フィルタを JST で評価するため、E2E データも JST 当日内に固定する
   return new Date(`${todayJst}T12:00:00+09:00`)
 }

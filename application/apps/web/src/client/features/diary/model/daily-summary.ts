@@ -5,13 +5,9 @@ interface SourceSummary {
   skip: number
 }
 
+// 失敗するのは Intl が壊れた異常環境のみで、toTodayJstDateString が送出しエラーバウンダリに委ねる
 export function getTodayJst(): string {
-  const result = toTodayJstDateString()
-  // 失敗するのは Intl が壊れた異常環境のみで通常は起きないため、握りつぶさずエラーバウンダリに委ねる
-  if (result.isErr()) {
-    throw result.error
-  }
-  return result.value
+  return toTodayJstDateString()
 }
 
 export function sumSourceSummary(sources: SourceSummary[]): SourceSummary {

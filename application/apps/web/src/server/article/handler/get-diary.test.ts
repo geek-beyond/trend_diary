@@ -35,11 +35,7 @@ interface DiaryRangeResponse {
   }
 }
 
-const getTodayJst = () => {
-  const result = toJstDateString(new Date())
-  if (result.isErr()) throw result.error
-  return result.value
-}
+const getTodayJst = () => toJstDateString(new Date())
 
 function toJstDateTime(date: string, time: string) {
   return new Date(`${date}T${time}+09:00`)

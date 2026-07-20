@@ -68,11 +68,7 @@ const buildRangeItemResponse = (
   ],
 })
 
-const getTodayJst = () => {
-  const result = toJstDateString(new Date())
-  if (result.isErr()) return '1970-01-01'
-  return result.value
-}
+const getTodayJst = () => toJstDateString(new Date())
 
 const buildDates = (baseDate: string) =>
   Array.from({ length: 7 }, (_, index) => addJstDays(baseDate, -(6 - index)))

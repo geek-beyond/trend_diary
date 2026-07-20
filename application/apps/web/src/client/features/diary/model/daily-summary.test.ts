@@ -1,4 +1,3 @@
-import { err, ok } from 'neverthrow'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as dateModule from '@/common/locale/date'
 import { getTodayJst, sumSourceSummary } from './daily-summary'
@@ -10,17 +9,17 @@ describe('daily-summary', () => {
 
   describe('getTodayJst', () => {
     it('JSTの日付文字列を返す', () => {
-      vi.spyOn(dateModule, 'toTodayJstDateString').mockReturnValue(ok('2026-03-08'))
+      vi.spyOn(dateModule, 'toTodayJstDateString').mockReturnValue('2026-03-08')
 
       expect(getTodayJst()).toBe('2026-03-08')
     })
 
-    it('JST解決に失敗したら例外を投げる', () => {
-      vi.spyOn(dateModule, 'toTodayJstDateString').mockReturnValue(
-        err(new Error('JST日付の取得に失敗しました')),
-      )
+    it('JST解決に失敗したら例外が伝播する', () => {
+      vi.spyOn(dateModule, 'toTodayJstDateString').mockImplementation(() => {
+        throw new Error('Failed to resolve JST date parts')
+      })
 
-      expect(() => getTodayJst()).toThrow('JST日付の取得に失敗しました')
+      expect(() => getTodayJst()).toThrow('Failed to resolve JST date parts')
     })
   })
 

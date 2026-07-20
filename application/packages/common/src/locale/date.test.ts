@@ -3,19 +3,12 @@ import { addJstDays, toJstDate, toJstDateString } from './date'
 describe('Common Date Module', () => {
   describe('toJstDateString', () => {
     it('DateをJSTのYYYY-MM-DD形式に変換できること', () => {
-      const result = toJstDateString(new Date('2024-01-01T00:00:00Z'))
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) {
-        expect(result.value).toBe('2024-01-01')
-      }
+      expect(toJstDateString(new Date('2024-01-01T00:00:00Z'))).toBe('2024-01-01')
     })
 
-    it('無効なDateの場合はfailureを返すこと', () => {
-      const result = toJstDateString(new Date('invalid-date'))
-      expect(result.isErr()).toBe(true)
-      if (result.isErr()) {
-        expect(result.error.message).toBe('無効な日付です')
-      }
+    // 妥当な Date を渡す契約のため、無効な Date は契約違反として送出する
+    it('無効なDateの場合は契約違反として送出すること', () => {
+      expect(() => toJstDateString(new Date('invalid-date'))).toThrow('Invalid date')
     })
   })
 

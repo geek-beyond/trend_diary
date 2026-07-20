@@ -78,14 +78,7 @@ const generateFakeResponse = (
   }
 }
 
-const resolveJstDateString = (rawDate: Date): string => {
-  const result = toJstDateString(rawDate)
-  if (result.isErr()) {
-    return '1970-01-01'
-  }
-
-  return result.value
-}
+const resolveJstDateString = (rawDate: Date): string => toJstDateString(rawDate)
 
 const resolveJstDateWithOffset = (baseDateString: string, days: number): string =>
   addJstDays(baseDateString, days)

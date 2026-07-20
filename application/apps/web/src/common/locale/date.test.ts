@@ -1,4 +1,3 @@
-import { ok } from 'neverthrow'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatSummaryDateTick, toJaDateString, toJaTimeString, toTodayJstDateString } from './date'
 
@@ -59,7 +58,7 @@ describe('Web Locale Module', () => {
     it('現在時刻をJSTのYYYY-MM-DD形式に変換できること', () => {
       vi.setSystemTime(new Date('2024-01-01T23:30:00Z'))
 
-      expect(toTodayJstDateString()).toEqual(ok('2024-01-02'))
+      expect(toTodayJstDateString()).toBe('2024-01-02')
     })
   })
 

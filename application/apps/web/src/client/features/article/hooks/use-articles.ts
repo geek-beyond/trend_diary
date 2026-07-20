@@ -70,14 +70,6 @@ const getDateRangeByPreset = (datePreset: DatePresetType, todayJstDateString: st
   to: todayJstDateString,
 })
 
-const getTodayJstDateString = (baseDate: Date): string => {
-  const todayJstDateResult = toJstDateString(baseDate)
-  // UTC 日付へ縮退させると JST 深夜帯に「今日」が前日へずれたままクエリが組まれるため送出する
-  if (todayJstDateResult.isErr()) throw todayJstDateResult.error
-
-  return todayJstDateResult.value
-}
-
 const parseDatePreset = (
   fromParam: string | null,
   toParam: string | null,
@@ -129,7 +121,7 @@ export default function useArticles(isLoggedIn = false) {
   const { client, apiCall } = createSWRFetcher()
 
   const date = new Date()
-  const todayJstDateString = getTodayJstDateString(date)
+  const todayJstDateString = toJstDateString(date)
 
   const pageParam = searchParams.get('page')
   const limitParam = searchParams.get('limit')

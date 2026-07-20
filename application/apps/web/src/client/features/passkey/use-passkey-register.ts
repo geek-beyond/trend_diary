@@ -16,7 +16,7 @@ export default function usePasskeyRegister() {
     const client = getApiClientForClient()
 
     const startResult = await wrapAsyncCall(async () => {
-      const res = await client.passkey.register.start.$post()
+      const res = await client.passkey.register.$post()
       if (!res.ok) throw new Error('passkey register start failed')
       return res.json()
     })

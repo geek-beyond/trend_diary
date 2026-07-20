@@ -22,7 +22,7 @@ export default function usePasskeyLogin(redirectTo?: string) {
     const client = getApiClientForClient()
 
     const startResult = await wrapAsyncCall(async () => {
-      const res = await client.passkey.login.start.$post()
+      const res = await client.passkey.login.$post()
       if (!res.ok) throw new Error('passkey login start failed')
       return res.json()
     })

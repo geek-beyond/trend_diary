@@ -9,7 +9,7 @@ export default function usePasskeyStatus() {
     const client = getApiClientForClient()
     const res = await client.passkey.$get()
     if (!res.ok) return false
-    const body: { hasPasskey: boolean } = await res.json()
+    const body = await res.json()
     return body.hasPasskey
   })
 

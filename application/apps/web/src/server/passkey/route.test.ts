@@ -48,7 +48,7 @@ describe('passkey認証', () => {
 
   // 認証検証には事前に登録済みpasskeyが要るため、登録 ceremony を通すヘルパ
   async function registerPasskey(cookies: string) {
-    const registerStart = await post('/api/passkey/register/start', undefined, cookies)
+    const registerStart = await post('/api/passkey/register', undefined, cookies)
     const registerStartBody: { challengeId: string } = await registerStart.json()
     return post(
       '/api/passkey/register/verify',
@@ -62,7 +62,7 @@ describe('passkey認証', () => {
       it('登録開始に成功すると200でchallengeIdを返す', async () => {
         const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
-        const res = await post('/api/passkey/register/start', undefined, cookies)
+        const res = await post('/api/passkey/register', undefined, cookies)
         expect(res.status).toBe(200)
         const body: { challengeId: string } = await res.json()
         expect(typeof body.challengeId).toBe('string')
@@ -72,7 +72,7 @@ describe('passkey認証', () => {
 
     describe('準正常系', () => {
       it('未ログインでは401を返す', async () => {
-        const res = await post('/api/passkey/register/start')
+        const res = await post('/api/passkey/register')
         expect(res.status).toBe(401)
       })
     })
@@ -85,7 +85,7 @@ describe('passkey認証', () => {
           throw new Error('supabase connection failed')
         })
 
-        const res = await post('/api/passkey/register/start', undefined, cookies)
+        const res = await post('/api/passkey/register', undefined, cookies)
         expect(res.status).toBe(500)
       })
     })
@@ -161,7 +161,7 @@ describe('passkey認証', () => {
         await registerPasskey(cookies)
 
         // 認証: start(未認証で可) → verify(未認証で可) → セッション確立
-        const loginStart = await post('/api/passkey/login/start')
+        const loginStart = await post('/api/passkey/login')
         expect(loginStart.status).toBe(200)
         const loginStartBody: { challengeId: string } = await loginStart.json()
 
@@ -177,7 +177,7 @@ describe('passkey認証', () => {
 
     describe('準正常系', () => {
       it('未登録の資格情報では401を返す', async () => {
-        const loginStart = await post('/api/passkey/login/start')
+        const loginStart = await post('/api/passkey/login')
         const loginStartBody: { challengeId: string } = await loginStart.json()
 
         const res = await post('/api/passkey/login/verify', {

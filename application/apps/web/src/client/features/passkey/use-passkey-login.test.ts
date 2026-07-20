@@ -22,7 +22,7 @@ vi.mock('@simplewebauthn/browser', () => ({ startAuthentication: startAuthentica
 const mockApiClient = {
   passkey: {
     login: {
-      start: { $post: vi.fn() },
+      $post: vi.fn(),
       verify: { $post: vi.fn() },
     },
   },
@@ -35,7 +35,7 @@ describe('usePasskeyLogin', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetApiClientForClient.mockReturnValue(mockApiClient)
-    mockApiClient.passkey.login.start.$post.mockResolvedValue({
+    mockApiClient.passkey.login.$post.mockResolvedValue({
       ok: true,
       json: async () => ({ challengeId: 'challenge-1', options: {} }),
     })
@@ -69,7 +69,7 @@ describe('usePasskeyLogin', () => {
 
   describe('準正常系', () => {
     it('startが非OKならログイン失敗を表示し遷移しない', async () => {
-      mockApiClient.passkey.login.start.$post.mockResolvedValue({ ok: false, status: 500 })
+      mockApiClient.passkey.login.$post.mockResolvedValue({ ok: false, status: 500 })
       const { result } = renderHook(() => usePasskeyLogin())
 
       await act(async () => {

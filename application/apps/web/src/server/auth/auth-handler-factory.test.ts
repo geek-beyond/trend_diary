@@ -12,7 +12,11 @@ import { z } from 'zod'
 import type { Env } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator from '@/middleware/zod-validator'
-import { type AuthHandlerContext, createAuthHandler } from './auth-handler-factory'
+import {
+  type AuthHandlerContext,
+  createAccountAuthHandler,
+  createAuthHandler,
+} from './auth-handler-factory'
 
 // resolveAccount 経路は createAccountUseCase(getRdbClient(...)) を構築するため実体依存を切る。
 // resolveAccount コールバック自身が結果を返すので use-case の中身は空で十分。
@@ -20,18 +24,17 @@ vi.mock('@trend-diary/datastore/rdb', () => ({ default: vi.fn(() => ({})) }))
 vi.mock('@trend-diary/domain/account', () => ({ createAccountUseCase: vi.fn(() => ({})) }))
 
 // 手動 Context モック(型アサーション)を避け、実 Hono へルーティングして app.request で本番同等の
-// 経路を通す。ロガーは実 Logger を spy し、二重アサーションを避ける(handle-error.test.ts と同方針)。
+// 経路を通す。ロガーは実 Logger(silent)を APP_LOG に載せる(handle-error.test.ts と同方針)。
 function mountHandler(handler: (c: Context<Env>) => Promise<Response>) {
-  const logger = new Logger('silent')
-  const info = vi.spyOn(logger, 'info').mockImplementation(() => {})
   const app = new Hono<Env>()
+  const logger = new Logger('silent')
   app.use('*', async (c, next) => {
     c.set(CONTEXT_KEY.APP_LOG, logger)
     await next()
   })
   app.post('/auth', handler)
   // env.DB は getRdbClient のモックが受けるため空で良い
-  return { request: () => app.request('/auth', { method: 'POST' }, { DB: {} }), info }
+  return () => app.request('/auth', { method: 'POST' }, { DB: {} })
 }
 
 describe('createAuthHandler', () => {
@@ -43,51 +46,35 @@ describe('createAuthHandler', () => {
         respond: (c, output) => c.json({ count: output.items.length }, 200),
       })
 
-      const res = await mountHandler(handler).request()
+      const res = await mountHandler(handler)()
 
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ count: 2 })
     })
 
-    it('resolveAccount 指定時は認証出力ではなくアカウント出力を respond に渡すこと', async () => {
-      const handler = createAuthHandler({
-        createClient: () => ({}),
-        authenticate: () => Promise.resolve(ok({ id: 'auth-1' })),
-        resolveAccount: (_useCase, user) =>
-          Promise.resolve(ok({ authenticationId: user.id, displayName: 'テスト太郎' })),
-        respond: (c, account) => c.json({ displayName: account.displayName }, 200),
-      })
-
-      const res = await mountHandler(handler).request()
-
-      expect(res.status).toBe(200)
-      expect(await res.json()).toEqual({ displayName: 'テスト太郎' })
-    })
-
-    it('log コールバックに最終出力を渡して呼ぶこと', async () => {
+    it('log コールバックに認証出力を渡して呼ぶこと', async () => {
       const log = vi.fn()
       const handler = createAuthHandler({
         createClient: () => ({}),
         authenticate: () => Promise.resolve(ok({ id: 'auth-1' })),
-        resolveAccount: () => Promise.resolve(ok({ activeUserId: 7n })),
         log,
         respond: (c) => c.json({}, 200),
       })
 
-      await mountHandler(handler).request()
+      await mountHandler(handler)()
 
       expect(log).toHaveBeenCalledTimes(1)
-      expect(log.mock.calls[0]![0]).toEqual({ activeUserId: 7n })
+      expect(log.mock.calls[0]![0]).toEqual({ id: 'auth-1' })
     })
 
-    it('respond が 204 を返すとボディなしになること', async () => {
+    it('respond が 204 を返すとボディなしになること(log 未指定)', async () => {
       const handler = createAuthHandler({
         createClient: () => ({}),
         authenticate: () => Promise.resolve(ok(null)),
         respond: (c) => c.body(null, 204),
       })
 
-      const res = await mountHandler(handler).request()
+      const res = await mountHandler(handler)()
 
       expect(res.status).toBe(204)
       expect(await res.text()).toBe('')
@@ -137,24 +124,11 @@ describe('createAuthHandler', () => {
           respond: (c) => c.json({}, 200),
         })
 
-        const res = await mountHandler(handler).request()
+        const res = await mountHandler(handler)()
 
         expect(res.status).toBe(status)
       },
     )
-
-    it('アカウントステップの err は toAuthError を通さず元のステータスを保つこと', async () => {
-      const handler = createAuthHandler({
-        createClient: () => ({}),
-        authenticate: () => Promise.resolve(ok({ id: 'auth-1' })),
-        resolveAccount: () => Promise.resolve(err(new ClientError('User not found', 404))),
-        respond: (c) => c.json({}, 200),
-      })
-
-      const res = await mountHandler(handler).request()
-
-      expect(res.status).toBe(404)
-    })
 
     it('authenticate が送出した例外(captcha 等)はそのまま応答へ伝播すること', async () => {
       const handler = createAuthHandler({
@@ -163,7 +137,7 @@ describe('createAuthHandler', () => {
         respond: (c) => c.json({}, 200),
       })
 
-      const res = await mountHandler(handler).request()
+      const res = await mountHandler(handler)()
 
       expect(res.status).toBe(403)
     })
@@ -177,9 +151,72 @@ describe('createAuthHandler', () => {
         respond: (c) => c.json({}, 200),
       })
 
-      const res = await mountHandler(handler).request()
+      const res = await mountHandler(handler)()
 
       expect(res.status).toBe(500)
+    })
+  })
+})
+
+describe('createAccountAuthHandler', () => {
+  describe('正常系', () => {
+    it('アカウント出力(認証出力ではない)を respond に渡すこと(log 未指定)', async () => {
+      const handler = createAccountAuthHandler({
+        createClient: () => ({}),
+        authenticate: () => Promise.resolve(ok({ id: 'auth-1' })),
+        resolveAccount: (_useCase, user) =>
+          Promise.resolve(ok({ authenticationId: user.id, displayName: 'テスト太郎' })),
+        respond: (c, account) => c.json({ displayName: account.displayName }, 200),
+      })
+
+      const res = await mountHandler(handler)()
+
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ displayName: 'テスト太郎' })
+    })
+
+    it('log コールバックにアカウント出力を渡して呼ぶこと', async () => {
+      const log = vi.fn()
+      const handler = createAccountAuthHandler({
+        createClient: () => ({}),
+        authenticate: () => Promise.resolve(ok({ id: 'auth-1' })),
+        resolveAccount: () => Promise.resolve(ok({ activeUserId: 7n })),
+        log,
+        respond: (c) => c.json({}, 200),
+      })
+
+      await mountHandler(handler)()
+
+      expect(log).toHaveBeenCalledTimes(1)
+      expect(log.mock.calls[0]![0]).toEqual({ activeUserId: 7n })
+    })
+  })
+
+  describe('準正常系', () => {
+    it('認証ステップの err は toAuthError で変換されること', async () => {
+      const handler = createAccountAuthHandler({
+        createClient: () => ({}),
+        authenticate: () => Promise.resolve(err(new InvalidCredentialsError('invalid'))),
+        resolveAccount: () => Promise.resolve(ok({})),
+        respond: (c) => c.json({}, 200),
+      })
+
+      const res = await mountHandler(handler)()
+
+      expect(res.status).toBe(401)
+    })
+
+    it('アカウントステップの err は toAuthError を通さず元のステータスを保つこと', async () => {
+      const handler = createAccountAuthHandler({
+        createClient: () => ({}),
+        authenticate: () => Promise.resolve(ok({ id: 'auth-1' })),
+        resolveAccount: () => Promise.resolve(err(new ClientError('User not found', 404))),
+        respond: (c) => c.json({}, 200),
+      })
+
+      const res = await mountHandler(handler)()
+
+      expect(res.status).toBe(404)
     })
   })
 })

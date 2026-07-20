@@ -3,7 +3,7 @@ import { ok } from 'neverthrow'
 import { createAuthHandler } from '../auth-handler-factory'
 
 export default createAuthHandler({
-  createClient: (ctx) => new PasskeyClient(authClientConfig(ctx.c)),
+  createClient: (c) => new PasskeyClient(authClientConfig(c)),
   // トグルOFFは「パスキーを使わない」状態にすることなので、登録済みを全て削除する
   authenticate: async (client) => {
     const listResult = await client.list()

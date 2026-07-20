@@ -2,17 +2,22 @@
  * Auth Handler Factory
  *
  * @overview
- * 認証(auth-client)系ハンドラーを統一パターンで生成する高階関数。
- * 「認証クライアント生成 → 認証ステップ(Result<_, AuthError>) → (任意)アカウント紐付けステップ
- *  → ロギング → レスポンス」という共通契約を1箇所へ集約する。
+ * 認証(auth-client)系ハンドラーを生成する高階関数。共通契約は
+ * 「認証クライアント生成 → 認証ステップ(Result<_, AuthError>) → ロギング → レスポンス」。
+ * アプリのアカウント(CurrentUser)を解決するかどうかで用途を 2 つに分ける:
+ * - createAuthHandler: 認証クライアント操作のみ(logout / passkey の start・status・disable)
+ * - createAccountAuthHandler: 認証成功後にアカウントを解決する(login / signup / passkey login verify)
+ * 用途を型で分けることで、統一ファクトリ + 実行時判別(`'resolveAccount' in config`)や
+ * オーバーロードを持たず、各ファクトリを素直に読める形にしている。
  *
  * @note handler-factory.ts(datastore系)との意図的な差分:
  * - 認証ステップの err には toAuthError を必ず適用する。アカウントステップの err はドメイン由来の
  *   ため toAuthError を通さず handleError にそのまま渡す。
  * - レスポンスは respond コールバックが c.json / c.body を直接返す。Hono RPC のレスポンス型推論を
  *   ハンドラーごとに保つため、レスポンス生成をファクトリー内へ隠さず呼び出し側へ残す。
- * - 成功ログは任意の log コールバックに委ね、message/payload の分岐をファクトリーへ持ち込まない
- *   (未使用の分岐を作らず、ハンドラーごとに従来どおりのログ形状をそのまま書けるようにするため)。
+ * - captcha 等の事前検証や authClientConfig の失敗は authenticate/createClient の送出として
+ *   そのまま errorHandler へ伝播させ、ファクトリー側に専用の分岐を持たない。
+ * - 成功ログは任意の log コールバックに委ね、message/payload の分岐をファクトリーへ持ち込まない。
  */
 import { type AuthError } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
@@ -36,7 +41,39 @@ export interface AuthHandlerContext<TJson = unknown> {
   logger: LoggerType
 }
 
-// 認証系ハンドラーの共通設定(認証成功後にアカウント紐付けを行う)。resolveAccount の err は
+// ミドルウェア検証済みだが Hono のジェネリック Context では静的に解決できない json を取り出す。
+// 型ハックはこの一点に閉じ込める(handler-factory.ts の extractValidatedData と同じ方針)。
+function extractValidatedJson(c: Context<Env>) {
+  // valid は内部で this(c.req)を参照するため、変数へ取り出すとレシーバが外れて壊れる。bind で固定する。
+  // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ジェネリックな Context では valid() の引数型が never へ潰れ、戻り値も検証前の未確定な値のため
+  const valid = c.req.valid.bind(c.req) as (key: 'json') => unknown
+  return valid('json')
+}
+
+// 検証済み json をハンドラー注釈の TJson へ橋渡しする唯一の地点(handler-factory の buildRequestContext と同方針)。
+function buildContext<TJson>(c: Context<Env>): AuthHandlerContext<TJson> {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- ミドルウェア検証済みの json をジェネリックな TJson へ橋渡しするため、静的型では表現できない
+  return {
+    c,
+    json: extractValidatedJson(c),
+    logger: mustGet(c, CONTEXT_KEY.APP_LOG),
+  } as AuthHandlerContext<TJson>
+}
+
+// 認証クライアント操作のみを行うハンドラーの設定
+interface AuthConfig<TClient, TJson, TAuthOutput, TResponse extends Response> {
+  // createClient は Hono の Context だけを要するため TJson へは依存させない
+  // (検証済み json を注釈する authenticate 側から TJson を一意に推論させるため)。
+  createClient: (c: Context<Env>) => TClient
+  authenticate: (
+    client: TClient,
+    ctx: AuthHandlerContext<TJson>,
+  ) => Promise<Result<TAuthOutput, AuthError>>
+  log?: (output: TAuthOutput, ctx: AuthHandlerContext<TJson>) => void
+  respond: (c: Context<Env>, output: TAuthOutput) => TResponse
+}
+
+// 認証成功後にアカウントを解決するハンドラーの設定。resolveAccount の err は
 // toAuthError を通さずドメインエラーのまま handleError へ渡す。
 interface AccountAuthConfig<
   TClient,
@@ -45,7 +82,7 @@ interface AccountAuthConfig<
   TAccountOutput,
   TResponse extends Response,
 > {
-  createClient: (ctx: AuthHandlerContext<TJson>) => TClient
+  createClient: (c: Context<Env>) => TClient
   authenticate: (
     client: TClient,
     ctx: AuthHandlerContext<TJson>,
@@ -59,36 +96,28 @@ interface AccountAuthConfig<
   respond: (c: Context<Env>, output: TAccountOutput) => TResponse
 }
 
-// 認証系ハンドラーの共通設定(アカウント紐付けなし)
-interface ThinAuthConfig<TClient, TJson, TAuthOutput, TResponse extends Response> {
-  createClient: (ctx: AuthHandlerContext<TJson>) => TClient
-  authenticate: (
-    client: TClient,
-    ctx: AuthHandlerContext<TJson>,
-  ) => Promise<Result<TAuthOutput, AuthError>>
-  log?: (output: TAuthOutput, ctx: AuthHandlerContext<TJson>) => void
-  respond: (c: Context<Env>, output: TAuthOutput) => TResponse
-}
+/**
+ * 認証クライアント操作のみを行うハンドラーを生成する。
+ */
+export function createAuthHandler<TClient, TJson, TAuthOutput, TResponse extends Response>(
+  config: AuthConfig<TClient, TJson, TAuthOutput, TResponse>,
+): (c: Context<Env>) => Promise<TResponse> {
+  return async (c: Context<Env>): Promise<TResponse> => {
+    const ctx = buildContext<TJson>(c)
 
-// 実装シグネチャは全オーバーロードを 1 つの本体で受けるため、型引数を消去した設定型を用意する。
-// oxlint-disable-next-line typescript/no-restricted-types -- 全オーバーロードを受けるため型引数を任意形状にする必要があるため
-type ErasedAccountConfig = AccountAuthConfig<unknown, unknown, unknown, unknown, Response>
-// oxlint-disable-next-line typescript/no-restricted-types -- 全オーバーロードを受けるため型引数を任意形状にする必要があるため
-type ErasedThinConfig = ThinAuthConfig<unknown, unknown, unknown, Response>
+    const client = config.createClient(c)
+    const authResult = await config.authenticate(client, ctx)
+    if (authResult.isErr()) handleError(toAuthError(authResult.error), ctx.logger)
 
-// ミドルウェア検証済みだが Hono のジェネリック Context では静的に解決できない json を取り出す。
-// 型ハックはこの一点に閉じ込める(handler-factory.ts の extractValidatedData と同じ方針)。
-function extractValidatedJson(c: Context<Env>) {
-  // valid は内部で this(c.req)を参照するため、変数へ取り出すとレシーバが外れて壊れる。bind で固定する。
-  // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- ジェネリックな Context では valid() の引数型が never へ潰れ、戻り値も検証前の未確定な値のため
-  const valid = c.req.valid.bind(c.req) as (key: 'json') => unknown
-  return valid('json')
+    if (config.log) config.log(authResult.value, ctx)
+    return config.respond(c, authResult.value)
+  }
 }
 
 /**
- * 認証系ハンドラーを生成する(認証成功後にアカウント紐付けを行う)。
+ * 認証成功後にアカウントを解決するハンドラーを生成する。
  */
-export function createAuthHandler<
+export function createAccountAuthHandler<
   TClient,
   TJson,
   TAuthOutput,
@@ -96,40 +125,20 @@ export function createAuthHandler<
   TResponse extends Response,
 >(
   config: AccountAuthConfig<TClient, TJson, TAuthOutput, TAccountOutput, TResponse>,
-): (c: Context<Env>) => Promise<TResponse>
-/**
- * 認証系ハンドラーを生成する(アカウント紐付けなし)。
- */
-export function createAuthHandler<TClient, TJson, TAuthOutput, TResponse extends Response>(
-  config: ThinAuthConfig<TClient, TJson, TAuthOutput, TResponse>,
-): (c: Context<Env>) => Promise<TResponse>
-export function createAuthHandler(
-  config: ErasedAccountConfig | ErasedThinConfig,
-): (c: Context<Env>) => Promise<Response> {
-  return async (c: Context<Env>): Promise<Response> => {
-    const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
-    const ctx: AuthHandlerContext = { c, json: extractValidatedJson(c), logger }
+): (c: Context<Env>) => Promise<TResponse> {
+  return async (c: Context<Env>): Promise<TResponse> => {
+    const ctx = buildContext<TJson>(c)
 
-    // 1. 認証ステップ。err は必ず toAuthError で HTTP エラーへ変換する。
-    //    captcha 等の事前検証や authClientConfig の失敗は authenticate/createClient の送出として
-    //    そのまま伝播させ(errorHandler が受ける)、ファクトリー側に専用の分岐を持たない。
-    const client = config.createClient(ctx)
+    const client = config.createClient(c)
     const authResult = await config.authenticate(client, ctx)
-    if (authResult.isErr()) handleError(toAuthError(authResult.error), logger)
+    if (authResult.isErr()) handleError(toAuthError(authResult.error), ctx.logger)
 
-    // 2. (任意)アカウント紐付け。ドメイン由来の err はそのまま handleError へ(toAuthError を通さない)。
-    let output = authResult.value
-    if ('resolveAccount' in config) {
-      const accountUseCase = createAccountUseCase(getRdbClient(c.env.DB))
-      const accountResult = await config.resolveAccount(accountUseCase, authResult.value, ctx)
-      if (accountResult.isErr()) handleError(accountResult.error, logger)
-      output = accountResult.value
-    }
+    // ドメイン由来の err はそのまま handleError へ(toAuthError を通さない)。
+    const accountUseCase = createAccountUseCase(getRdbClient(c.env.DB))
+    const accountResult = await config.resolveAccount(accountUseCase, authResult.value, ctx)
+    if (accountResult.isErr()) handleError(accountResult.error, ctx.logger)
 
-    // 3. ロギング(呼び出し側が最終出力を使って任意の成功ログを出す)。
-    if (config.log) config.log(output, ctx)
-
-    // 4. レスポンス生成(呼び出し側が c.json / c.body を直接返し RPC 型を保つ)。
-    return config.respond(c, output)
+    if (config.log) config.log(accountResult.value, ctx)
+    return config.respond(c, accountResult.value)
   }
 }

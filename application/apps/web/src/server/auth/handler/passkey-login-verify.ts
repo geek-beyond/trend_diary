@@ -2,7 +2,7 @@ import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import { z } from 'zod'
 import zodValidator from '@/middleware/zod-validator'
-import { type AuthHandlerContext, createAuthHandler } from '../auth-handler-factory'
+import { type AuthHandlerContext, createAccountAuthHandler } from '../auth-handler-factory'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
 export const passkeyLoginVerifyInputSchema = z.object({
@@ -16,8 +16,8 @@ export const passkeyLoginVerifyValidator = zodValidator('json', passkeyLoginVeri
 
 type PasskeyLoginVerifyInput = z.infer<typeof passkeyLoginVerifyInputSchema>
 
-export default createAuthHandler({
-  createClient: (ctx) => new PasskeyClient(authClientConfig(ctx.c)),
+export default createAccountAuthHandler({
+  createClient: (c) => new PasskeyClient(authClientConfig(c)),
   authenticate: (client, ctx: AuthHandlerContext<PasskeyLoginVerifyInput>) =>
     client.verifyAuthentication({
       challengeId: ctx.json.challengeId,

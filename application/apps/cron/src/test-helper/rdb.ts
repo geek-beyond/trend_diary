@@ -1,6 +1,6 @@
-import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
-import * as schema from '@trend-diary/datastore/drizzle-orm/schema'
 import type { RdbClient } from '@trend-diary/datastore/rdb'
+import { articles } from '@trend-diary/datastore/schema'
+import * as schema from '@trend-diary/datastore/schema'
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
 

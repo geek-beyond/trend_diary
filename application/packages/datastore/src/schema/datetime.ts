@@ -1,3 +1,4 @@
+import { assert } from '@trend-diary/common/contract'
 import { customType } from 'drizzle-orm/sqlite-core'
 
 // 既存D1本番データには（Prisma時代に書き込まれた）ISO-8601 文字列、CURRENT_TIMESTAMP 由来の
@@ -16,9 +17,10 @@ export function normalizeDateTime(value: string | number | bigint): Date {
   }
   // DB の日時カラムはパース可能な値のみが書き込まれる契約のため、
   // Invalid Date を黙って返すとデータ破損が下流へ静かに伝播する。ここで顕在化させる
-  if (Number.isNaN(normalized.getTime())) {
-    throw new Error(`Datetime value from database is not parseable: ${String(value)}`)
-  }
+  assert(
+    !Number.isNaN(normalized.getTime()),
+    `Datetime value from database is not parseable: ${String(value)}`,
+  )
   return normalized
 }
 

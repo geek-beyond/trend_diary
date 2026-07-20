@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { assert } from '@trend-diary/common/contract'
 
 export interface AuthAdminConfig {
   url: string
@@ -16,9 +17,10 @@ export class AuthAdminClient {
   private readonly client: SupabaseClient
 
   constructor(config: AuthAdminConfig) {
-    if (process.env.NODE_ENV !== 'test') {
-      throw new Error('AuthAdminClient はテスト専用であり、テスト環境以外では生成できません')
-    }
+    assert(
+      process.env.NODE_ENV === 'test',
+      'AuthAdminClient is test-only and must not be instantiated outside the test environment',
+    )
     this.client = createClient(config.url, config.serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })

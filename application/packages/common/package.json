@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./contract": "./src/contract/index.ts",
     "./env": "./src/env/index.ts",
     "./errors": "./src/errors/index.ts",
     "./http": "./src/http/index.ts",

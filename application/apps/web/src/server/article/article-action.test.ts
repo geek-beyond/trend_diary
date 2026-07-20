@@ -1,6 +1,6 @@
 import { ClientError, NotFoundError } from '@trend-diary/std/errors'
 import { HTTPException } from 'hono/http-exception'
-import { err, ok, type Result } from 'neverthrow'
+import { err, ok } from 'neverthrow'
 import type { SessionUser } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
 import { type ArticleActionContext, createArticleActionHandler } from './article-action'
@@ -32,13 +32,12 @@ function buildContext(options: BuildContextOptions = {}): {
       return undefined
     },
     env: { DB: {} },
-    req: { valid: () => ({ article_id: ARTICLE_ID }) },
-    // oxlint-disable-next-line typescript/no-restricted-types -- Hono の c.json を模すモックで、任意の JSON 値を受けるため
-    json: (data: unknown, status: number) =>
-      new Response(JSON.stringify(data), {
-        status,
-        headers: { 'Content-Type': 'application/json' },
-      }),
+    req: {
+      valid: () => ({ article_id: ARTICLE_ID }),
+      method: 'POST',
+      routePath: '/api/articles/:article_id/skip',
+    },
+    body: (data: BodyInit | null, status: number) => new Response(data, { status }),
     // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
   } as unknown as ArticleActionContext
   return { c, logger }
@@ -50,35 +49,23 @@ const sessionUser: SessionUser = {
   email: 'user@example.com',
 }
 
-function baseConfig<TOutput>(result: Result<TOutput, Error>) {
-  return {
-    execute: () => Promise.resolve(result),
-    message: '完了しました',
-    logMessage: 'action completed',
-    statusCode: 200 as const,
-  }
-}
-
 describe('createArticleActionHandler', () => {
   describe('正常系', () => {
-    it('成功時は message を statusCode 付きで返すこと', async () => {
-      const handler = createArticleActionHandler({
-        ...baseConfig(ok({ ignored: true })),
-        statusCode: 201,
-      })
+    it('成功時は 204 No Content をボディなしで返すこと', async () => {
+      const handler = createArticleActionHandler(() => Promise.resolve(ok(undefined)))
 
       const { c } = buildContext({ user: sessionUser })
       const res = await handler(c)
 
-      expect(res.status).toBe(201)
-      expect(await res.json()).toEqual({ message: '完了しました' })
+      expect(res.status).toBe(204)
+      expect(await res.text()).toBe('')
     })
 
     it('セッションユーザーの activeUserId と検証済み article_id を execute に渡すこと', async () => {
       const execute = vi.fn((_useCase: object, _activeUserId: bigint, _articleId: bigint) =>
         Promise.resolve(ok(undefined)),
       )
-      const handler = createArticleActionHandler({ ...baseConfig(ok(undefined)), execute })
+      const handler = createArticleActionHandler(execute)
 
       const { c } = buildContext({ user: sessionUser })
       await handler(c)
@@ -86,14 +73,16 @@ describe('createArticleActionHandler', () => {
       expect(execute).toHaveBeenCalledWith(expect.anything(), sessionUser.activeUserId, ARTICLE_ID)
     })
 
-    it('logMessage と activeUserId・articleId を info ログに出すこと', async () => {
-      const handler = createArticleActionHandler(baseConfig(ok(undefined)))
+    it('ルート情報と activeUserId・articleId を info ログに出すこと', async () => {
+      const handler = createArticleActionHandler(() => Promise.resolve(ok(undefined)))
 
       const { c, logger } = buildContext({ user: sessionUser })
       await handler(c)
 
       expect(logger.info).toHaveBeenCalledWith({
-        msg: 'action completed',
+        msg: 'article action completed',
+        method: 'POST',
+        route: '/api/articles/:article_id/skip',
         activeUserId: sessionUser.activeUserId,
         articleId: ARTICLE_ID,
       })
@@ -107,7 +96,7 @@ describe('createArticleActionHandler', () => {
     ])(
       'execute が $name を返すと handleError で変換した HTTPException を投げること',
       async ({ error, status }) => {
-        const handler = createArticleActionHandler(baseConfig(err(error)))
+        const handler = createArticleActionHandler(() => Promise.resolve(err(error)))
 
         const { c } = buildContext({ user: sessionUser })
         // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
@@ -122,7 +111,7 @@ describe('createArticleActionHandler', () => {
   describe('異常系', () => {
     // authenticator が先行適用される契約のため、未設定は 401 に偽装せず契約違反として送出する
     it('SESSION_USER が未設定なら契約違反エラーを投げること', async () => {
-      const handler = createArticleActionHandler(baseConfig(ok(undefined)))
+      const handler = createArticleActionHandler(() => Promise.resolve(ok(undefined)))
 
       const { c } = buildContext()
 

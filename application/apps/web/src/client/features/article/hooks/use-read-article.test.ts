@@ -92,8 +92,7 @@ describe('useReadArticle', () => {
     it('記事を未読にできる', async () => {
       mockApiClient.articles[':article_id'].unread.$delete.mockResolvedValue({
         ok: true,
-        status: 200,
-        json: vi.fn().mockResolvedValue({ message: '記事を未読にしました' }),
+        status: 204,
       })
 
       const { result } = renderHook(() => useReadArticle())

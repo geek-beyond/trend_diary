@@ -49,9 +49,7 @@ describe('POST /api/articles/:article_id/skip', () => {
   it('記事をskipできること', async () => {
     const response = await requestSkipArticle(testArticleId.toString(), authCookies)
 
-    expect(response.status).toBe(201)
-    const json: { message: string } = await response.json()
-    expect(json.message).toBe('記事をスキップしました')
+    expect(response.status).toBe(204)
   })
 
   it.each([
@@ -81,7 +79,7 @@ describe('POST /api/articles/:article_id/skip', () => {
       createdUserIds.authIds.push(userB.authenticationId)
 
       const response = await requestSkipArticle(testArticleId.toString(), authCookies)
-      expect(response.status).toBe(201)
+      expect(response.status).toBe(204)
 
       expect(await articleHelper.countSkippedArticles(testActiveUserId, testArticleId)).toBe(1)
       expect(await articleHelper.countSkippedArticles(userB.activeUserId, testArticleId)).toBe(0)

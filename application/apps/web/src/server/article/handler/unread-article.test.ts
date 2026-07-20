@@ -63,9 +63,7 @@ describe('DELETE /api/articles/:article_id/unread', () => {
 
       const response = await requestUnreadArticle(testArticleId.toString(), authCookies)
 
-      expect(response.status).toBe(200)
-      const json: { message: string } = await response.json()
-      expect(json.message).toBe('記事を未読にしました')
+      expect(response.status).toBe(204)
 
       // DBから実際に削除されていることを確認
       const afterCount = await articleHelper.countReadHistories(testActiveUserId, testArticleId)
@@ -78,9 +76,7 @@ describe('DELETE /api/articles/:article_id/unread', () => {
 
       const response = await requestUnreadArticle(testArticleId.toString(), authCookies)
 
-      expect(response.status).toBe(200)
-      const json: { message: string } = await response.json()
-      expect(json.message).toBe('記事を未読にしました')
+      expect(response.status).toBe(204)
 
       // DBから実際に削除されていることを確認
       const afterCount = await articleHelper.countReadHistories(testActiveUserId, testArticleId)
@@ -114,7 +110,7 @@ describe('DELETE /api/articles/:article_id/unread', () => {
       const userBLogin = await userHelper.login('unread-cross-user@example.com', 'Test@password123')
 
       const response = await requestUnreadArticle(testArticleId.toString(), userBLogin.cookies)
-      expect(response.status).toBe(200)
+      expect(response.status).toBe(204)
 
       expect(await articleHelper.countReadHistories(testActiveUserId, testArticleId)).toBe(1)
     })

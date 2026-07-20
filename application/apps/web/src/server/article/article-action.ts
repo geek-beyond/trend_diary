@@ -10,23 +10,16 @@ type ArticleUseCase = ReturnType<typeof createArticleUseCase>
 
 export type ArticleActionContext = ZodValidatedContext<[typeof articleIdParamValidator]>
 
-interface ArticleActionConfig<TOutput, TStatus extends 200 | 201> {
+// article モジュール専用のハンドラーファクトリー。
+// 「article_id を受けてセッションユーザーの記事状態を変更する」形に限定する。
+// 対象をモジュール内へ絞りコンテキスト型を具象（articleIdParamValidator）に固定することで、
+// 汎用ファクトリーで必要だった型アサーションと Hono client の型推論の破れを避ける
+export function createArticleActionHandler<TOutput>(
   execute: (
     useCase: ArticleUseCase,
     activeUserId: bigint,
     articleId: bigint,
-  ) => Promise<Result<TOutput, Error>>
-  message: string
-  logMessage: string
-  statusCode: TStatus
-}
-
-// article モジュール専用のハンドラーファクトリー。
-// 「article_id を受けてセッションユーザーの記事状態を変更し、メッセージを返す」形に限定する。
-// 対象をモジュール内へ絞りコンテキスト型を具象（articleIdParamValidator）に固定することで、
-// 汎用ファクトリーで必要だった型アサーションと Hono client の型推論の破れを避ける
-export function createArticleActionHandler<TOutput, TStatus extends 200 | 201>(
-  config: ArticleActionConfig<TOutput, TStatus>,
+  ) => Promise<Result<TOutput, Error>>,
 ) {
   return async (c: ArticleActionContext) => {
     const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
@@ -35,17 +28,21 @@ export function createArticleActionHandler<TOutput, TStatus extends 200 | 201>(
     const { article_id } = c.req.valid('param')
 
     const useCase = createArticleUseCase(getRdbClient(c.env.DB))
-    const result = await config.execute(useCase, user.activeUserId, article_id)
+    const result = await execute(useCase, user.activeUserId, article_id)
     if (result.isErr()) {
       handleError(result.error, logger)
     }
 
+    // ハンドラーごとの英語ログメッセージを手書きさせないため、操作の識別はルート情報から導出する
     logger.info({
-      msg: config.logMessage,
+      msg: 'article action completed',
+      method: c.req.method,
+      route: c.req.routePath,
       activeUserId: user.activeUserId,
       articleId: article_id,
     })
 
-    return c.json({ message: config.message }, config.statusCode)
+    // 成功レスポンスのボディはクライアントが参照しないため、メッセージを持たせず 204 で返す
+    return c.body(null, 204)
   }
 }

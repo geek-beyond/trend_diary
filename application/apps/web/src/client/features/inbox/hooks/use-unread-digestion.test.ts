@@ -109,7 +109,7 @@ describe('useUnreadDigestion', () => {
       total: 1,
     })
     mockSkipPost.mockResolvedValue({
-      status: 201,
+      status: 204,
     })
 
     const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
@@ -239,7 +239,7 @@ describe('useUnreadDigestion', () => {
         total: 1,
       })
     mockSkipPost.mockResolvedValue({
-      status: 201,
+      status: 204,
     })
 
     const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
@@ -268,7 +268,7 @@ describe('useUnreadDigestion', () => {
       total: 2,
     })
     mockSkipPost.mockResolvedValue({
-      status: 201,
+      status: 204,
     })
 
     const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })

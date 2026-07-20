@@ -46,7 +46,6 @@ interface AccountAuthConfig<
   TResponse extends Response,
 > {
   createClient: (ctx: AuthHandlerContext<TJson>) => TClient
-  beforeAuthenticate?: (ctx: AuthHandlerContext<TJson>) => Promise<void>
   authenticate: (
     client: TClient,
     ctx: AuthHandlerContext<TJson>,
@@ -63,7 +62,6 @@ interface AccountAuthConfig<
 // 認証系ハンドラーの共通設定(アカウント紐付けなし)
 interface ThinAuthConfig<TClient, TJson, TAuthOutput, TResponse extends Response> {
   createClient: (ctx: AuthHandlerContext<TJson>) => TClient
-  beforeAuthenticate?: (ctx: AuthHandlerContext<TJson>) => Promise<void>
   authenticate: (
     client: TClient,
     ctx: AuthHandlerContext<TJson>,
@@ -112,15 +110,14 @@ export function createAuthHandler(
     const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
     const ctx: AuthHandlerContext = { c, json: extractValidatedJson(c), logger }
 
-    // 1. 認証前フック(captcha 等)。失敗時はフック内の handleError が送出する。
-    if (config.beforeAuthenticate) await config.beforeAuthenticate(ctx)
-
-    // 2. 認証ステップ。err は必ず toAuthError で HTTP エラーへ変換する。
+    // 1. 認証ステップ。err は必ず toAuthError で HTTP エラーへ変換する。
+    //    captcha 等の事前検証や authClientConfig の失敗は authenticate/createClient の送出として
+    //    そのまま伝播させ(errorHandler が受ける)、ファクトリー側に専用の分岐を持たない。
     const client = config.createClient(ctx)
     const authResult = await config.authenticate(client, ctx)
     if (authResult.isErr()) handleError(toAuthError(authResult.error), logger)
 
-    // 3. (任意)アカウント紐付け。ドメイン由来の err はそのまま handleError へ(toAuthError を通さない)。
+    // 2. (任意)アカウント紐付け。ドメイン由来の err はそのまま handleError へ(toAuthError を通さない)。
     let output = authResult.value
     if ('resolveAccount' in config) {
       const accountUseCase = createAccountUseCase(getRdbClient(c.env.DB))
@@ -129,10 +126,10 @@ export function createAuthHandler(
       output = accountResult.value
     }
 
-    // 4. ロギング(呼び出し側が最終出力を使って任意の成功ログを出す)。
+    // 3. ロギング(呼び出し側が最終出力を使って任意の成功ログを出す)。
     if (config.log) config.log(output, ctx)
 
-    // 5. レスポンス生成(呼び出し側が c.json / c.body を直接返し RPC 型を保つ)。
+    // 4. レスポンス生成(呼び出し側が c.json / c.body を直接返し RPC 型を保つ)。
     return config.respond(c, output)
   }
 }

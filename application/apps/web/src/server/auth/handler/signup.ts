@@ -5,17 +5,17 @@ import { type AuthHandlerContext, createAuthHandler } from '../auth-handler-fact
 import { assertCaptchaVerified } from '../captcha'
 
 export default createAuthHandler({
-  beforeAuthenticate: (ctx: AuthHandlerContext<AuthInput>) =>
-    assertCaptchaVerified(ctx.c.env.TURNSTILE_SECRET_KEY, ctx.json.captchaToken, ctx.logger),
   createClient: (ctx) => new PasswordAuthClient(authClientConfig(ctx.c)),
-  authenticate: (client, ctx: AuthHandlerContext<AuthInput>) =>
-    client.signUp({ email: ctx.json.email, password: ctx.json.password }),
+  authenticate: async (client, ctx: AuthHandlerContext<AuthInput>) => {
+    await assertCaptchaVerified(ctx.c.env.TURNSTILE_SECRET_KEY, ctx.json.captchaToken, ctx.logger)
+    return client.signUp({ email: ctx.json.email, password: ctx.json.password })
+  },
   // NOTE: 認証ユーザー作成(signUp)は成功後にロールバックできないため、後続の registerActiveUser が
   // 失敗すると認証側に孤児ユーザーが残る。同期補償(認証ユーザーの削除)はSupabaseの管理者権限
   // (service_role)を要するが、サインアップ経路(anonクライアント)にadmin権限を持たせるべきではない
   // ため行わない。対応候補は service_role を持つ別cronで未紐付けの認証ユーザーを定期クリーンアップ
   // するなど。別イシューで再設計する。
-  resolveAccount: (accountUseCase, user, ctx) =>
+  resolveAccount: (accountUseCase, user, ctx: AuthHandlerContext<AuthInput>) =>
     accountUseCase.registerActiveUser(
       user.email ?? ctx.json.email,
       user.id,

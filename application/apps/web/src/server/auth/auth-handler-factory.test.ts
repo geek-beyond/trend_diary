@@ -93,26 +93,6 @@ describe('createAuthHandler', () => {
       expect(await res.text()).toBe('')
     })
 
-    it('beforeAuthenticate は authenticate より前に実行されること', async () => {
-      const order: string[] = []
-      const handler = createAuthHandler({
-        beforeAuthenticate: () => {
-          order.push('before')
-          return Promise.resolve()
-        },
-        createClient: () => ({}),
-        authenticate: () => {
-          order.push('authenticate')
-          return Promise.resolve(ok({}))
-        },
-        respond: (c) => c.json({}, 200),
-      })
-
-      await mountHandler(handler).request()
-
-      expect(order).toEqual(['before', 'authenticate'])
-    })
-
     it('検証済み json を ctx.json として respond まで通すこと', async () => {
       const handler = createAuthHandler({
         createClient: () => ({}),
@@ -176,19 +156,16 @@ describe('createAuthHandler', () => {
       expect(res.status).toBe(404)
     })
 
-    it('beforeAuthenticate が送出すると authenticate を呼ばず短絡すること', async () => {
-      const authenticate = vi.fn(() => Promise.resolve(ok({})))
+    it('authenticate が送出した例外(captcha 等)はそのまま応答へ伝播すること', async () => {
       const handler = createAuthHandler({
-        beforeAuthenticate: () => Promise.reject(new HTTPException(403, { message: 'captcha' })),
         createClient: () => ({}),
-        authenticate,
+        authenticate: () => Promise.reject(new HTTPException(403, { message: 'captcha' })),
         respond: (c) => c.json({}, 200),
       })
 
       const res = await mountHandler(handler).request()
 
       expect(res.status).toBe(403)
-      expect(authenticate).not.toHaveBeenCalled()
     })
   })
 

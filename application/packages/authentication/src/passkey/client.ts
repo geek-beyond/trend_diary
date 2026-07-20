@@ -5,13 +5,13 @@ import {
   PasskeyRegistrationError,
   PasskeyVerificationError,
   UnexpectedAuthError,
-} from './errors'
+} from '../errors'
 import {
   type AuthClientConfig,
   createBackendClient,
   type SupabaseAuthClient,
-} from './supabase-client'
-import { callSupabase } from './supabase-result'
+} from '../infrastructure/supabase-client'
+import { callSupabase } from '../infrastructure/supabase-result'
 
 type PasskeyApi = SupabaseAuthClient['auth']['passkey']
 type VerifyRegistrationParams = Parameters<PasskeyApi['verifyRegistration']>[0]

@@ -1,11 +1,11 @@
 import { err, ok, type Result } from 'neverthrow'
-import { type AuthError, NoSessionError } from './errors'
+import { type AuthError, NoSessionError } from '../errors'
 import {
   type AuthClientConfig,
   createBackendClient,
   type SupabaseAuthClient,
-} from './supabase-client'
-import { callSupabase } from './supabase-result'
+} from '../infrastructure/supabase-client'
+import { callSupabase } from '../infrastructure/supabase-result'
 
 export class SessionClient {
   private readonly client: SupabaseAuthClient

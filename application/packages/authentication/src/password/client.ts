@@ -10,8 +10,8 @@ import {
   type AuthClientConfig,
   createBackendClient,
   type SupabaseAuthClient,
-} from '../supabase/client'
-import { callSupabase } from '../supabase/result'
+} from '../supabase-client'
+import { callSupabase } from '../supabase-result'
 
 interface PasswordCredentials {
   email: string

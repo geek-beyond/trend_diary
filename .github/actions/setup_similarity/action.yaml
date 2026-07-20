@@ -23,10 +23,20 @@ runs:
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
+        RUNNER_OS: ${{ runner.os }}
+        RUNNER_ARCH: ${{ runner.arch }}
         DEST: ${{ runner.tool_cache }}/similarity-ts/${{ inputs.version }}
       run: |
         set -euo pipefail
-        asset="similarity-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+        # キャッシュキー(runner.os/arch)と取得アセットを一致させるため、実行環境から target を導出する
+        case "${RUNNER_OS}-${RUNNER_ARCH}" in
+          Linux-X64)   target="x86_64-unknown-linux-gnu" ;;
+          Linux-ARM64) target="aarch64-unknown-linux-gnu" ;;
+          macOS-ARM64) target="aarch64-apple-darwin" ;;
+          macOS-X64)   target="x86_64-apple-darwin" ;;
+          *) echo "::error::未対応のプラットフォームです: ${RUNNER_OS} ${RUNNER_ARCH}"; exit 1 ;;
+        esac
+        asset="similarity-v${VERSION}-${target}.tar.gz"
         url="https://github.com/mizchi/similarity/releases/download/v${VERSION}/${asset}"
         mkdir -p "$DEST"
         tmp="$(mktemp -d)"

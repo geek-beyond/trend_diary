@@ -1,10 +1,11 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
 import type { AuthInput } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
-import { type AuthHandlerContext, createAccountAuthHandler } from '../auth-handler-factory'
 import { assertCaptchaVerified } from '../captcha'
+import { createAccountHandler } from '../factory/account-handler'
+import type { AuthHandlerContext } from '../factory/context'
 
-export default createAccountAuthHandler({
+export default createAccountHandler({
   createClient: (c) => new PasswordAuthClient(authClientConfig(c)),
   authenticate: async (client, ctx: AuthHandlerContext<AuthInput>) => {
     await assertCaptchaVerified(ctx.c.env.TURNSTILE_SECRET_KEY, ctx.json.captchaToken, ctx.logger)

@@ -1,6 +1,6 @@
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import { ok } from 'neverthrow'
-import { createAuthHandler } from '../auth-handler-factory'
+import { createAuthHandler } from '../factory/auth-handler'
 
 export default createAuthHandler({
   createClient: (c) => new PasskeyClient(authClientConfig(c)),

@@ -5,10 +5,8 @@ import getApiClientForClient from '@/infrastructure/api'
 import usePasskeyDisable from './use-passkey-disable'
 
 const mockApiClient = {
-  auth: {
-    passkey: {
-      $delete: vi.fn(),
-    },
+  passkey: {
+    $delete: vi.fn(),
   },
 }
 
@@ -23,7 +21,7 @@ describe('usePasskeyDisable', () => {
 
   describe('正常系', () => {
     it('無効化に成功するとtrueを返し成功トーストを出す', async () => {
-      mockApiClient.auth.passkey.$delete.mockResolvedValue({ ok: true, status: 204 })
+      mockApiClient.passkey.$delete.mockResolvedValue({ ok: true, status: 204 })
 
       const { result } = renderHook(() => usePasskeyDisable())
 
@@ -39,7 +37,7 @@ describe('usePasskeyDisable', () => {
 
   describe('準正常系', () => {
     it('レスポンスが非OKならfalseを返しエラートーストを出す', async () => {
-      mockApiClient.auth.passkey.$delete.mockResolvedValue({ ok: false, status: 500 })
+      mockApiClient.passkey.$delete.mockResolvedValue({ ok: false, status: 500 })
 
       const { result } = renderHook(() => usePasskeyDisable())
 
@@ -55,7 +53,7 @@ describe('usePasskeyDisable', () => {
 
   describe('異常系', () => {
     it('通信が例外を投げるとfalseを返しエラートーストを出す', async () => {
-      mockApiClient.auth.passkey.$delete.mockRejectedValue(new Error('network down'))
+      mockApiClient.passkey.$delete.mockRejectedValue(new Error('network down'))
 
       const { result } = renderHook(() => usePasskeyDisable())
 

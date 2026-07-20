@@ -5,8 +5,8 @@ import CONTEXT_KEY from '@/middleware/context'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 
-// 暫定: 認証ハンドラの契約由来の構造一致（logout / passkeyLoginStart /
-// passkeyRegisterStart / passkeyStatus との類似）を共通化で解消するまで検出を抑制する。恒久対応は #1015
+// 暫定: 認証ハンドラの契約由来の構造一致（logout / passkeyAuthenticationOptions /
+// passkeyRegistrationOptions / passkeyStatus との類似）を共通化で解消するまで検出を抑制する。恒久対応は #1015
 // similarity-ignore
 export default async function passkeyDisable(c: Context<Env>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)

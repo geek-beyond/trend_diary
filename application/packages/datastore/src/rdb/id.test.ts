@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { fromDbId, toDbId, toDbIds } from './id'
+import { fromDbId, isWithinDbIdRange, toDbId, toDbIds } from './id'
 
 const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER)
+
+describe('isWithinDbIdRange', () => {
+  it.each([
+    { name: '下限（0n）は範囲内', id: 0n, expected: true },
+    { name: '上限（MAX_SAFE_INTEGER）は範囲内', id: MAX_SAFE, expected: true },
+    { name: '負数は範囲外', id: -1n, expected: false },
+    { name: '上限超過は範囲外', id: MAX_SAFE + 1n, expected: false },
+  ])('$name', ({ id, expected }) => {
+    expect(isWithinDbIdRange(id)).toBe(expected)
+  })
+})
 
 describe('toDbId', () => {
   describe('正常系', () => {

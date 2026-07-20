@@ -1,6 +1,6 @@
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { ToggleGroup, type ToggleOption } from '@/client/components/ui/input/toggle-group'
 
 const themeOptions: readonly ToggleOption<string>[] = [
@@ -11,19 +11,28 @@ const themeOptions: readonly ToggleOption<string>[] = [
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  // サーバー描画時はテーマが未確定のため、ハイドレーション不一致を避けてマウント後に選択状態を反映する
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const hydrated = useHydrated()
 
   return (
     <ToggleGroup
       options={themeOptions}
-      selectedValue={mounted ? (theme ?? 'system') : ''}
+      // サーバー描画時はテーマが未確定のため、ハイドレーション不一致を避けてマウント後に選択状態を反映する
+      selectedValue={hydrated ? (theme ?? 'system') : ''}
       onSelect={setTheme}
       className='sm:shrink-0'
     />
+  )
+}
+
+const emptySubscribe = () => () => {}
+
+// クライアントでハイドレーション済みかを返す。SSR と初回レンダーでは false、マウント後に true になる。
+// server/client でスナップショットを出し分けることで、マウント検知の setState（Effect 内の同期 setState）を
+// 使わずにハイドレーション不一致を避けられる
+function useHydrated() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
   )
 }

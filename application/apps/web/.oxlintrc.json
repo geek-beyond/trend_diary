@@ -16,6 +16,7 @@
     {
       "files": ["src/client/**/*.{ts,tsx}"],
       "rules": {
+        "react/react-compiler": "error",
         "no-restricted-properties": [
           "error",
           {

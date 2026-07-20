@@ -2,11 +2,11 @@ import { apiRequest } from '@/test/helper/request'
 import type { CleanUpIds } from '@/test/helper/user'
 import * as userHelper from '@/test/helper/user'
 
-async function requestMe(cookies?: string) {
-  return apiRequest('/api/auth/me', { method: 'GET', cookies, contentTypeJson: true })
+async function requestCurrent(cookies?: string) {
+  return apiRequest('/api/sessions/current', { method: 'GET', cookies, contentTypeJson: true })
 }
 
-describe('GET /api/auth/me', () => {
+describe('GET /api/sessions/current', () => {
   const TEST_EMAIL = 'me-test@example.com'
   const TEST_PASSWORD = 'Test@password123'
   const createdIds: CleanUpIds = { userIds: [], authIds: [] }
@@ -28,16 +28,16 @@ describe('GET /api/auth/me', () => {
     const { cookies } = await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
     // ユーザー情報取得（クッキーを渡す）
-    const meRes = await requestMe(cookies)
-    expect(meRes.status).toBe(200)
+    const currentRes = await requestCurrent(cookies)
+    expect(currentRes.status).toBe(200)
 
-    const body: { user: { displayName: string | null } } = await meRes.json()
+    const body: { user: { displayName: string | null } } = await currentRes.json()
     expect(body).toHaveProperty('user')
     expect(body.user).toHaveProperty('displayName')
   })
 
   it('準正常系: ログインしていない場合は401を返す', async () => {
-    const res = await requestMe()
+    const res = await requestCurrent()
     expect(res.status).toBe(401)
   })
 
@@ -45,7 +45,7 @@ describe('GET /api/auth/me', () => {
     await userHelper.login(TEST_EMAIL, TEST_PASSWORD)
 
     // ログアウト（クッキーなしでリクエスト）
-    const res = await requestMe()
+    const res = await requestCurrent()
     expect(res.status).toBe(401)
   })
 })

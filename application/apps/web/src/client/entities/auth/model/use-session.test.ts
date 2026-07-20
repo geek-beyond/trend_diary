@@ -6,8 +6,8 @@ import getApiClientForClient from '@/infrastructure/api'
 import useSession from './use-session'
 
 const mockApiClient = {
-  auth: {
-    me: {
+  sessions: {
+    current: {
       $get: vi.fn(),
     },
   },
@@ -32,7 +32,7 @@ describe('useSession', () => {
   })
 
   it('セッション確認が完了するまではisLoggedInがfalseかつisLoadingがtrue', () => {
-    mockApiClient.auth.me.$get.mockReturnValue(new Promise(() => undefined))
+    mockApiClient.sessions.current.$get.mockReturnValue(new Promise(() => undefined))
 
     const { result } = renderHook(() => useSession(), { wrapper })
 
@@ -40,8 +40,8 @@ describe('useSession', () => {
     expect(result.current.isLoading).toBe(true)
   })
 
-  it('GET /api/auth/me が200を返した場合はisLoggedInがtrueかつisLoadingがfalseになる', async () => {
-    mockApiClient.auth.me.$get.mockResolvedValue({ ok: true, status: 200 })
+  it('GET /api/sessions/current が200を返した場合はisLoggedInがtrueかつisLoadingがfalseになる', async () => {
+    mockApiClient.sessions.current.$get.mockResolvedValue({ ok: true, status: 200 })
 
     const { result } = renderHook(() => useSession(), { wrapper })
 
@@ -52,19 +52,19 @@ describe('useSession', () => {
   })
 
   it('未ログイン（401）の場合はisLoggedInがfalseのままかつisLoadingがfalseになる', async () => {
-    mockApiClient.auth.me.$get.mockResolvedValue({ ok: false, status: 401 })
+    mockApiClient.sessions.current.$get.mockResolvedValue({ ok: false, status: 401 })
 
     const { result } = renderHook(() => useSession(), { wrapper })
 
     await waitFor(() => {
-      expect(mockApiClient.auth.me.$get).toHaveBeenCalled()
+      expect(mockApiClient.sessions.current.$get).toHaveBeenCalled()
     })
     expect(result.current.isLoggedIn).toBe(false)
     expect(result.current.isLoading).toBe(false)
   })
 
   it('通信失敗（例外）の場合はisLoggedInがfalseかつisLoadingがfalseになる', async () => {
-    mockApiClient.auth.me.$get.mockRejectedValue(new Error('Network Error'))
+    mockApiClient.sessions.current.$get.mockRejectedValue(new Error('Network Error'))
 
     const { result } = renderHook(() => useSession(), { wrapper })
 

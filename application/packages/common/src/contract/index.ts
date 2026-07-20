@@ -1,9 +1,12 @@
-import { AssertionError, ok } from 'node:assert'
-
-// 契約違反の識別子として node:assert の AssertionError を採用する。
-// invariant 系ライブラリは本番でメッセージを潰す設計のため、診断出力に英語メッセージを残す
-// 規約と両立せず、AssertionError なら errorHandler 側でバグ由来と識別できるため。
-export { AssertionError }
+// 契約違反の識別子。@trend-diary/common はクライアント（ブラウザ）からもインポートされるため、
+// node:assert に依存するとブラウザバンドルでビルドが壊れる。環境非依存の自前クラスとする。
+// invariant 系ライブラリは本番でメッセージを潰す設計のため採用しない
+export class AssertionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AssertionError'
+  }
+}
 
 // 不変条件を表明する。破れは AssertionError で顕在化し、握りつぶさず errorHandler の 5xx 通知へ届ける
 export function assert(
@@ -11,7 +14,9 @@ export function assert(
   condition: unknown,
   message: string,
 ): asserts condition {
-  ok(condition, message)
+  if (!condition) {
+    throw new AssertionError(message)
+  }
 }
 
 // 非 null 契約を表明する。値が設定されている前提を NonNullable へ絞り、mustGet を一般化する

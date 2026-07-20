@@ -83,10 +83,7 @@ describe('errorHandler', () => {
 
     it('契約違反（AssertionError）は contract violation としてログに残し500と Discord 通知で返すこと', async () => {
       const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
-      const res = await errorHandler(
-        new AssertionError({ message: 'invariant broken' }),
-        buildContext(logger),
-      )
+      const res = await errorHandler(new AssertionError('invariant broken'), buildContext(logger))
 
       expect(res.status).toBe(500)
       expect(logger.error).toHaveBeenCalledWith(

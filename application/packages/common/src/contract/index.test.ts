@@ -1,6 +1,5 @@
-import { AssertionError } from 'node:assert'
 import { describe, expect, it } from 'vitest'
-import { assert, assertNonNull } from './index'
+import { AssertionError, assert, assertNonNull } from './index'
 
 // assert 後の narrowing を型レベルで検証するため、引数の型を絞る前の union に保つヘルパー
 const lengthOf = (value: string | undefined): number => {

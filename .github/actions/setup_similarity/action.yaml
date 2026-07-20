@@ -19,15 +19,12 @@ runs:
         RUNNER_ARCH: ${{ runner.arch }}
       run: |
         set -euo pipefail
-        # 実行環境から取得アセットの target を導出する
-        case "${RUNNER_OS}-${RUNNER_ARCH}" in
-          Linux-X64)   target="x86_64-unknown-linux-gnu" ;;
-          Linux-ARM64) target="aarch64-unknown-linux-gnu" ;;
-          macOS-ARM64) target="aarch64-apple-darwin" ;;
-          macOS-X64)   target="x86_64-apple-darwin" ;;
-          *) echo "::error::未対応のプラットフォームです: ${RUNNER_OS} ${RUNNER_ARCH}"; exit 1 ;;
-        esac
-        asset="similarity-v${VERSION}-${target}.tar.gz"
+        # CI は Linux x86_64 のランナーでのみ実行するため、そのバイナリだけを対象とする
+        if [[ "${RUNNER_OS}-${RUNNER_ARCH}" != "Linux-X64" ]]; then
+          echo "::error::未対応のプラットフォームです: ${RUNNER_OS} ${RUNNER_ARCH}"
+          exit 1
+        fi
+        asset="similarity-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
         url="https://github.com/mizchi/similarity/releases/download/v${VERSION}/${asset}"
         dest="${RUNNER_TEMP}/similarity-ts"
         mkdir -p "$dest"

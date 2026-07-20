@@ -104,6 +104,15 @@ jobs:
       - name: Knip
         run: pnpm knip
 
+      - name: similarity-ts のセットアップ
+        uses: ./.github/actions/setup_similarity
+
+      # コピペ由来の重複関数は lint / knip では検出できないため
+      # 導入直後は既存の重複が残るため非ブロッキングで運用し、解消後にゲート化する
+      - name: 重複関数の検出
+        continue-on-error: true
+        run: pnpm similarity
+
   unit-test:
     needs: changes
     if: ${{ needs.changes.outputs.cron == 'true' }}

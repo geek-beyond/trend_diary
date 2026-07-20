@@ -6,6 +6,7 @@
     "build": "pnpm --filter @trend-diary/web build",
     "lint": "oxlint && oxfmt --check && pnpm -r typecheck",
     "knip": "knip",
+    "similarity": "similarity-ts apps packages --no-types --exclude '**/components/shadcn/**' --exclude '**/components/customized/**' --exclude '**/migrations/**' --fail-on-duplicates",
     "check": "oxlint && oxfmt --check",
     "check:fix": "oxlint --fix && oxfmt",
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",

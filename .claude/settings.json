@@ -120,5 +120,18 @@
         ]
       }
     ]
+  },
+  "extraKnownMarketplaces": {
+    "rin2yh-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "rin2yh/claude-code-plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "development-skills@rin2yh-plugins": true,
+    "meta-skills@rin2yh-plugins": true,
+    "fav-rules@rin2yh-plugins": true
   }
 }

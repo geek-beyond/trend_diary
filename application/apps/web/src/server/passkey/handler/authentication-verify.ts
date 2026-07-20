@@ -9,17 +9,20 @@ import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
-export const passkeyLoginVerifyInputSchema = z.object({
+export const passkeyAuthenticationVerifyInputSchema = z.object({
   challengeId: z.string().min(1),
   credential: z.custom<AuthenticationResponseJSON>(
     (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
   ),
 })
 
-export const passkeyLoginVerifyValidator = zodValidator('json', passkeyLoginVerifyInputSchema)
+export const passkeyAuthenticationVerifyValidator = zodValidator(
+  'json',
+  passkeyAuthenticationVerifyInputSchema,
+)
 
-export default async function passkeyLoginVerify(
-  c: ZodValidatedContext<[typeof passkeyLoginVerifyValidator]>,
+export default async function passkeyAuthenticationVerify(
+  c: ZodValidatedContext<[typeof passkeyAuthenticationVerifyValidator]>,
 ) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')

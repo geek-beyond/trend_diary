@@ -5,11 +5,11 @@ import CONTEXT_KEY from '@/middleware/context'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 
-export default async function passkeyRegisterStart(c: Context<Env>) {
+export default async function passkeyAuthenticationOptions(c: Context<Env>) {
   const logger = c.get(CONTEXT_KEY.APP_LOG)
 
   const passkeyClient = new PasskeyClient(authClientConfig(c))
-  const result = await passkeyClient.startRegistration()
+  const result = await passkeyClient.startAuthentication()
   if (result.isErr()) handleError(toAuthError(result.error), logger)
 
   return c.json({ challengeId: result.value.challenge_id, options: result.value.options }, 200)

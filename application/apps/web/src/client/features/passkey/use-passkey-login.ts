@@ -22,7 +22,7 @@ export default function usePasskeyLogin(redirectTo?: string) {
     const client = getApiClientForClient()
 
     const startResult = await wrapAsyncCall(async () => {
-      const res = await client.auth.passkey.login.start.$post()
+      const res = await client.passkey.authentication.options.$post()
       if (!res.ok) throw new Error('passkey login start failed')
       return res.json()
     })
@@ -48,7 +48,7 @@ export default function usePasskeyLogin(redirectTo?: string) {
     }
 
     const verifyResult = await wrapAsyncCall(() =>
-      client.auth.passkey.login.verify.$post({
+      client.passkey.authentication.verify.$post({
         json: { challengeId, credential: ceremonyResult.value },
       }),
     )

@@ -5,10 +5,8 @@ import SwrTestWrapper from '@/test/helper/swr'
 import usePasskeyStatus from './use-passkey-status'
 
 const mockApiClient = {
-  auth: {
-    passkey: {
-      $get: vi.fn(),
-    },
+  passkey: {
+    $get: vi.fn(),
   },
 }
 
@@ -23,7 +21,7 @@ describe('usePasskeyStatus', () => {
 
   describe('正常系', () => {
     it('登録済みのレスポンスなら登録ありと判定する', async () => {
-      mockApiClient.auth.passkey.$get.mockResolvedValue({
+      mockApiClient.passkey.$get.mockResolvedValue({
         ok: true,
         json: async () => ({ hasPasskey: true }),
       })
@@ -36,7 +34,7 @@ describe('usePasskeyStatus', () => {
     })
 
     it('未登録のレスポンスなら登録なしと判定する', async () => {
-      mockApiClient.auth.passkey.$get.mockResolvedValue({
+      mockApiClient.passkey.$get.mockResolvedValue({
         ok: true,
         json: async () => ({ hasPasskey: false }),
       })
@@ -44,7 +42,7 @@ describe('usePasskeyStatus', () => {
       const { result } = renderHook(() => usePasskeyStatus(), { wrapper: SwrTestWrapper })
 
       await waitFor(() => {
-        expect(mockApiClient.auth.passkey.$get).toHaveBeenCalled()
+        expect(mockApiClient.passkey.$get).toHaveBeenCalled()
       })
       expect(result.current.hasPasskey).toBe(false)
     })
@@ -52,12 +50,12 @@ describe('usePasskeyStatus', () => {
 
   describe('準正常系', () => {
     it('取得に失敗したら登録なし扱いになる', async () => {
-      mockApiClient.auth.passkey.$get.mockResolvedValue({ ok: false, status: 401 })
+      mockApiClient.passkey.$get.mockResolvedValue({ ok: false, status: 401 })
 
       const { result } = renderHook(() => usePasskeyStatus(), { wrapper: SwrTestWrapper })
 
       await waitFor(() => {
-        expect(mockApiClient.auth.passkey.$get).toHaveBeenCalled()
+        expect(mockApiClient.passkey.$get).toHaveBeenCalled()
       })
       expect(result.current.hasPasskey).toBe(false)
     })

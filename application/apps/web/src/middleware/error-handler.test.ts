@@ -1,3 +1,4 @@
+import { AssertionError } from '@trend-diary/common/contract'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { Env } from '@/env'
@@ -77,6 +78,21 @@ describe('errorHandler', () => {
 
       expect(res.status).toBe(500)
       expect(logger.error).toHaveBeenCalledWith('Unhandled error', expect.any(Error))
+      expect(discordError).toHaveBeenCalledOnce()
+    })
+
+    it('契約違反（AssertionError）は contract violation としてログに残し500と Discord 通知で返すこと', async () => {
+      const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
+      const res = await errorHandler(
+        new AssertionError({ message: 'invariant broken' }),
+        buildContext(logger),
+      )
+
+      expect(res.status).toBe(500)
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ msg: 'contract violation' }),
+        expect.any(AssertionError),
+      )
       expect(discordError).toHaveBeenCalledOnce()
     })
   })

@@ -1,6 +1,6 @@
 import type { D1Database } from '@cloudflare/workers-types'
-import * as schema from '@trend-diary/datastore/drizzle-orm/schema'
 import type { RdbClient } from '@trend-diary/datastore/rdb'
+import * as schema from '@trend-diary/datastore/schema'
 import { drizzle as drizzleProxy } from 'drizzle-orm/sqlite-proxy'
 import { beforeEach, vi } from 'vitest'
 

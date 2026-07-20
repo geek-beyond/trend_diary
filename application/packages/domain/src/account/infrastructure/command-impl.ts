@@ -1,6 +1,6 @@
-import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { wrapDbCall } from '@trend-diary/datastore/rdb'
+import { activeUsers, users } from '@trend-diary/datastore/schema'
 import Logger from '@trend-diary/logger'
 import { ServerError } from '@trend-diary/std/errors'
 import { eq } from 'drizzle-orm'

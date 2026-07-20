@@ -4,8 +4,8 @@ import {
   PasswordAuthClient,
   UserAlreadyExistsError,
 } from '@trend-diary/authentication'
-import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import { fromDbId, toDbIds } from '@trend-diary/datastore/rdb/id'
+import { activeUsers, users } from '@trend-diary/datastore/schema'
 import type { ActiveUser } from '@trend-diary/domain/account'
 import { eq, inArray, like } from 'drizzle-orm'
 import app from '@/server'

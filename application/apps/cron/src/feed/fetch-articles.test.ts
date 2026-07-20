@@ -1,4 +1,4 @@
-import { articles } from '@trend-diary/datastore/drizzle-orm/schema'
+import { articles } from '@trend-diary/datastore/schema'
 import Logger from '@trend-diary/logger'
 import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'

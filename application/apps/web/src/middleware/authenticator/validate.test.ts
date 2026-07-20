@@ -1,5 +1,5 @@
-import { activeUsers, users } from '@trend-diary/datastore/drizzle-orm/schema'
 import { toDbIds } from '@trend-diary/datastore/rdb/id'
+import { activeUsers, users } from '@trend-diary/datastore/schema'
 import { inArray } from 'drizzle-orm'
 import { Hono } from 'hono'
 import type { Env } from '@/env'

@@ -1,5 +1,5 @@
-import type { Article as RdbArticle } from '@trend-diary/datastore/drizzle-orm/schema'
 import { fromDbId } from '@trend-diary/datastore/rdb/id'
+import type { Article as RdbArticle } from '@trend-diary/datastore/schema'
 import { assertArticleMedia } from '../media'
 import type { Article } from '../schema/article-schema'
 

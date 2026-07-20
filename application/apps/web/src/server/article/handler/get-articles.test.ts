@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker'
-import { articles, readHistories } from '@trend-diary/datastore/drizzle-orm/schema'
+import { articles, readHistories } from '@trend-diary/datastore/schema'
 import type * as ArticleModule from '@trend-diary/domain/article'
 import { createArticleUseCase } from '@trend-diary/domain/article'
 import { ServerError } from '@trend-diary/std/errors'

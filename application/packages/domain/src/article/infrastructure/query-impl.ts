@@ -1,7 +1,7 @@
-import { articles, normalizeDateTime } from '@trend-diary/datastore/drizzle-orm/schema'
 import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
+import { articles, normalizeDateTime } from '@trend-diary/datastore/schema'
 import { assert } from '@trend-diary/std/contract'
 import { ServerError } from '@trend-diary/std/errors'
 import { addJstDays, toJstDate } from '@trend-diary/std/locale/date'

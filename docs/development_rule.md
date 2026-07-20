@@ -4,6 +4,7 @@
 
 - 仕様はテストコードに記載する（コードを書かずともテストケース名は記載する）
 - lint / format / test は git hook（pre-commit / pre-push）と CI で担保する（フックは一部の軽量な検証・テストのみを実行し、web・E2E を含むフルテストは CI で実行する）。手元での実行漏れをゲートで拾うため、クローン後に `./scripts/git-hooks/install.sh` でフックを有効化することを必須とする
+- FSD のスライス境界とドメイン集約の境界は import-lint で守る。スライス／集約の内部実装へは直接 import せず、境界直下の `index.ts`（公開 API）を経由する。設定と方針は `application/.importlintrc.jsonc` と [ADR](adr/20260720_import-lintでFSDとドメインの境界を守る.md) を参照する
 - 必ず日本語かつ適度な敬語を使用する
 - コメントは why（なぜそうするか）だけを書く。what（何をするか）はコードから読めるので書かない。移行の経緯など運用に不要な背景はコードに残さず PR・コミットに書く
 

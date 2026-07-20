@@ -10,7 +10,7 @@ import {
 } from '@/client/components/shadcn/sheet'
 import NavMenu from '@/client/components/ui/navigation/nav-menu'
 import { getVisibleMenuItems } from '@/client/entities/navigation'
-import { LogoutButton } from '@/client/features/authenticate/logout'
+import { LogoutButton } from '@/client/features/sessions'
 
 interface Props {
   isLoggedIn: boolean

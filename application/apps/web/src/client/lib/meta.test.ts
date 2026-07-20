@@ -8,13 +8,13 @@ function buildMatch(meta: MetaMatches[number]['meta']): MetaMatches[number] {
 describe('pageMeta', () => {
   it('title/descriptionからtitle・description・OGP・Twitter Card用のmetaを組み立てる', () => {
     expect(
-      pageMeta({ title: 'ログイン | TrendDiary', description: 'ログイン説明', path: '/login' }),
+      pageMeta({ title: 'ログイン | TrendDiary', description: 'ログイン説明', path: '/sessions' }),
     ).toEqual([
       { title: 'ログイン | TrendDiary' },
       { name: 'description', content: 'ログイン説明' },
       { property: 'og:title', content: 'ログイン | TrendDiary' },
       { property: 'og:description', content: 'ログイン説明' },
-      { property: 'og:url', content: `${SITE_URL}/login` },
+      { property: 'og:url', content: `${SITE_URL}/sessions` },
       { name: 'twitter:title', content: 'ログイン | TrendDiary' },
       { name: 'twitter:description', content: 'ログイン説明' },
     ])

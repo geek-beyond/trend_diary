@@ -14,7 +14,7 @@ export default function ProtectedLayout() {
   // 初回アクセスかセッション切れかを区別せず同じ導線に寄せ、挙動を統一する
   if (!isLoggedIn) {
     const redirectTo = `${location.pathname}${location.search}${location.hash}`
-    return <Navigate to={`/login?redirect=${encodeURIComponent(redirectTo)}`} replace />
+    return <Navigate to={`/sessions?redirect=${encodeURIComponent(redirectTo)}`} replace />
   }
 
   return <Outlet />

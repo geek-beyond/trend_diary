@@ -45,14 +45,14 @@ describe('useSignup', () => {
       })
     })
 
-    it('サインアップ成功時は/loginへ遷移する', async () => {
+    it('サインアップ成功時は/sessionsへ遷移する', async () => {
       const { result } = renderHook(() => useSignup())
 
       await act(async () => {
         await result.current.submit(buildFormData(validForm))
       })
 
-      expect(navigateMock).toHaveBeenCalledWith('/login')
+      expect(navigateMock).toHaveBeenCalledWith('/sessions')
       expect(result.current.formError).toBeUndefined()
     })
   })

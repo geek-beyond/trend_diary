@@ -10,6 +10,6 @@ export default function useSignup(turnstileSiteKey?: string) {
     turnstileSiteKey,
     request: (json) => getApiClientForClient().registrations.$post({ json }),
     resolveErrorMessage: resolveSignupErrorMessage,
-    onSuccess: () => navigate('/login'),
+    onSuccess: () => navigate('/sessions'),
   })
 }

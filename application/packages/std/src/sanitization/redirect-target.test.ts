@@ -26,9 +26,9 @@ describe('resolveLoginRedirectTarget', () => {
       { outline: 'スラッシュから始まらない相対パス', input: 'diary' },
       { outline: 'タブを挟んだプロトコル相対URL', input: '/\t//evil.example.com' },
       { outline: '改行を挟んだプロトコル相対URL', input: '/\n//evil.example.com' },
-      { outline: 'ログイン画面自身', input: '/login' },
-      { outline: 'クエリ付きのログイン画面自身', input: '/login?foo=bar' },
-      { outline: '新規登録画面', input: '/signup' },
+      { outline: 'ログイン画面自身', input: '/sessions' },
+      { outline: 'クエリ付きのログイン画面自身', input: '/sessions?foo=bar' },
+      { outline: '新規登録画面', input: '/registrations' },
     ])('$outlineはundefinedを返す', ({ input }) => {
       expect(resolveLoginRedirectTarget(input)).toBeUndefined()
     })

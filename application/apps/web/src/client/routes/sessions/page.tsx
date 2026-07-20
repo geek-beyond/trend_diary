@@ -1,6 +1,6 @@
-import { LoginForm, type LoginFormProps } from '@/client/features/authenticate/login'
 import { GithubAuthButton } from '@/client/features/github-auth'
 import { PasskeyLoginButton } from '@/client/features/passkey'
+import { LoginForm, type LoginFormProps } from '@/client/features/sessions'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
@@ -47,7 +47,10 @@ export default function LoginPage({
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>
             <div className='text-muted-foreground text-center text-sm'>
               アカウントをお持ちでないですか？{' '}
-              <AnchorLink to='/signup' className='text-primary hover:text-primary/90 underline'>
+              <AnchorLink
+                to='/registrations'
+                className='text-primary hover:text-primary/90 underline'
+              >
                 アカウント作成
               </AnchorLink>
             </div>

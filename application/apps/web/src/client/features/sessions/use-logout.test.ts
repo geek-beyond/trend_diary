@@ -46,7 +46,7 @@ describe('useLogout', () => {
   })
 
   describe('正常系', () => {
-    it('ログアウト成功時は/loginへ遷移して成功トーストを表示する', async () => {
+    it('ログアウト成功時は/sessionsへ遷移して成功トーストを表示する', async () => {
       apiCallMock.mockResolvedValue(null)
 
       const { result } = renderHook(() => useLogout())
@@ -56,7 +56,7 @@ describe('useLogout', () => {
       })
 
       await waitFor(() => {
-        expect(navigateMock).toHaveBeenCalledWith('/login')
+        expect(navigateMock).toHaveBeenCalledWith('/sessions')
       })
       expect(apiCallMock).toHaveBeenCalledTimes(1)
       expect(toast.success).toHaveBeenCalledWith('ログアウトしました')

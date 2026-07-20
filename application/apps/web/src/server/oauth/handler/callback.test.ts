@@ -56,7 +56,7 @@ describe('GitHub OAuthコールバック', () => {
         name: 'codeなしの失敗はエラー種別を添えてログイン画面へ戻す',
         path: '/api/oauth/github/callback?error=access_denied',
         cookies: undefined,
-        location: '/login?oauthError=github',
+        location: '/sessions?oauthError=github',
       },
       {
         name: '連携フローの失敗はログイン状態を保ったまま設定画面へ戻す',
@@ -68,7 +68,7 @@ describe('GitHub OAuthコールバック', () => {
         name: '戻り先が設定画面でもログインフローの失敗はログイン画面へ戻す',
         path: '/api/oauth/github/callback?error=access_denied',
         cookies: 'oauth_flow=login; oauth_redirect_to=%2Fsettings',
-        location: '/login?oauthError=github',
+        location: '/sessions?oauthError=github',
       },
     ])('$name', async ({ path, cookies, location }) => {
       const res = await apiRequest(path, { cookies })
@@ -81,7 +81,7 @@ describe('GitHub OAuthコールバック', () => {
       const res = await apiRequest('/api/oauth/github/callback?code=not-issued')
 
       expect(res.status).toBe(302)
-      expect(res.headers.get('Location')).toBe('/login?oauthError=github')
+      expect(res.headers.get('Location')).toBe('/sessions?oauthError=github')
     })
   })
 })

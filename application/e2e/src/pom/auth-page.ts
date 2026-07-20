@@ -3,7 +3,7 @@ import { AUTH_FLOW_TIMEOUT, SUBMIT_OUTCOME_TIMEOUT } from './constants'
 
 type SignupOutcome = 'redirected-to-login' | 'stayed'
 
-const LOGIN_URL_PATTERN = /\/login(?:\?.*)?$/
+const LOGIN_URL_PATTERN = /\/sessions(?:\?.*)?$/
 
 export class AuthPage {
   private readonly emailInput: Locator
@@ -31,16 +31,16 @@ export class AuthPage {
   }
 
   async gotoSignup(): Promise<void> {
-    await this.page.goto('/signup')
+    await this.page.goto('/registrations')
   }
 
   async gotoLogin(): Promise<void> {
-    await this.page.goto('/login')
+    await this.page.goto('/sessions')
   }
 
   async submitSignup(email: string, password: string): Promise<SignupOutcome> {
     // ハイドレーション未完了だと送信ハンドラ未接続でクリックが握り潰されるため、
-    // 合成マーカーは使わず本番の送信結果（/login への遷移 or 重複エラー表示）が出るまで fill+click を再試行する
+    // 合成マーカーは使わず本番の送信結果（/sessions への遷移 or 重複エラー表示）が出るまで fill+click を再試行する
     await expect(async () => {
       // 前回のクリックが遅れて成立した場合に二重送信しない
       if (await this.currentSignupOutcome()) {
@@ -71,7 +71,7 @@ export class AuthPage {
   }
 
   async submitLogin(email: string, password: string): Promise<void> {
-    // submitSignup と同様、本番の送信結果（/login からの離脱＝/trends への遷移）が出るまで再試行する
+    // submitSignup と同様、本番の送信結果（/sessions からの離脱＝/trends への遷移）が出るまで再試行する
     await expect(async () => {
       // 前回のクリックが遅れて成立した場合に二重送信しない
       if (!LOGIN_URL_PATTERN.test(this.page.url())) {

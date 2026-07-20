@@ -1,6 +1,6 @@
 import { type LoaderFunctionArgs, type MetaFunction, useLoaderData } from 'react-router'
 import { resolveTurnstileSiteKey } from '@/client/entities/auth'
-import { useSignup } from '@/client/features/authenticate/signup'
+import { useSignup } from '@/client/features/registrations'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import { appLoadContext } from '@/load-context'
 import SignupPage from './page'

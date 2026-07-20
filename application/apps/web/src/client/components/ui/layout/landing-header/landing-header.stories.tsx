@@ -3,7 +3,7 @@ import { expect, userEvent } from 'storybook/test'
 import { vi } from 'vitest'
 import LandingHeader from './index'
 
-vi.mock('@/client/features/authenticate/logout/use-logout', () => ({
+vi.mock('@/client/features/sessions/use-logout', () => ({
   default: vi.fn(() => ({
     handleLogout: vi.fn(),
     isLoading: false,
@@ -93,10 +93,10 @@ export const LinkValidation: Story = {
     await expect(homeLink).toHaveAttribute('href', '/')
 
     const loginLink = canvas.getByRole('link', { name: 'ログイン' })
-    await expect(loginLink).toHaveAttribute('href', '/login')
+    await expect(loginLink).toHaveAttribute('href', '/sessions')
 
     const signupLink = canvas.getByRole('link', { name: 'アカウント作成' })
-    await expect(signupLink).toHaveAttribute('href', '/signup')
+    await expect(signupLink).toHaveAttribute('href', '/registrations')
   },
 }
 

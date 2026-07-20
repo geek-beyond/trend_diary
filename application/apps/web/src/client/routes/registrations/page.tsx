@@ -1,5 +1,5 @@
-import { SignupForm, type SignupFormProps } from '@/client/features/authenticate/signup'
 import { GithubAuthButton } from '@/client/features/github-auth'
+import { SignupForm, type SignupFormProps } from '@/client/features/registrations'
 import {
   Card,
   CardContent,
@@ -48,7 +48,7 @@ export default function SignupPage({
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>
             <div className='text-muted-foreground text-center text-sm'>
               既にアカウントをお持ちですか？{' '}
-              <AnchorLink to='/login' className='text-primary hover:text-primary/90 underline'>
+              <AnchorLink to='/sessions' className='text-primary hover:text-primary/90 underline'>
                 ログイン
               </AnchorLink>
             </div>

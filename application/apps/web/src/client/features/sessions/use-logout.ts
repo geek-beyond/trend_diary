@@ -20,7 +20,7 @@ export default function useLogout() {
         // redirectクエリ付きで割り込んでしまう(navigateのPromise解決はReactのコミット完了を
         // 保証しないため)。サーバー側セッションは既にDELETEで無効化済みなので、
         // クライアントキャッシュは無理に即時更新せず次の自然な再検証に委ねる
-        navigate('/login')
+        navigate('/sessions')
         toast.success('ログアウトしました')
       },
       onError: () => {

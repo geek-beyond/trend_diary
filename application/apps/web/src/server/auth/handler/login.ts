@@ -10,7 +10,7 @@ export default createAuthHandler({
   authenticate: (client, ctx: AuthHandlerContext<AuthInput>) =>
     client.signIn({ email: ctx.json.email, password: ctx.json.password }),
   resolveAccount: (accountUseCase, user) => accountUseCase.resolveActiveUser(user.id),
-  logMessage: 'login success',
-  logPayload: (currentUser) => ({ activeUserId: currentUser.activeUserId }),
+  log: (currentUser, ctx) =>
+    ctx.logger.info('login success', { activeUserId: currentUser.activeUserId }),
   respond: (c, currentUser) => c.json({ displayName: currentUser.displayName }, 200),
 })

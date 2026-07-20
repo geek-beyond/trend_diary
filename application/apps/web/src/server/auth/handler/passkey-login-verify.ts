@@ -24,7 +24,7 @@ export default createAuthHandler({
       credential: ctx.json.credential,
     }),
   resolveAccount: (accountUseCase, user) => accountUseCase.resolveActiveUser(user.id),
-  logMessage: 'passkey login success',
-  logPayload: (currentUser) => ({ activeUserId: currentUser.activeUserId }),
+  log: (currentUser, ctx) =>
+    ctx.logger.info('passkey login success', { activeUserId: currentUser.activeUserId }),
   respond: (c, currentUser) => c.json({ displayName: currentUser.displayName }, 200),
 })

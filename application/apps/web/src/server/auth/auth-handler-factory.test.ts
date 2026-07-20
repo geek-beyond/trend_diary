@@ -1,46 +1,37 @@
-import { InvalidCredentialsError, UnexpectedAuthError } from '@trend-diary/authentication'
+import {
+  InvalidCredentialsError,
+  PasskeyRegistrationError,
+  UnexpectedAuthError,
+} from '@trend-diary/authentication'
+import Logger from '@trend-diary/logger'
 import { ClientError } from '@trend-diary/std/errors'
-import type { Context } from 'hono'
+import { type Context, Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { err, ok } from 'neverthrow'
+import { z } from 'zod'
 import type { Env } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
+import zodValidator from '@/middleware/zod-validator'
 import { type AuthHandlerContext, createAuthHandler } from './auth-handler-factory'
 
-// resolveAccount 経路は createAccountUseCase(getRdbClient(...)) を構築するため、実体依存を切る。
-// テストでは resolveAccount コールバック自身が結果を返すので、use-case の中身は空で十分。
+// resolveAccount 経路は createAccountUseCase(getRdbClient(...)) を構築するため実体依存を切る。
+// resolveAccount コールバック自身が結果を返すので use-case の中身は空で十分。
 vi.mock('@trend-diary/datastore/rdb', () => ({ default: vi.fn(() => ({})) }))
 vi.mock('@trend-diary/domain/account', () => ({ createAccountUseCase: vi.fn(() => ({})) }))
 
-interface FakeLogger {
-  info: ReturnType<typeof vi.fn>
-  warn: ReturnType<typeof vi.fn>
-  error: ReturnType<typeof vi.fn>
-}
-
-interface BuildContextOptions {
-  // oxlint-disable-next-line typescript/no-restricted-types -- 検証済み json を模す任意形状の値を渡すため
-  json?: unknown
-}
-
-function buildContext(options: BuildContextOptions = {}): { c: Context<Env>; logger: FakeLogger } {
-  const logger: FakeLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-  const req = { valid: (key: 'json') => (key === 'json' ? options.json : undefined) }
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- テストに必要な最小限の Context を組み立てるため
-  const c = {
-    get: (key: string) => (key === CONTEXT_KEY.APP_LOG ? logger : undefined),
-    env: { DB: {} },
-    req,
-    // oxlint-disable-next-line typescript/no-restricted-types -- Hono の c.json を模すモックで、任意の JSON 値を受けるため
-    json: (data: unknown, status: number) =>
-      new Response(JSON.stringify(data), {
-        status,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    body: (data: BodyInit | null, status: number) => new Response(data, { status }),
-    // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
-  } as unknown as Context<Env>
-  return { c, logger }
+// 手動 Context モック(型アサーション)を避け、実 Hono へルーティングして app.request で本番同等の
+// 経路を通す。ロガーは実 Logger を spy し、二重アサーションを避ける(handle-error.test.ts と同方針)。
+function mountHandler(handler: (c: Context<Env>) => Promise<Response>) {
+  const logger = new Logger('silent')
+  const info = vi.spyOn(logger, 'info').mockImplementation(() => {})
+  const app = new Hono<Env>()
+  app.use('*', async (c, next) => {
+    c.set(CONTEXT_KEY.APP_LOG, logger)
+    await next()
+  })
+  app.post('/auth', handler)
+  // env.DB は getRdbClient のモックが受けるため空で良い
+  return { request: () => app.request('/auth', { method: 'POST' }, { DB: {} }), info }
 }
 
 describe('createAuthHandler', () => {
@@ -52,8 +43,7 @@ describe('createAuthHandler', () => {
         respond: (c, output) => c.json({ count: output.items.length }, 200),
       })
 
-      const { c } = buildContext()
-      const res = await handler(c)
+      const res = await mountHandler(handler).request()
 
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ count: 2 })
@@ -68,40 +58,26 @@ describe('createAuthHandler', () => {
         respond: (c, account) => c.json({ displayName: account.displayName }, 200),
       })
 
-      const { c } = buildContext()
-      const res = await handler(c)
+      const res = await mountHandler(handler).request()
 
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ displayName: 'テスト太郎' })
     })
 
-    it('logMessage と logPayload を指定すると logger.info(message, payload) を呼ぶこと', async () => {
+    it('log コールバックに最終出力を渡して呼ぶこと', async () => {
+      const log = vi.fn()
       const handler = createAuthHandler({
         createClient: () => ({}),
-        authenticate: () => Promise.resolve(ok({ activeUserId: 7n })),
-        logMessage: 'login success',
-        logPayload: (output) => ({ activeUserId: output.activeUserId }),
+        authenticate: () => Promise.resolve(ok({ id: 'auth-1' })),
+        resolveAccount: () => Promise.resolve(ok({ activeUserId: 7n })),
+        log,
         respond: (c) => c.json({}, 200),
       })
 
-      const { c, logger } = buildContext()
-      await handler(c)
+      await mountHandler(handler).request()
 
-      expect(logger.info).toHaveBeenCalledWith('login success', { activeUserId: 7n })
-    })
-
-    it('logPayload 未指定なら logger.info(message) を単一引数で呼ぶこと', async () => {
-      const handler = createAuthHandler({
-        createClient: () => ({}),
-        authenticate: () => Promise.resolve(ok(null)),
-        logMessage: 'logout success',
-        respond: (c) => c.body(null, 204),
-      })
-
-      const { c, logger } = buildContext()
-      await handler(c)
-
-      expect(logger.info).toHaveBeenCalledWith('logout success')
+      expect(log).toHaveBeenCalledTimes(1)
+      expect(log.mock.calls[0]![0]).toEqual({ activeUserId: 7n })
     })
 
     it('respond が 204 を返すとボディなしになること', async () => {
@@ -111,8 +87,7 @@ describe('createAuthHandler', () => {
         respond: (c) => c.body(null, 204),
       })
 
-      const { c } = buildContext()
-      const res = await handler(c)
+      const res = await mountHandler(handler).request()
 
       expect(res.status).toBe(204)
       expect(await res.text()).toBe('')
@@ -133,13 +108,12 @@ describe('createAuthHandler', () => {
         respond: (c) => c.json({}, 200),
       })
 
-      const { c } = buildContext()
-      await handler(c)
+      await mountHandler(handler).request()
 
       expect(order).toEqual(['before', 'authenticate'])
     })
 
-    it('検証済み json を ctx.json として各コールバックへ渡すこと', async () => {
+    it('検証済み json を ctx.json として respond まで通すこと', async () => {
       const handler = createAuthHandler({
         createClient: () => ({}),
         authenticate: (_client, ctx: AuthHandlerContext<{ email: string }>) =>
@@ -147,29 +121,47 @@ describe('createAuthHandler', () => {
         respond: (c, output) => c.json({ email: output.email }, 200),
       })
 
-      const { c } = buildContext({ json: { email: 'user@example.com' } })
-      const res = await handler(c)
+      const logger = new Logger('silent')
+      const app = new Hono<Env>()
+      app.use('*', async (c, next) => {
+        c.set(CONTEXT_KEY.APP_LOG, logger)
+        await next()
+      })
+      app.post('/auth', zodValidator('json', z.object({ email: z.string().email() })), handler)
 
+      const res = await app.request(
+        '/auth',
+        {
+          method: 'POST',
+          body: JSON.stringify({ email: 'user@example.com' }),
+          headers: { 'Content-Type': 'application/json' },
+        },
+        { DB: {} },
+      )
+
+      expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ email: 'user@example.com' })
     })
   })
 
   describe('準正常系', () => {
-    it('認証ステップの err は toAuthError で変換された HTTPException になること', async () => {
-      const handler = createAuthHandler({
-        createClient: () => ({}),
-        authenticate: () => Promise.resolve(err(new InvalidCredentialsError('invalid'))),
-        respond: (c) => c.json({}, 200),
-      })
+    it.each([
+      { name: '認証情報不正', error: new InvalidCredentialsError('invalid'), status: 401 },
+      { name: 'passkey登録失敗', error: new PasskeyRegistrationError('register'), status: 400 },
+    ])(
+      '認証ステップの $name は toAuthError で $status に変換されること',
+      async ({ error, status }) => {
+        const handler = createAuthHandler({
+          createClient: () => ({}),
+          authenticate: () => Promise.resolve(err(error)),
+          respond: (c) => c.json({}, 200),
+        })
 
-      const { c } = buildContext()
-      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
-      const thrown = await handler(c).catch((e: unknown) => e)
+        const res = await mountHandler(handler).request()
 
-      expect(thrown).toBeInstanceOf(HTTPException)
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- instanceof で確認済みのため
-      expect((thrown as HTTPException).status).toBe(401)
-    })
+        expect(res.status).toBe(status)
+      },
+    )
 
     it('アカウントステップの err は toAuthError を通さず元のステータスを保つこと', async () => {
       const handler = createAuthHandler({
@@ -179,13 +171,9 @@ describe('createAuthHandler', () => {
         respond: (c) => c.json({}, 200),
       })
 
-      const { c } = buildContext()
-      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
-      const thrown = await handler(c).catch((e: unknown) => e)
+      const res = await mountHandler(handler).request()
 
-      expect(thrown).toBeInstanceOf(HTTPException)
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- instanceof で確認済みのため
-      expect((thrown as HTTPException).status).toBe(404)
+      expect(res.status).toBe(404)
     })
 
     it('beforeAuthenticate が送出すると authenticate を呼ばず短絡すること', async () => {
@@ -197,11 +185,9 @@ describe('createAuthHandler', () => {
         respond: (c) => c.json({}, 200),
       })
 
-      const { c } = buildContext()
-      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
-      const thrown = await handler(c).catch((e: unknown) => e)
+      const res = await mountHandler(handler).request()
 
-      expect(thrown).toBeInstanceOf(HTTPException)
+      expect(res.status).toBe(403)
       expect(authenticate).not.toHaveBeenCalled()
     })
   })
@@ -214,13 +200,9 @@ describe('createAuthHandler', () => {
         respond: (c) => c.json({}, 200),
       })
 
-      const { c } = buildContext()
-      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
-      const thrown = await handler(c).catch((e: unknown) => e)
+      const res = await mountHandler(handler).request()
 
-      expect(thrown).toBeInstanceOf(HTTPException)
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- instanceof で確認済みのため
-      expect((thrown as HTTPException).status).toBe(500)
+      expect(res.status).toBe(500)
     })
   })
 })

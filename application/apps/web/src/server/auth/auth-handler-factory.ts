@@ -11,8 +11,8 @@
  *   ため toAuthError を通さず handleError にそのまま渡す。
  * - レスポンスは respond コールバックが c.json / c.body を直接返す。Hono RPC のレスポンス型推論を
  *   ハンドラーごとに保つため、レスポンス生成をファクトリー内へ隠さず呼び出し側へ残す。
- * - ロギングは既存auth handlerの logger.info(message, payload?) の呼び出し形をそのまま踏襲する
- *   (datastore系の logger.info({ msg, ...payload }) とはあえて合わせない。ログ形状を不変に保つため)。
+ * - 成功ログは任意の log コールバックに委ね、message/payload の分岐をファクトリーへ持ち込まない
+ *   (未使用の分岐を作らず、ハンドラーごとに従来どおりのログ形状をそのまま書けるようにするため)。
  */
 import { type AuthError } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
@@ -56,9 +56,7 @@ interface AccountAuthConfig<
     authOutput: TAuthOutput,
     ctx: AuthHandlerContext<TJson>,
   ) => Promise<Result<TAccountOutput, Error>>
-  logMessage?: string | ((output: TAccountOutput, ctx: AuthHandlerContext<TJson>) => string)
-  // oxlint-disable-next-line typescript/no-restricted-types -- 任意の構造化データをログ出力するペイロードで、値の型を限定できないため
-  logPayload?: (output: TAccountOutput, ctx: AuthHandlerContext<TJson>) => Record<string, unknown>
+  log?: (output: TAccountOutput, ctx: AuthHandlerContext<TJson>) => void
   respond: (c: Context<Env>, output: TAccountOutput) => TResponse
 }
 
@@ -70,9 +68,7 @@ interface ThinAuthConfig<TClient, TJson, TAuthOutput, TResponse extends Response
     client: TClient,
     ctx: AuthHandlerContext<TJson>,
   ) => Promise<Result<TAuthOutput, AuthError>>
-  logMessage?: string | ((output: TAuthOutput, ctx: AuthHandlerContext<TJson>) => string)
-  // oxlint-disable-next-line typescript/no-restricted-types -- 任意の構造化データをログ出力するペイロードで、値の型を限定できないため
-  logPayload?: (output: TAuthOutput, ctx: AuthHandlerContext<TJson>) => Record<string, unknown>
+  log?: (output: TAuthOutput, ctx: AuthHandlerContext<TJson>) => void
   respond: (c: Context<Env>, output: TAuthOutput) => TResponse
 }
 
@@ -133,13 +129,8 @@ export function createAuthHandler(
       output = accountResult.value
     }
 
-    // 4. ロギング(既存auth handlerの呼び出し形を踏襲)
-    if (config.logMessage) {
-      const message =
-        typeof config.logMessage === 'function' ? config.logMessage(output, ctx) : config.logMessage
-      if (config.logPayload) logger.info(message, config.logPayload(output, ctx))
-      else logger.info(message)
-    }
+    // 4. ロギング(呼び出し側が最終出力を使って任意の成功ログを出す)。
+    if (config.log) config.log(output, ctx)
 
     // 5. レスポンス生成(呼び出し側が c.json / c.body を直接返し RPC 型を保つ)。
     return config.respond(c, output)

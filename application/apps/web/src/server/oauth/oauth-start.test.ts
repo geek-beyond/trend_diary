@@ -1,5 +1,5 @@
 import type * as AuthModule from '@trend-diary/authentication'
-import { NoSessionError, UnexpectedAuthError } from '@trend-diary/authentication'
+import { UnexpectedAuthError } from '@trend-diary/authentication'
 import { HTTPException } from 'hono/http-exception'
 import { err, ok, type Result } from 'neverthrow'
 import CONTEXT_KEY from '@/middleware/context'
@@ -55,7 +55,8 @@ function findSetCookie(setCookies: string[], prefix: string): string {
   return setCookies.find((cookie) => cookie.startsWith(prefix)) ?? ''
 }
 
-function baseConfig(result: Result<{ url: string }, Error>) {
+// start が返しうるエラーは OAuthClient の実エラー(UnexpectedAuthError)に限られるため、Error でぼかさない
+function baseConfig(result: Result<{ url: string }, UnexpectedAuthError>) {
   return {
     start: () => Promise.resolve(result),
     flow: OAUTH_FLOW.login,
@@ -120,10 +121,10 @@ describe('createOAuthStartHandler', () => {
   })
 
   describe('準正常系', () => {
-    it.each([
-      { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
-      { name: 'UnexpectedAuthError', error: new UnexpectedAuthError('unexpected'), status: 500 },
-    ])('startが$nameを返すとHTTPException($status)を投げること', async ({ error, status }) => {
+    // エラー種別ごとの写像(NoSessionError→401 等)は error.test.ts が担保する。
+    // ここは start のエラーを throwHttpError へ委譲し HTTPException として送出することだけを検証する
+    it('startがエラーを返すとthrowHttpError経由でHTTPExceptionを投げること', async () => {
+      const error = new UnexpectedAuthError('unexpected')
       const handler = createOAuthStartHandler(baseConfig(err(error)))
 
       const { c } = buildContext()
@@ -131,7 +132,7 @@ describe('createOAuthStartHandler', () => {
       const thrown = await handler(c).catch((e: unknown) => e)
 
       expect(thrown).toBeInstanceOf(HTTPException)
-      expect(thrown).toMatchObject({ status, message: error.message })
+      expect(thrown).toMatchObject({ status: 500, message: error.message })
     })
   })
 })

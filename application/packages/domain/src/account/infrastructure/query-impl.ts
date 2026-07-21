@@ -5,7 +5,7 @@ import { activeUsers } from '@trend-diary/datastore/schema'
 import type { Nullable } from '@trend-diary/std/types/utility'
 import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { type AccountError, AccountRepositoryError } from '../error'
+import { AccountRepositoryError } from '../error'
 import type { Query } from '../port'
 import type { CurrentUser } from '../schema/active-user-schema'
 import { mapToActiveUser } from './mapper'
@@ -13,7 +13,7 @@ import { mapToActiveUser } from './mapper'
 export default class QueryImpl implements Query {
   constructor(private readonly db: RdbClient) {}
 
-  async findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, AccountError>> {
+  async findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, AccountRepositoryError>> {
     const dbId = toDbId(id)
     const activeUserResult = await wrapDbCall(() =>
       this.db.select().from(activeUsers).where(eq(activeUsers.activeUserId, dbId)).limit(1),
@@ -30,7 +30,9 @@ export default class QueryImpl implements Query {
     return ok(mapToActiveUser(activeUser))
   }
 
-  async findActiveByEmail(email: string): Promise<Result<Nullable<CurrentUser>, AccountError>> {
+  async findActiveByEmail(
+    email: string,
+  ): Promise<Result<Nullable<CurrentUser>, AccountRepositoryError>> {
     const activeUserResult = await wrapDbCall(() =>
       this.db.select().from(activeUsers).where(eq(activeUsers.email, email)).limit(1),
     )
@@ -48,7 +50,7 @@ export default class QueryImpl implements Query {
 
   async findActiveByAuthenticationId(
     authenticationId: string,
-  ): Promise<Result<Nullable<CurrentUser>, AccountError>> {
+  ): Promise<Result<Nullable<CurrentUser>, AccountRepositoryError>> {
     const activeUserResult = await wrapDbCall(() =>
       this.db
         .select()

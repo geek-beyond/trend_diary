@@ -4,7 +4,7 @@ import { activeUsers, users } from '@trend-diary/datastore/schema'
 import Logger from '@trend-diary/logger'
 import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { type AccountError, AccountRepositoryError } from '../error'
+import { AccountRepositoryError } from '../error'
 import type { Command, Notifier } from '../port'
 import type { CurrentUser } from '../schema/active-user-schema'
 import { mapToActiveUser } from './mapper'
@@ -23,7 +23,7 @@ export default class CommandImpl implements Command {
     authenticationId: string,
     notifier: Notifier,
     displayName?: string | null,
-  ): Promise<Result<CurrentUser, AccountError>> {
+  ): Promise<Result<CurrentUser, AccountRepositoryError>> {
     // INFO: D1はインタラクティブトランザクション非対応のため、users→active_usersを逐次insertし、
     //       2文目失敗時はusersをdeleteする補償方式で整合性を担保する
     const userResult = await wrapDbCall(() => this.db.insert(users).values({}).returning())
@@ -40,7 +40,7 @@ export default class CommandImpl implements Command {
     // INFO: active_users insert失敗時の補償。作成済みusersを削除しエラーを返す。
     //       補償自体の失敗は元のエラーを優先して返すが、active_usersを持たないusersレコードが
     //       孤立して残り自動検知できないため、手動対応に必要なuserIdと補償エラーをerrorログに残す
-    const compensateAndFail = async (): Promise<Result<CurrentUser, AccountError>> => {
+    const compensateAndFail = async (): Promise<Result<CurrentUser, AccountRepositoryError>> => {
       const compensateResult = await wrapDbCall(() =>
         this.db.delete(users).where(eq(users.userId, userId)),
       )

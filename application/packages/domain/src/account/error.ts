@@ -1,6 +1,6 @@
 // アカウント集約のドメインエラー。HTTP ステータス等の責務は持たず、失敗の種別を型で表す。
 // HTTP への写像は HTTP 境界(ハンドラ)の責務とする。
-export abstract class AccountError extends Error {}
+abstract class AccountError extends Error {}
 
 export class ActiveUserNotFoundError extends AccountError {
   name = 'ActiveUserNotFoundError'

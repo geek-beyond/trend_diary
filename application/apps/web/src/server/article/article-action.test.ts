@@ -1,5 +1,4 @@
 import { ClientError, NotFoundError } from '@trend-diary/std/errors'
-import { HTTPException } from 'hono/http-exception'
 import { err, ok, type Result } from 'neverthrow'
 import type { SessionUser } from '@/env'
 import CONTEXT_KEY from '@/middleware/context'
@@ -108,19 +107,15 @@ describe('createArticleActionHandler', () => {
     it.each([
       { name: 'NotFoundError', error: new NotFoundError('not found'), status: 404 },
       { name: 'ClientError', error: new ClientError('bad request', 400), status: 400 },
-    ])(
-      'execute が $name を返すと handleError で変換した HTTPException を投げること',
-      async ({ error, status }) => {
-        const handler = createArticleActionHandler(baseConfig(err(error)))
+    ])('execute が $name を返すとそのエラーをそのまま投げること', async ({ error, status }) => {
+      const handler = createArticleActionHandler(baseConfig(err(error)))
 
-        const { c } = buildContext({ user: sessionUser })
-        // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
-        const thrown = await handler(c).catch((e: unknown) => e)
+      const { c } = buildContext({ user: sessionUser })
+      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
+      const thrown = await handler(c).catch((e: unknown) => e)
 
-        expect(thrown).toBeInstanceOf(HTTPException)
-        expect(thrown).toMatchObject({ status })
-      },
-    )
+      expect(thrown).toMatchObject({ statusCode: status })
+    })
   })
 
   describe('異常系', () => {

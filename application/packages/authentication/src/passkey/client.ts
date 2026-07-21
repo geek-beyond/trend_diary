@@ -1,11 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import { err, ok, type Result } from 'neverthrow'
-import {
-  type AuthError,
-  PasskeyRegistrationError,
-  PasskeyVerificationError,
-  UnexpectedAuthError,
-} from '../errors'
+import { PasskeyRegistrationError, PasskeyVerificationError, UnexpectedAuthError } from '../errors'
 import {
   type AuthClientConfig,
   createBackendClient,
@@ -41,7 +36,9 @@ export class PasskeyClient {
   }
 
   // 成功でも user/session が空なら認証失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
-  async verifyAuthentication(params: VerifyAuthenticationParams): Promise<Result<User, AuthError>> {
+  async verifyAuthentication(
+    params: VerifyAuthenticationParams,
+  ): Promise<Result<User, PasskeyVerificationError | UnexpectedAuthError>> {
     return (
       await callSupabase(
         () => this.client.auth.passkey.verifyAuthentication(params),

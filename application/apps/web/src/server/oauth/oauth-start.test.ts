@@ -1,5 +1,5 @@
 import type * as AuthModule from '@trend-diary/authentication'
-import { type AuthError, NoSessionError, UnexpectedAuthError } from '@trend-diary/authentication'
+import { NoSessionError, UnexpectedAuthError } from '@trend-diary/authentication'
 import { HTTPException } from 'hono/http-exception'
 import { err, ok, type Result } from 'neverthrow'
 import CONTEXT_KEY from '@/middleware/context'
@@ -55,7 +55,7 @@ function findSetCookie(setCookies: string[], prefix: string): string {
   return setCookies.find((cookie) => cookie.startsWith(prefix)) ?? ''
 }
 
-function baseConfig(result: Result<{ url: string }, AuthError>) {
+function baseConfig(result: Result<{ url: string }, Error>) {
   return {
     start: () => Promise.resolve(result),
     flow: OAUTH_FLOW.login,

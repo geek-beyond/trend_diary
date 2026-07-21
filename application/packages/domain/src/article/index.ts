@@ -9,6 +9,6 @@ export function createArticleUseCase(db: RdbClient): UseCase {
   return new UseCase(articleQuery, articleCommand)
 }
 
-export { ArticleError, ArticleNotFoundError, ArticleRepositoryError } from './error'
+export { ArticleNotFoundError, ArticleRepositoryError } from './error'
 export type { Article } from './schema/article-schema'
 export type { QueryParams } from './schema/query-schema'

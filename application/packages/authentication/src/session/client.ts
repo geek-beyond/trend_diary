@@ -1,5 +1,5 @@
 import { err, ok, type Result } from 'neverthrow'
-import { type AuthError, NoSessionError } from '../errors'
+import { NoSessionError, type UnexpectedAuthError } from '../errors'
 import {
   type AuthClientConfig,
   createBackendClient,
@@ -15,7 +15,9 @@ export class SessionClient {
   }
 
   // セッション無し・失効はエラーではなく未認証として扱うため、業務エラーも空データも一律 NoSessionError に畳む
-  async getClaims(): Promise<Result<{ authenticationId: string }, AuthError>> {
+  async getClaims(): Promise<
+    Result<{ authenticationId: string }, NoSessionError | UnexpectedAuthError>
+  > {
     return (
       await callSupabase(
         () => this.client.auth.getClaims(),

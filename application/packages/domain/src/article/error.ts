@@ -1,6 +1,7 @@
 // 記事集約のドメインエラー。HTTP ステータス等の責務は持たず、失敗の種別を型で表す。
 // HTTP への写像は HTTP 境界(ハンドラ)の責務とする。
-export abstract class ArticleError extends Error {}
+// 各メソッドの Result は実際に返す具象型で表すため、基底型は集約内の共通土台に留め公開しない。
+abstract class ArticleError extends Error {}
 
 export class ArticleNotFoundError extends ArticleError {
   name = 'ArticleNotFoundError'

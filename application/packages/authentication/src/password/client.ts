@@ -1,11 +1,6 @@
 import { AuthError, type User } from '@supabase/supabase-js'
 import { err, ok, type Result } from 'neverthrow'
-import {
-  type AuthError as AuthClientError,
-  InvalidCredentialsError,
-  UnexpectedAuthError,
-  UserAlreadyExistsError,
-} from '../errors'
+import { InvalidCredentialsError, UnexpectedAuthError, UserAlreadyExistsError } from '../errors'
 import {
   type AuthClientConfig,
   createBackendClient,
@@ -26,7 +21,9 @@ export class PasswordAuthClient {
   }
 
   // 成功でも user/session が空なら失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
-  async signIn(credentials: PasswordCredentials): Promise<Result<User, AuthClientError>> {
+  async signIn(
+    credentials: PasswordCredentials,
+  ): Promise<Result<User, InvalidCredentialsError | UnexpectedAuthError>> {
     return (
       await callSupabase(() => this.client.auth.signInWithPassword(credentials), toSignInError)
     ).andThen(({ user, session }) =>
@@ -35,19 +32,21 @@ export class PasswordAuthClient {
   }
 
   // 成功でも user が空なら登録失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
-  async signUp(credentials: PasswordCredentials): Promise<Result<User, AuthClientError>> {
+  async signUp(
+    credentials: PasswordCredentials,
+  ): Promise<Result<User, UserAlreadyExistsError | UnexpectedAuthError>> {
     return (await callSupabase(() => this.client.auth.signUp(credentials), toSignUpError)).andThen(
       ({ user }) => (user ? ok(user) : err(new UnexpectedAuthError('User registration failed'))),
     )
   }
 
   // 既にログアウト済みでもSupabaseはエラーを返さないため、error は通信・サーバ障害のみを表す
-  async signOut(): Promise<Result<null, AuthClientError>> {
+  async signOut(): Promise<Result<null, UnexpectedAuthError>> {
     return callSupabase(async () => ({ ...(await this.client.auth.signOut()), data: null }))
   }
 }
 
-function toSignInError(error: Error): AuthClientError {
+function toSignInError(error: Error): InvalidCredentialsError | UnexpectedAuthError {
   const isInvalidCredentials = error instanceof AuthError && error.code === 'invalid_credentials'
   return isInvalidCredentials
     ? new InvalidCredentialsError(error.message)
@@ -55,7 +54,7 @@ function toSignInError(error: Error): AuthClientError {
 }
 
 // NOTE: Supabaseは専用エラー型を提供しないためメッセージ文字列で既存ユーザーを判定している
-function toSignUpError(error: Error): AuthClientError {
+function toSignUpError(error: Error): UserAlreadyExistsError | UnexpectedAuthError {
   return error.message.includes('already registered')
     ? new UserAlreadyExistsError(error.message)
     : new UnexpectedAuthError(error.message)

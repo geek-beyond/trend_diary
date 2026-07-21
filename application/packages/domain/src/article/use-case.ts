@@ -3,7 +3,7 @@ import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import { DEFAULT_LIMIT, DEFAULT_PAGE } from '@trend-diary/std/pagination'
 import extractTrimmed from '@trend-diary/std/sanitization'
 import type { Result } from 'neverthrow'
-import type { ArticleError } from './error'
+import type { ArticleNotFoundError, ArticleRepositoryError } from './error'
 import type { ArticleMedia } from './media'
 import type { Command, Query } from './port'
 import type { ArticleWithOptionalReadStatus, UnreadDigestionResult } from './schema/article-schema'
@@ -26,7 +26,9 @@ export class UseCase {
   async searchArticles(
     params: QueryParams,
     activeUserId?: bigint,
-  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ArticleError>> {
+  ): Promise<
+    Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ArticleRepositoryError>
+  > {
     const optimizedParams: QueryParams = {
       title: extractTrimmed(params.title),
       author: extractTrimmed(params.author),
@@ -45,7 +47,7 @@ export class UseCase {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, ArticleError>> {
+  ): Promise<Result<ReadHistory, ArticleNotFoundError | ArticleRepositoryError>> {
     // 記事存在チェックは command 側のSQLに集約済みのため、ここでは委譲のみ行う
     return this.command.createReadHistory(activeUserId, articleId, readAt)
   }
@@ -54,7 +56,7 @@ export class UseCase {
     activeUserId: bigint,
     media?: ArticleMedia[],
     now: Date = new Date(),
-  ): Promise<Result<UnreadDigestionResult, ArticleError>> {
+  ): Promise<Result<UnreadDigestionResult, ArticleRepositoryError>> {
     return this.query.getUnreadDigestionArticles(activeUserId, toJstDateString(now), media)
   }
 
@@ -63,7 +65,7 @@ export class UseCase {
     targetDateJst: string,
     page: number,
     limit: number,
-  ): Promise<Result<DailyDiary, ArticleError>> {
+  ): Promise<Result<DailyDiary, ArticleRepositoryError>> {
     return this.query.getDailyDiary(activeUserId, targetDateJst, page, limit)
   }
 
@@ -71,14 +73,14 @@ export class UseCase {
     activeUserId: bigint,
     fromDateJst: string,
     toDateJst: string,
-  ): Promise<Result<DailyDiaryRangeItem[], ArticleError>> {
+  ): Promise<Result<DailyDiaryRangeItem[], ArticleRepositoryError>> {
     return this.query.getDailyDiaryRange(activeUserId, fromDateJst, toDateJst)
   }
 
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, ArticleError>> {
+  ): Promise<Result<SkippedArticle, ArticleNotFoundError | ArticleRepositoryError>> {
     // 記事存在チェックは command 側のSQLに集約済みのため、ここでは委譲のみ行う
     return this.command.createSkippedArticle(activeUserId, articleId)
   }
@@ -86,7 +88,7 @@ export class UseCase {
   async deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<void, ArticleError>> {
+  ): Promise<Result<void, ArticleNotFoundError | ArticleRepositoryError>> {
     // 記事存在チェックは command 側のSQLに集約済みのため、ここでは委譲のみ行う
     return this.command.deleteAllReadHistory(activeUserId, articleId)
   }

@@ -9,7 +9,7 @@ import { DEFAULT_LIMIT, DEFAULT_PAGE } from '@trend-diary/std/pagination'
 import type { Nullable } from '@trend-diary/std/types/utility'
 import { eq, type SQL, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { type ArticleError, ArticleRepositoryError } from '../error'
+import { ArticleRepositoryError } from '../error'
 import { ARTICLE_MEDIA, type ArticleMedia, assertArticleMedia } from '../media'
 import type { Query } from '../port'
 import type {
@@ -108,7 +108,9 @@ export default class QueryImpl implements Query {
   async searchArticles(
     params: QueryParams,
     activeUserId?: bigint,
-  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ArticleError>> {
+  ): Promise<
+    Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ArticleRepositoryError>
+  > {
     const { page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, from, to, ...searchParams } = params
     const dbActiveUserId = activeUserId !== undefined ? toDbId(activeUserId) : undefined
     const whereSql = QueryImpl.buildSqlWhereClause({
@@ -166,7 +168,9 @@ export default class QueryImpl implements Query {
     })
   }
 
-  async findArticleById(articleId: bigint): Promise<Result<Nullable<Article>, ArticleError>> {
+  async findArticleById(
+    articleId: bigint,
+  ): Promise<Result<Nullable<Article>, ArticleRepositoryError>> {
     const dbArticleId = toDbId(articleId)
     const result = await wrapDbCall(() =>
       this.db.select().from(articles).where(eq(articles.articleId, dbArticleId)),
@@ -188,7 +192,7 @@ export default class QueryImpl implements Query {
     activeUserId: bigint,
     targetDateJst: string,
     media?: ArticleMedia[],
-  ): Promise<Result<UnreadDigestionResult, ArticleError>> {
+  ): Promise<Result<UnreadDigestionResult, ArticleRepositoryError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(targetDateJst, targetDateJst)
     const createdAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -248,7 +252,7 @@ export default class QueryImpl implements Query {
     targetDateJst: string,
     page: number,
     limit: number,
-  ): Promise<Result<DailyDiary, ArticleError>> {
+  ): Promise<Result<DailyDiary, ArticleRepositoryError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(targetDateJst, targetDateJst)
     const readAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -371,7 +375,7 @@ export default class QueryImpl implements Query {
     activeUserId: bigint,
     fromDateJst: string,
     toDateJst: string,
-  ): Promise<Result<DailyDiaryRangeItem[], ArticleError>> {
+  ): Promise<Result<DailyDiaryRangeItem[], ArticleRepositoryError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(fromDateJst, toDateJst)
     const readAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -431,13 +435,10 @@ export default class QueryImpl implements Query {
 
     const readByDate = QueryImpl.groupSourcesByDate(readSourceRows)
     const skipByDate = QueryImpl.groupSourcesByDate(skipSourceRows)
-    const datesResult = QueryImpl.enumerateJstDateRange(fromDateJst, toDateJst)
-    if (datesResult.isErr()) {
-      return err(new ArticleRepositoryError(datesResult.error))
-    }
+    const dates = QueryImpl.enumerateJstDateRange(fromDateJst, toDateJst)
 
     return ok(
-      datesResult.value.map((date) => {
+      dates.map((date) => {
         const sources = QueryImpl.mergeDiarySources(
           readByDate.get(date) ?? [],
           skipByDate.get(date) ?? [],
@@ -715,16 +716,14 @@ export default class QueryImpl implements Query {
     }))
   }
 
-  private static enumerateJstDateRange(
-    fromDateJst: string,
-    toDateJst: string,
-  ): Result<string[], Error> {
-    // 不正なtoDateJstは辞書順比較で常にcurrentより大きく評価され、Date上限到達まで巨大ループになる。
-    // 不正なfromDateJstは空配列を正常値として返してしまう。両端を先に検証して両方を防ぐ
+  private static enumerateJstDateRange(fromDateJst: string, toDateJst: string): string[] {
+    // 日付は API 境界(diaryDateSchema)で 422 検証済みのため、ここへの不正日付の到達はサーバ側の契約違反。
+    // 不正な toDateJst は辞書順比較で Date 上限まで巨大ループになり、不正な fromDateJst は空配列を正常値として返すため、両端を先に表明して顕在化させる
     for (const dateJst of [fromDateJst, toDateJst]) {
-      if (Number.isNaN(toJstDate(dateJst).getTime())) {
-        return err(new Error(`不正な日付文字列です: ${dateJst}`))
-      }
+      assert(
+        !Number.isNaN(toJstDate(dateJst).getTime()),
+        `enumerateJstDateRange received an invalid date string: ${dateJst}`,
+      )
     }
 
     const dates: string[] = []
@@ -734,6 +733,6 @@ export default class QueryImpl implements Query {
       // 両端は検証済みのため、途中の加算失敗は契約違反として addJstDays が送出する
       current = addJstDays(current, 1)
     }
-    return ok(dates)
+    return dates
   }
 }

@@ -1,6 +1,5 @@
 import { type SQL, sql } from 'drizzle-orm'
 import { SQLiteSyncDialect } from 'drizzle-orm/sqlite-core'
-import { type Result } from 'neverthrow'
 import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import QueryImpl from './query-impl'
@@ -18,7 +17,7 @@ interface DateRangeSqlBuilders {
 const dateRangeSqlBuilders = QueryImpl as unknown as DateRangeSqlBuilders
 
 interface DateRangeEnumerator {
-  enumerateJstDateRange(fromDateJst: string, toDateJst: string): Result<string[], Error>
+  enumerateJstDateRange(fromDateJst: string, toDateJst: string): string[]
 }
 // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-restricted-types -- privateなstaticメソッドをホワイトボックステストするため、型システムを意図的に迂回する必要があるためです
 const dateRangeEnumerator = QueryImpl as unknown as DateRangeEnumerator
@@ -593,24 +592,18 @@ describe('QueryImpl', () => {
     it('範囲内の日付を列挙できる', () => {
       const result = dateRangeEnumerator.enumerateJstDateRange('2026-03-06', '2026-03-08')
 
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) {
-        expect(result.value).toEqual(['2026-03-06', '2026-03-07', '2026-03-08'])
-      }
+      expect(result).toEqual(['2026-03-06', '2026-03-07', '2026-03-08'])
     })
 
     it.each([
-      // fromDateJstが不正だと辞書順比較次第で空配列を正常値として返しうるため、検証してエラーにする
+      // fromDateJstが不正だと辞書順比較次第で空配列を正常値として返しうるため、契約違反として送出する
       { name: 'fromDateJstが不正', from: 'invalid', to: '2026-03-08', invalid: 'invalid' },
       // toDateJstが不正だと辞書順比較で常にcurrentより大きく、Date上限まで巨大ループになるのを防ぐ
       { name: 'toDateJstが不正', from: '2026-03-06', to: 'invalid', invalid: 'invalid' },
-    ])('$nameな場合は欠けたリストを返さずエラーを伝播する', ({ from, to, invalid }) => {
-      const result = dateRangeEnumerator.enumerateJstDateRange(from, to)
-
-      expect(result.isErr()).toBe(true)
-      if (result.isErr()) {
-        expect(result.error.message).toBe(`不正な日付文字列です: ${invalid}`)
-      }
+    ])('$nameな場合は契約違反として送出する', ({ from, to, invalid }) => {
+      expect(() => dateRangeEnumerator.enumerateJstDateRange(from, to)).toThrow(
+        `enumerateJstDateRange received an invalid date string: ${invalid}`,
+      )
     })
   })
 

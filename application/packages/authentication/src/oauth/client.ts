@@ -1,6 +1,6 @@
 import type { OAuthResponse, User, UserIdentity } from '@supabase/supabase-js'
 import { err, ok, type Result } from 'neverthrow'
-import { type AuthError, UnexpectedAuthError } from '../errors'
+import { UnexpectedAuthError } from '../errors'
 import {
   type AuthClientConfig,
   createBackendClient,
@@ -21,7 +21,7 @@ export class OAuthClient {
   private async startFlow(
     request: () => Promise<OAuthResponse>,
     failureLabel: string,
-  ): Promise<Result<{ url: string }, AuthError>> {
+  ): Promise<Result<{ url: string }, UnexpectedAuthError>> {
     return (await callSupabase(request)).andThen(({ url }) =>
       url ? ok({ url }) : err(new UnexpectedAuthError(failureLabel)),
     )
@@ -30,7 +30,7 @@ export class OAuthClient {
   async startAuthorization(
     provider: OAuthProvider,
     redirectTo: string,
-  ): Promise<Result<{ url: string }, AuthError>> {
+  ): Promise<Result<{ url: string }, UnexpectedAuthError>> {
     return this.startFlow(
       () =>
         this.client.auth.signInWithOAuth({
@@ -44,7 +44,7 @@ export class OAuthClient {
   async startLink(
     provider: OAuthProvider,
     redirectTo: string,
-  ): Promise<Result<{ url: string }, AuthError>> {
+  ): Promise<Result<{ url: string }, UnexpectedAuthError>> {
     return this.startFlow(
       () =>
         this.client.auth.linkIdentity({
@@ -56,20 +56,20 @@ export class OAuthClient {
   }
 
   // 成功でも user/session が空なら失敗として err に畳み、呼び出し側でのResult外エラー処理を無くす
-  async exchangeCode(code: string): Promise<Result<User, AuthError>> {
+  async exchangeCode(code: string): Promise<Result<User, UnexpectedAuthError>> {
     return (await callSupabase(() => this.client.auth.exchangeCodeForSession(code))).andThen(
       ({ user, session }) =>
         user && session ? ok(user) : err(new UnexpectedAuthError('OAuth code exchange failed')),
     )
   }
 
-  async listIdentities(): Promise<Result<UserIdentity[], AuthError>> {
+  async listIdentities(): Promise<Result<UserIdentity[], UnexpectedAuthError>> {
     return (await callSupabase(() => this.client.auth.getUserIdentities())).map(
       ({ identities }) => identities,
     )
   }
 
-  async unlinkIdentity(identity: UserIdentity): Promise<Result<null, AuthError>> {
+  async unlinkIdentity(identity: UserIdentity): Promise<Result<null, UnexpectedAuthError>> {
     return callSupabase(async () => ({
       ...(await this.client.auth.unlinkIdentity(identity)),
       data: null,

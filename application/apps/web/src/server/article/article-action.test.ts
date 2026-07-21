@@ -120,8 +120,8 @@ describe('createArticleActionHandler', () => {
   })
 
   describe('異常系', () => {
-    // リポジトリ障害等のドメインに写像先を持たないエラーは HTTP へ写像せず、errorHandler の 5xx 処理へ委ねる
-    it('execute が写像先を持たない Error を返すと元のエラーをそのまま投げること', async () => {
+    // リポジトリ障害等のドメインに写像先を持たないエラーはサーバ起因のため 500 に写像する
+    it('execute が写像先を持たない Error を返すと HTTPException(500) を投げること', async () => {
       const error = new Error('db down')
       const handler = createArticleActionHandler(baseConfig(err(error)))
 
@@ -129,7 +129,8 @@ describe('createArticleActionHandler', () => {
       // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
       const thrown = await handler(c).catch((e: unknown) => e)
 
-      expect(thrown).toBe(error)
+      expect(thrown).toBeInstanceOf(HTTPException)
+      expect(thrown).toMatchObject({ status: 500, message: error.message })
     })
 
     // authenticator が先行適用される契約のため、未設定は 401 に偽装せず契約違反として送出する

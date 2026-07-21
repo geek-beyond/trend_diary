@@ -106,8 +106,8 @@ describe('createPasskeyActionHandler', () => {
   })
 
   describe('異常系', () => {
-    // 対応表に無い認証エラーは HTTP へ写像せず、errorHandler の 5xx 処理へ委ねる
-    it('execute が写像先を持たない認証エラーを返すと元のエラーをそのまま投げ respond を呼ばないこと', async () => {
+    // 対応表に無い認証エラーはサーバ起因のため 500 に写像し、respond は呼ばない
+    it('execute が写像先を持たない認証エラーを返すと HTTPException(500) を投げ respond を呼ばないこと', async () => {
       const error = new UnexpectedAuthError('unexpected')
       const respond = vi.fn()
       const handler = createPasskeyActionHandler({
@@ -119,7 +119,8 @@ describe('createPasskeyActionHandler', () => {
       // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
       const thrown = await handler(c).catch((e: unknown) => e)
 
-      expect(thrown).toBe(error)
+      expect(thrown).toBeInstanceOf(HTTPException)
+      expect(thrown).toMatchObject({ status: 500, message: error.message })
       expect(respond).not.toHaveBeenCalled()
     })
   })

@@ -4,25 +4,20 @@ import { err, ok, type Result } from 'neverthrow'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
-// CAPTCHA 検証の業務エラー(トークン不備・検証失敗)を表す。HTTP は知らず、HTTP への写像は境界の責務とする。
-export class CaptchaVerificationError extends Error {
-  name = 'CaptchaVerificationError'
-}
-
 // oxlint-disable-next-line typescript/no-restricted-types -- siteverify の JSON レスポンス(未検証)から success を判定するため入力は unknown を受ける
 function isSuccessResponse(value: unknown): boolean {
   return value !== null && typeof value === 'object' && 'success' in value && value.success === true
 }
 
 /**
- * Cloudflare TurnstileのトークンをsiteverifyAPIで検証する。
- * 検証失敗は CaptchaVerificationError、通信・解析の失敗は素の Error を返す。
+ * Cloudflare TurnstileのトークンをsiteverifyAPIで検証し、検証の成否を返す。
+ * 通信・解析の失敗のみ err を返す（トークン不備・検証失敗は ok(false)）。
  */
 export async function verifyTurnstile(
   secret: string,
   token?: string,
-): Promise<Result<void, Error>> {
-  if (!token) return err(new CaptchaVerificationError('captcha token is required'))
+): Promise<Result<boolean, Error>> {
+  if (!token) return ok(false)
 
   const body = new URLSearchParams()
   body.append('secret', secret)
@@ -34,11 +29,7 @@ export async function verifyTurnstile(
   const parsed = await wrapAsyncCall(() => response.value.json())
   if (parsed.isErr()) return err(parsed.error)
 
-  if (!isSuccessResponse(parsed.value)) {
-    return err(new CaptchaVerificationError('captcha verification failed'))
-  }
-
-  return ok(undefined)
+  return ok(isSuccessResponse(parsed.value))
 }
 
 /**
@@ -52,11 +43,8 @@ export async function assertCaptchaVerified(
   if (!secret) return
 
   const result = await verifyTurnstile(secret, token)
-  if (result.isErr()) {
-    // 検証失敗はクライアント起因(403)、それ以外(通信・解析の失敗)はサーバ起因として errorHandler の 5xx 処理に委ねる
-    if (result.error instanceof CaptchaVerificationError) {
-      throw new HTTPException(403, { message: result.error.message })
-    }
-    throw result.error
-  }
+  // 通信・解析の失敗はサーバ起因として errorHandler の 5xx 処理に委ねる
+  if (result.isErr()) throw result.error
+  // 検証失敗(トークン不備・不正)はクライアント起因のため 403 を返す
+  if (!result.value) throw new HTTPException(403, { message: 'captcha verification failed' })
 }

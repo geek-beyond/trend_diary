@@ -1,6 +1,6 @@
 import { HTTPException } from 'hono/http-exception'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { assertCaptchaVerified, CaptchaVerificationError, verifyTurnstile } from './captcha'
+import { assertCaptchaVerified, verifyTurnstile } from './captcha'
 
 const fetchMock = vi.fn()
 
@@ -15,12 +15,12 @@ afterEach(() => {
 
 describe('verifyTurnstile', () => {
   describe('正常系', () => {
-    it('siteverifyがsuccess:trueを返す場合は許可する', async () => {
+    it('siteverifyがsuccess:trueを返す場合はok(true)を返す', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: true })))
 
       const result = await verifyTurnstile('secret', 'valid-token')
 
-      expect(result.isOk()).toBe(true)
+      expect(result._unsafeUnwrap()).toBe(true)
       expect(fetchMock).toHaveBeenCalledWith(
         'https://challenges.cloudflare.com/turnstile/v0/siteverify',
         expect.objectContaining({ method: 'POST' }),
@@ -29,39 +29,37 @@ describe('verifyTurnstile', () => {
   })
 
   describe('準正常系', () => {
-    it('secret設定済みでtokenが無い場合はCaptchaVerificationErrorを返す', async () => {
+    it('secret設定済みでtokenが無い場合はok(false)を返す', async () => {
       const result = await verifyTurnstile('secret', undefined)
 
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(CaptchaVerificationError)
+      expect(result._unsafeUnwrap()).toBe(false)
       expect(fetchMock).not.toHaveBeenCalled()
     })
 
-    it('siteverifyがsuccess:falseを返す場合はCaptchaVerificationErrorを返す', async () => {
+    it('siteverifyがsuccess:falseを返す場合はok(false)を返す', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: false })))
 
       const result = await verifyTurnstile('secret', 'invalid-token')
 
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(CaptchaVerificationError)
+      expect(result._unsafeUnwrap()).toBe(false)
     })
   })
 
   describe('異常系', () => {
-    it('fetchが例外を投げる場合は素のErrorを返す', async () => {
+    it('fetchが例外を投げる場合はerrを返す', async () => {
       fetchMock.mockRejectedValue(new Error('network down'))
 
       const result = await verifyTurnstile('secret', 'token')
 
-      const error = result._unsafeUnwrapErr()
-      expect(error).not.toBeInstanceOf(CaptchaVerificationError)
-      expect(error.message).toBe('network down')
+      expect(result._unsafeUnwrapErr().message).toBe('network down')
     })
 
-    it('レスポンスのJSON解析に失敗する場合は素のErrorを返す', async () => {
+    it('レスポンスのJSON解析に失敗する場合はerrを返す', async () => {
       fetchMock.mockResolvedValue(new Response('not-json'))
 
       const result = await verifyTurnstile('secret', 'token')
 
-      expect(result._unsafeUnwrapErr()).not.toBeInstanceOf(CaptchaVerificationError)
+      expect(result.isErr()).toBe(true)
     })
   })
 })

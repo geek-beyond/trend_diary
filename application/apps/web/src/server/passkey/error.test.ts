@@ -3,7 +3,6 @@ import {
   PasskeyVerificationError,
   UnexpectedAuthError,
 } from '@trend-diary/authentication'
-import { ActiveUserNotFoundError } from '@trend-diary/domain/account'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'
 import { captureThrow } from '@/test/helper/capture-throw'
@@ -22,11 +21,6 @@ describe('パスキー系ハンドラのエラーの HTTP 写像', () => {
         error: new PasskeyVerificationError('verify'),
         status: 401,
       },
-      {
-        name: 'ActiveUserNotFoundError',
-        error: new ActiveUserNotFoundError('user not found'),
-        status: 404,
-      },
     ])('$name を HTTPException($status) へ写像しメッセージを引き継ぐこと', ({ error, status }) => {
       const thrown = captureThrow(() => throwHttpError(error))
 
@@ -36,6 +30,7 @@ describe('パスキー系ハンドラのエラーの HTTP 写像', () => {
   })
 
   describe('異常系', () => {
+    // 認証後の active_user 解決失敗（未写像の account エラー）を含め、写像先を持たないエラーは 500 に倒す
     it('写像先を持たないエラーは HTTPException(500) へ写像しメッセージを引き継ぐこと', () => {
       const error = new UnexpectedAuthError('boom')
 

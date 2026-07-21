@@ -35,6 +35,7 @@ export default async function passkeyAuthenticationVerify(
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
+  // 認証成功後に active_user が無いのは孤児 auth ユーザー等のサーバ不整合なので、404 ではなく 500 に倒す
   const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
   if (activeUserResult.isErr()) throwHttpError(activeUserResult.error)
 

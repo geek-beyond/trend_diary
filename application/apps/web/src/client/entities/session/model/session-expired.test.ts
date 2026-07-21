@@ -1,7 +1,7 @@
-import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import HttpError from '@/client/infrastructure/http-error'
 import {
   isSessionExpiredError,
   notifyErrorUnlessSessionExpired,
@@ -18,15 +18,15 @@ vi.mock('swr', async (importOriginal) => {
 
 describe('isSessionExpiredError', () => {
   describe('正常系', () => {
-    it('statusCodeが401のClientErrorはセッション切れと判定する', () => {
-      expect(isSessionExpiredError(new ClientError('Unauthorized', 401))).toBe(true)
+    it('status が401の HttpError はセッション切れと判定する', () => {
+      expect(isSessionExpiredError(new HttpError(401, 'Unauthorized'))).toBe(true)
     })
   })
 
   describe('準正常系', () => {
     it.each([
-      { outline: 'statusCodeが401以外のClientError', error: new ClientError('Bad Request', 400) },
-      { outline: 'ServerError', error: new ServerError('Internal Server Error', 500) },
+      { outline: 'status が401以外の HttpError', error: new HttpError(400, 'Bad Request') },
+      { outline: 'status が500の HttpError', error: new HttpError(500, 'Internal Server Error') },
       { outline: 'Errorインスタンスではない値', error: 'unauthorized' },
     ])('$outlineはセッション切れと判定しない', ({ error }) => {
       expect(isSessionExpiredError(error)).toBe(false)
@@ -54,7 +54,7 @@ describe('notifyErrorUnlessSessionExpired', () => {
 
   describe('正常系', () => {
     it('セッション切れではない場合は指定したメッセージでトーストを表示する', () => {
-      notifyErrorUnlessSessionExpired(new ClientError('Bad Request', 400), 'エラーが発生しました', {
+      notifyErrorUnlessSessionExpired(new HttpError(400, 'Bad Request'), 'エラーが発生しました', {
         id: 'example-error',
       })
 
@@ -64,7 +64,7 @@ describe('notifyErrorUnlessSessionExpired', () => {
 
   describe('準正常系', () => {
     it('セッション切れの場合は指定したメッセージのトーストを表示しない', () => {
-      notifyErrorUnlessSessionExpired(new ClientError('Unauthorized', 401), 'エラーが発生しました')
+      notifyErrorUnlessSessionExpired(new HttpError(401, 'Unauthorized'), 'エラーが発生しました')
 
       expect(toast.error).not.toHaveBeenCalled()
     })

@@ -2,7 +2,6 @@ import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { toDbId } from '@trend-diary/datastore/rdb/id'
 import { activeUsers } from '@trend-diary/datastore/schema'
-import { ServerError } from '@trend-diary/std/errors'
 import type { Nullable } from '@trend-diary/std/types/utility'
 import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
@@ -19,7 +18,7 @@ export default class QueryImpl implements Query {
       this.db.select().from(activeUsers).where(eq(activeUsers.activeUserId, dbId)).limit(1),
     )
     if (activeUserResult.isErr()) {
-      return err(new ServerError(activeUserResult.error))
+      return err(activeUserResult.error)
     }
 
     const activeUser = activeUserResult.value[0]
@@ -35,7 +34,7 @@ export default class QueryImpl implements Query {
       this.db.select().from(activeUsers).where(eq(activeUsers.email, email)).limit(1),
     )
     if (activeUserResult.isErr()) {
-      return err(new ServerError(activeUserResult.error))
+      return err(activeUserResult.error)
     }
 
     const activeUser = activeUserResult.value[0]
@@ -57,7 +56,7 @@ export default class QueryImpl implements Query {
         .limit(1),
     )
     if (activeUserResult.isErr()) {
-      return err(new ServerError(activeUserResult.error))
+      return err(activeUserResult.error)
     }
 
     const activeUser = activeUserResult.value[0]

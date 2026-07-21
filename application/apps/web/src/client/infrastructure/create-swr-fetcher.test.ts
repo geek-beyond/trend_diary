@@ -1,7 +1,7 @@
-import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { toast } from 'sonner'
 import { describe, expect, it, vi } from 'vitest'
 import createSWRFetcher from './create-swr-fetcher'
+import HttpError from './http-error'
 
 global.fetch = vi.fn()
 
@@ -52,8 +52,8 @@ describe('createSWRFetcher', () => {
       const { fetcher } = createSWRFetcher()
 
       const promise = fetcher('http://example.com/api')
-      await expect(promise).rejects.toBeInstanceOf(ClientError)
-      await expect(promise).rejects.toHaveProperty('statusCode', 404)
+      await expect(promise).rejects.toBeInstanceOf(HttpError)
+      await expect(promise).rejects.toHaveProperty('status', 404)
     })
 
     it('401の場合はセッション切れの案内トーストを表示する', async () => {
@@ -68,7 +68,7 @@ describe('createSWRFetcher', () => {
       const { fetcher } = createSWRFetcher()
 
       const promise = fetcher('http://example.com/api')
-      await expect(promise).rejects.toBeInstanceOf(ClientError)
+      await expect(promise).rejects.toBeInstanceOf(HttpError)
       expect(toast.error).toHaveBeenCalledWith(
         'セッションの有効期限が切れました。再度ログインしてください。',
         { id: 'session-expired' },
@@ -151,8 +151,8 @@ describe('createSWRFetcher', () => {
       const { apiCall } = createSWRFetcher()
 
       const promise = apiCall(mockApiFunction)
-      await expect(promise).rejects.toBeInstanceOf(ServerError)
-      await expect(promise).rejects.toHaveProperty('statusCode', 500)
+      await expect(promise).rejects.toBeInstanceOf(HttpError)
+      await expect(promise).rejects.toHaveProperty('status', 500)
     })
   })
 })

@@ -5,8 +5,8 @@ import { createAccountUseCase } from '@trend-diary/domain/account'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
+import throwAccountHttpError from '@/server/error/account-error'
+import throwAuthHttpError from '@/server/error/auth-error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
 export const passkeyAuthenticationVerifyInputSchema = z.object({
@@ -32,12 +32,12 @@ export default async function passkeyAuthenticationVerify(
     challengeId: valid.challengeId,
     credential: valid.credential,
   })
-  if (userResult.isErr()) handleError(toAuthError(userResult.error), logger)
+  if (userResult.isErr()) throwAuthHttpError(userResult.error)
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
   const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
-  if (activeUserResult.isErr()) handleError(activeUserResult.error, logger)
+  if (activeUserResult.isErr()) throwAccountHttpError(activeUserResult.error)
 
   logger.info('passkey login success', { activeUserId: activeUserResult.value.activeUserId })
 

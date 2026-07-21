@@ -1,4 +1,3 @@
-import type { ServerError } from '@trend-diary/std/errors'
 import type { Nullable } from '@trend-diary/std/types/utility'
 import { type Result } from 'neverthrow'
 import type { CurrentUser } from './schema/active-user-schema'
@@ -24,5 +23,5 @@ export interface Command {
     authenticationId: string,
     notifier: Notifier,
     displayName?: string | null,
-  ): Promise<Result<CurrentUser, ServerError>>
+  ): Promise<Result<CurrentUser, Error>>
 }

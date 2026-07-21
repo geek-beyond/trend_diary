@@ -3,7 +3,6 @@ import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { articles, normalizeDateTime } from '@trend-diary/datastore/schema'
 import { assert } from '@trend-diary/std/contract'
-import { ServerError } from '@trend-diary/std/errors'
 import { addJstDays, toJstDate } from '@trend-diary/std/locale/date'
 import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import { DEFAULT_LIMIT, DEFAULT_PAGE } from '@trend-diary/std/pagination'
@@ -108,7 +107,7 @@ export default class QueryImpl implements Query {
   async searchArticles(
     params: QueryParams,
     activeUserId?: bigint,
-  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ServerError>> {
+  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, Error>> {
     const { page = DEFAULT_PAGE, limit = DEFAULT_LIMIT, from, to, ...searchParams } = params
     const dbActiveUserId = activeUserId !== undefined ? toDbId(activeUserId) : undefined
     const whereSql = QueryImpl.buildSqlWhereClause({
@@ -145,7 +144,7 @@ export default class QueryImpl implements Query {
       `),
     )
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(result.error)
     }
 
     const articleRows = result.value
@@ -166,13 +165,13 @@ export default class QueryImpl implements Query {
     })
   }
 
-  async findArticleById(articleId: bigint): Promise<Result<Nullable<Article>, ServerError>> {
+  async findArticleById(articleId: bigint): Promise<Result<Nullable<Article>, Error>> {
     const dbArticleId = toDbId(articleId)
     const result = await wrapDbCall(() =>
       this.db.select().from(articles).where(eq(articles.articleId, dbArticleId)),
     )
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(result.error)
     }
 
     const article = result.value[0]
@@ -188,7 +187,7 @@ export default class QueryImpl implements Query {
     activeUserId: bigint,
     targetDateJst: string,
     media?: ArticleMedia[],
-  ): Promise<Result<UnreadDigestionResult, ServerError>> {
+  ): Promise<Result<UnreadDigestionResult, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(targetDateJst, targetDateJst)
     const createdAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -233,7 +232,7 @@ export default class QueryImpl implements Query {
       `),
     )
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(result.error)
     }
 
     const articleRows = result.value
@@ -248,7 +247,7 @@ export default class QueryImpl implements Query {
     targetDateJst: string,
     page: number,
     limit: number,
-  ): Promise<Result<DailyDiary, ServerError>> {
+  ): Promise<Result<DailyDiary, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(targetDateJst, targetDateJst)
     const readAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -334,7 +333,7 @@ export default class QueryImpl implements Query {
       `),
     )
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(result.error)
     }
 
     const { sourceRows, readsRows } = QueryImpl.splitDiaryCombinedRows(result.value)
@@ -371,7 +370,7 @@ export default class QueryImpl implements Query {
     activeUserId: bigint,
     fromDateJst: string,
     toDateJst: string,
-  ): Promise<Result<DailyDiaryRangeItem[], ServerError>> {
+  ): Promise<Result<DailyDiaryRangeItem[], Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const { fromDate, toDateExclusive } = QueryImpl.buildDateRange(fromDateJst, toDateJst)
     const readAtRangeSql = QueryImpl.buildClosedOpenDateRangeSql(
@@ -424,7 +423,7 @@ export default class QueryImpl implements Query {
       `),
     )
     if (sourceResult.isErr()) {
-      return err(new ServerError(sourceResult.error))
+      return err(sourceResult.error)
     }
     const { readRows: readSourceRows, skipRows: skipSourceRows } =
       QueryImpl.splitDiaryDateSourceRows(sourceResult.value)
@@ -433,7 +432,7 @@ export default class QueryImpl implements Query {
     const skipByDate = QueryImpl.groupSourcesByDate(skipSourceRows)
     const datesResult = QueryImpl.enumerateJstDateRange(fromDateJst, toDateJst)
     if (datesResult.isErr()) {
-      return err(new ServerError(datesResult.error))
+      return err(datesResult.error)
     }
 
     return ok(

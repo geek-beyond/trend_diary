@@ -1,6 +1,6 @@
-import { ClientError } from '@trend-diary/std/errors'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import HttpError from '@/client/infrastructure/http-error'
 import { dismissFetchError, FETCH_ERROR_MESSAGE, notifyFetchError } from './notify-fetch-error'
 import { TOAST_ID } from './toast-id'
 
@@ -13,7 +13,7 @@ describe('notifyFetchError', () => {
     it('固定id・無期限・再試行アクション付きでエラートーストを表示する', () => {
       const retry = vi.fn()
 
-      notifyFetchError(new ClientError('Bad Request', 400), TOAST_ID.ARTICLES_ERROR, retry)
+      notifyFetchError(new HttpError(400, 'Bad Request'), TOAST_ID.ARTICLES_ERROR, retry)
 
       expect(toast.error).toHaveBeenCalledWith(FETCH_ERROR_MESSAGE, {
         id: TOAST_ID.ARTICLES_ERROR,
@@ -25,7 +25,7 @@ describe('notifyFetchError', () => {
 
   describe('準正常系', () => {
     it('セッション切れ(401)の場合はエラートーストを表示しない', () => {
-      notifyFetchError(new ClientError('Unauthorized', 401), TOAST_ID.ARTICLES_ERROR, vi.fn())
+      notifyFetchError(new HttpError(401, 'Unauthorized'), TOAST_ID.ARTICLES_ERROR, vi.fn())
 
       expect(toast.error).not.toHaveBeenCalled()
     })

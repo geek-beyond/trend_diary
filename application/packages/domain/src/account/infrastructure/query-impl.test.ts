@@ -1,4 +1,3 @@
-import { ServerError } from '@trend-diary/std/errors'
 import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import QueryImpl from './query-impl'
@@ -80,7 +79,7 @@ describe('QueryImpl', () => {
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error).toBeInstanceOf(Error)
         expect(result.error.message).toBe('Database connection failed')
       }
     })
@@ -124,7 +123,7 @@ describe('QueryImpl', () => {
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error).toBeInstanceOf(Error)
         expect(result.error.message).toBe('Database connection failed')
       }
     })
@@ -168,7 +167,7 @@ describe('QueryImpl', () => {
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error).toBeInstanceOf(Error)
         expect(result.error.message).toBe('Database connection failed')
       }
     })

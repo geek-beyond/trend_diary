@@ -1,7 +1,7 @@
-import type { NotFoundError, ServerError } from '@trend-diary/std/errors'
 import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import type { Nullable } from '@trend-diary/std/types/utility'
 import { type Result } from 'neverthrow'
+import type { ArticleNotFoundError } from './error'
 import type { ArticleMedia } from './media'
 import type {
   Article,
@@ -22,53 +22,53 @@ export interface Query {
   searchArticles(
     params: QueryParams,
     activeUserId?: bigint,
-  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ServerError>>
+  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, Error>>
 
   getUnreadDigestionArticles(
     activeUserId: bigint,
     targetDateJst: string,
     media?: ArticleMedia[],
-  ): Promise<Result<UnreadDigestionResult, ServerError>>
+  ): Promise<Result<UnreadDigestionResult, Error>>
 
   getDailyDiary(
     activeUserId: bigint,
     targetDateJst: string,
     page: number,
     limit: number,
-  ): Promise<Result<DailyDiary, ServerError>>
+  ): Promise<Result<DailyDiary, Error>>
 
   getDailyDiaryRange(
     activeUserId: bigint,
     fromDateJst: string,
     toDateJst: string,
-  ): Promise<Result<DailyDiaryRangeItem[], ServerError>>
+  ): Promise<Result<DailyDiaryRangeItem[], Error>>
 
-  findArticleById(articleId: bigint): Promise<Result<Nullable<Article>, ServerError>>
+  findArticleById(articleId: bigint): Promise<Result<Nullable<Article>, Error>>
 }
 
 export interface Command {
   /**
-   * 既読履歴を作成する。記事が存在しない場合は NotFoundError を返す
+   * 既読履歴を作成する。記事が存在しない場合は ArticleNotFoundError を返す
    */
   createReadHistory(
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, ServerError | NotFoundError>>
+  ): Promise<Result<ReadHistory, Error | ArticleNotFoundError>>
 
   /**
-   * 記事をスキップ登録する。記事が存在しない場合は NotFoundError を返す
+   * 記事をスキップ登録する。記事が存在しない場合は ArticleNotFoundError を返す
    */
   createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, ServerError | NotFoundError>>
+  ): Promise<Result<SkippedArticle, Error | ArticleNotFoundError>>
 
   /**
-   * 記事の既読履歴を全削除する。記事が存在しない場合は NotFoundError を返す
+   * 記事の既読履歴を全削除する。記事が存在しない場合は ArticleNotFoundError を返す
    */
   deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<void, ServerError | NotFoundError>>
+  ): Promise<Result<void, Error | ArticleNotFoundError>>
 }

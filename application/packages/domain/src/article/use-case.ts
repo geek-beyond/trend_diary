@@ -1,9 +1,9 @@
-import type { NotFoundError, ServerError } from '@trend-diary/std/errors'
 import { toJstDateString } from '@trend-diary/std/locale/date'
 import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import { DEFAULT_LIMIT, DEFAULT_PAGE } from '@trend-diary/std/pagination'
 import extractTrimmed from '@trend-diary/std/sanitization'
 import type { Result } from 'neverthrow'
+import type { ArticleNotFoundError } from './error'
 import type { ArticleMedia } from './media'
 import type { Command, Query } from './port'
 import type { ArticleWithOptionalReadStatus, UnreadDigestionResult } from './schema/article-schema'
@@ -26,7 +26,7 @@ export class UseCase {
   async searchArticles(
     params: QueryParams,
     activeUserId?: bigint,
-  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ServerError>> {
+  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, Error>> {
     const optimizedParams: QueryParams = {
       title: extractTrimmed(params.title),
       author: extractTrimmed(params.author),
@@ -45,7 +45,7 @@ export class UseCase {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, ServerError | NotFoundError>> {
+  ): Promise<Result<ReadHistory, Error | ArticleNotFoundError>> {
     // 記事存在チェックは command 側のSQLに集約済みのため、ここでは委譲のみ行う
     return this.command.createReadHistory(activeUserId, articleId, readAt)
   }
@@ -78,7 +78,7 @@ export class UseCase {
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, ServerError | NotFoundError>> {
+  ): Promise<Result<SkippedArticle, Error | ArticleNotFoundError>> {
     // 記事存在チェックは command 側のSQLに集約済みのため、ここでは委譲のみ行う
     return this.command.createSkippedArticle(activeUserId, articleId)
   }
@@ -86,7 +86,7 @@ export class UseCase {
   async deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<void, ServerError | NotFoundError>> {
+  ): Promise<Result<void, Error | ArticleNotFoundError>> {
     // 記事存在チェックは command 側のSQLに集約済みのため、ここでは委譲のみ行う
     return this.command.deleteAllReadHistory(activeUserId, articleId)
   }

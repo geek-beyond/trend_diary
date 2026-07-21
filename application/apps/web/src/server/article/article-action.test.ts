@@ -1,4 +1,4 @@
-import { ClientError, NotFoundError } from '@trend-diary/std/errors'
+import { ArticleNotFoundError } from '@trend-diary/domain/article'
 import { HTTPException } from 'hono/http-exception'
 import { err, ok, type Result } from 'neverthrow'
 import type { SessionUser } from '@/env'
@@ -105,25 +105,33 @@ describe('createArticleActionHandler', () => {
   })
 
   describe('準正常系', () => {
-    it.each([
-      { name: 'NotFoundError', error: new NotFoundError('not found'), status: 404 },
-      { name: 'ClientError', error: new ClientError('bad request', 400), status: 400 },
-    ])(
-      'execute が $name を返すと handleError で変換した HTTPException を投げること',
-      async ({ error, status }) => {
-        const handler = createArticleActionHandler(baseConfig(err(error)))
+    it('execute が ArticleNotFoundError を返すと境界で HTTPException(404) へ写像して投げること', async () => {
+      const handler = createArticleActionHandler(
+        baseConfig(err(new ArticleNotFoundError('not found'))),
+      )
 
-        const { c } = buildContext({ user: sessionUser })
-        // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
-        const thrown = await handler(c).catch((e: unknown) => e)
+      const { c } = buildContext({ user: sessionUser })
+      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
+      const thrown = await handler(c).catch((e: unknown) => e)
 
-        expect(thrown).toBeInstanceOf(HTTPException)
-        expect(thrown).toMatchObject({ status })
-      },
-    )
+      expect(thrown).toBeInstanceOf(HTTPException)
+      expect(thrown).toMatchObject({ status: 404 })
+    })
   })
 
   describe('異常系', () => {
+    // リポジトリ障害等のドメインに写像先を持たないエラーは HTTP へ写像せず、errorHandler の 5xx 処理へ委ねる
+    it('execute が写像先を持たない Error を返すと元のエラーをそのまま投げること', async () => {
+      const error = new Error('db down')
+      const handler = createArticleActionHandler(baseConfig(err(error)))
+
+      const { c } = buildContext({ user: sessionUser })
+      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
+      const thrown = await handler(c).catch((e: unknown) => e)
+
+      expect(thrown).toBe(error)
+    })
+
     // authenticator が先行適用される契約のため、未設定は 401 に偽装せず契約違反として送出する
     it('SESSION_USER が未設定なら契約違反エラーを投げること', async () => {
       const handler = createArticleActionHandler(baseConfig(ok(undefined)))

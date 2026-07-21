@@ -1,5 +1,4 @@
 import Logger from '@trend-diary/logger'
-import { ServerError } from '@trend-diary/std/errors'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import type { Notifier } from '../port'
@@ -136,10 +135,10 @@ describe('CommandImpl', () => {
         notifier,
       )
 
-      // Assert: ServerErrorを返す
+      // Assert: エラーを返す
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error).toBeInstanceOf(Error)
         expect(result.error.message).toBe('Failed to create active user')
       }
 
@@ -168,10 +167,10 @@ describe('CommandImpl', () => {
         notifier,
       )
 
-      // Assert: ServerErrorを返す
+      // Assert: エラーを返す
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error).toBeInstanceOf(Error)
         expect(result.error.message).toBe('Failed to create active user')
       }
 
@@ -184,7 +183,7 @@ describe('CommandImpl', () => {
       expect(deleteParams).toContain(2)
     })
 
-    it('activeUser作成失敗かつ補償delete失敗時もServerErrorを返す', async () => {
+    it('activeUser作成失敗かつ補償delete失敗時も元のエラーを返す', async () => {
       // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete失敗
       mockRdbExecutor
         .mockResolvedValueOnce({ rows: [buildUserRow(2)] })
@@ -198,10 +197,10 @@ describe('CommandImpl', () => {
         notifier,
       )
 
-      // Assert: 補償が失敗しても元のServerErrorを返す
+      // Assert: 補償が失敗しても元のエラーを返す
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ServerError)
+        expect(result.error).toBeInstanceOf(Error)
         expect(result.error.message).toBe('Failed to create active user')
       }
 

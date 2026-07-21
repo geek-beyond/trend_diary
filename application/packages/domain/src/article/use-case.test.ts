@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker'
-import { NotFoundError, ServerError } from '@trend-diary/std/errors'
 import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import { err, ok } from 'neverthrow'
 import { mockDeep } from 'vitest-mock-extended'
+import { ArticleNotFoundError } from './error'
 import type { Command, Query } from './port'
 import type { Article, ArticleWithOptionalReadStatus } from './schema/article-schema'
 import type { DailyDiary } from './schema/diary-schema'
@@ -309,7 +309,7 @@ describe('ArticleUseCase', () => {
         page: 1,
       }
 
-      const dbError = new ServerError('Database error')
+      const dbError = new Error('Database error')
       queryMock.searchArticles.mockResolvedValue(err(dbError))
 
       const result = await useCase.searchArticles(params)
@@ -349,14 +349,14 @@ describe('ArticleUseCase', () => {
 
     it.each([
       {
-        name: '存在しない記事(NotFoundError)',
-        error: new NotFoundError('Article with ID 999 not found'),
-        expectedError: NotFoundError,
+        name: '存在しない記事(ArticleNotFoundError)',
+        error: new ArticleNotFoundError('Article with ID 999 not found'),
+        expectedError: ArticleNotFoundError,
       },
       {
-        name: 'データベースエラー(ServerError)',
-        error: new ServerError('Database error'),
-        expectedError: ServerError,
+        name: 'データベースエラー(Error)',
+        error: new Error('Database error'),
+        expectedError: Error,
       },
     ])('command が $name を返す場合はそのまま伝播すること', async ({ error, expectedError }) => {
       commandMock.createReadHistory.mockResolvedValue(err(error))
@@ -387,14 +387,14 @@ describe('ArticleUseCase', () => {
 
     it.each([
       {
-        name: '存在しない記事(NotFoundError)',
-        error: new NotFoundError('Article with ID 200 not found'),
-        expectedError: NotFoundError,
+        name: '存在しない記事(ArticleNotFoundError)',
+        error: new ArticleNotFoundError('Article with ID 200 not found'),
+        expectedError: ArticleNotFoundError,
       },
       {
-        name: 'データベースエラー(ServerError)',
-        error: new ServerError('Database error'),
-        expectedError: ServerError,
+        name: 'データベースエラー(Error)',
+        error: new Error('Database error'),
+        expectedError: Error,
       },
     ])('command が $name を返す場合はそのまま伝播すること', async ({ error, expectedError }) => {
       commandMock.deleteAllReadHistory.mockResolvedValue(err(error))
@@ -477,14 +477,14 @@ describe('ArticleUseCase', () => {
 
     it.each([
       {
-        name: '存在しない記事(NotFoundError)',
-        error: new NotFoundError('Article with ID 200 not found'),
-        expectedError: NotFoundError,
+        name: '存在しない記事(ArticleNotFoundError)',
+        error: new ArticleNotFoundError('Article with ID 200 not found'),
+        expectedError: ArticleNotFoundError,
       },
       {
-        name: 'データベースエラー(ServerError)',
-        error: new ServerError('db'),
-        expectedError: ServerError,
+        name: 'データベースエラー(Error)',
+        error: new Error('db'),
+        expectedError: Error,
       },
     ])('command が $name を返す場合はそのまま伝播すること', async ({ error, expectedError }) => {
       commandMock.createSkippedArticle.mockResolvedValue(err(error))

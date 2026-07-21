@@ -7,54 +7,61 @@ import {
   UnexpectedAuthError,
   UserAlreadyExistsError,
 } from '@trend-diary/authentication'
-import { ClientError, ServerError } from '@trend-diary/std/errors'
-import toAuthError from './auth-error'
+import { HTTPException } from 'hono/http-exception'
+import { describe, expect, it } from 'vitest'
+import throwAuthHttpError from './auth-error'
 
-describe('toAuthError', () => {
+// throwAuthHttpError は never を返して throw するため、投げられた値を捕捉して検証する
+// oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
+const captureThrow = (fn: () => never): unknown => {
+  try {
+    fn()
+    return undefined
+  } catch (e) {
+    return e
+  }
+}
+
+describe('throwAuthHttpError', () => {
   describe('準正常系', () => {
-    const cases: Array<{ name: string; error: AuthError; statusCode: number }> = [
+    const cases: Array<{ name: string; error: AuthError; status: number }> = [
       {
         name: 'InvalidCredentialsError',
         error: new InvalidCredentialsError('invalid'),
-        statusCode: 401,
+        status: 401,
       },
-      {
-        name: 'UserAlreadyExistsError',
-        error: new UserAlreadyExistsError('exists'),
-        statusCode: 409,
-      },
+      { name: 'UserAlreadyExistsError', error: new UserAlreadyExistsError('exists'), status: 409 },
       {
         name: 'PasskeyRegistrationError',
         error: new PasskeyRegistrationError('register'),
-        statusCode: 400,
+        status: 400,
       },
       {
         name: 'PasskeyVerificationError',
         error: new PasskeyVerificationError('verify'),
-        statusCode: 401,
+        status: 401,
       },
-      { name: 'NoSessionError', error: new NoSessionError('no session'), statusCode: 401 },
+      { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
     ]
 
     it.each(cases)(
-      '$name は対応する ClientError へ写像しメッセージを引き継ぐこと',
-      ({ error, statusCode }) => {
-        const converted = toAuthError(error)
+      '$name は対応する HTTPException を投げメッセージを引き継ぐこと',
+      ({ error, status }) => {
+        const thrown = captureThrow(() => throwAuthHttpError(error))
 
-        expect(converted).toBeInstanceOf(ClientError)
-        expect(converted.statusCode).toBe(statusCode)
-        expect(converted.message).toBe(error.message)
+        expect(thrown).toBeInstanceOf(HTTPException)
+        expect(thrown).toMatchObject({ status, message: error.message })
       },
     )
   })
 
   describe('異常系', () => {
-    it('対応表に無い認証エラーは ServerError(500) へ倒しメッセージを引き継ぐこと', () => {
-      const converted = toAuthError(new UnexpectedAuthError('boom'))
+    it('対応表に無い認証エラーは HTTPException に写像せず元のエラーをそのまま投げること', () => {
+      const error = new UnexpectedAuthError('boom')
 
-      expect(converted).toBeInstanceOf(ServerError)
-      expect(converted.statusCode).toBe(500)
-      expect(converted.message).toBe('boom')
+      const thrown = captureThrow(() => throwAuthHttpError(error))
+
+      expect(thrown).toBe(error)
     })
   })
 })

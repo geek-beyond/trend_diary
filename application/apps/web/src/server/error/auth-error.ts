@@ -6,24 +6,29 @@ import {
   PasskeyVerificationError,
   UserAlreadyExistsError,
 } from '@trend-diary/authentication'
-import { AlreadyExistsError, ClientError, ServerError } from '@trend-diary/std/errors'
+import { HTTPException } from 'hono/http-exception'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
-// 認証パッケージのカスタムエラーは HTTP を知らないため、common エラーへの変換はハンドラ層の責務とする。
-// メッセージは元のエラーをそのまま引き継ぎ、対応表に無いものはサーバ起因として ServerError に倒す。
-const AUTH_ERROR_FACTORY = new Map<
+// 認証パッケージのカスタムエラーは HTTP を知らないため、HTTP への写像はハンドラ層(HTTP 境界)の責務とする。
+// どの認証エラーがどのステータスかは境界の対応表として持つ。
+const AUTH_ERROR_STATUS = new Map<
   abstract new (...args: never[]) => AuthError,
-  (message: string) => ClientError
+  ContentfulStatusCode
 >([
-  [InvalidCredentialsError, (message) => new ClientError(message, 401)],
-  [UserAlreadyExistsError, (message) => new AlreadyExistsError(message)],
-  [PasskeyRegistrationError, (message) => new ClientError(message, 400)],
-  [PasskeyVerificationError, (message) => new ClientError(message, 401)],
-  [NoSessionError, (message) => new ClientError(message, 401)],
+  [InvalidCredentialsError, 401],
+  [UserAlreadyExistsError, 409],
+  [PasskeyRegistrationError, 400],
+  [PasskeyVerificationError, 401],
+  [NoSessionError, 401],
 ])
 
-export default function toAuthError(error: AuthError): ClientError | ServerError {
-  for (const [ErrorClass, toClientError] of AUTH_ERROR_FACTORY) {
-    if (error instanceof ErrorClass) return toClientError(error.message)
+// 認証ドメインエラーを対応する HTTPException として送出する。
+// 対応表に無い認証エラー(想定外)はサーバ起因として errorHandler の 5xx 処理に委ねる。
+export default function throwAuthHttpError(error: AuthError): never {
+  for (const [ErrorClass, status] of AUTH_ERROR_STATUS) {
+    if (error instanceof ErrorClass) {
+      throw new HTTPException(status, { message: error.message })
+    }
   }
-  return new ServerError(error.message)
+  throw error
 }

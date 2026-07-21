@@ -2,9 +2,9 @@ import type { RdbClient } from '@trend-diary/datastore/rdb'
 import { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { articles, normalizeDateTime, readHistories } from '@trend-diary/datastore/schema'
-import { NotFoundError, ServerError } from '@trend-diary/std/errors'
 import { and, eq, exists, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
+import { ArticleNotFoundError } from '../error'
 import type { Command } from '../port'
 import type { ReadHistory } from '../schema/read-history-schema'
 import type { SkippedArticle } from '../schema/skipped-article-schema'
@@ -32,11 +32,11 @@ export default class CommandImpl implements Command {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, ServerError | NotFoundError>> {
+  ): Promise<Result<ReadHistory, Error | ArticleNotFoundError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
-    // 記事存在チェックのSELECTと挿入を1文に集約する。記事が無ければ挿入されず0行になり404を返す
+    // 記事存在チェックのSELECTと挿入を1文に集約する。記事が無ければ挿入されず0行になり ArticleNotFoundError を返す
     const result = await wrapDbCall(() =>
       this.db.all<RawReadHistoryRow>(sql`
         INSERT INTO read_histories (active_user_id, article_id, read_at)
@@ -51,12 +51,12 @@ export default class CommandImpl implements Command {
       `),
     )
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(result.error)
     }
 
     const createdReadHistory = result.value[0]
     if (!createdReadHistory) {
-      return err(new NotFoundError(`Article with ID ${articleId} not found`))
+      return err(new ArticleNotFoundError(`Article with ID ${articleId} not found`))
     }
     return ok({
       readHistoryId: fromDbId(createdReadHistory.readHistoryId),
@@ -70,7 +70,7 @@ export default class CommandImpl implements Command {
   async deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<void, ServerError | NotFoundError>> {
+  ): Promise<Result<void, Error | ArticleNotFoundError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
@@ -99,12 +99,12 @@ export default class CommandImpl implements Command {
       ]),
     )
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(result.error)
     }
 
     const [articleRows] = result.value
     if (articleRows.length === 0) {
-      return err(new NotFoundError(`Article with ID ${articleId} not found`))
+      return err(new ArticleNotFoundError(`Article with ID ${articleId} not found`))
     }
 
     return ok(undefined)
@@ -113,11 +113,11 @@ export default class CommandImpl implements Command {
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, ServerError | NotFoundError>> {
+  ): Promise<Result<SkippedArticle, Error | ArticleNotFoundError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
-    // 記事存在チェックのSELECTと挿入を1文に集約する。記事が無ければ挿入されず0行になり404を返す。
+    // 記事存在チェックのSELECTと挿入を1文に集約する。記事が無ければ挿入されず0行になり ArticleNotFoundError を返す。
     // 競合時も returning が行を返すよう、既存行に対しダミー更新(値不変)を行う
     const result = await wrapDbCall(() =>
       this.db.all<RawSkippedArticleRow>(sql`
@@ -133,12 +133,12 @@ export default class CommandImpl implements Command {
       `),
     )
     if (result.isErr()) {
-      return err(new ServerError(result.error))
+      return err(result.error)
     }
 
     const skippedArticle = result.value[0]
     if (!skippedArticle) {
-      return err(new NotFoundError(`Article with ID ${articleId} not found`))
+      return err(new ArticleNotFoundError(`Article with ID ${articleId} not found`))
     }
     return ok({
       skippedArticleId: fromDbId(skippedArticle.skippedArticleId),

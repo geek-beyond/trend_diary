@@ -2,7 +2,6 @@ import { faker } from '@faker-js/faker'
 import { articles, readHistories } from '@trend-diary/datastore/schema'
 import type * as ArticleModule from '@trend-diary/domain/article'
 import { createArticleUseCase } from '@trend-diary/domain/article'
-import { ServerError } from '@trend-diary/std/errors'
 import { inArray } from 'drizzle-orm'
 import { err } from 'neverthrow'
 import { vi } from 'vitest'
@@ -230,12 +229,11 @@ describe('GET /api/articles', () => {
   })
 
   describe('異常系', () => {
-    it('検索でServerErrorが発生した場合は500を返す', async () => {
+    it('検索でリポジトリ障害が発生した場合は500を返す', async () => {
       const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
       vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {
         const useCase = actual.createArticleUseCase(rdb)
-        useCase.searchArticles = () =>
-          Promise.resolve(err(new ServerError(new Error('検索に失敗しました'))))
+        useCase.searchArticles = () => Promise.resolve(err(new Error('検索に失敗しました')))
         return useCase
       })
 

@@ -1,11 +1,11 @@
 import { PasskeyRegistrationError, PasskeyVerificationError } from '@trend-diary/authentication'
-import { ActiveUserNotFoundError } from '@trend-diary/domain/account'
 import throwHttpErrorByTable, { type ErrorStatusTable } from '@/server/error/throw-http-error'
 
+// 認証後の active_user 解決失敗（ActiveUserNotFoundError 等）はサーバ側の不整合なので、
+// ここでは写像せず default の 500 へ倒す。account のエラー写像は passkey ハンドラから分離する
 const ERROR_STATUS_TABLE: ErrorStatusTable = [
   [PasskeyRegistrationError, 400],
   [PasskeyVerificationError, 401],
-  [ActiveUserNotFoundError, 404],
 ]
 
 export default function throwHttpError(error: Error): never {

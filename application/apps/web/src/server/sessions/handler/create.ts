@@ -25,6 +25,7 @@ export default async function createSession(c: ZodValidatedContext<[typeof authI
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
+  // 認証成功後に active_user が無いのは孤児 auth ユーザー等のサーバ不整合なので、404 ではなく 500 に倒す
   const result = await accountUseCase.resolveActiveUser(user.id)
   if (result.isErr()) throwHttpError(result.error)
 

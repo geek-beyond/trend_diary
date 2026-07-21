@@ -3,6 +3,7 @@ import type { Context } from 'hono'
 import type { Err, Result } from 'neverthrow'
 import type { Env } from '@/env'
 import throwHttpError from '@/server/passkey/error'
+import { unwrapOrThrowHttp } from '@/server/throw-http-error'
 
 export type PasskeyActionContext = Context<Env>
 
@@ -10,8 +11,8 @@ type ResultErr<TResult> = TResult extends Err<infer _TValue, infer TError> ? TEr
 // 境界の TError を手書きの基底型で緩めず、PasskeyClient が実際に返すエラー集合を上限にする
 type PasskeyClientError = ResultErr<Awaited<ReturnType<PasskeyClient[keyof PasskeyClient]>>>
 
-// TContext を総称化し、zodValidator 適用済みの Context を持つハンドラ（verify 系）もこのファクトリで
-// 束ねられるようにする。execute へ c を渡すのは検証済み入力の取得のため
+// execute へ c を渡すのは、verify 系ハンドラが検証済み入力（zodValidator 適用済み Context）を
+// 必要とするため。TContext に既定値を置くのは、入力を持たない既存ハンドラを変えずに済ませるため
 export function createPasskeyActionHandler<
   TOutput,
   TResponse,
@@ -24,9 +25,8 @@ export function createPasskeyActionHandler<
   return async (c: TContext) => {
     const passkeyClient = new PasskeyClient(authClientConfig(c))
     const result = await config.execute(passkeyClient, c)
-    if (result.isErr()) throwHttpError(result.error)
 
-    return config.respond(c, result.value)
+    return config.respond(c, unwrapOrThrowHttp(result, throwHttpError))
   }
 }
 

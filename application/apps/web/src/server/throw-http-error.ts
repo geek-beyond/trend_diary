@@ -17,8 +17,8 @@ export default function throwHttpErrorByTable(error: Error, statusTable: ErrorSt
   throw new HTTPException(500, { message: error.message })
 }
 
-// 認証ハンドラが共通で持つ「1 処理の Result を受け、err ならスライス固有の HTTP 写像へ委譲、ok なら値を使う」
-// という契約を集約する。写像先を引数で受けることで、各スライスのエラー対応表をハンドラ側に残したまま束ねる
+// 認証ハンドラ群の契約由来の err 分岐の重複を畳むためのヘルパ。写像先を引数で受けるのは、
+// 各スライスのエラー対応表をハンドラ側に残したまま共通部分だけを束ねるため
 export function unwrapOrThrowHttp<T, E = Error>(
   result: Result<T, E>,
   throwHttpError: (error: E) => never,

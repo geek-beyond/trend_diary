@@ -4,7 +4,7 @@ import { mediaListSchema } from '@trend-diary/domain/article/schema/query-schema
 import { z } from 'zod'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/error/handle-error'
+import throwHttpError from '@/server/article/error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 interface UnreadDigestionArticlesResponse {
@@ -29,7 +29,7 @@ export default async function unreadDigestionArticles(
   const useCase = createArticleUseCase(rdb)
   const result = await useCase.getUnreadDigestionArticles(sessionUser.activeUserId, query.media)
   if (result.isErr()) {
-    handleError(result.error, logger)
+    throwHttpError(result.error)
   }
 
   const response: UnreadDigestionArticlesResponse = {

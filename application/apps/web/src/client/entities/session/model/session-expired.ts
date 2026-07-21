@@ -1,6 +1,6 @@
-import { ClientError } from '@trend-diary/std/errors'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
+import HttpError from '@/client/infrastructure/http-error'
 import { TOAST_ID } from './toast-id'
 import { SESSION_SWR_KEY } from './use-session'
 
@@ -9,9 +9,9 @@ export const SESSION_EXPIRED_MESSAGE =
 
 // 認証必須APIの401はセッション切れとして扱う。ログイン自体の401（認証情報不一致）は
 // createSWRFetcher を経由しないため、ここでは対象にならない
-// oxlint-disable-next-line typescript/no-restricted-types -- 任意の値を受けて ClientError か絞り込む型ガードの役割のため
+// oxlint-disable-next-line typescript/no-restricted-types -- 任意の値を受けて HttpError か絞り込む型ガードの役割のため
 export const isSessionExpiredError = (error: unknown): boolean =>
-  error instanceof ClientError && error.statusCode === 401
+  error instanceof HttpError && error.status === 401
 
 // 同時に複数のAPIが401を返しても、案内トーストは1つに集約する。
 // セッションキャッシュも未ログインへ揃え、保護ページ側のルートガードに波及させる

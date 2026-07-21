@@ -5,7 +5,6 @@
   "type": "module",
   "exports": {
     "./contract": "./src/contract/index.ts",
-    "./errors": "./src/errors/index.ts",
     "./locale": "./src/locale/index.ts",
     "./pagination": "./src/pagination/index.ts",
     "./result": "./src/result/index.ts",

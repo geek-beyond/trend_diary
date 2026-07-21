@@ -1,5 +1,5 @@
-import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { err, ok, type Result } from 'neverthrow'
+import { type AccountRepositoryError, ActiveUserNotFoundError } from './error'
 import type { Command, Notifier, Query } from './port'
 import type { CurrentUser } from './schema/active-user-schema'
 
@@ -14,7 +14,7 @@ export class AccountUseCase {
     authenticationId: string,
     notifier: Notifier,
     displayName?: string | null,
-  ): Promise<Result<CurrentUser, ServerError>> {
+  ): Promise<Result<CurrentUser, AccountRepositoryError>> {
     return this.userCommand.createActiveWithAuthenticationId(
       email,
       authenticationId,
@@ -25,15 +25,15 @@ export class AccountUseCase {
 
   async resolveActiveUser(
     authenticationId: string,
-  ): Promise<Result<CurrentUser, ClientError | ServerError>> {
+  ): Promise<Result<CurrentUser, ActiveUserNotFoundError | AccountRepositoryError>> {
     const activeUserResult = await this.userQuery.findActiveByAuthenticationId(authenticationId)
 
     if (activeUserResult.isErr()) {
-      return err(new ServerError(activeUserResult.error))
+      return err(activeUserResult.error)
     }
 
     if (!activeUserResult.value) {
-      return err(new ClientError('User not found', 404))
+      return err(new ActiveUserNotFoundError('User not found'))
     }
 
     return ok(activeUserResult.value)

@@ -1,13 +1,12 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/account'
+import { ActiveUserNotFoundError, createAccountUseCase } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
-import { ClientError } from '@trend-diary/std/errors'
 import { resolveLoginRedirectTarget } from '@trend-diary/std/sanitization'
 import { deleteCookie, getCookie } from 'hono/cookie'
+import { HTTPException } from 'hono/http-exception'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/error/handle-error'
 import {
   OAUTH_COOKIE_OPTIONS,
   OAUTH_FLOW,
@@ -69,8 +68,9 @@ export default async function oauthCallback(
     logger.info('oauth login success', { provider, activeUserId: resolved.value.activeUserId })
     return c.redirect(redirectTarget, 302)
   }
-  if (!(resolved.error instanceof ClientError)) {
-    handleError(resolved.error, logger)
+  // 未連携(ActiveUserNotFoundError)は初回ログインとして新規登録へ進む。それ以外はサーバ起因のため 500 に写像する
+  if (!(resolved.error instanceof ActiveUserNotFoundError)) {
+    throw new HTTPException(500, { message: resolved.error.message })
   }
 
   // 未連携の初回ログインは新規登録として扱う。メール未取得では登録できないため認証失敗として戻す
@@ -82,7 +82,8 @@ export default async function oauthCallback(
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
   const registered = await accountUseCase.registerActiveUser(email, authenticationId, notifier)
   if (registered.isErr()) {
-    handleError(registered.error, logger)
+    // 認証後の active_user 作成失敗はサーバ起因のため 500 に写像する
+    throw new HTTPException(500, { message: registered.error.message })
   }
 
   logger.info('oauth signup success', { provider, activeUserId: registered.value.activeUserId })

@@ -1,6 +1,5 @@
 import type * as ArticleModule from '@trend-diary/domain/article'
 import { createArticleUseCase } from '@trend-diary/domain/article'
-import { ServerError } from '@trend-diary/std/errors'
 import { err } from 'neverthrow'
 import { vi } from 'vitest'
 import * as articleHelper from '@/test/helper/article'
@@ -124,12 +123,12 @@ describe('GET /api/articles/unread-digestion', () => {
   })
 
   describe('異常系', () => {
-    it('取得でServerErrorが発生した場合は500を返す', async () => {
+    it('取得でリポジトリ障害が発生した場合は500を返す', async () => {
       const actual = await vi.importActual<typeof ArticleModule>('@trend-diary/domain/article')
       vi.mocked(createArticleUseCase).mockImplementationOnce((rdb) => {
         const useCase = actual.createArticleUseCase(rdb)
         useCase.getUnreadDigestionArticles = () =>
-          Promise.resolve(err(new ServerError(new Error('取得に失敗しました'))))
+          Promise.resolve(err(new Error('取得に失敗しました')))
         return useCase
       })
 

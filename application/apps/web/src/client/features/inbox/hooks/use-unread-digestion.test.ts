@@ -1,5 +1,4 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { ClientError } from '@trend-diary/std/errors'
 import { createElement, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
@@ -7,6 +6,7 @@ import { ALL_MEDIA, type SelectedMedia, useReadArticle } from '@/client/features
 import type * as UseArticlesModule from '@/client/features/article/hooks/use-articles'
 import { completionPendingStorage } from '@/client/features/inbox/model/completion-pending-storage'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
+import HttpError from '@/client/infrastructure/http-error'
 import useUnreadDigestion, { type Article } from './use-unread-digestion'
 
 vi.mock('@/client/infrastructure/create-swr-fetcher', () => ({
@@ -322,7 +322,7 @@ describe('useUnreadDigestion', () => {
     })
 
     it('未読一覧取得が401のときはエラートーストを表示しない', async () => {
-      mockUnreadDigestionGet.mockRejectedValue(new ClientError('Unauthorized', 401))
+      mockUnreadDigestionGet.mockRejectedValue(new HttpError(401, 'Unauthorized'))
 
       renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
@@ -363,7 +363,7 @@ describe('useUnreadDigestion', () => {
         data: [baseArticle],
         total: 1,
       })
-      mockSkipPost.mockRejectedValue(new ClientError('Unauthorized', 401))
+      mockSkipPost.mockRejectedValue(new HttpError(401, 'Unauthorized'))
 
       const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 

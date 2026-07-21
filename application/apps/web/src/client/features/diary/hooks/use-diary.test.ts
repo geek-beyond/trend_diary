@@ -1,10 +1,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { ClientError } from '@trend-diary/std/errors'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import HttpError from '@/client/infrastructure/http-error'
 import useDiary from './use-diary'
 import useDiaryApi from './use-diary-api'
 
@@ -175,7 +175,7 @@ describe('useDiary', () => {
     })
 
     it('セッション切れ(401)の場合はエラートーストを表示しない', async () => {
-      const fetchDiary = vi.fn().mockRejectedValue(new ClientError('Unauthorized', 401))
+      const fetchDiary = vi.fn().mockRejectedValue(new HttpError(401, 'Unauthorized'))
       mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange: vi.fn() })
 
       setupHook(['/diary'])

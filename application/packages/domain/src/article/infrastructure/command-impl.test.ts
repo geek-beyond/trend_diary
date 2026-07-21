@@ -1,6 +1,6 @@
-import { NotFoundError, ServerError } from '@trend-diary/std/errors'
 import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
+import { ArticleNotFoundError, ArticleRepositoryError } from '../error'
 import CommandImpl from './command-impl'
 
 describe('CommandImpl', () => {
@@ -51,7 +51,7 @@ describe('CommandImpl', () => {
     })
 
     describe('準正常系', () => {
-      it('記事が存在せず0行の場合はNotFoundErrorを返す', async () => {
+      it('記事が存在せず0行の場合は ArticleNotFoundError を返す', async () => {
         mockRdbExecutor.mockResolvedValue({ rows: [] })
 
         const result = await commandImpl.createReadHistory(
@@ -62,7 +62,7 @@ describe('CommandImpl', () => {
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(NotFoundError)
+          expect(result.error).toBeInstanceOf(ArticleNotFoundError)
           expect(result.error.message).toBe('Article with ID 100 not found')
         }
       })
@@ -81,7 +81,7 @@ describe('CommandImpl', () => {
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
+          expect(result.error).toBeInstanceOf(ArticleRepositoryError)
           expect(result.error.message).toBe(errorMessage)
         }
       })
@@ -128,14 +128,14 @@ describe('CommandImpl', () => {
     })
 
     describe('準正常系', () => {
-      it('記事が存在せず0行の場合はNotFoundErrorを返す', async () => {
+      it('記事が存在せず0行の場合は ArticleNotFoundError を返す', async () => {
         mockRdbExecutor.mockResolvedValueOnce({ rows: [] })
 
         const result = await commandImpl.createSkippedArticle(1n, 100n)
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(NotFoundError)
+          expect(result.error).toBeInstanceOf(ArticleNotFoundError)
           expect(result.error.message).toBe('Article with ID 100 not found')
         }
       })
@@ -150,7 +150,7 @@ describe('CommandImpl', () => {
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
+          expect(result.error).toBeInstanceOf(ArticleRepositoryError)
           expect(result.error.message).toBe(errorMessage)
         }
       })
@@ -182,13 +182,13 @@ describe('CommandImpl', () => {
     })
 
     describe('準正常系', () => {
-      it('記事が存在しない場合はNotFoundErrorを返す', async () => {
+      it('記事が存在しない場合は ArticleNotFoundError を返す', async () => {
         // 存在チェック・DELETEともに空(デフォルト)
         const result = await commandImpl.deleteAllReadHistory(2n, 200n)
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(NotFoundError)
+          expect(result.error).toBeInstanceOf(ArticleNotFoundError)
           expect(result.error.message).toBe('Article with ID 200 not found')
         }
       })
@@ -203,7 +203,7 @@ describe('CommandImpl', () => {
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(ServerError)
+          expect(result.error).toBeInstanceOf(ArticleRepositoryError)
           expect(result.error.message).toBe(errorMessage)
         }
       })

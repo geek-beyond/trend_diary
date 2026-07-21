@@ -1,8 +1,6 @@
-import type { LoggerType } from '@trend-diary/logger'
-import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { wrapAsyncCall } from '@trend-diary/std/result'
+import { HTTPException } from 'hono/http-exception'
 import { err, ok, type Result } from 'neverthrow'
-import { handleError } from '@/server/error/handle-error'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
@@ -12,29 +10,26 @@ function isSuccessResponse(value: unknown): boolean {
 }
 
 /**
- * Cloudflare TurnstileのトークンをsiteverifyAPIで検証する。
+ * Cloudflare TurnstileのトークンをsiteverifyAPIで検証し、検証の成否を返す。
+ * 通信・解析の失敗のみ err を返す（トークン不備・検証失敗は ok(false)）。
  */
 export async function verifyTurnstile(
   secret: string,
   token?: string,
-): Promise<Result<void, ClientError | ServerError>> {
-  if (!token) return err(new ClientError('captcha token is required', 403))
+): Promise<Result<boolean, Error>> {
+  if (!token) return ok(false)
 
   const body = new URLSearchParams()
   body.append('secret', secret)
   body.append('response', token)
 
   const response = await wrapAsyncCall(() => fetch(SITEVERIFY_URL, { method: 'POST', body }))
-  if (response.isErr()) return err(new ServerError(response.error))
+  if (response.isErr()) return err(response.error)
 
   const parsed = await wrapAsyncCall(() => response.value.json())
-  if (parsed.isErr()) return err(new ServerError(parsed.error))
+  if (parsed.isErr()) return err(parsed.error)
 
-  if (!isSuccessResponse(parsed.value)) {
-    return err(new ClientError('captcha verification failed', 403))
-  }
-
-  return ok(undefined)
+  return ok(isSuccessResponse(parsed.value))
 }
 
 /**
@@ -44,10 +39,12 @@ export async function verifyTurnstile(
 export async function assertCaptchaVerified(
   secret: string | undefined,
   token: string | undefined,
-  logger: LoggerType,
 ): Promise<void> {
   if (!secret) return
 
   const result = await verifyTurnstile(secret, token)
-  if (result.isErr()) handleError(result.error, logger)
+  // 通信・解析の失敗はサーバ起因のため 500 に写像する
+  if (result.isErr()) throw new HTTPException(500, { message: result.error.message })
+  // 検証失敗(トークン不備・不正)はクライアント起因のため 403 を返す
+  if (!result.value) throw new HTTPException(403, { message: 'captcha verification failed' })
 }

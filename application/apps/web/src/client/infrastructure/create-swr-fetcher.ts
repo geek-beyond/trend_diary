@@ -1,7 +1,7 @@
 import { fetchWithTimeout } from '@trend-diary/runtime/http'
-import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { notifySessionExpired } from '@/client/entities/session'
 import getApiClientForClient from '@/client/infrastructure/api'
+import HttpError from '@/client/infrastructure/http-error'
 
 interface ApiCallResponse {
   ok: boolean
@@ -17,7 +17,7 @@ const toHttpError = (status: number, statusText: string) => {
     notifySessionExpired()
   }
 
-  return status >= 500 ? new ServerError(statusText, status) : new ClientError(statusText, status)
+  return new HttpError(status, statusText)
 }
 
 const fetcher = async <T>(url: string): Promise<T> => {

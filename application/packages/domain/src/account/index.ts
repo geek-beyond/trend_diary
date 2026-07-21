@@ -1,3 +1,4 @@
+import { ActiveUserNotFoundError, AccountRepositoryError } from './error'
 import { createAccountUseCase } from './factory'
 import type { ActiveUser, ActiveUserInput, CurrentUser } from './schema/active-user-schema'
 import { activeUserInputSchema, activeUserSchema } from './schema/active-user-schema'
@@ -20,6 +21,8 @@ export type {
 // スキーマ
 // ファクトリ
 export {
+  AccountRepositoryError,
+  ActiveUserNotFoundError,
   activeUserInputSchema,
   activeUserSchema,
   authInputSchema,

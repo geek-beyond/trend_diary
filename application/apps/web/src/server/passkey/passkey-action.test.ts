@@ -1,5 +1,4 @@
 import {
-  NoSessionError,
   PasskeyClient,
   PasskeyRegistrationError,
   PasskeyVerificationError,
@@ -86,10 +85,8 @@ describe('createPasskeyActionHandler', () => {
         error: new PasskeyVerificationError('verification failed'),
         status: 401,
       },
-      { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
-      { name: 'UnexpectedAuthError', error: new UnexpectedAuthError('unexpected'), status: 500 },
     ])(
-      'execute が $name を返すと toAuthError で変換した HTTPException を投げ respond を呼ばないこと',
+      'execute が $name を返すと境界で HTTPException へ写像して投げ respond を呼ばないこと',
       async ({ error, status }) => {
         const respond = vi.fn()
         const handler = createPasskeyActionHandler({
@@ -109,16 +106,22 @@ describe('createPasskeyActionHandler', () => {
   })
 
   describe('異常系', () => {
-    // ロガーはミドルウェアが必ず設定する契約のため、未設定は握りつぶさず契約違反として送出する
-    it('APP_LOG が未設定なら契約違反エラーを投げること', async () => {
+    // 対応表に無い認証エラーはサーバ起因のため 500 に写像し、respond は呼ばない
+    it('execute が写像先を持たない認証エラーを返すと HTTPException(500) を投げ respond を呼ばないこと', async () => {
+      const error = new UnexpectedAuthError('unexpected')
+      const respond = vi.fn()
       const handler = createPasskeyActionHandler({
-        execute: () => Promise.resolve(ok(null)),
-        respond: () => null,
+        execute: () => Promise.resolve(err(error)),
+        respond,
       })
 
-      const { c } = buildContext({ hasAppLog: false })
+      const { c } = buildContext()
+      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
+      const thrown = await handler(c).catch((e: unknown) => e)
 
-      await expect(handler(c)).rejects.toThrow(CONTEXT_KEY.APP_LOG)
+      expect(thrown).toBeInstanceOf(HTTPException)
+      expect(thrown).toMatchObject({ status: 500, message: error.message })
+      expect(respond).not.toHaveBeenCalled()
     })
   })
 })

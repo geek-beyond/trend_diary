@@ -1,6 +1,6 @@
 import { authClientConfig, OAuthClient, type OAuthProvider } from '@trend-diary/authentication'
 import { setCookie } from 'hono/cookie'
-import type { Result } from 'neverthrow'
+import type { Err, Result } from 'neverthrow'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import throwHttpError from '@/server/oauth/error'
 import {
@@ -15,9 +15,13 @@ type OAuthFlow = (typeof OAUTH_FLOW)[keyof typeof OAUTH_FLOW]
 
 export type OAuthStartContext = ZodValidatedContext<[typeof oauthProviderParamValidator]>
 
+type ResultErr<TResult> = TResult extends Err<infer _TValue, infer TError> ? TError : never
+// 境界の TError を手書きの基底型で緩めず、OAuthClient が実際に返すエラー集合を上限にする
+type OAuthClientError = ResultErr<Awaited<ReturnType<OAuthClient[keyof OAuthClient]>>>
+
 export function createOAuthStartHandler<
   TContext extends OAuthStartContext = OAuthStartContext,
-  TError extends Error = Error,
+  TError extends OAuthClientError = OAuthClientError,
 >(config: {
   start: (
     oauthClient: OAuthClient,

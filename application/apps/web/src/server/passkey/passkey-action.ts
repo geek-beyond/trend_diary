@@ -1,13 +1,21 @@
-import { type AuthError, authClientConfig, PasskeyClient } from '@trend-diary/authentication'
+import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import type { Context } from 'hono'
-import type { Result } from 'neverthrow'
+import type { Err, Result } from 'neverthrow'
 import type { Env } from '@/env'
 import throwHttpError from '@/server/passkey/error'
 
 export type PasskeyActionContext = Context<Env>
 
-export function createPasskeyActionHandler<TOutput, TResponse>(config: {
-  execute: (passkeyClient: PasskeyClient) => Promise<Result<TOutput, AuthError>>
+type ResultErr<TResult> = TResult extends Err<infer _TValue, infer TError> ? TError : never
+// 境界の TError を手書きの基底型で緩めず、PasskeyClient が実際に返すエラー集合を上限にする
+type PasskeyClientError = ResultErr<Awaited<ReturnType<PasskeyClient[keyof PasskeyClient]>>>
+
+export function createPasskeyActionHandler<
+  TOutput,
+  TResponse,
+  TError extends PasskeyClientError,
+>(config: {
+  execute: (passkeyClient: PasskeyClient) => Promise<Result<TOutput, TError>>
   respond: (c: PasskeyActionContext, output: TOutput) => TResponse
 }) {
   return async (c: PasskeyActionContext) => {

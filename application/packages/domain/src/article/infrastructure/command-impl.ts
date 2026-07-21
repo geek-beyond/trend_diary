@@ -4,7 +4,7 @@ import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { articles, normalizeDateTime, readHistories } from '@trend-diary/datastore/schema'
 import { and, eq, exists, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { type ArticleError, ArticleNotFoundError, ArticleRepositoryError } from '../error'
+import { ArticleNotFoundError, ArticleRepositoryError } from '../error'
 import type { Command } from '../port'
 import type { ReadHistory } from '../schema/read-history-schema'
 import type { SkippedArticle } from '../schema/skipped-article-schema'
@@ -32,7 +32,7 @@ export default class CommandImpl implements Command {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, ArticleError>> {
+  ): Promise<Result<ReadHistory, ArticleNotFoundError | ArticleRepositoryError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
@@ -70,7 +70,7 @@ export default class CommandImpl implements Command {
   async deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<void, ArticleError>> {
+  ): Promise<Result<void, ArticleNotFoundError | ArticleRepositoryError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
@@ -113,7 +113,7 @@ export default class CommandImpl implements Command {
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, ArticleError>> {
+  ): Promise<Result<SkippedArticle, ArticleNotFoundError | ArticleRepositoryError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 

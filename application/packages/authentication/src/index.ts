@@ -1,6 +1,5 @@
 export { AuthAdminClient, type AuthAdminConfig, type AuthUserSummary } from './admin/client'
 export {
-  AuthError,
   InvalidCredentialsError,
   NoSessionError,
   PasskeyRegistrationError,

@@ -6,7 +6,7 @@ import {
 } from 'react-router'
 import { resolveTurnstileSiteKey } from '@/client/entities/session'
 import { GITHUB_AUTH_MESSAGES, useOAuthError } from '@/client/features/github-auth'
-import { resolveLoginRedirectTarget, useLogin } from '@/client/features/sessions'
+import { resolveLoginRedirectTarget, useLogin } from '@/client/features/login'
 import { mergeMeta, pageMeta } from '@/client/lib/meta'
 import { appLoadContext } from '@/load-context'
 import LoginPage from './page'

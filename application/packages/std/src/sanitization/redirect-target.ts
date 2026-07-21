@@ -2,7 +2,7 @@
 const REDIRECT_BASE_URL = 'https://safe.internal'
 
 // ログイン後にここへ戻すと再びログインへ迷い込むだけの遷移になるため除外する
-const LOGIN_FLOW_PATHS = ['/sessions', '/registrations']
+const LOGIN_FLOW_PATHS = ['/login', '/signup']
 
 // 外部ドメインへの誤誘導（オープンリダイレクト）を避ける。制御文字の除去や
 // バックスラッシュの正規化など、文字列比較では取りこぼすブラウザのURL解釈を

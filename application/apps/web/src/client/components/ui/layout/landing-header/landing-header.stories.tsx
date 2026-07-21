@@ -93,10 +93,10 @@ export const LinkValidation: Story = {
     await expect(homeLink).toHaveAttribute('href', '/')
 
     const loginLink = canvas.getByRole('link', { name: 'ログイン' })
-    await expect(loginLink).toHaveAttribute('href', '/sessions')
+    await expect(loginLink).toHaveAttribute('href', '/login')
 
     const signupLink = canvas.getByRole('link', { name: 'アカウント作成' })
-    await expect(signupLink).toHaveAttribute('href', '/registrations')
+    await expect(signupLink).toHaveAttribute('href', '/signup')
   },
 }
 

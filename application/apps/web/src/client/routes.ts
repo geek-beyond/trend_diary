@@ -26,8 +26,8 @@ const baseGroup = {
   prefix: '',
   routes: [
     { path: PATH_INDEX, file: './routes/_index/route.tsx' },
-    { path: '/sessions', file: './routes/sessions/route.tsx' },
-    { path: '/registrations', file: './routes/registrations/route.tsx' },
+    { path: '/login', file: './routes/login/route.tsx' },
+    { path: '/signup', file: './routes/signup/route.tsx' },
     { path: '/privacy-policy', file: './routes/privacy-policy/route.tsx' },
     { path: '/terms-of-service', file: './routes/terms-of-service/route.tsx' },
   ],

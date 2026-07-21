@@ -19,7 +19,7 @@ function renderWithChild(initialEntries: string[] = ['/']) {
         children: [{ index: true, element: createElement('div', null, '保護ページ本体') }],
       },
       {
-        path: '/sessions',
+        path: '/login',
         element: createElement('div', null, 'ログイン画面'),
       },
     ],
@@ -58,7 +58,7 @@ describe('ProtectedLayout', () => {
 
       expect(screen.queryByText('保護ページ本体')).toBeNull()
       expect(screen.getByText('ログイン画面')).not.toBeNull()
-      expect(router.state.location.pathname).toBe('/sessions')
+      expect(router.state.location.pathname).toBe('/login')
       expect(router.state.location.search).toBe(`?redirect=${encodeURIComponent('/?page=2')}`)
     })
 

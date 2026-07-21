@@ -1,35 +1,33 @@
 import { GithubAuthButton } from '@/client/features/github-auth'
-import { SignupForm, type SignupFormProps } from '@/client/features/registrations'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '../../components/shadcn/card'
+import { LoginForm, type LoginFormProps } from '@/client/features/login'
+import { PasskeyLoginButton } from '@/client/features/passkey'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'
 import LandingHeader from '../../components/ui/layout/landing-header'
 import { AnchorLink } from '../../components/ui/navigation/link'
 
-export default function SignupPage({
+interface Props extends LoginFormProps {
+  redirectTo?: string
+}
+
+export default function LoginPage({
   onSubmit,
   isSubmitting,
   errors,
   formError,
   turnstileSiteKey,
-}: SignupFormProps) {
+  redirectTo,
+}: Props) {
   return (
     <div className='min-h-screen bg-gradient-to-br from-muted to-background'>
       <LandingHeader />
       <main className='flex min-h-[calc(100vh-180px)] items-center justify-center p-4'>
         <Card className='flex w-full max-w-md flex-col'>
           <CardHeader className='space-y-1'>
-            <CardTitle className='text-2xl font-bold'>アカウント作成</CardTitle>
-            <CardDescription>以下の情報を入力してアカウントを作成してください</CardDescription>
+            <CardTitle className='text-2xl font-bold'>ログイン</CardTitle>
           </CardHeader>
           <CardContent>
-            <SignupForm
+            <LoginForm
               onSubmit={onSubmit}
               isSubmitting={isSubmitting}
               errors={errors}
@@ -42,14 +40,15 @@ export default function SignupPage({
                 <span className='text-muted-foreground text-xs'>または</span>
                 <span className='bg-border h-px flex-1' />
               </div>
-              <GithubAuthButton label='GitHubで登録' />
+              <PasskeyLoginButton redirectTo={redirectTo} />
+              <GithubAuthButton label='GitHubでログイン' redirectTo={redirectTo} />
             </div>
           </CardContent>
           <CardFooter className='flex flex-col gap-4 border-t pt-6'>
             <div className='text-muted-foreground text-center text-sm'>
-              既にアカウントをお持ちですか？{' '}
-              <AnchorLink to='/sessions' className='text-primary hover:text-primary/90 underline'>
-                ログイン
+              アカウントをお持ちでないですか？{' '}
+              <AnchorLink to='/signup' className='text-primary hover:text-primary/90 underline'>
+                アカウント作成
               </AnchorLink>
             </div>
           </CardFooter>

@@ -21,11 +21,11 @@ describe('TopPage', () => {
       const loginLinks = screen.getAllByRole('link', { name: 'ログイン' })
       expect(loginLinks.length).toBeGreaterThan(0)
       for (const link of loginLinks) {
-        expect(link).toHaveAttribute('href', '/sessions')
+        expect(link).toHaveAttribute('href', '/login')
       }
       expect(screen.getByRole('link', { name: 'アカウント作成' })).toHaveAttribute(
         'href',
-        '/registrations',
+        '/signup',
       )
       expect(screen.queryByRole('button', { name: 'メニューを開く' })).not.toBeInTheDocument()
     })
@@ -35,7 +35,7 @@ describe('TopPage', () => {
 
       expect(screen.getByRole('link', { name: '無料でアカウントを作成' })).toHaveAttribute(
         'href',
-        '/registrations',
+        '/signup',
       )
       expect(screen.queryByRole('link', { name: 'トレンド一覧へ' })).not.toBeInTheDocument()
     })

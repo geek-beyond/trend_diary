@@ -1,4 +1,3 @@
-// never を返して throw する関数から、投げられた値を捕捉して検証するためのテストヘルパー。
 // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
 export const captureThrow = (fn: () => never): unknown => {
   try {

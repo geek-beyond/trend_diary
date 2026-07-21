@@ -15,7 +15,6 @@ const ERROR_STATUS_TABLE: ErrorStatusTable = [
   [NoSessionError, 401],
 ]
 
-// 認証集約のドメインエラーを HTTPException へ写像して送出する。
 export default function throwHttpError(error: Error): never {
   return throwHttpErrorByTable(error, ERROR_STATUS_TABLE)
 }

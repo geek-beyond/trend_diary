@@ -1,12 +1,16 @@
-import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
+import {
+  authClientConfig,
+  PasswordAuthClient,
+  UserAlreadyExistsError,
+} from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { authInputSchema, createAccountUseCase } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
+import { AlreadyExistsError, ServerError } from '@trend-diary/std/errors'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { assertCaptchaVerified } from '@/server/captcha'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
+import { handleError } from '@/server/handle-error'
 
 export const authInputValidator = zodValidator('json', authInputSchema)
 
@@ -20,7 +24,14 @@ export default async function createRegistration(
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const userResult = await authClient.signUp({ email: valid.email, password: valid.password })
-  if (userResult.isErr()) handleError(toAuthError(userResult.error), logger)
+  if (userResult.isErr()) {
+    // 既存ユーザーとの重複だけを 409 に写像し、それ以外はサーバ起因として 500 に倒す
+    const error =
+      userResult.error instanceof UserAlreadyExistsError
+        ? new AlreadyExistsError(userResult.error.message)
+        : new ServerError(userResult.error)
+    handleError(error, logger)
+  }
 
   const user = userResult.value
 

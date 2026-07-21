@@ -1,10 +1,14 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/browser'
-import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
+import {
+  authClientConfig,
+  PasskeyClient,
+  PasskeyRegistrationError,
+} from '@trend-diary/authentication'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
+import { handleError } from '@/server/handle-error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは登録 ceremony 結果を素通しする
 export const passkeyRegistrationVerifyInputSchema = z.object({
@@ -30,7 +34,14 @@ export default async function passkeyRegistrationVerify(
     challengeId: valid.challengeId,
     credential: valid.credential,
   })
-  if (result.isErr()) handleError(toAuthError(result.error), logger)
+  if (result.isErr()) {
+    // 登録 ceremony の検証失敗だけを 400 に写像し、それ以外はサーバ起因として 500 に倒す
+    const error =
+      result.error instanceof PasskeyRegistrationError
+        ? new ClientError(result.error.message, 400)
+        : new ServerError(result.error)
+    handleError(error, logger)
+  }
 
   logger.info('passkey registration success', { passkeyId: result.value.id })
 

@@ -1,9 +1,8 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
-import { ClientError } from '@trend-diary/std/errors'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
+import { handleError } from '@/server/handle-error'
 import type { oauthProviderParamValidator } from '@/server/oauth/schema'
 
 export default async function oauthUnlink(
@@ -14,7 +13,8 @@ export default async function oauthUnlink(
 
   const oauthClient = new OAuthClient(authClientConfig(c))
   const identitiesResult = await oauthClient.listIdentities()
-  if (identitiesResult.isErr()) handleError(toAuthError(identitiesResult.error), logger)
+  // 連携一覧の取得が返す認証エラーはサーバ起因のみのため 500 に倒す
+  if (identitiesResult.isErr()) handleError(new ServerError(identitiesResult.error), logger)
 
   const identities = identitiesResult.value
   const target = identities.find((identity) => identity.provider === provider)
@@ -28,7 +28,8 @@ export default async function oauthUnlink(
   }
 
   const unlinkResult = await oauthClient.unlinkIdentity(target)
-  if (unlinkResult.isErr()) handleError(toAuthError(unlinkResult.error), logger)
+  // 連携解除が返す認証エラーはサーバ起因のみのため 500 に倒す
+  if (unlinkResult.isErr()) handleError(new ServerError(unlinkResult.error), logger)
 
   return c.body(null, 204)
 }

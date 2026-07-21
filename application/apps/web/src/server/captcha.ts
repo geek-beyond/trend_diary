@@ -2,7 +2,7 @@ import type { LoggerType } from '@trend-diary/logger'
 import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { wrapAsyncCall } from '@trend-diary/std/result'
 import { err, ok, type Result } from 'neverthrow'
-import { handleError } from '@/server/error/handle-error'
+import { handleError } from '@/server/handle-error'
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 

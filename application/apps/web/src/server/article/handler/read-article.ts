@@ -5,7 +5,7 @@ import { DIARY_DAYS } from '@trend-diary/domain/article/diary'
 import { z } from 'zod'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/error/handle-error'
+import { handleError } from '@/server/handle-error'
 
 const MS_PER_MINUTE = 60 * 1000
 const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE

@@ -1,12 +1,16 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
-import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
+import {
+  authClientConfig,
+  PasskeyClient,
+  PasskeyVerificationError,
+} from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/account'
+import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
+import { handleError } from '@/server/handle-error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
 export const passkeyAuthenticationVerifyInputSchema = z.object({
@@ -32,7 +36,14 @@ export default async function passkeyAuthenticationVerify(
     challengeId: valid.challengeId,
     credential: valid.credential,
   })
-  if (userResult.isErr()) handleError(toAuthError(userResult.error), logger)
+  if (userResult.isErr()) {
+    // 認証 ceremony の検証失敗だけを 401 に写像し、それ以外はサーバ起因として 500 に倒す
+    const error =
+      userResult.error instanceof PasskeyVerificationError
+        ? new ClientError(userResult.error.message, 401)
+        : new ServerError(userResult.error)
+    handleError(error, logger)
+  }
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)

@@ -7,7 +7,7 @@ import { resolveLoginRedirectTarget } from '@trend-diary/std/sanitization'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/error/handle-error'
+import { handleError } from '@/server/handle-error'
 import {
   OAUTH_COOKIE_OPTIONS,
   OAUTH_FLOW,

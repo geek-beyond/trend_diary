@@ -10,17 +10,20 @@ type ResultErr<TResult> = TResult extends Err<infer _TValue, infer TError> ? TEr
 // 境界の TError を手書きの基底型で緩めず、PasskeyClient が実際に返すエラー集合を上限にする
 type PasskeyClientError = ResultErr<Awaited<ReturnType<PasskeyClient[keyof PasskeyClient]>>>
 
+// TContext を総称化し、zodValidator 適用済みの Context を持つハンドラ（verify 系）もこのファクトリで
+// 束ねられるようにする。execute へ c を渡すのは検証済み入力の取得のため
 export function createPasskeyActionHandler<
   TOutput,
   TResponse,
   TError extends PasskeyClientError,
+  TContext extends PasskeyActionContext = PasskeyActionContext,
 >(config: {
-  execute: (passkeyClient: PasskeyClient) => Promise<Result<TOutput, TError>>
-  respond: (c: PasskeyActionContext, output: TOutput) => TResponse
+  execute: (passkeyClient: PasskeyClient, c: TContext) => Promise<Result<TOutput, TError>>
+  respond: (c: TContext, output: TOutput) => TResponse
 }) {
-  return async (c: PasskeyActionContext) => {
+  return async (c: TContext) => {
     const passkeyClient = new PasskeyClient(authClientConfig(c))
-    const result = await config.execute(passkeyClient)
+    const result = await config.execute(passkeyClient, c)
     if (result.isErr()) throwHttpError(result.error)
 
     return config.respond(c, result.value)

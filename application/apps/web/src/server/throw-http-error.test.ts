@@ -2,7 +2,7 @@ import { HTTPException } from 'hono/http-exception'
 import { err, ok } from 'neverthrow'
 import { describe, expect, it } from 'vitest'
 import { captureThrow } from '@/test/helper/capture-throw'
-import unwrapOrThrowHttp from './unwrap-or-throw-http'
+import { unwrapOrThrowHttp } from './throw-http-error'
 
 const throwAsBadRequest = (error: Error): never => {
   throw new HTTPException(400, { message: error.message })

@@ -5,8 +5,8 @@ import { DiscordWebhookClient } from '@trend-diary/notification'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { assertCaptchaVerified } from '@/server/captcha'
-import unwrapOrThrowHttp from '@/server/error/unwrap-or-throw-http'
 import throwHttpError from '@/server/registrations/error'
+import { unwrapOrThrowHttp } from '@/server/throw-http-error'
 
 export const authInputValidator = zodValidator('json', authInputSchema)
 

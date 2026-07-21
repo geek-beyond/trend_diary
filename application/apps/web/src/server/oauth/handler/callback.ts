@@ -34,8 +34,8 @@ export default async function oauthCallback(
 
   // 失敗時はJSONを返してもユーザーは操作できないため、エラー種別を添えて画面へ戻す。
   // 連携フローはログイン済みのまま設定画面へ、ログインフローはログイン画面へ
-  const errorRedirect =
-    flow === OAUTH_FLOW.link ? `/settings?oauthError=${provider}` : `/login?oauthError=${provider}`
+  const errorReturnPath = flow === OAUTH_FLOW.link ? '/settings' : '/login'
+  const errorRedirect = `${errorReturnPath}?oauthError=${provider}`
 
   // ユーザーによる認可拒否やプロバイダ側の失敗。詳細はログにだけ残す
   if (!code) {

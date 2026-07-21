@@ -162,7 +162,7 @@ export async function createWithGithub(email: string, password: string): Promise
 export async function login(email: string, password: string): Promise<LoginResult> {
   // Hono経由でログイン
   const res = await app.request(
-    '/api/auth/login',
+    '/api/sessions',
     {
       method: 'POST',
       body: JSON.stringify({ email, password }),

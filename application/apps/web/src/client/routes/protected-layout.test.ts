@@ -4,11 +4,11 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import ProtectedLayout from './protected-layout'
 
-vi.mock('@/client/entities/auth', () => ({
+vi.mock('@/client/entities/session', () => ({
   useSession: vi.fn(),
 }))
 
-const { useSession } = await import('@/client/entities/auth')
+const { useSession } = await import('@/client/entities/session')
 const mockUseSession = vi.mocked(useSession)
 
 function renderWithChild(initialEntries: string[] = ['/']) {

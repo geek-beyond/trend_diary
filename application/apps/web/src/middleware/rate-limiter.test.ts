@@ -42,7 +42,7 @@ describe('レートリミットミドルウェア', () => {
 
     testCases.forEach(({ name, env }) => {
       it(`${name}（429にならない）`, async () => {
-        const res = await requestAuth('/api/auth/login', env)
+        const res = await requestAuth('/api/sessions', env)
         expect(res.status).not.toBe(429)
       })
     })
@@ -50,8 +50,8 @@ describe('レートリミットミドルウェア', () => {
 
   describe('準正常系', () => {
     const testCases: Array<{ name: string; path: string }> = [
-      { name: 'login', path: '/api/auth/login' },
-      { name: 'signup', path: '/api/auth/signup' },
+      { name: 'login', path: '/api/sessions' },
+      { name: 'signup', path: '/api/registrations' },
     ]
 
     testCases.forEach(({ name, path }) => {
@@ -65,8 +65,8 @@ describe('レートリミットミドルウェア', () => {
   describe('異常系', () => {
     // 認証エンドポイントではブルートフォースを許す方が危険なため、障害時はフェイルセーフで止める
     const testCases: Array<{ name: string; path: string }> = [
-      { name: 'login', path: '/api/auth/login' },
-      { name: 'signup', path: '/api/auth/signup' },
+      { name: 'login', path: '/api/sessions' },
+      { name: 'signup', path: '/api/registrations' },
     ]
 
     testCases.forEach(({ name, path }) => {

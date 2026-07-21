@@ -1,5 +1,5 @@
-import { SignupForm, type SignupFormProps } from '@/client/features/authenticate/signup'
 import { GithubAuthButton } from '@/client/features/github-auth'
+import { SignupForm, type SignupFormProps } from '@/client/features/signup'
 import {
   Card,
   CardContent,

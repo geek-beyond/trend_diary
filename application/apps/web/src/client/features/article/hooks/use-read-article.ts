@@ -1,6 +1,6 @@
 import { wrapAsyncCall } from '@trend-diary/std/result'
 import { useState } from 'react'
-import { notifyErrorUnlessSessionExpired } from '@/client/entities/auth'
+import { notifyErrorUnlessSessionExpired } from '@/client/entities/session'
 import createSWRFetcher from '@/client/infrastructure/create-swr-fetcher'
 
 const MarkAsReadErrorMessage = '既読に失敗しました'

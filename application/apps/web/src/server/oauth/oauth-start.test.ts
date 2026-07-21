@@ -1,0 +1,163 @@
+import type * as AuthModule from '@trend-diary/authentication'
+import { type AuthError, NoSessionError, UnexpectedAuthError } from '@trend-diary/authentication'
+import { HTTPException } from 'hono/http-exception'
+import { err, ok, type Result } from 'neverthrow'
+import CONTEXT_KEY from '@/middleware/context'
+import { createOAuthStartHandler, type OAuthStartContext } from './oauth-start'
+import { OAUTH_FLOW } from './redirect'
+
+// 認可URLの発行はSupabase SDKへ委譲するため、クライアント生成をモックしてファクトリーの制御だけを検証する
+vi.mock('@trend-diary/authentication', async (importOriginal) => {
+  const actual = await importOriginal<typeof AuthModule>()
+  return { ...actual, authClientConfig: vi.fn(() => ({})), OAuthClient: vi.fn() }
+})
+
+interface FakeLogger {
+  info: ReturnType<typeof vi.fn>
+  warn: ReturnType<typeof vi.fn>
+  error: ReturnType<typeof vi.fn>
+}
+
+const AUTHORIZE_URL = 'https://supabase.example.com/auth/v1/authorize?provider=github'
+
+interface BuildContextOptions {
+  hasAppLog?: boolean
+}
+
+function buildContext(options: BuildContextOptions = {}): {
+  c: OAuthStartContext
+  logger: FakeLogger
+  setCookies: string[]
+} {
+  const logger: FakeLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+  const setCookies: string[] = []
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストで、構造的に代入できず二重アサーションが避けられないため
+  const c = {
+    get: (key: string) => {
+      if (key === CONTEXT_KEY.APP_LOG && (options.hasAppLog ?? true)) return logger
+      return undefined
+    },
+    req: {
+      valid: () => ({ provider: 'github' }),
+      url: 'http://localhost/api/oauth/github/login',
+      raw: new Request('http://localhost/api/oauth/github/login'),
+    },
+    header: (_name: string, value: string) => {
+      setCookies.push(value)
+    },
+    redirect: (location: string, status: number) =>
+      new Response(null, { status, headers: { Location: location } }),
+    // oxlint-disable-next-line typescript/no-restricted-types -- 最小限のモックを Hono の複雑な Context 型へ橋渡しする境界キャストのため
+  } as unknown as OAuthStartContext
+  return { c, logger, setCookies }
+}
+
+function findSetCookie(setCookies: string[], prefix: string): string {
+  return setCookies.find((cookie) => cookie.startsWith(prefix)) ?? ''
+}
+
+function baseConfig(result: Result<{ url: string }, AuthError>) {
+  return {
+    start: () => Promise.resolve(result),
+    flow: OAUTH_FLOW.login,
+    resolveRedirectTarget: () => undefined,
+  }
+}
+
+describe('createOAuthStartHandler', () => {
+  describe('正常系', () => {
+    it('startが返した認可URLへ302リダイレクトすること', async () => {
+      const handler = createOAuthStartHandler(baseConfig(ok({ url: AUTHORIZE_URL })))
+
+      const { c } = buildContext()
+      const res = await handler(c)
+
+      expect(res.status).toBe(302)
+      expect(res.headers.get('Location')).toBe(AUTHORIZE_URL)
+    })
+
+    it('検証済みproviderとリクエストオリジンから組み立てたcallback URLをstartに渡すこと', async () => {
+      const start = vi.fn(() => Promise.resolve(ok({ url: AUTHORIZE_URL })))
+      const handler = createOAuthStartHandler({ ...baseConfig(ok({ url: AUTHORIZE_URL })), start })
+
+      const { c } = buildContext()
+      await handler(c)
+
+      expect(start).toHaveBeenCalledWith(
+        expect.anything(),
+        'github',
+        'http://localhost/api/oauth/github/callback',
+      )
+    })
+
+    it.each([{ flow: OAUTH_FLOW.login }, { flow: OAUTH_FLOW.link }])(
+      'フロー種別Cookieに$flowをOAuthスコープ限定で保存すること',
+      async ({ flow }) => {
+        const handler = createOAuthStartHandler({ ...baseConfig(ok({ url: AUTHORIZE_URL })), flow })
+
+        const { c, setCookies } = buildContext()
+        await handler(c)
+
+        const flowCookie = findSetCookie(setCookies, 'oauth_flow=')
+        expect(flowCookie).toContain(`oauth_flow=${flow}`)
+        expect(flowCookie).toContain('Path=/api/oauth')
+        expect(flowCookie).toContain('HttpOnly')
+      },
+    )
+
+    it('戻り先が解決できたら戻り先Cookieに保存すること', async () => {
+      const handler = createOAuthStartHandler({
+        ...baseConfig(ok({ url: AUTHORIZE_URL })),
+        resolveRedirectTarget: () => '/settings',
+      })
+
+      const { c, setCookies } = buildContext()
+      await handler(c)
+
+      expect(findSetCookie(setCookies, 'oauth_redirect_to=')).toContain(
+        'oauth_redirect_to=%2Fsettings',
+      )
+    })
+
+    it('戻り先が解決できなければ残存する戻り先Cookieを削除すること', async () => {
+      const handler = createOAuthStartHandler(baseConfig(ok({ url: AUTHORIZE_URL })))
+
+      const { c, setCookies } = buildContext()
+      await handler(c)
+
+      const redirectCookie = findSetCookie(setCookies, 'oauth_redirect_to=')
+      expect(redirectCookie).toContain('oauth_redirect_to=;')
+      expect(redirectCookie).toContain('Max-Age=0')
+    })
+  })
+
+  describe('準正常系', () => {
+    it.each([
+      { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
+      { name: 'UnexpectedAuthError', error: new UnexpectedAuthError('unexpected'), status: 500 },
+    ])(
+      'startが$nameを返すとtoAuthErrorで変換したHTTPExceptionを投げること',
+      async ({ error, status }) => {
+        const handler = createOAuthStartHandler(baseConfig(err(error)))
+
+        const { c } = buildContext()
+        // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
+        const thrown = await handler(c).catch((e: unknown) => e)
+
+        expect(thrown).toBeInstanceOf(HTTPException)
+        expect(thrown).toMatchObject({ status })
+      },
+    )
+  })
+
+  describe('異常系', () => {
+    // ロガーはミドルウェアが必ず設定する契約のため、未設定はフォールバックせず契約違反として送出する
+    it('APP_LOGが未設定なら契約違反エラーを投げること', async () => {
+      const handler = createOAuthStartHandler(baseConfig(ok({ url: AUTHORIZE_URL })))
+
+      const { c } = buildContext({ hasAppLog: false })
+
+      await expect(handler(c)).rejects.toThrow(CONTEXT_KEY.APP_LOG)
+    })
+  })
+})

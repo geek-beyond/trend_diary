@@ -8,9 +8,7 @@ import {
 import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { setCookie } from 'hono/cookie'
 import type { Result } from 'neverthrow'
-import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/handle-error'
 import {
   buildOAuthCallbackUrl,
   OAUTH_COOKIE_OPTIONS,
@@ -36,20 +34,17 @@ export function createOAuthStartHandler<
   setRedirectCookie: (c: TContext) => void
 }) {
   return async (c: TContext) => {
-    const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
     const { provider } = c.req.valid('param')
 
     const oauthClient = new OAuthClient(authClientConfig(c))
     const result = await config.start(oauthClient, provider, buildOAuthCallbackUrl(c, provider))
     if (result.isErr()) {
       // 認証パッケージのエラーは HTTP を知らないため、セッション不在だけを 401 に写像し、
-      // それ以外はサーバ起因として 500 に倒す
+      // それ以外はサーバ起因として 500 に倒す。HTTP への最終変換は errorHandler が担う
       const authError = result.error
-      const error =
-        authError instanceof NoSessionError
-          ? new ClientError(authError.message, 401)
-          : new ServerError(authError)
-      handleError(error, logger)
+      throw authError instanceof NoSessionError
+        ? new ClientError(authError.message, 401)
+        : new ServerError(authError)
     }
 
     setCookie(c, OAUTH_FLOW_COOKIE, config.flow, OAUTH_COOKIE_OPTIONS)

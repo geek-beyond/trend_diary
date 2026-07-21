@@ -10,7 +10,6 @@ import { ClientError, ServerError } from '@trend-diary/std/errors'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/handle-error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
 export const passkeyAuthenticationVerifyInputSchema = z.object({
@@ -38,17 +37,15 @@ export default async function passkeyAuthenticationVerify(
   })
   if (userResult.isErr()) {
     // 認証 ceremony の検証失敗だけを 401 に写像し、それ以外はサーバ起因として 500 に倒す
-    const error =
-      userResult.error instanceof PasskeyVerificationError
-        ? new ClientError(userResult.error.message, 401)
-        : new ServerError(userResult.error)
-    handleError(error, logger)
+    throw userResult.error instanceof PasskeyVerificationError
+      ? new ClientError(userResult.error.message, 401)
+      : new ServerError(userResult.error)
   }
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
   const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
-  if (activeUserResult.isErr()) handleError(activeUserResult.error, logger)
+  if (activeUserResult.isErr()) throw activeUserResult.error
 
   logger.info('passkey login success', { activeUserId: activeUserResult.value.activeUserId })
 

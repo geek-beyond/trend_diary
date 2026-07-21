@@ -1,6 +1,5 @@
 import type * as AuthModule from '@trend-diary/authentication'
 import { type AuthError, NoSessionError, UnexpectedAuthError } from '@trend-diary/authentication'
-import { HTTPException } from 'hono/http-exception'
 import { err, ok, type Result } from 'neverthrow'
 import CONTEXT_KEY from '@/middleware/context'
 import { createOAuthStartHandler, type OAuthStartContext } from './oauth-start'
@@ -123,29 +122,14 @@ describe('createOAuthStartHandler', () => {
     it.each([
       { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
       { name: 'UnexpectedAuthError', error: new UnexpectedAuthError('unexpected'), status: 500 },
-    ])(
-      'startが$nameを返すとtoAuthErrorで変換したHTTPExceptionを投げること',
-      async ({ error, status }) => {
-        const handler = createOAuthStartHandler(baseConfig(err(error)))
+    ])('startが$nameを返すと対応するステータスのエラーを投げること', async ({ error, status }) => {
+      const handler = createOAuthStartHandler(baseConfig(err(error)))
 
-        const { c } = buildContext()
-        // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
-        const thrown = await handler(c).catch((e: unknown) => e)
+      const { c } = buildContext()
+      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
+      const thrown = await handler(c).catch((e: unknown) => e)
 
-        expect(thrown).toBeInstanceOf(HTTPException)
-        expect(thrown).toMatchObject({ status })
-      },
-    )
-  })
-
-  describe('異常系', () => {
-    // ロガーはミドルウェアが必ず設定する契約のため、未設定はフォールバックせず契約違反として送出する
-    it('APP_LOGが未設定なら契約違反エラーを投げること', async () => {
-      const handler = createOAuthStartHandler(baseConfig(ok({ url: AUTHORIZE_URL })))
-
-      const { c } = buildContext({ hasAppLog: false })
-
-      await expect(handler(c)).rejects.toThrow(CONTEXT_KEY.APP_LOG)
+      expect(thrown).toMatchObject({ statusCode: status })
     })
   })
 })

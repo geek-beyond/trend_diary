@@ -1,20 +1,17 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { ServerError } from '@trend-diary/std/errors'
-import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/handle-error'
 import type { oauthProviderParamValidator } from '@/server/oauth/schema'
 
 export default async function oauthStatus(
   c: ZodValidatedContext<[typeof oauthProviderParamValidator]>,
 ) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
   const { provider } = c.req.valid('param')
 
   const oauthClient = new OAuthClient(authClientConfig(c))
   const result = await oauthClient.listIdentities()
   // 連携状態の取得が返す認証エラーはサーバ起因のみのため 500 に倒す
-  if (result.isErr()) handleError(new ServerError(result.error), logger)
+  if (result.isErr()) throw new ServerError(result.error)
 
   const linked = result.value.some((identity) => identity.provider === provider)
 

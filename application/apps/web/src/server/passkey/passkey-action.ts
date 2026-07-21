@@ -10,8 +10,6 @@ import { ClientError, ServerError } from '@trend-diary/std/errors'
 import type { Context } from 'hono'
 import type { Result } from 'neverthrow'
 import type { Env } from '@/env'
-import CONTEXT_KEY, { mustGet } from '@/middleware/context'
-import { handleError } from '@/server/handle-error'
 
 export type PasskeyActionContext = Context<Env>
 
@@ -20,24 +18,22 @@ export function createPasskeyActionHandler<TOutput, TResponse>(config: {
   respond: (c: PasskeyActionContext, output: TOutput) => TResponse
 }) {
   return async (c: PasskeyActionContext) => {
-    const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
-
     const passkeyClient = new PasskeyClient(authClientConfig(c))
     const result = await config.execute(passkeyClient)
     if (result.isErr()) {
       // 認証パッケージのエラーは HTTP を知らないため、passkey 操作で起こり得る種別を対応する
-      // クライアントエラーへ写像し、それ以外はサーバ起因として 500 に倒す
+      // クライアントエラーへ写像し、それ以外はサーバ起因として 500 に倒す。HTTP への最終変換は errorHandler が担う
       const authError = result.error
       if (authError instanceof PasskeyRegistrationError) {
-        handleError(new ClientError(authError.message, 400), logger)
+        throw new ClientError(authError.message, 400)
       }
       if (authError instanceof PasskeyVerificationError) {
-        handleError(new ClientError(authError.message, 401), logger)
+        throw new ClientError(authError.message, 401)
       }
       if (authError instanceof NoSessionError) {
-        handleError(new ClientError(authError.message, 401), logger)
+        throw new ClientError(authError.message, 401)
       }
-      handleError(new ServerError(authError), logger)
+      throw new ServerError(authError)
     }
 
     return config.respond(c, result.value)

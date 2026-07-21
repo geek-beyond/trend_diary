@@ -9,7 +9,6 @@ import { ClientError, ServerError } from '@trend-diary/std/errors'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { assertCaptchaVerified } from '@/server/captcha'
-import { handleError } from '@/server/handle-error'
 
 export const authInputValidator = zodValidator('json', authInputSchema)
 
@@ -20,18 +19,16 @@ export default async function createSession(c: ZodValidatedContext<[typeof authI
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
-  await assertCaptchaVerified(c.env.TURNSTILE_SECRET_KEY, valid.captchaToken, logger)
+  await assertCaptchaVerified(c.env.TURNSTILE_SECRET_KEY, valid.captchaToken)
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const loginResult = await authClient.signIn({ email: valid.email, password: valid.password })
   if (loginResult.isErr()) {
     // 認証パッケージのエラーは HTTP を知らないため、このハンドラで扱う InvalidCredentials だけを 401 に写像し、
-    // それ以外はサーバ起因として 500 に倒す
-    const error =
-      loginResult.error instanceof InvalidCredentialsError
-        ? new ClientError(loginResult.error.message, 401)
-        : new ServerError(loginResult.error)
-    handleError(error, logger)
+    // それ以外はサーバ起因として 500 に倒す。HTTP への最終変換は errorHandler が担う
+    throw loginResult.error instanceof InvalidCredentialsError
+      ? new ClientError(loginResult.error.message, 401)
+      : new ServerError(loginResult.error)
   }
 
   const user = loginResult.value
@@ -39,7 +36,7 @@ export default async function createSession(c: ZodValidatedContext<[typeof authI
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
   const result = await accountUseCase.resolveActiveUser(user.id)
-  if (result.isErr()) handleError(result.error, logger)
+  if (result.isErr()) throw result.error
 
   logger.info('session created', { activeUserId: result.value.activeUserId })
 

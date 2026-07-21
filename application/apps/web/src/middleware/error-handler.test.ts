@@ -1,4 +1,5 @@
 import { AssertionError } from '@trend-diary/std/contract'
+import { ClientError, ExternalServiceError, ServerError } from '@trend-diary/std/errors'
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { Env } from '@/env'
@@ -69,6 +70,52 @@ describe('errorHandler', () => {
 
       expect(res.status).toBe(503)
       expect(logger.error).toHaveBeenCalledOnce()
+      expect(discordError).toHaveBeenCalledOnce()
+    })
+
+    it('ClientError は statusCode の 4xx で warn ログを出し Discord 通知せずに返すこと', async () => {
+      const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
+      const res = await errorHandler(new ClientError('invalid query', 422), buildContext(logger))
+
+      expect(res.status).toBe(422)
+      expect(await res.json()).toEqual({ message: 'invalid query' })
+      expect(logger.warn).toHaveBeenCalledOnce()
+      expect(logger.error).not.toHaveBeenCalled()
+      expect(discordError).not.toHaveBeenCalled()
+    })
+
+    it('ServerError は statusCode の 5xx で error ログと Discord 通知を行うこと', async () => {
+      const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
+      const res = await errorHandler(
+        new ServerError(new Error('db down'), 503),
+        buildContext(logger),
+      )
+
+      expect(res.status).toBe(503)
+      expect(await res.json()).toEqual({ message: 'db down' })
+      expect(logger.error).toHaveBeenCalledOnce()
+      expect(discordError).toHaveBeenCalledOnce()
+    })
+
+    it('ExternalServiceError は詳細を構造化ログに残し Discord 通知して500で返すこと', async () => {
+      const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
+      const externalError = new ExternalServiceError(
+        'compensation failed',
+        new ServerError('original failure'),
+        new ServerError('service failure'),
+        { userId: 'auth-user-1' },
+      )
+
+      const res = await errorHandler(externalError, buildContext(logger))
+
+      expect(res.status).toBe(500)
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          msg: 'external service error',
+          context: { userId: 'auth-user-1' },
+        }),
+        externalError,
+      )
       expect(discordError).toHaveBeenCalledOnce()
     })
 

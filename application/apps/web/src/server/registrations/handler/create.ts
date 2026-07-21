@@ -10,7 +10,6 @@ import { AlreadyExistsError, ServerError } from '@trend-diary/std/errors'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { assertCaptchaVerified } from '@/server/captcha'
-import { handleError } from '@/server/handle-error'
 
 export const authInputValidator = zodValidator('json', authInputSchema)
 
@@ -20,17 +19,15 @@ export default async function createRegistration(
   const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
-  await assertCaptchaVerified(c.env.TURNSTILE_SECRET_KEY, valid.captchaToken, logger)
+  await assertCaptchaVerified(c.env.TURNSTILE_SECRET_KEY, valid.captchaToken)
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const userResult = await authClient.signUp({ email: valid.email, password: valid.password })
   if (userResult.isErr()) {
     // 既存ユーザーとの重複だけを 409 に写像し、それ以外はサーバ起因として 500 に倒す
-    const error =
-      userResult.error instanceof UserAlreadyExistsError
-        ? new AlreadyExistsError(userResult.error.message)
-        : new ServerError(userResult.error)
-    handleError(error, logger)
+    throw userResult.error instanceof UserAlreadyExistsError
+      ? new AlreadyExistsError(userResult.error.message)
+      : new ServerError(userResult.error)
   }
 
   const user = userResult.value
@@ -48,7 +45,7 @@ export default async function createRegistration(
     user.id,
     notifier,
   )
-  if (result.isErr()) handleError(result.error, logger)
+  if (result.isErr()) throw result.error
 
   logger.info('registration created', { activeUserId: result.value.activeUserId })
 

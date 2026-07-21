@@ -7,7 +7,6 @@ import { resolveLoginRedirectTarget } from '@trend-diary/std/sanitization'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { handleError } from '@/server/handle-error'
 import {
   OAUTH_COOKIE_OPTIONS,
   OAUTH_FLOW,
@@ -70,7 +69,7 @@ export default async function oauthCallback(
     return c.redirect(redirectTarget, 302)
   }
   if (!(resolved.error instanceof ClientError)) {
-    handleError(resolved.error, logger)
+    throw resolved.error
   }
 
   // 未連携の初回ログインは新規登録として扱う。メール未取得では登録できないため認証失敗として戻す
@@ -82,7 +81,7 @@ export default async function oauthCallback(
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
   const registered = await accountUseCase.registerActiveUser(email, authenticationId, notifier)
   if (registered.isErr()) {
-    handleError(registered.error, logger)
+    throw registered.error
   }
 
   logger.info('oauth signup success', { provider, activeUserId: registered.value.activeUserId })

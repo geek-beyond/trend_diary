@@ -5,7 +5,6 @@ import {
   PasskeyVerificationError,
   UnexpectedAuthError,
 } from '@trend-diary/authentication'
-import { HTTPException } from 'hono/http-exception'
 import { err, ok } from 'neverthrow'
 import CONTEXT_KEY from '@/middleware/context'
 import {
@@ -89,7 +88,7 @@ describe('createPasskeyActionHandler', () => {
       { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
       { name: 'UnexpectedAuthError', error: new UnexpectedAuthError('unexpected'), status: 500 },
     ])(
-      'execute が $name を返すと toAuthError で変換した HTTPException を投げ respond を呼ばないこと',
+      'execute が $name を返すと対応するステータスのエラーを投げ respond を呼ばないこと',
       async ({ error, status }) => {
         const respond = vi.fn()
         const handler = createPasskeyActionHandler({
@@ -101,25 +100,10 @@ describe('createPasskeyActionHandler', () => {
         // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
         const thrown = await handler(c).catch((e: unknown) => e)
 
-        expect(thrown).toBeInstanceOf(HTTPException)
-        expect(thrown).toMatchObject({ status })
+        expect(thrown).toMatchObject({ statusCode: status })
         expect(respond).not.toHaveBeenCalled()
       },
     )
-  })
-
-  describe('異常系', () => {
-    // ロガーはミドルウェアが必ず設定する契約のため、未設定は握りつぶさず契約違反として送出する
-    it('APP_LOG が未設定なら契約違反エラーを投げること', async () => {
-      const handler = createPasskeyActionHandler({
-        execute: () => Promise.resolve(ok(null)),
-        respond: () => null,
-      })
-
-      const { c } = buildContext({ hasAppLog: false })
-
-      await expect(handler(c)).rejects.toThrow(CONTEXT_KEY.APP_LOG)
-    })
   })
 })
 

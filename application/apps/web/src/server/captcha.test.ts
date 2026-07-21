@@ -1,6 +1,4 @@
-import Logger from '@trend-diary/logger'
 import { ClientError, ServerError } from '@trend-diary/std/errors'
-import { HTTPException } from 'hono/http-exception'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { assertCaptchaVerified, verifyTurnstile } from './captcha'
 
@@ -80,29 +78,27 @@ describe('verifyTurnstile', () => {
 })
 
 describe('assertCaptchaVerified', () => {
-  const logger = new Logger('silent')
-
   describe('正常系', () => {
     it('secret未設定のときは検証を行わず解決する', async () => {
-      await expect(assertCaptchaVerified(undefined, 'token', logger)).resolves.toBeUndefined()
+      await expect(assertCaptchaVerified(undefined, 'token')).resolves.toBeUndefined()
       expect(fetchMock).not.toHaveBeenCalled()
     })
 
     it('検証に成功したときは解決する', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: true })))
 
-      await expect(assertCaptchaVerified('secret', 'valid-token', logger)).resolves.toBeUndefined()
+      await expect(assertCaptchaVerified('secret', 'valid-token')).resolves.toBeUndefined()
     })
   })
 
   describe('準正常系', () => {
-    it('検証に失敗したときはHTTPException(403)を送出する', async () => {
+    it('検証に失敗したときはClientError(403)を送出する', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: false })))
 
-      const promise = assertCaptchaVerified('secret', 'invalid-token', logger)
+      const promise = assertCaptchaVerified('secret', 'invalid-token')
 
-      await expect(promise).rejects.toBeInstanceOf(HTTPException)
-      await expect(promise).rejects.toMatchObject({ status: 403 })
+      await expect(promise).rejects.toBeInstanceOf(ClientError)
+      await expect(promise).rejects.toMatchObject({ statusCode: 403 })
     })
   })
 })

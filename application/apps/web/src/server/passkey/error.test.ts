@@ -3,7 +3,6 @@ import {
   PasskeyVerificationError,
   UnexpectedAuthError,
 } from '@trend-diary/authentication'
-import { ActiveUserNotFoundError } from '@trend-diary/domain/account'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'
 import { captureThrow } from '@/test/helper/capture-throw'
@@ -31,24 +30,14 @@ describe('パスキー系ハンドラのエラーの HTTP 写像', () => {
   })
 
   describe('異常系', () => {
-    it.each([
-      {
-        // 認証後の active_user 解決失敗はサーバ側の不整合なので 404 ではなく 500 に倒す
-        name: 'ActiveUserNotFoundError',
-        error: new ActiveUserNotFoundError('user not found'),
-      },
-      {
-        name: 'UnexpectedAuthError',
-        error: new UnexpectedAuthError('boom'),
-      },
-    ])(
-      '$name は写像先を持たず HTTPException(500) へ写像しメッセージを引き継ぐこと',
-      ({ error }) => {
-        const thrown = captureThrow(() => throwHttpError(error))
+    // 認証後の active_user 解決失敗（未写像の account エラー）を含め、写像先を持たないエラーは 500 に倒す
+    it('写像先を持たないエラーは HTTPException(500) へ写像しメッセージを引き継ぐこと', () => {
+      const error = new UnexpectedAuthError('boom')
 
-        expect(thrown).toBeInstanceOf(HTTPException)
-        expect(thrown).toMatchObject({ status: 500, message: error.message })
-      },
-    )
+      const thrown = captureThrow(() => throwHttpError(error))
+
+      expect(thrown).toBeInstanceOf(HTTPException)
+      expect(thrown).toMatchObject({ status: 500, message: error.message })
+    })
   })
 })

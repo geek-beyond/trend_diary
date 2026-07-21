@@ -1,7 +1,7 @@
 import { err, ok } from 'neverthrow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
-import { ActiveUserNotFoundError } from './error'
+import { AccountRepositoryError, ActiveUserNotFoundError } from './error'
 import type { Command, Notifier, Query } from './port'
 import type { CurrentUser } from './schema/active-user-schema'
 import { AccountUseCase } from './use-case'
@@ -51,7 +51,7 @@ describe('AccountUseCase', () => {
     describe('異常系', () => {
       it('アクティブユーザー作成が失敗した場合はエラーを返す', async () => {
         commandMock.createActiveWithAuthenticationId.mockResolvedValue(
-          err(new Error('create failed')),
+          err(new AccountRepositoryError('create failed')),
         )
 
         const result = await useCase.registerActiveUser(
@@ -60,7 +60,7 @@ describe('AccountUseCase', () => {
           notifierMock,
         )
 
-        expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(AccountRepositoryError)
       })
     })
   })
@@ -88,11 +88,13 @@ describe('AccountUseCase', () => {
 
     describe('異常系', () => {
       it('クエリが失敗した場合はエラーを返す', async () => {
-        queryMock.findActiveByAuthenticationId.mockResolvedValue(err(new Error('db down')))
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(
+          err(new AccountRepositoryError('db down')),
+        )
 
         const result = await useCase.resolveActiveUser('auth-user-id-123')
 
-        expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
+        expect(result._unsafeUnwrapErr()).toBeInstanceOf(AccountRepositoryError)
       })
     })
   })

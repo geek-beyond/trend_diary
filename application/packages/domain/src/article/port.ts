@@ -1,6 +1,7 @@
 import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import type { Nullable } from '@trend-diary/std/types/utility'
 import { type Result } from 'neverthrow'
+import type { ArticleError } from './error'
 import type { ArticleMedia } from './media'
 import type {
   Article,
@@ -21,28 +22,28 @@ export interface Query {
   searchArticles(
     params: QueryParams,
     activeUserId?: bigint,
-  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, Error>>
+  ): Promise<Result<OffsetPaginationResult<ArticleWithOptionalReadStatus>, ArticleError>>
 
   getUnreadDigestionArticles(
     activeUserId: bigint,
     targetDateJst: string,
     media?: ArticleMedia[],
-  ): Promise<Result<UnreadDigestionResult, Error>>
+  ): Promise<Result<UnreadDigestionResult, ArticleError>>
 
   getDailyDiary(
     activeUserId: bigint,
     targetDateJst: string,
     page: number,
     limit: number,
-  ): Promise<Result<DailyDiary, Error>>
+  ): Promise<Result<DailyDiary, ArticleError>>
 
   getDailyDiaryRange(
     activeUserId: bigint,
     fromDateJst: string,
     toDateJst: string,
-  ): Promise<Result<DailyDiaryRangeItem[], Error>>
+  ): Promise<Result<DailyDiaryRangeItem[], ArticleError>>
 
-  findArticleById(articleId: bigint): Promise<Result<Nullable<Article>, Error>>
+  findArticleById(articleId: bigint): Promise<Result<Nullable<Article>, ArticleError>>
 }
 
 export interface Command {
@@ -53,7 +54,7 @@ export interface Command {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, Error>>
+  ): Promise<Result<ReadHistory, ArticleError>>
 
   /**
    * 記事をスキップ登録する。記事が存在しない場合は ArticleNotFoundError を返す
@@ -61,10 +62,10 @@ export interface Command {
   createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, Error>>
+  ): Promise<Result<SkippedArticle, ArticleError>>
 
   /**
    * 記事の既読履歴を全削除する。記事が存在しない場合は ArticleNotFoundError を返す
    */
-  deleteAllReadHistory(activeUserId: bigint, articleId: bigint): Promise<Result<void, Error>>
+  deleteAllReadHistory(activeUserId: bigint, articleId: bigint): Promise<Result<void, ArticleError>>
 }

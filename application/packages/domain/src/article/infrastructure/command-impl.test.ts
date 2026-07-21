@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
-import { ArticleNotFoundError } from '../error'
+import { ArticleNotFoundError, ArticleRepositoryError } from '../error'
 import CommandImpl from './command-impl'
 
 describe('CommandImpl', () => {
@@ -81,7 +81,7 @@ describe('CommandImpl', () => {
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(Error)
+          expect(result.error).toBeInstanceOf(ArticleRepositoryError)
           expect(result.error.message).toBe(errorMessage)
         }
       })
@@ -150,7 +150,7 @@ describe('CommandImpl', () => {
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(Error)
+          expect(result.error).toBeInstanceOf(ArticleRepositoryError)
           expect(result.error.message).toBe(errorMessage)
         }
       })
@@ -203,7 +203,7 @@ describe('CommandImpl', () => {
 
         expect(result.isErr()).toBe(true)
         if (result.isErr()) {
-          expect(result.error).toBeInstanceOf(Error)
+          expect(result.error).toBeInstanceOf(ArticleRepositoryError)
           expect(result.error.message).toBe(errorMessage)
         }
       })

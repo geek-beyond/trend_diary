@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker'
 import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import { err, ok } from 'neverthrow'
 import { mockDeep } from 'vitest-mock-extended'
-import { ArticleNotFoundError } from './error'
+import { ArticleNotFoundError, ArticleRepositoryError } from './error'
 import type { Command, Query } from './port'
 import type { Article, ArticleWithOptionalReadStatus } from './schema/article-schema'
 import type { DailyDiary } from './schema/diary-schema'
@@ -309,7 +309,7 @@ describe('ArticleUseCase', () => {
         page: 1,
       }
 
-      const dbError = new Error('Database error')
+      const dbError = new ArticleRepositoryError('Database error')
       queryMock.searchArticles.mockResolvedValue(err(dbError))
 
       const result = await useCase.searchArticles(params)
@@ -354,9 +354,9 @@ describe('ArticleUseCase', () => {
         expectedError: ArticleNotFoundError,
       },
       {
-        name: 'データベースエラー(Error)',
-        error: new Error('Database error'),
-        expectedError: Error,
+        name: 'データベースエラー(ArticleRepositoryError)',
+        error: new ArticleRepositoryError('Database error'),
+        expectedError: ArticleRepositoryError,
       },
     ])('command が $name を返す場合はそのまま伝播すること', async ({ error, expectedError }) => {
       commandMock.createReadHistory.mockResolvedValue(err(error))
@@ -392,9 +392,9 @@ describe('ArticleUseCase', () => {
         expectedError: ArticleNotFoundError,
       },
       {
-        name: 'データベースエラー(Error)',
-        error: new Error('Database error'),
-        expectedError: Error,
+        name: 'データベースエラー(ArticleRepositoryError)',
+        error: new ArticleRepositoryError('Database error'),
+        expectedError: ArticleRepositoryError,
       },
     ])('command が $name を返す場合はそのまま伝播すること', async ({ error, expectedError }) => {
       commandMock.deleteAllReadHistory.mockResolvedValue(err(error))
@@ -482,9 +482,9 @@ describe('ArticleUseCase', () => {
         expectedError: ArticleNotFoundError,
       },
       {
-        name: 'データベースエラー(Error)',
-        error: new Error('db'),
-        expectedError: Error,
+        name: 'データベースエラー(ArticleRepositoryError)',
+        error: new ArticleRepositoryError('db'),
+        expectedError: ArticleRepositoryError,
       },
     ])('command が $name を返す場合はそのまま伝播すること', async ({ error, expectedError }) => {
       commandMock.createSkippedArticle.mockResolvedValue(err(error))

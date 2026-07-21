@@ -4,7 +4,7 @@ import { fromDbId, toDbId } from '@trend-diary/datastore/rdb/id'
 import { articles, normalizeDateTime, readHistories } from '@trend-diary/datastore/schema'
 import { and, eq, exists, sql } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
-import { ArticleNotFoundError } from '../error'
+import { type ArticleError, ArticleNotFoundError, ArticleRepositoryError } from '../error'
 import type { Command } from '../port'
 import type { ReadHistory } from '../schema/read-history-schema'
 import type { SkippedArticle } from '../schema/skipped-article-schema'
@@ -32,7 +32,7 @@ export default class CommandImpl implements Command {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, Error>> {
+  ): Promise<Result<ReadHistory, ArticleError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
@@ -51,7 +51,7 @@ export default class CommandImpl implements Command {
       `),
     )
     if (result.isErr()) {
-      return err(result.error)
+      return err(new ArticleRepositoryError(result.error))
     }
 
     const createdReadHistory = result.value[0]
@@ -70,7 +70,7 @@ export default class CommandImpl implements Command {
   async deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<void, Error>> {
+  ): Promise<Result<void, ArticleError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
@@ -99,7 +99,7 @@ export default class CommandImpl implements Command {
       ]),
     )
     if (result.isErr()) {
-      return err(result.error)
+      return err(new ArticleRepositoryError(result.error))
     }
 
     const [articleRows] = result.value
@@ -113,7 +113,7 @@ export default class CommandImpl implements Command {
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, Error>> {
+  ): Promise<Result<SkippedArticle, ArticleError>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
@@ -133,7 +133,7 @@ export default class CommandImpl implements Command {
       `),
     )
     if (result.isErr()) {
-      return err(result.error)
+      return err(new ArticleRepositoryError(result.error))
     }
 
     const skippedArticle = result.value[0]

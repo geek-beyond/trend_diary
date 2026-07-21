@@ -1,13 +1,14 @@
 import type { Nullable } from '@trend-diary/std/types/utility'
 import { type Result } from 'neverthrow'
+import type { AccountError } from './error'
 import type { CurrentUser } from './schema/active-user-schema'
 
 export interface Query {
-  findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, Error>>
-  findActiveByEmail(email: string): Promise<Result<Nullable<CurrentUser>, Error>>
+  findActiveById(id: bigint): Promise<Result<Nullable<CurrentUser>, AccountError>>
+  findActiveByEmail(email: string): Promise<Result<Nullable<CurrentUser>, AccountError>>
   findActiveByAuthenticationId(
     authenticationId: string,
-  ): Promise<Result<Nullable<CurrentUser>, Error>>
+  ): Promise<Result<Nullable<CurrentUser>, AccountError>>
 }
 
 /**
@@ -23,5 +24,5 @@ export interface Command {
     authenticationId: string,
     notifier: Notifier,
     displayName?: string | null,
-  ): Promise<Result<CurrentUser, Error>>
+  ): Promise<Result<CurrentUser, AccountError>>
 }

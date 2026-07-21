@@ -1,5 +1,5 @@
 import { err, ok, type Result } from 'neverthrow'
-import { ActiveUserNotFoundError } from './error'
+import { type AccountError, ActiveUserNotFoundError } from './error'
 import type { Command, Notifier, Query } from './port'
 import type { CurrentUser } from './schema/active-user-schema'
 
@@ -14,7 +14,7 @@ export class AccountUseCase {
     authenticationId: string,
     notifier: Notifier,
     displayName?: string | null,
-  ): Promise<Result<CurrentUser, Error>> {
+  ): Promise<Result<CurrentUser, AccountError>> {
     return this.userCommand.createActiveWithAuthenticationId(
       email,
       authenticationId,
@@ -23,7 +23,7 @@ export class AccountUseCase {
     )
   }
 
-  async resolveActiveUser(authenticationId: string): Promise<Result<CurrentUser, Error>> {
+  async resolveActiveUser(authenticationId: string): Promise<Result<CurrentUser, AccountError>> {
     const activeUserResult = await this.userQuery.findActiveByAuthenticationId(authenticationId)
 
     if (activeUserResult.isErr()) {

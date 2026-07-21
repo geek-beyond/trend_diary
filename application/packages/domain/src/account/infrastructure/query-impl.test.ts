@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
+import { AccountRepositoryError } from '../error'
 import QueryImpl from './query-impl'
 
 // INFO: Drizzleのselectは「カラム順の配列」で行を返す
@@ -79,7 +80,7 @@ describe('QueryImpl', () => {
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(Error)
+        expect(result.error).toBeInstanceOf(AccountRepositoryError)
         expect(result.error.message).toBe('Database connection failed')
       }
     })
@@ -123,7 +124,7 @@ describe('QueryImpl', () => {
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(Error)
+        expect(result.error).toBeInstanceOf(AccountRepositoryError)
         expect(result.error.message).toBe('Database connection failed')
       }
     })
@@ -167,7 +168,7 @@ describe('QueryImpl', () => {
 
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(Error)
+        expect(result.error).toBeInstanceOf(AccountRepositoryError)
         expect(result.error.message).toBe('Database connection failed')
       }
     })

@@ -1,6 +1,7 @@
 import Logger from '@trend-diary/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
+import { AccountRepositoryError } from '../error'
 import type { Notifier } from '../port'
 import CommandImpl from './command-impl'
 
@@ -138,7 +139,7 @@ describe('CommandImpl', () => {
       // Assert: エラーを返す
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(Error)
+        expect(result.error).toBeInstanceOf(AccountRepositoryError)
         expect(result.error.message).toBe('Failed to create active user')
       }
 
@@ -170,7 +171,7 @@ describe('CommandImpl', () => {
       // Assert: エラーを返す
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(Error)
+        expect(result.error).toBeInstanceOf(AccountRepositoryError)
         expect(result.error.message).toBe('Failed to create active user')
       }
 
@@ -200,7 +201,7 @@ describe('CommandImpl', () => {
       // Assert: 補償が失敗しても元のエラーを返す
       expect(result.isErr()).toBe(true)
       if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(Error)
+        expect(result.error).toBeInstanceOf(AccountRepositoryError)
         expect(result.error.message).toBe('Failed to create active user')
       }
 

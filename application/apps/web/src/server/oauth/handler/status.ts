@@ -1,6 +1,6 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/error/auth-error'
+import throwHttpError, { AUTH_ERROR_STATUS } from '@/server/error/throw-http-error'
 import type { oauthProviderParamValidator } from '@/server/oauth/schema'
 
 export default async function oauthStatus(
@@ -10,7 +10,7 @@ export default async function oauthStatus(
 
   const oauthClient = new OAuthClient(authClientConfig(c))
   const result = await oauthClient.listIdentities()
-  if (result.isErr()) throwHttpError(result.error)
+  if (result.isErr()) throwHttpError(result.error, AUTH_ERROR_STATUS)
 
   const linked = result.value.some((identity) => identity.provider === provider)
 

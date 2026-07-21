@@ -11,7 +11,7 @@ import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/error/article-error'
+import throwHttpError, { ARTICLE_ERROR_STATUS } from '@/server/error/throw-http-error'
 
 const DATE_STRING_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const DIARY_DATE_MESSAGE = 'date must be a valid JST date'
@@ -94,7 +94,7 @@ export default async function getDiary(c: ZodValidatedContext<[typeof diaryQuery
       DIARY_READ_LIMIT,
     )
     if (detailResult.isErr()) {
-      throwHttpError(detailResult.error)
+      throwHttpError(detailResult.error, ARTICLE_ERROR_STATUS)
     }
 
     const response = toDiaryDetailResponse(detailResult.value)
@@ -110,7 +110,7 @@ export default async function getDiary(c: ZodValidatedContext<[typeof diaryQuery
 
   const result = await useCase.getDailyDiaryRange(sessionUser.activeUserId, fromDate, toDate)
   if (result.isErr()) {
-    throwHttpError(result.error)
+    throwHttpError(result.error, ARTICLE_ERROR_STATUS)
   }
   const response = toDiaryResponse(result.value)
   logger.info('daily diary range retrieved successfully', {

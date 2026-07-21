@@ -5,8 +5,10 @@ import { DiscordWebhookClient } from '@trend-diary/notification'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { assertCaptchaVerified } from '@/server/captcha'
-import throwAccountHttpError from '@/server/error/account-error'
-import throwAuthHttpError from '@/server/error/auth-error'
+import throwHttpError, {
+  ACCOUNT_ERROR_STATUS,
+  AUTH_ERROR_STATUS,
+} from '@/server/error/throw-http-error'
 
 export const authInputValidator = zodValidator('json', authInputSchema)
 
@@ -20,7 +22,7 @@ export default async function createRegistration(
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const userResult = await authClient.signUp({ email: valid.email, password: valid.password })
-  if (userResult.isErr()) throwAuthHttpError(userResult.error)
+  if (userResult.isErr()) throwHttpError(userResult.error, AUTH_ERROR_STATUS)
 
   const user = userResult.value
 
@@ -37,7 +39,7 @@ export default async function createRegistration(
     user.id,
     notifier,
   )
-  if (result.isErr()) throwAccountHttpError(result.error)
+  if (result.isErr()) throwHttpError(result.error, ACCOUNT_ERROR_STATUS)
 
   logger.info('registration created', { activeUserId: result.value.activeUserId })
 

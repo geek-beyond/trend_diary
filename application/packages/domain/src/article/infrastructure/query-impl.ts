@@ -717,14 +717,20 @@ export default class QueryImpl implements Query {
   }
 
   private static enumerateJstDateRange(fromDateJst: string, toDateJst: string): string[] {
-    // 日付は API 境界(diaryDateSchema)で 422 検証済みのため、ここへの不正日付の到達はサーバ側の契約違反。
-    // 不正な toDateJst は辞書順比較で Date 上限まで巨大ループになり、不正な fromDateJst は空配列を正常値として返すため、両端を先に表明して顕在化させる
+    // 日付とその前後関係は API 境界(diaryDateSchema / validateDiaryDateRange)で 422 検証済みのため、
+    // ここへの不正日付・逆転範囲の到達はサーバ側の契約違反。
+    // 不正な toDateJst は辞書順比較で Date 上限まで巨大ループになり、不正・逆転した fromDateJst は
+    // 空配列を正常値として返すため、両端の妥当性と前後関係を先に表明して顕在化させる
     for (const dateJst of [fromDateJst, toDateJst]) {
       assert(
         !Number.isNaN(toJstDate(dateJst).getTime()),
         `enumerateJstDateRange received an invalid date string: ${dateJst}`,
       )
     }
+    assert(
+      fromDateJst <= toDateJst,
+      `enumerateJstDateRange received fromDateJst (${fromDateJst}) greater than toDateJst (${toDateJst})`,
+    )
 
     const dates: string[] = []
     let current = fromDateJst

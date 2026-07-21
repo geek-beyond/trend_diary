@@ -605,6 +605,13 @@ describe('QueryImpl', () => {
         `enumerateJstDateRange received an invalid date string: ${invalid}`,
       )
     })
+
+    // from > to は API 境界(validateDiaryDateRange)で 422 検証済みのため、到達は契約違反
+    it('fromDateJstがtoDateJstより大きい場合は契約違反として送出する', () => {
+      expect(() => dateRangeEnumerator.enumerateJstDateRange('2026-03-08', '2026-03-06')).toThrow(
+        'enumerateJstDateRange received fromDateJst (2026-03-08) greater than toDateJst (2026-03-06)',
+      )
+    })
   })
 
   describe('日付範囲SQLビルダの同一性', () => {

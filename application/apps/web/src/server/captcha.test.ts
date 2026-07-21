@@ -88,4 +88,15 @@ describe('assertCaptchaVerified', () => {
       await expect(promise).rejects.toMatchObject({ status: 403 })
     })
   })
+
+  describe('異常系', () => {
+    it('通信に失敗したときはHTTPException(500)を送出する', async () => {
+      fetchMock.mockRejectedValue(new Error('network down'))
+
+      const promise = assertCaptchaVerified('secret', 'token')
+
+      await expect(promise).rejects.toBeInstanceOf(HTTPException)
+      await expect(promise).rejects.toMatchObject({ status: 500, message: 'network down' })
+    })
+  })
 })

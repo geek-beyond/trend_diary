@@ -43,8 +43,8 @@ export async function assertCaptchaVerified(
   if (!secret) return
 
   const result = await verifyTurnstile(secret, token)
-  // 通信・解析の失敗はサーバ起因として errorHandler の 5xx 処理に委ねる
-  if (result.isErr()) throw result.error
+  // 通信・解析の失敗はサーバ起因のため 500 に写像する
+  if (result.isErr()) throw new HTTPException(500, { message: result.error.message })
   // 検証失敗(トークン不備・不正)はクライアント起因のため 403 を返す
   if (!result.value) throw new HTTPException(403, { message: 'captcha verification failed' })
 }

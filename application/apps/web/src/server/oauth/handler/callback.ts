@@ -4,6 +4,7 @@ import { ActiveUserNotFoundError, createAccountUseCase } from '@trend-diary/doma
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import { resolveLoginRedirectTarget } from '@trend-diary/std/sanitization'
 import { deleteCookie, getCookie } from 'hono/cookie'
+import { HTTPException } from 'hono/http-exception'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
 import throwHttpError from '@/server/error/account-error'
@@ -68,9 +69,9 @@ export default async function oauthCallback(
     logger.info('oauth login success', { provider, activeUserId: resolved.value.activeUserId })
     return c.redirect(redirectTarget, 302)
   }
-  // 未連携(ActiveUserNotFoundError)は初回ログインとして新規登録へ進む。それ以外はサーバ起因のため送出する
+  // 未連携(ActiveUserNotFoundError)は初回ログインとして新規登録へ進む。それ以外はサーバ起因のため 500 に写像する
   if (!(resolved.error instanceof ActiveUserNotFoundError)) {
-    throw resolved.error
+    throw new HTTPException(500, { message: resolved.error.message })
   }
 
   // 未連携の初回ログインは新規登録として扱う。メール未取得では登録できないため認証失敗として戻す

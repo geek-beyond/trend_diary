@@ -1,13 +1,13 @@
-import { InvalidCredentialsError, UnexpectedAuthError } from '@trend-diary/authentication'
+import { NoSessionError, UnexpectedAuthError } from '@trend-diary/authentication'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'
 import { captureThrow } from '@/test/helper/capture-throw'
 import throwHttpError from './error'
 
-describe('ログイン認証エラーの HTTP 写像', () => {
+describe('OAuth 認証エラーの HTTP 写像', () => {
   describe('準正常系', () => {
-    it('InvalidCredentialsError を HTTPException(401) へ写像しメッセージを引き継ぐこと', () => {
-      const error = new InvalidCredentialsError('invalid')
+    it('NoSessionError を HTTPException(401) へ写像しメッセージを引き継ぐこと', () => {
+      const error = new NoSessionError('no session')
 
       const thrown = captureThrow(() => throwHttpError(error))
 

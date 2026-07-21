@@ -1,5 +1,6 @@
 import type * as AuthModule from '@trend-diary/authentication'
-import { type AuthError, UnexpectedAuthError } from '@trend-diary/authentication'
+import { type AuthError, NoSessionError, UnexpectedAuthError } from '@trend-diary/authentication'
+import { HTTPException } from 'hono/http-exception'
 import { err, ok, type Result } from 'neverthrow'
 import CONTEXT_KEY from '@/middleware/context'
 import { createOAuthStartHandler, type OAuthStartContext } from './oauth-start'
@@ -118,17 +119,19 @@ describe('createOAuthStartHandler', () => {
     })
   })
 
-  describe('異常系', () => {
-    // OAuth の開始失敗はサーバ起因(UnexpectedAuthError 等)なので HTTP へ写像せず、errorHandler の 5xx 処理へ委ねる
-    it('startが失敗すると元のエラーをそのまま投げること', async () => {
-      const error = new UnexpectedAuthError('unexpected')
+  describe('準正常系', () => {
+    it.each([
+      { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
+      { name: 'UnexpectedAuthError', error: new UnexpectedAuthError('unexpected'), status: 500 },
+    ])('startが$nameを返すとHTTPException($status)を投げること', async ({ error, status }) => {
       const handler = createOAuthStartHandler(baseConfig(err(error)))
 
       const { c } = buildContext()
       // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
       const thrown = await handler(c).catch((e: unknown) => e)
 
-      expect(thrown).toBe(error)
+      expect(thrown).toBeInstanceOf(HTTPException)
+      expect(thrown).toMatchObject({ status, message: error.message })
     })
   })
 })

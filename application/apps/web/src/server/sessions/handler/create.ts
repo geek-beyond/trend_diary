@@ -1,12 +1,14 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/account'
+import { authInputSchema, createAccountUseCase } from '@trend-diary/domain/account'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { assertCaptchaVerified } from '@/server/auth/captcha'
-import type { authInputValidator } from '@/server/auth/validators'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
+import { assertCaptchaVerified } from '@/server/captcha'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
+
+// signup / login で同一スキーマを共有するため単一の validator を使い回す
+export const authInputValidator = zodValidator('json', authInputSchema)
 
 // 暫定: 認証ハンドラの契約由来の構造一致（registrations の create / passkeyLoginVerify との類似）を
 // 共通化で解消するまで検出を抑制する。恒久対応は #1015

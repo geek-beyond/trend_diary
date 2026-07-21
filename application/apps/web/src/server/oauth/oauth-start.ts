@@ -23,9 +23,6 @@ type OAuthFlow = (typeof OAUTH_FLOW)[keyof typeof OAUTH_FLOW]
 
 export type OAuthStartContext = ZodValidatedContext<[typeof oauthProviderParamValidator]>
 
-// 認可開始（ログイン/連携）は「認可URLを発行し、フロー種別と戻り先をCookieへ載せてプロバイダへ302で送る」
-// 形が同一のため、差分だけを設定として受けるoauthモジュール内ファクトリーに集約する。
-// ログイン開始だけがredirectクエリのvalidatorを追加で持つため、コンテキスト型は型引数で受ける
 export function createOAuthStartHandler<
   TContext extends OAuthStartContext = OAuthStartContext,
 >(config: {

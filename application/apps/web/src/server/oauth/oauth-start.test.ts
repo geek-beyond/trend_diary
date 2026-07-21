@@ -55,7 +55,6 @@ function findSetCookie(setCookies: string[], prefix: string): string {
   return setCookies.find((cookie) => cookie.startsWith(prefix)) ?? ''
 }
 
-// start が返しうるエラーは OAuthClient の実エラー(UnexpectedAuthError)に限られるため、Error でぼかさない
 function baseConfig(result: Result<{ url: string }, UnexpectedAuthError>) {
   return {
     start: () => Promise.resolve(result),

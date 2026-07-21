@@ -1,5 +1,4 @@
 import {
-  NoSessionError,
   PasskeyClient,
   PasskeyRegistrationError,
   PasskeyVerificationError,
@@ -86,7 +85,6 @@ describe('createPasskeyActionHandler', () => {
         error: new PasskeyVerificationError('verification failed'),
         status: 401,
       },
-      { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
     ])(
       'execute が $name を返すと境界で HTTPException へ写像して投げ respond を呼ばないこと',
       async ({ error, status }) => {

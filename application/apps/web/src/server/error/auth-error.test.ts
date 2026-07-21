@@ -2,8 +2,6 @@ import {
   type AuthError,
   InvalidCredentialsError,
   NoSessionError,
-  PasskeyRegistrationError,
-  PasskeyVerificationError,
   UnexpectedAuthError,
   UserAlreadyExistsError,
 } from '@trend-diary/authentication'
@@ -21,16 +19,6 @@ describe('認証集約のエラーの HTTP 写像', () => {
         status: 401,
       },
       { name: 'UserAlreadyExistsError', error: new UserAlreadyExistsError('exists'), status: 409 },
-      {
-        name: 'PasskeyRegistrationError',
-        error: new PasskeyRegistrationError('register'),
-        status: 400,
-      },
-      {
-        name: 'PasskeyVerificationError',
-        error: new PasskeyVerificationError('verify'),
-        status: 401,
-      },
       { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
     ]
 

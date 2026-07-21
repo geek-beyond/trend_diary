@@ -7,7 +7,6 @@ import { deleteCookie, getCookie } from 'hono/cookie'
 import { HTTPException } from 'hono/http-exception'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/error/account-error'
 import {
   OAUTH_COOKIE_OPTIONS,
   OAUTH_FLOW,
@@ -83,7 +82,8 @@ export default async function oauthCallback(
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
   const registered = await accountUseCase.registerActiveUser(email, authenticationId, notifier)
   if (registered.isErr()) {
-    throwHttpError(registered.error)
+    // 認証後の active_user 作成失敗はサーバ起因のため 500 に写像する
+    throw new HTTPException(500, { message: registered.error.message })
   }
 
   logger.info('oauth signup success', { provider, activeUserId: registered.value.activeUserId })

@@ -40,7 +40,6 @@ function buildContext(options: BuildContextOptions = {}): {
     req: {
       valid: () => ({ provider: 'github' }),
       url: 'http://localhost/api/oauth/github/login',
-      raw: new Request('http://localhost/api/oauth/github/login'),
     },
     header: (_name: string, value: string) => {
       setCookies.push(value)
@@ -60,7 +59,7 @@ function baseConfig(result: Result<{ url: string }, AuthError>) {
   return {
     start: () => Promise.resolve(result),
     flow: OAUTH_FLOW.login,
-    resolveRedirectTarget: () => undefined,
+    setRedirectCookie: () => {},
   }
 }
 
@@ -105,29 +104,18 @@ describe('createOAuthStartHandler', () => {
       },
     )
 
-    it('戻り先が解決できたら戻り先Cookieに保存すること', async () => {
+    // 戻り先Cookieの保存/クリアはフローごとの仕様のため、各ハンドラーのテストで検証する
+    it('戻り先Cookieの制御を設定に委譲してコンテキストを渡すこと', async () => {
+      const setRedirectCookie = vi.fn()
       const handler = createOAuthStartHandler({
         ...baseConfig(ok({ url: AUTHORIZE_URL })),
-        resolveRedirectTarget: () => '/settings',
+        setRedirectCookie,
       })
 
-      const { c, setCookies } = buildContext()
+      const { c } = buildContext()
       await handler(c)
 
-      expect(findSetCookie(setCookies, 'oauth_redirect_to=')).toContain(
-        'oauth_redirect_to=%2Fsettings',
-      )
-    })
-
-    it('戻り先が解決できなければ残存する戻り先Cookieを削除すること', async () => {
-      const handler = createOAuthStartHandler(baseConfig(ok({ url: AUTHORIZE_URL })))
-
-      const { c, setCookies } = buildContext()
-      await handler(c)
-
-      const redirectCookie = findSetCookie(setCookies, 'oauth_redirect_to=')
-      expect(redirectCookie).toContain('oauth_redirect_to=;')
-      expect(redirectCookie).toContain('Max-Age=0')
+      expect(setRedirectCookie).toHaveBeenCalledWith(c)
     })
   })
 

@@ -4,7 +4,7 @@ import {
   OAuthClient,
   type OAuthProvider,
 } from '@trend-diary/authentication'
-import { deleteCookie, setCookie } from 'hono/cookie'
+import { setCookie } from 'hono/cookie'
 import type { Result } from 'neverthrow'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
@@ -15,7 +15,6 @@ import {
   OAUTH_COOKIE_OPTIONS,
   type OAUTH_FLOW,
   OAUTH_FLOW_COOKIE,
-  OAUTH_REDIRECT_COOKIE,
 } from '@/server/oauth/redirect'
 import type { oauthProviderParamValidator } from '@/server/oauth/schema'
 
@@ -32,7 +31,8 @@ export function createOAuthStartHandler<
     callbackUrl: string,
   ) => Promise<Result<{ url: string }, AuthError>>
   flow: OAuthFlow
-  resolveRedirectTarget: (c: TContext) => string | undefined
+  // 戻り先Cookieは保存/クリアの判断がフローごとに異なるため、ファクトリーに分岐を持ち込まず設定側で制御する
+  setRedirectCookie: (c: TContext) => void
 }) {
   return async (c: TContext) => {
     const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
@@ -43,14 +43,7 @@ export function createOAuthStartHandler<
     if (result.isErr()) handleError(toAuthError(result.error), logger)
 
     setCookie(c, OAUTH_FLOW_COOKIE, config.flow, OAUTH_COOKIE_OPTIONS)
-
-    const redirectTarget = config.resolveRedirectTarget(c)
-    if (redirectTarget) {
-      setCookie(c, OAUTH_REDIRECT_COOKIE, redirectTarget, OAUTH_COOKIE_OPTIONS)
-    } else {
-      // 直前の未完了フローの戻り先が残っていると誤った画面へ戻すため、必ずクリアする
-      deleteCookie(c, OAUTH_REDIRECT_COOKIE, { path: OAUTH_COOKIE_OPTIONS.path })
-    }
+    config.setRedirectCookie(c)
 
     return c.redirect(result.value.url, 302)
   }

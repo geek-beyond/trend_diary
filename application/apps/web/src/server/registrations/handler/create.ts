@@ -1,13 +1,14 @@
 import { authClientConfig, PasswordAuthClient } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/account'
+import { authInputSchema, createAccountUseCase } from '@trend-diary/domain/account'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { assertCaptchaVerified } from '@/server/auth/captcha'
-import type { authInputValidator } from '@/server/auth/validators'
+import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
+import { assertCaptchaVerified } from '@/server/captcha'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
+
+export const authInputValidator = zodValidator('json', authInputSchema)
 
 export default async function createRegistration(
   c: ZodValidatedContext<[typeof authInputValidator]>,

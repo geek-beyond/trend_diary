@@ -24,7 +24,7 @@ const AUTH_ERROR_STATUS = new Map<
 
 // 認証ドメインエラーを対応する HTTPException として送出する。
 // 対応表に無い認証エラー(想定外)はサーバ起因として errorHandler の 5xx 処理に委ねる。
-export default function throwAuthHttpError(error: AuthError): never {
+export default function throwHttpError(error: AuthError): never {
   for (const [ErrorClass, status] of AUTH_ERROR_STATUS) {
     if (error instanceof ErrorClass) {
       throw new HTTPException(status, { message: error.message })

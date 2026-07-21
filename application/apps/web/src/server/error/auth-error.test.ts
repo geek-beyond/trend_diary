@@ -9,9 +9,9 @@ import {
 } from '@trend-diary/authentication'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'
-import throwAuthHttpError from './auth-error'
+import throwHttpError from './auth-error'
 
-// throwAuthHttpError は never を返して throw するため、投げられた値を捕捉して検証する
+// throwHttpError は never を返して throw するため、投げられた値を捕捉して検証する
 // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
 const captureThrow = (fn: () => never): unknown => {
   try {
@@ -22,7 +22,7 @@ const captureThrow = (fn: () => never): unknown => {
   }
 }
 
-describe('throwAuthHttpError', () => {
+describe('throwHttpError', () => {
   describe('準正常系', () => {
     const cases: Array<{ name: string; error: AuthError; status: number }> = [
       {
@@ -47,7 +47,7 @@ describe('throwAuthHttpError', () => {
     it.each(cases)(
       '$name は対応する HTTPException を投げメッセージを引き継ぐこと',
       ({ error, status }) => {
-        const thrown = captureThrow(() => throwAuthHttpError(error))
+        const thrown = captureThrow(() => throwHttpError(error))
 
         expect(thrown).toBeInstanceOf(HTTPException)
         expect(thrown).toMatchObject({ status, message: error.message })
@@ -59,7 +59,7 @@ describe('throwAuthHttpError', () => {
     it('対応表に無い認証エラーは HTTPException に写像せず元のエラーをそのまま投げること', () => {
       const error = new UnexpectedAuthError('boom')
 
-      const thrown = captureThrow(() => throwAuthHttpError(error))
+      const thrown = captureThrow(() => throwHttpError(error))
 
       expect(thrown).toBe(error)
     })

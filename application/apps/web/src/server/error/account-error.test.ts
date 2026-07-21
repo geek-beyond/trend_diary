@@ -1,9 +1,9 @@
 import { ActiveUserNotFoundError } from '@trend-diary/domain/account'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'
-import throwAccountHttpError from './account-error'
+import throwHttpError from './account-error'
 
-// throwAccountHttpError は never を返して throw するため、投げられた値を捕捉して検証する
+// throwHttpError は never を返して throw するため、投げられた値を捕捉して検証する
 // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
 const captureThrow = (fn: () => never): unknown => {
   try {
@@ -14,12 +14,12 @@ const captureThrow = (fn: () => never): unknown => {
   }
 }
 
-describe('throwAccountHttpError', () => {
+describe('throwHttpError', () => {
   describe('準正常系', () => {
     it('ActiveUserNotFoundError は HTTPException(404) を投げメッセージを引き継ぐこと', () => {
       const error = new ActiveUserNotFoundError('User not found')
 
-      const thrown = captureThrow(() => throwAccountHttpError(error))
+      const thrown = captureThrow(() => throwHttpError(error))
 
       expect(thrown).toBeInstanceOf(HTTPException)
       expect(thrown).toMatchObject({ status: 404, message: error.message })
@@ -30,7 +30,7 @@ describe('throwAccountHttpError', () => {
     it('対応表に無いエラーは HTTPException に写像せず元のエラーをそのまま投げること', () => {
       const error = new Error('db down')
 
-      const thrown = captureThrow(() => throwAccountHttpError(error))
+      const thrown = captureThrow(() => throwHttpError(error))
 
       expect(thrown).toBe(error)
     })

@@ -1,5 +1,5 @@
-import { LoginForm, type LoginFormProps } from '@/client/features/authenticate/login'
 import { GithubAuthButton } from '@/client/features/github-auth'
+import { LoginForm, type LoginFormProps } from '@/client/features/login'
 import { PasskeyLoginButton } from '@/client/features/passkey'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/shadcn/card'
 import Footer from '../../components/ui/layout/footer'

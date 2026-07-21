@@ -55,7 +55,7 @@ describe('CSRF対策ミドルウェア', () => {
       cases.forEach(({ name, headers, status }) => {
         it(name, async () => {
           const res = await app.request(
-            '/api/auth/login',
+            '/api/sessions',
             { method: 'POST', headers, body },
             TEST_ENV,
           )

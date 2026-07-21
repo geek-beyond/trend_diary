@@ -5,6 +5,7 @@ import { DiscordWebhookClient } from '@trend-diary/notification'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { assertCaptchaVerified } from '@/server/captcha'
+import unwrapOrThrowHttp from '@/server/error/unwrap-or-throw-http'
 import throwHttpError from '@/server/registrations/error'
 
 export const authInputValidator = zodValidator('json', authInputSchema)
@@ -18,10 +19,10 @@ export default async function createRegistration(
   await assertCaptchaVerified(c.env.TURNSTILE_SECRET_KEY, valid.captchaToken)
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
-  const userResult = await authClient.signUp({ email: valid.email, password: valid.password })
-  if (userResult.isErr()) throwHttpError(userResult.error)
-
-  const user = userResult.value
+  const user = unwrapOrThrowHttp(
+    await authClient.signUp({ email: valid.email, password: valid.password }),
+    throwHttpError,
+  )
 
   // ロールバック不能な認証ユーザー作成が成功したときだけ、アカウント作成のドメイン処理を呼ぶ
   // NOTE: ここで失敗すると認証側に孤児ユーザーが残る。同期補償(認証ユーザーの削除)はSupabaseの
@@ -31,14 +32,12 @@ export default async function createRegistration(
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
-  const result = await accountUseCase.registerActiveUser(
-    user.email ?? valid.email,
-    user.id,
-    notifier,
+  const registered = unwrapOrThrowHttp(
+    await accountUseCase.registerActiveUser(user.email ?? valid.email, user.id, notifier),
+    throwHttpError,
   )
-  if (result.isErr()) throwHttpError(result.error)
 
-  logger.info('registration created', { activeUserId: result.value.activeUserId })
+  logger.info('registration created', { activeUserId: registered.activeUserId })
 
   return c.json({}, 201)
 }

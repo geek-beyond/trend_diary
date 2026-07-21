@@ -1,10 +1,9 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
 import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
-import getRdbClient from '@trend-diary/datastore/rdb'
-import { createAccountUseCase } from '@trend-diary/domain/account'
 import { z } from 'zod'
-import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
+import respondActiveUserLogin from '@/server/active-user-login'
+import unwrapOrThrowHttp from '@/server/error/unwrap-or-throw-http'
 import throwHttpError from '@/server/passkey/error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
@@ -23,28 +22,16 @@ export const passkeyAuthenticationVerifyValidator = zodValidator(
 export default async function passkeyAuthenticationVerify(
   c: ZodValidatedContext<[typeof passkeyAuthenticationVerifyValidator]>,
 ) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
   const valid = c.req.valid('json')
 
   const passkeyClient = new PasskeyClient(authClientConfig(c))
-  const userResult = await passkeyClient.verifyAuthentication({
-    challengeId: valid.challengeId,
-    credential: valid.credential,
-  })
-  if (userResult.isErr()) throwHttpError(userResult.error)
-
-  const rdb = getRdbClient(c.env.DB)
-  const accountUseCase = createAccountUseCase(rdb)
-  // 認証成功後に active_user が無いのは孤児 auth ユーザー等のサーバ不整合なので、404 ではなく 500 に倒す
-  const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
-  if (activeUserResult.isErr()) throwHttpError(activeUserResult.error)
-
-  logger.info('passkey login success', { activeUserId: activeUserResult.value.activeUserId })
-
-  return c.json(
-    {
-      displayName: activeUserResult.value.displayName,
-    },
-    200,
+  const user = unwrapOrThrowHttp(
+    await passkeyClient.verifyAuthentication({
+      challengeId: valid.challengeId,
+      credential: valid.credential,
+    }),
+    throwHttpError,
   )
+
+  return respondActiveUserLogin(c, user.id, throwHttpError, 'passkey login success')
 }

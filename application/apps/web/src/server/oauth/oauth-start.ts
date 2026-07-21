@@ -15,7 +15,6 @@ type OAuthFlow = (typeof OAUTH_FLOW)[keyof typeof OAUTH_FLOW]
 
 export type OAuthStartContext = ZodValidatedContext<[typeof oauthProviderParamValidator]>
 
-// エラー型は start が実際に返す具象型を TError で受け、HTTP 写像(throwHttpError)へそのまま渡す
 export function createOAuthStartHandler<
   TContext extends OAuthStartContext = OAuthStartContext,
   TError extends Error = Error,

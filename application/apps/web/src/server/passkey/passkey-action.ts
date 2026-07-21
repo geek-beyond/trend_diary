@@ -6,7 +6,6 @@ import throwHttpError from '@/server/passkey/error'
 
 export type PasskeyActionContext = Context<Env>
 
-// エラー型は execute が実際に返す具象型を TError で受け、HTTP 写像(throwHttpError)へそのまま渡す
 export function createPasskeyActionHandler<TOutput, TResponse, TError extends Error>(config: {
   execute: (passkeyClient: PasskeyClient) => Promise<Result<TOutput, TError>>
   respond: (c: PasskeyActionContext, output: TOutput) => TResponse

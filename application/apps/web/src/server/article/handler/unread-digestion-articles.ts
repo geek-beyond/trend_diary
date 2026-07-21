@@ -4,7 +4,7 @@ import { mediaListSchema } from '@trend-diary/domain/article/schema/query-schema
 import { z } from 'zod'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/error/article-error'
+import throwHttpError from '@/server/article/error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 interface UnreadDigestionArticlesResponse {

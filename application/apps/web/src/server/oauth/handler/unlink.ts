@@ -1,7 +1,6 @@
 import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { HTTPException } from 'hono/http-exception'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/error/auth-error'
 import type { oauthProviderParamValidator } from '@/server/oauth/schema'
 
 export default async function oauthUnlink(
@@ -11,7 +10,7 @@ export default async function oauthUnlink(
 
   const oauthClient = new OAuthClient(authClientConfig(c))
   const identitiesResult = await oauthClient.listIdentities()
-  if (identitiesResult.isErr()) throwHttpError(identitiesResult.error)
+  if (identitiesResult.isErr()) throw identitiesResult.error
 
   const identities = identitiesResult.value
   const target = identities.find((identity) => identity.provider === provider)
@@ -25,7 +24,7 @@ export default async function oauthUnlink(
   }
 
   const unlinkResult = await oauthClient.unlinkIdentity(target)
-  if (unlinkResult.isErr()) throwHttpError(unlinkResult.error)
+  if (unlinkResult.isErr()) throw unlinkResult.error
 
   return c.body(null, 204)
 }

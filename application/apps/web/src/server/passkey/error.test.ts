@@ -6,7 +6,7 @@ import {
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'
 import { captureThrow } from '@/test/helper/capture-throw'
-import throwHttpError from './passkey-error'
+import throwHttpError from './error'
 
 describe('パスキー認証エラーの HTTP 写像', () => {
   describe('準正常系', () => {
@@ -30,7 +30,7 @@ describe('パスキー認証エラーの HTTP 写像', () => {
   })
 
   describe('異常系', () => {
-    it('対応表に無いエラーは写像せず元のエラーをそのまま投げること', () => {
+    it('写像先を持たないエラーは元のエラーをそのまま投げること', () => {
       const error = new UnexpectedAuthError('boom')
 
       const thrown = captureThrow(() => throwHttpError(error))

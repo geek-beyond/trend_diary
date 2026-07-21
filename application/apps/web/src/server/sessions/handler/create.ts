@@ -5,7 +5,7 @@ import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { assertCaptchaVerified } from '@/server/captcha'
 import throwAccountHttpError from '@/server/error/account-error'
-import throwAuthHttpError from '@/server/error/auth-error'
+import throwHttpError from '@/server/sessions/error'
 
 export const authInputValidator = zodValidator('json', authInputSchema)
 
@@ -20,7 +20,7 @@ export default async function createSession(c: ZodValidatedContext<[typeof authI
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const loginResult = await authClient.signIn({ email: valid.email, password: valid.password })
-  if (loginResult.isErr()) throwAuthHttpError(loginResult.error)
+  if (loginResult.isErr()) throwHttpError(loginResult.error)
 
   const user = loginResult.value
 

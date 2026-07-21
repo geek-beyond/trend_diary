@@ -2,7 +2,7 @@ import { type AuthError, authClientConfig, PasskeyClient } from '@trend-diary/au
 import type { Context } from 'hono'
 import type { Result } from 'neverthrow'
 import type { Env } from '@/env'
-import throwHttpError from '@/server/error/passkey-error'
+import throwHttpError from '@/server/passkey/error'
 
 export type PasskeyActionContext = Context<Env>
 

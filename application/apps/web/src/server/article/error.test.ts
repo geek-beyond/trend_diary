@@ -1,8 +1,8 @@
-import { ArticleNotFoundError } from '@trend-diary/domain/article'
+import { ArticleNotFoundError, ArticleRepositoryError } from '@trend-diary/domain/article'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'
 import { captureThrow } from '@/test/helper/capture-throw'
-import throwHttpError from './article-error'
+import throwHttpError from './error'
 
 describe('記事集約のエラーの HTTP 写像', () => {
   describe('準正常系', () => {
@@ -13,6 +13,16 @@ describe('記事集約のエラーの HTTP 写像', () => {
 
       expect(thrown).toBeInstanceOf(HTTPException)
       expect(thrown).toMatchObject({ status: 404, message: error.message })
+    })
+  })
+
+  describe('異常系', () => {
+    it('写像先を持たないエラーは元のエラーをそのまま投げること', () => {
+      const error = new ArticleRepositoryError(new Error('db down'))
+
+      const thrown = captureThrow(() => throwHttpError(error))
+
+      expect(thrown).toBe(error)
     })
   })
 })

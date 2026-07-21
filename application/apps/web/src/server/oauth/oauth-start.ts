@@ -7,7 +7,6 @@ import {
 import { setCookie } from 'hono/cookie'
 import type { Result } from 'neverthrow'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/error/auth-error'
 import {
   buildOAuthCallbackUrl,
   OAUTH_COOKIE_OPTIONS,
@@ -37,7 +36,7 @@ export function createOAuthStartHandler<
 
     const oauthClient = new OAuthClient(authClientConfig(c))
     const result = await config.start(oauthClient, provider, buildOAuthCallbackUrl(c, provider))
-    if (result.isErr()) throwHttpError(result.error)
+    if (result.isErr()) throw result.error
 
     setCookie(c, OAUTH_FLOW_COOKIE, config.flow, OAUTH_COOKIE_OPTIONS)
     config.setRedirectCookie(c)

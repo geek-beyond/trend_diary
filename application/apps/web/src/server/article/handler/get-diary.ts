@@ -11,7 +11,7 @@ import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/error/article-error'
+import throwHttpError from '@/server/article/error'
 
 const DATE_STRING_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const DIARY_DATE_MESSAGE = 'date must be a valid JST date'

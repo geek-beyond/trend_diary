@@ -6,7 +6,7 @@ import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import throwAccountHttpError from '@/server/error/account-error'
-import throwPasskeyHttpError from '@/server/error/passkey-error'
+import throwPasskeyHttpError from '@/server/passkey/error'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
 export const passkeyAuthenticationVerifyInputSchema = z.object({

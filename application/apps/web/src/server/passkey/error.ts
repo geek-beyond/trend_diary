@@ -1,5 +1,5 @@
 import { PasskeyRegistrationError, PasskeyVerificationError } from '@trend-diary/authentication'
-import throwHttpErrorByTable, { type ErrorStatusTable } from './throw-http-error'
+import throwHttpErrorByTable, { type ErrorStatusTable } from '@/server/error/throw-http-error'
 
 const ERROR_STATUS_TABLE: ErrorStatusTable = [
   [PasskeyRegistrationError, 400],

@@ -1,5 +1,5 @@
 import { ArticleNotFoundError } from '@trend-diary/domain/article'
-import throwHttpErrorByTable, { type ErrorStatusTable } from './throw-http-error'
+import throwHttpErrorByTable, { type ErrorStatusTable } from '@/server/error/throw-http-error'
 
 const ERROR_STATUS_TABLE: ErrorStatusTable = [[ArticleNotFoundError, 404]]
 

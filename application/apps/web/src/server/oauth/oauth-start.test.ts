@@ -1,6 +1,5 @@
 import type * as AuthModule from '@trend-diary/authentication'
-import { type AuthError, NoSessionError, UnexpectedAuthError } from '@trend-diary/authentication'
-import { HTTPException } from 'hono/http-exception'
+import { type AuthError, UnexpectedAuthError } from '@trend-diary/authentication'
 import { err, ok, type Result } from 'neverthrow'
 import CONTEXT_KEY from '@/middleware/context'
 import { createOAuthStartHandler, type OAuthStartContext } from './oauth-start'
@@ -119,22 +118,9 @@ describe('createOAuthStartHandler', () => {
     })
   })
 
-  describe('準正常系', () => {
-    it('startが対応表にある認証エラーを返すと境界で HTTPException へ写像して投げること', async () => {
-      const handler = createOAuthStartHandler(baseConfig(err(new NoSessionError('no session'))))
-
-      const { c } = buildContext()
-      // oxlint-disable-next-line typescript/no-restricted-types -- catch は任意の値を受けるため unknown 以外に書けないため
-      const thrown = await handler(c).catch((e: unknown) => e)
-
-      expect(thrown).toBeInstanceOf(HTTPException)
-      expect(thrown).toMatchObject({ status: 401 })
-    })
-  })
-
   describe('異常系', () => {
-    // 対応表に無い認証エラーは HTTP へ写像せず、errorHandler の 5xx 処理へ委ねる
-    it('startが写像先を持たない認証エラーを返すと元のエラーをそのまま投げること', async () => {
+    // OAuth の開始失敗はサーバ起因(UnexpectedAuthError 等)なので HTTP へ写像せず、errorHandler の 5xx 処理へ委ねる
+    it('startが失敗すると元のエラーをそのまま投げること', async () => {
       const error = new UnexpectedAuthError('unexpected')
       const handler = createOAuthStartHandler(baseConfig(err(error)))
 

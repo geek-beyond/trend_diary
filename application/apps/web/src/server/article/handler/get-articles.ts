@@ -11,7 +11,7 @@ import { offsetPaginationSchema } from '@trend-diary/std/pagination'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/error/article-error'
+import throwHttpError from '@/server/article/error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 const readStatusEnum = z.enum(['0', '1'])

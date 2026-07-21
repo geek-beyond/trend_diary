@@ -3,7 +3,7 @@ import { createArticleUseCase } from '@trend-diary/domain/article'
 import type { Result } from 'neverthrow'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/error/article-error'
+import throwHttpError from '@/server/article/error'
 import type { articleIdParamValidator } from './handler/read-article'
 
 type ArticleUseCase = ReturnType<typeof createArticleUseCase>

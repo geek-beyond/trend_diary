@@ -8,7 +8,7 @@ import { assertCaptchaVerified } from '@/server/captcha'
 import toAuthError from '@/server/error/auth-error'
 import { handleError } from '@/server/error/handle-error'
 
-// signup / login で同一スキーマを共有するため単一の validator を使い回す
+// signup / login は同一の入力スキーマを共有する
 export const authInputValidator = zodValidator('json', authInputSchema)
 
 export default async function createRegistration(

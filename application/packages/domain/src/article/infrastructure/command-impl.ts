@@ -32,7 +32,7 @@ export default class CommandImpl implements Command {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, Error | ArticleNotFoundError>> {
+  ): Promise<Result<ReadHistory, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
@@ -70,7 +70,7 @@ export default class CommandImpl implements Command {
   async deleteAllReadHistory(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<void, Error | ArticleNotFoundError>> {
+  ): Promise<Result<void, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 
@@ -113,7 +113,7 @@ export default class CommandImpl implements Command {
   async createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, Error | ArticleNotFoundError>> {
+  ): Promise<Result<SkippedArticle, Error>> {
     const dbActiveUserId = toDbId(activeUserId)
     const dbArticleId = toDbId(articleId)
 

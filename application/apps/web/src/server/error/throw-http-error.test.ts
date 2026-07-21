@@ -11,11 +11,10 @@ import { ArticleNotFoundError } from '@trend-diary/domain/article'
 import { HTTPException } from 'hono/http-exception'
 import { describe, expect, it } from 'vitest'
 import { captureThrow } from '@/test/helper/capture-throw'
-import throwHttpError, {
-  ACCOUNT_ERROR_STATUS,
-  ARTICLE_ERROR_STATUS,
-  AUTH_ERROR_STATUS,
-} from './throw-http-error'
+import { ACCOUNT_ERROR_STATUS_TABLE } from './account-error-status'
+import { ARTICLE_ERROR_STATUS_TABLE } from './article-error-status'
+import { AUTH_ERROR_STATUS_TABLE } from './auth-error-status'
+import throwHttpError from './throw-http-error'
 
 describe('throwHttpError', () => {
   describe('準正常系', () => {
@@ -38,9 +37,9 @@ describe('throwHttpError', () => {
       },
       { name: 'NoSessionError', error: new NoSessionError('no session'), status: 401 },
     ])(
-      'AUTH_ERROR_STATUS で $name を HTTPException($status) へ写像すること',
+      'AUTH_ERROR_STATUS_TABLE で $name を HTTPException($status) へ写像すること',
       ({ error, status }) => {
-        const thrown = captureThrow(() => throwHttpError(error, AUTH_ERROR_STATUS))
+        const thrown = captureThrow(() => throwHttpError(error, AUTH_ERROR_STATUS_TABLE))
 
         expect(thrown).toBeInstanceOf(HTTPException)
         expect(thrown).toMatchObject({ status, message: error.message })
@@ -50,12 +49,12 @@ describe('throwHttpError', () => {
     it.each([
       {
         name: 'ArticleNotFoundError',
-        table: ARTICLE_ERROR_STATUS,
+        table: ARTICLE_ERROR_STATUS_TABLE,
         error: new ArticleNotFoundError('article not found'),
       },
       {
         name: 'ActiveUserNotFoundError',
-        table: ACCOUNT_ERROR_STATUS,
+        table: ACCOUNT_ERROR_STATUS_TABLE,
         error: new ActiveUserNotFoundError('user not found'),
       },
     ])('$name を HTTPException(404) へ写像しメッセージを引き継ぐこと', ({ table, error }) => {
@@ -70,7 +69,7 @@ describe('throwHttpError', () => {
     it('対応表に無いエラーは HTTPException に写像せず元のエラーをそのまま投げること', () => {
       const error = new UnexpectedAuthError('boom')
 
-      const thrown = captureThrow(() => throwHttpError(error, AUTH_ERROR_STATUS))
+      const thrown = captureThrow(() => throwHttpError(error, AUTH_ERROR_STATUS_TABLE))
 
       expect(thrown).toBe(error)
     })

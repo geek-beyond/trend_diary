@@ -23,9 +23,7 @@ export class AccountUseCase {
     )
   }
 
-  async resolveActiveUser(
-    authenticationId: string,
-  ): Promise<Result<CurrentUser, Error | ActiveUserNotFoundError>> {
+  async resolveActiveUser(authenticationId: string): Promise<Result<CurrentUser, Error>> {
     const activeUserResult = await this.userQuery.findActiveByAuthenticationId(authenticationId)
 
     if (activeUserResult.isErr()) {

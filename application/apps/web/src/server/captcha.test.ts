@@ -15,7 +15,7 @@ afterEach(() => {
 
 describe('verifyTurnstile', () => {
   describe('正常系', () => {
-    it('siteverifyがsuccess:trueを返す場合はok(true)を返す', async () => {
+    it('トークンが有効なら検証を通す', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: true })))
 
       const result = await verifyTurnstile('secret', 'valid-token')
@@ -29,14 +29,14 @@ describe('verifyTurnstile', () => {
   })
 
   describe('準正常系', () => {
-    it('secret設定済みでtokenが無い場合はok(false)を返す', async () => {
+    it('トークンが無い場合は検証を通さない', async () => {
       const result = await verifyTurnstile('secret', undefined)
 
       expect(result._unsafeUnwrap()).toBe(false)
       expect(fetchMock).not.toHaveBeenCalled()
     })
 
-    it('siteverifyがsuccess:falseを返す場合はok(false)を返す', async () => {
+    it('トークンが無効なら検証を通さない', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: false })))
 
       const result = await verifyTurnstile('secret', 'invalid-token')
@@ -46,7 +46,7 @@ describe('verifyTurnstile', () => {
   })
 
   describe('異常系', () => {
-    it('fetchが例外を投げる場合はerrを返す', async () => {
+    it('siteverifyとの通信に失敗したときは検証できずに失敗する', async () => {
       fetchMock.mockRejectedValue(new Error('network down'))
 
       const result = await verifyTurnstile('secret', 'token')
@@ -54,7 +54,7 @@ describe('verifyTurnstile', () => {
       expect(result._unsafeUnwrapErr().message).toBe('network down')
     })
 
-    it('レスポンスのJSON解析に失敗する場合はerrを返す', async () => {
+    it('siteverifyの応答を解析できないときは検証できずに失敗する', async () => {
       fetchMock.mockResolvedValue(new Response('not-json'))
 
       const result = await verifyTurnstile('secret', 'token')

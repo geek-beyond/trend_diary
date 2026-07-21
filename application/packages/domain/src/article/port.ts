@@ -1,7 +1,6 @@
 import type { OffsetPaginationResult } from '@trend-diary/std/pagination'
 import type { Nullable } from '@trend-diary/std/types/utility'
 import { type Result } from 'neverthrow'
-import type { ArticleNotFoundError } from './error'
 import type { ArticleMedia } from './media'
 import type {
   Article,
@@ -54,7 +53,7 @@ export interface Command {
     activeUserId: bigint,
     articleId: bigint,
     readAt: Date,
-  ): Promise<Result<ReadHistory, Error | ArticleNotFoundError>>
+  ): Promise<Result<ReadHistory, Error>>
 
   /**
    * 記事をスキップ登録する。記事が存在しない場合は ArticleNotFoundError を返す
@@ -62,13 +61,10 @@ export interface Command {
   createSkippedArticle(
     activeUserId: bigint,
     articleId: bigint,
-  ): Promise<Result<SkippedArticle, Error | ArticleNotFoundError>>
+  ): Promise<Result<SkippedArticle, Error>>
 
   /**
    * 記事の既読履歴を全削除する。記事が存在しない場合は ArticleNotFoundError を返す
    */
-  deleteAllReadHistory(
-    activeUserId: bigint,
-    articleId: bigint,
-  ): Promise<Result<void, Error | ArticleNotFoundError>>
+  deleteAllReadHistory(activeUserId: bigint, articleId: bigint): Promise<Result<void, Error>>
 }

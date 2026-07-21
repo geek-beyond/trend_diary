@@ -11,7 +11,8 @@ import { offsetPaginationSchema } from '@trend-diary/std/pagination'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError, { ARTICLE_ERROR_STATUS } from '@/server/error/throw-http-error'
+import { ARTICLE_ERROR_STATUS_TABLE } from '@/server/error/article-error-status'
+import throwHttpError from '@/server/error/throw-http-error'
 import { type ArticleResponse, toArticleResponse } from '../article-response'
 
 const readStatusEnum = z.enum(['0', '1'])
@@ -53,7 +54,7 @@ export default async function getArticles(
     activeUserId,
   )
   if (result.isErr()) {
-    throwHttpError(result.error, ARTICLE_ERROR_STATUS)
+    throwHttpError(result.error, ARTICLE_ERROR_STATUS_TABLE)
   }
 
   const paginationResult = result.value

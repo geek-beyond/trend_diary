@@ -6,7 +6,8 @@ import { resolveLoginRedirectTarget } from '@trend-diary/std/sanitization'
 import { deleteCookie, getCookie } from 'hono/cookie'
 import CONTEXT_KEY from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError, { ACCOUNT_ERROR_STATUS } from '@/server/error/throw-http-error'
+import { ACCOUNT_ERROR_STATUS_TABLE } from '@/server/error/account-error-status'
+import throwHttpError from '@/server/error/throw-http-error'
 import {
   OAUTH_COOKIE_OPTIONS,
   OAUTH_FLOW,
@@ -82,7 +83,7 @@ export default async function oauthCallback(
   const notifier = new DiscordWebhookClient(c.env.DISCORD_WEBHOOK_URL, logger)
   const registered = await accountUseCase.registerActiveUser(email, authenticationId, notifier)
   if (registered.isErr()) {
-    throwHttpError(registered.error, ACCOUNT_ERROR_STATUS)
+    throwHttpError(registered.error, ACCOUNT_ERROR_STATUS_TABLE)
   }
 
   logger.info('oauth signup success', { provider, activeUserId: registered.value.activeUserId })

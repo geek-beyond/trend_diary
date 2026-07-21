@@ -8,8 +8,6 @@ import { handleError } from '@/server/error/handle-error'
 
 export type PasskeyActionContext = Context<Env>
 
-// ハンドラ契約由来の共通部分（ロガー取得→PasskeyClient生成→実行→AuthError変換）だけを集約する。
-// レスポンス整形はハンドラごとに異なるため respond として各ハンドラに残し、過剰抽象を避ける
 export function createPasskeyActionHandler<TOutput, TResponse>(config: {
   execute: (passkeyClient: PasskeyClient) => Promise<Result<TOutput, AuthError>>
   respond: (c: PasskeyActionContext, output: TOutput) => TResponse
@@ -25,8 +23,6 @@ export function createPasskeyActionHandler<TOutput, TResponse>(config: {
   }
 }
 
-// 登録・認証の options エンドポイントは WebAuthn ceremony 開始という同じ公開契約
-// （challengeId と options を返す）を持つため、レスポンス整形を共通化する
 export function respondChallengeOptions<TOptions>(
   c: PasskeyActionContext,
   started: { challenge_id: string; options: TOptions },

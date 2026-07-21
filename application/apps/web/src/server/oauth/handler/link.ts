@@ -1,31 +1,10 @@
-import { authClientConfig, OAuthClient } from '@trend-diary/authentication'
 import { setCookie } from 'hono/cookie'
-import CONTEXT_KEY from '@/middleware/context'
-import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import toAuthError from '@/server/error/auth-error'
-import { handleError } from '@/server/error/handle-error'
-import {
-  buildOAuthCallbackUrl,
-  OAUTH_COOKIE_OPTIONS,
-  OAUTH_FLOW,
-  OAUTH_FLOW_COOKIE,
-  OAUTH_REDIRECT_COOKIE,
-} from '@/server/oauth/redirect'
-import type { oauthProviderParamValidator } from '@/server/oauth/schema'
+import { createOAuthStartHandler } from '@/server/oauth/oauth-start'
+import { OAUTH_COOKIE_OPTIONS, OAUTH_FLOW, OAUTH_REDIRECT_COOKIE } from '@/server/oauth/redirect'
 
-export default async function oauthLink(
-  c: ZodValidatedContext<[typeof oauthProviderParamValidator]>,
-) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const { provider } = c.req.valid('param')
-
-  const oauthClient = new OAuthClient(authClientConfig(c))
-  const result = await oauthClient.startLink(provider, buildOAuthCallbackUrl(c, provider))
-  if (result.isErr()) handleError(toAuthError(result.error), logger)
-
+export default createOAuthStartHandler({
+  start: (oauthClient, provider, callbackUrl) => oauthClient.startLink(provider, callbackUrl),
+  flow: OAUTH_FLOW.link,
   // 連携は設定画面から始まる操作のため、完了後は設定画面へ戻す
-  setCookie(c, OAUTH_FLOW_COOKIE, OAUTH_FLOW.link, OAUTH_COOKIE_OPTIONS)
-  setCookie(c, OAUTH_REDIRECT_COOKIE, '/settings', OAUTH_COOKIE_OPTIONS)
-
-  return c.redirect(result.value.url, 302)
-}
+  setRedirectCookie: (c) => setCookie(c, OAUTH_REDIRECT_COOKIE, '/settings', OAUTH_COOKIE_OPTIONS),
+})

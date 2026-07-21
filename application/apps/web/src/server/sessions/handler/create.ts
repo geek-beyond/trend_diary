@@ -4,9 +4,8 @@ import { authInputSchema, createAccountUseCase } from '@trend-diary/domain/accou
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
 import { assertCaptchaVerified } from '@/server/captcha'
-import { ACCOUNT_ERROR_STATUS_TABLE } from '@/server/error/account-error-status'
-import { AUTH_ERROR_STATUS_TABLE } from '@/server/error/auth-error-status'
-import throwHttpError from '@/server/error/throw-http-error'
+import throwAccountHttpError from '@/server/error/account-error'
+import throwAuthHttpError from '@/server/error/auth-error'
 
 export const authInputValidator = zodValidator('json', authInputSchema)
 
@@ -21,14 +20,14 @@ export default async function createSession(c: ZodValidatedContext<[typeof authI
 
   const authClient = new PasswordAuthClient(authClientConfig(c))
   const loginResult = await authClient.signIn({ email: valid.email, password: valid.password })
-  if (loginResult.isErr()) throwHttpError(loginResult.error, AUTH_ERROR_STATUS_TABLE)
+  if (loginResult.isErr()) throwAuthHttpError(loginResult.error)
 
   const user = loginResult.value
 
   const rdb = getRdbClient(c.env.DB)
   const accountUseCase = createAccountUseCase(rdb)
   const result = await accountUseCase.resolveActiveUser(user.id)
-  if (result.isErr()) throwHttpError(result.error, ACCOUNT_ERROR_STATUS_TABLE)
+  if (result.isErr()) throwAccountHttpError(result.error)
 
   logger.info('session created', { activeUserId: result.value.activeUserId })
 

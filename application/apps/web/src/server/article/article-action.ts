@@ -3,8 +3,7 @@ import { createArticleUseCase } from '@trend-diary/domain/article'
 import type { Result } from 'neverthrow'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import type { ZodValidatedContext } from '@/middleware/zod-validator'
-import { ARTICLE_ERROR_STATUS_TABLE } from '@/server/error/article-error-status'
-import throwHttpError from '@/server/error/throw-http-error'
+import throwHttpError from '@/server/error/article-error'
 import type { articleIdParamValidator } from './handler/read-article'
 
 type ArticleUseCase = ReturnType<typeof createArticleUseCase>
@@ -27,7 +26,7 @@ export function createArticleActionHandler<TOutput, TStatus extends 200 | 201>(c
     const useCase = createArticleUseCase(getRdbClient(c.env.DB))
     const result = await config.execute(useCase, user.activeUserId, article_id)
     if (result.isErr()) {
-      throwHttpError(result.error, ARTICLE_ERROR_STATUS_TABLE)
+      throwHttpError(result.error)
     }
 
     logger.info({

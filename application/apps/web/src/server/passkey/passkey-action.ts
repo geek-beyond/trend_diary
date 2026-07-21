@@ -2,8 +2,7 @@ import { type AuthError, authClientConfig, PasskeyClient } from '@trend-diary/au
 import type { Context } from 'hono'
 import type { Result } from 'neverthrow'
 import type { Env } from '@/env'
-import { AUTH_ERROR_STATUS_TABLE } from '@/server/error/auth-error-status'
-import throwHttpError from '@/server/error/throw-http-error'
+import throwHttpError from '@/server/error/auth-error'
 
 export type PasskeyActionContext = Context<Env>
 
@@ -14,7 +13,7 @@ export function createPasskeyActionHandler<TOutput, TResponse>(config: {
   return async (c: PasskeyActionContext) => {
     const passkeyClient = new PasskeyClient(authClientConfig(c))
     const result = await config.execute(passkeyClient)
-    if (result.isErr()) throwHttpError(result.error, AUTH_ERROR_STATUS_TABLE)
+    if (result.isErr()) throwHttpError(result.error)
 
     return config.respond(c, result.value)
   }

@@ -5,8 +5,7 @@ import { DIARY_DAYS } from '@trend-diary/domain/article/diary'
 import { z } from 'zod'
 import CONTEXT_KEY, { mustGet } from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import { ARTICLE_ERROR_STATUS_TABLE } from '@/server/error/article-error-status'
-import throwHttpError from '@/server/error/throw-http-error'
+import throwHttpError from '@/server/error/article-error'
 
 const MS_PER_MINUTE = 60 * 1000
 const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE
@@ -65,7 +64,7 @@ export default async function readArticle(
 
   const result = await useCase.createReadHistory(user.activeUserId, article_id, new Date(read_at))
   if (result.isErr()) {
-    throwHttpError(result.error, ARTICLE_ERROR_STATUS_TABLE)
+    throwHttpError(result.error)
   }
 
   logger.info({

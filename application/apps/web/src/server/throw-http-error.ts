@@ -1,5 +1,6 @@
 import { HTTPException } from 'hono/http-exception'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
+import type { Result } from 'neverthrow'
 
 export type ErrorStatusTable = ReadonlyArray<
   readonly [abstract new (...args: never[]) => Error, ContentfulStatusCode]
@@ -14,4 +15,14 @@ export default function throwHttpErrorByTable(error: Error, statusTable: ErrorSt
     }
   }
   throw new HTTPException(500, { message: error.message })
+}
+
+// 認証ハンドラ群の契約由来の err 分岐の重複を畳むためのヘルパ。写像先を引数で受けるのは、
+// 各スライスのエラー対応表をハンドラ側に残したまま共通部分だけを束ねるため
+export function unwrapOrThrowHttp<T, E = Error>(
+  result: Result<T, E>,
+  throwHttpError: (error: E) => never,
+): T {
+  if (result.isErr()) throwHttpError(result.error)
+  return result.value
 }

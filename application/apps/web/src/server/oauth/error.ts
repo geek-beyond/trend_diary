@@ -1,5 +1,5 @@
 import { NoSessionError } from '@trend-diary/authentication'
-import throwHttpErrorByTable, { type ErrorStatusTable } from '@/server/error/throw-http-error'
+import throwHttpErrorByTable, { type ErrorStatusTable } from '@/server/throw-http-error'
 
 const ERROR_STATUS_TABLE: ErrorStatusTable = [[NoSessionError, 401]]
 

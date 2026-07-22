@@ -1,9 +1,8 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/browser'
-import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/passkey/error'
+import { createPasskeyActionHandler } from '../passkey-action'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは登録 ceremony 結果を素通しする
 export const passkeyRegistrationVerifyInputSchema = z.object({
@@ -18,20 +17,21 @@ export const passkeyRegistrationVerifyValidator = zodValidator(
   passkeyRegistrationVerifyInputSchema,
 )
 
-export default async function passkeyRegistrationVerify(
-  c: ZodValidatedContext<[typeof passkeyRegistrationVerifyValidator]>,
-) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const valid = c.req.valid('json')
+type PasskeyRegistrationVerifyContext = ZodValidatedContext<
+  [typeof passkeyRegistrationVerifyValidator]
+>
 
-  const passkeyClient = new PasskeyClient(authClientConfig(c))
-  const result = await passkeyClient.verifyRegistration({
-    challengeId: valid.challengeId,
-    credential: valid.credential,
-  })
-  if (result.isErr()) throwHttpError(result.error)
+export default createPasskeyActionHandler({
+  execute: (passkeyClient, c: PasskeyRegistrationVerifyContext) => {
+    const valid = c.req.valid('json')
+    return passkeyClient.verifyRegistration({
+      challengeId: valid.challengeId,
+      credential: valid.credential,
+    })
+  },
+  respond: (c, registered) => {
+    c.get(CONTEXT_KEY.APP_LOG).info('passkey registration success', { passkeyId: registered.id })
 
-  logger.info('passkey registration success', { passkeyId: result.value.id })
-
-  return c.json({ id: result.value.id }, 201)
-}
+    return c.json({ id: registered.id }, 201)
+  },
+})

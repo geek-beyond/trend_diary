@@ -1,11 +1,11 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
-import { authClientConfig, PasskeyClient } from '@trend-diary/authentication'
 import getRdbClient from '@trend-diary/datastore/rdb'
 import { createAccountUseCase } from '@trend-diary/domain/account'
+import { err } from 'neverthrow'
 import { z } from 'zod'
 import CONTEXT_KEY from '@/middleware/context'
 import zodValidator, { type ZodValidatedContext } from '@/middleware/zod-validator'
-import throwHttpError from '@/server/passkey/error'
+import { createPasskeyActionHandler } from '../passkey-action'
 
 // 真正性はSupabaseが検証するため中身の妥当性検証はプロバイダに委ね、ここは認証 ceremony 結果を素通しする
 export const passkeyAuthenticationVerifyInputSchema = z.object({
@@ -20,31 +20,28 @@ export const passkeyAuthenticationVerifyValidator = zodValidator(
   passkeyAuthenticationVerifyInputSchema,
 )
 
-export default async function passkeyAuthenticationVerify(
-  c: ZodValidatedContext<[typeof passkeyAuthenticationVerifyValidator]>,
-) {
-  const logger = c.get(CONTEXT_KEY.APP_LOG)
-  const valid = c.req.valid('json')
+type PasskeyAuthenticationVerifyContext = ZodValidatedContext<
+  [typeof passkeyAuthenticationVerifyValidator]
+>
 
-  const passkeyClient = new PasskeyClient(authClientConfig(c))
-  const userResult = await passkeyClient.verifyAuthentication({
-    challengeId: valid.challengeId,
-    credential: valid.credential,
-  })
-  if (userResult.isErr()) throwHttpError(userResult.error)
+export default createPasskeyActionHandler({
+  execute: async (passkeyClient, c: PasskeyAuthenticationVerifyContext) => {
+    const valid = c.req.valid('json')
+    const verified = await passkeyClient.verifyAuthentication({
+      challengeId: valid.challengeId,
+      credential: valid.credential,
+    })
+    if (verified.isErr()) return err(verified.error)
 
-  const rdb = getRdbClient(c.env.DB)
-  const accountUseCase = createAccountUseCase(rdb)
-  // 認証成功後に active_user が無いのは孤児 auth ユーザー等のサーバ不整合なので、404 ではなく 500 に倒す
-  const activeUserResult = await accountUseCase.resolveActiveUser(userResult.value.id)
-  if (activeUserResult.isErr()) throwHttpError(activeUserResult.error)
+    // 認証成功後に active_user が無いのは孤児 auth ユーザー等のサーバ不整合なので、404 ではなく 500 に倒す
+    const accountUseCase = createAccountUseCase(getRdbClient(c.env.DB))
+    return accountUseCase.resolveActiveUser(verified.value.id)
+  },
+  respond: (c, activeUser) => {
+    c.get(CONTEXT_KEY.APP_LOG).info('passkey login success', {
+      activeUserId: activeUser.activeUserId,
+    })
 
-  logger.info('passkey login success', { activeUserId: activeUserResult.value.activeUserId })
-
-  return c.json(
-    {
-      displayName: activeUserResult.value.displayName,
-    },
-    200,
-  )
-}
+    return c.json({ displayName: activeUser.displayName }, 200)
+  },
+})

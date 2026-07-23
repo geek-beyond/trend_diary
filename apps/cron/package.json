@@ -1,30 +1,36 @@
 {
-  "name": "@trend-diary/domain",
+  "name": "@trend-diary/cron",
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "./src/worker.ts",
   "exports": {
-    "./article": "./src/article/index.ts",
-    "./account": "./src/account/index.ts",
+    "./worker": "./src/worker.ts",
     "./*": "./src/*.ts"
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "@trend-diary/datastore": "workspace:*",
+    "@trend-diary/domain": "workspace:*",
     "@trend-diary/logger": "workspace:*",
+    "@trend-diary/notification": "workspace:*",
+    "@trend-diary/runtime": "workspace:*",
     "@trend-diary/std": "workspace:*",
     "drizzle-orm": "catalog:",
     "neverthrow": "catalog:",
+    "rss-parser": "^3.13.0",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
-    "@faker-js/faker": "catalog:",
-    "@types/node": "catalog:",
+    "@trend-diary/config": "workspace:*",
+    "@vitest/coverage-istanbul": "^4.1.9",
     "vitest": "catalog:",
-    "vitest-mock-extended": "catalog:"
+    "wrangler": "catalog:"
   }
 }

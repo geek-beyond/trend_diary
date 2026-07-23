@@ -1,29 +1,31 @@
 {
-  "name": "@trend-diary/datastore",
+  "name": "@trend-diary/domain",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": {
-    "./rdb": "./src/rdb/index.ts",
-    "./schema": "./src/schema/index.ts",
+    "./article": "./src/article/index.ts",
+    "./account": "./src/account/index.ts",
     "./*": "./src/*.ts"
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate",
-    "db:check": "drizzle-kit check"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@trend-diary/datastore": "workspace:*",
     "@trend-diary/logger": "workspace:*",
     "@trend-diary/std": "workspace:*",
     "drizzle-orm": "catalog:",
-    "neverthrow": "catalog:"
+    "neverthrow": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
+    "@faker-js/faker": "catalog:",
+    "@trend-diary/config": "workspace:*",
     "@types/node": "catalog:",
-    "drizzle-kit": "0.31.10",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "vitest-mock-extended": "catalog:"
   }
 }

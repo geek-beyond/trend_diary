@@ -28,17 +28,19 @@ runs:
       run: |
         set -euo pipefail
 
-        files=$(git diff --name-only "$BASE" HEAD)
+        # ルート直下の .md（README / CLAUDE 等）はデプロイに影響しないため差分から除く。
+        # フラット化で root='^[^/]+$' がこれらを拾い、web / cron デプロイが誤発火するのを防ぐ
+        files=$(git diff --name-only "$BASE" HEAD | grep -vE '\.md$' || true)
         changed() { grep -qE "$1" <<<"$files"; }
 
         # パッケージ間の依存関係は追わず粗く判定する。デプロイは冪等で過剰実行の害がない
         # ため、厳密な選別より判定の単純さを優先する
-        pkgs='^application/packages/'
-        root='^application/[^/]+$'
+        pkgs='^packages/'
+        root='^[^/]+$'
 
-        web=false;      if changed "^application/apps/web/|$pkgs|$root"; then web=true; fi
-        cron=false;     if changed "^application/apps/cron/|$pkgs|$root"; then cron=true; fi
-        database=false; if changed "^application/packages/datastore/migrations/"; then database=true; fi
+        web=false;      if changed "^apps/web/|$pkgs|$root"; then web=true; fi
+        cron=false;     if changed "^apps/cron/|$pkgs|$root"; then cron=true; fi
+        database=false; if changed "^packages/datastore/migrations/"; then database=true; fi
 
         {
           echo "web=$web"

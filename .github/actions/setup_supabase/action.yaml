@@ -38,7 +38,6 @@ runs:
 
     - name: Supabaseの起動
       shell: bash
-      working-directory: ./application
       # INFO: 認証のみ起動
       # link: https://supabase.com/docs/reference/cli/supabase-start
       run: supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
@@ -61,7 +60,6 @@ runs:
     - name: Supabaseのキーを環境変数に設定
       id: get-keys
       shell: bash
-      working-directory: ./application
       run: |
         set -euo pipefail
         SUPABASE_ENV="$(supabase status --output env)"

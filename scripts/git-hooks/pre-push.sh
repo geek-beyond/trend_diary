@@ -17,7 +17,7 @@ if [ -z "$has_update" ]; then
   exit 0
 fi
 
-cd "$(git rev-parse --show-toplevel)/application"
+cd "$(git rev-parse --show-toplevel)"
 
 echo "[pre-push] packages/* の単体テストを実行します（スキップ: git push --no-verify）"
 pnpm --filter "./packages/*" test

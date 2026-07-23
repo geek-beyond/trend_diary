@@ -18,6 +18,9 @@
     "**/supabase",
     "**/migrations/**",
     "**/client/components/shadcn/**",
-    "**/client/components/customized/**"
+    "**/client/components/customized/**",
+    "**/*.md",
+    ".github/",
+    ".claude/"
   ]
 }

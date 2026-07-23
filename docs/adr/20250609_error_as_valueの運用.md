@@ -18,7 +18,7 @@ neverthrowを導入して使ってみたが、TypeScriptの使用感とあまり
 ## References
 
 - [20250525_neverthrowの運用.md](docs/adr/20250525_neverthrowの運用.md)
-- [独自Result　導入例](application/apps/web/src/middleware/authenticator/authenticator.ts)
+- [独自Result　導入例](apps/web/src/middleware/authenticator/authenticator.ts)
   <!-- 判断に使った資料などがあればここにリンクなどを貼ってください -->
   <!-- Context の文中に記載しても問題ないです -->
 

@@ -17,7 +17,7 @@ catalog:
   pino: ^10.3.1
   playwright: ^1.61.1
   vitest: ^4.1.10
-  vitest-mock-extended: ^4.0.0
+  vitest-mock-extended: ^5.0.0
   wrangler: ^4.110.0
   zod: ^4.4.3
 

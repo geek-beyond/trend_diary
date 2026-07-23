@@ -41,7 +41,7 @@ function coverageConfig(overrides: CoverageOverrides = {}) {
 }
 
 interface ConfigOverrides extends Omit<TestUserConfig, 'coverage'> {
-  // カバレッジを計測しないパッケージ（authentication）向けに false を許容する。
+  // カバレッジを計測しない選択も許容する。
   coverage?: CoverageOverrides | false
 }
 

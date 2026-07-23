@@ -6,8 +6,8 @@ packages:
 # パッケージ間で共有する依存のバージョンを集中管理する。
 # 各パッケージでは "<dep>": "catalog:" と宣言してここのバージョンを参照する。
 catalog:
-  '@cloudflare/vitest-pool-workers': ^0.18.4
-  '@cloudflare/workers-types': ^5.20260711.1
+  '@cloudflare/vitest-pool-workers': ^0.18.6
+  '@cloudflare/workers-types': ^5.20260718.1
   '@faker-js/faker': ^10.5.0
   '@playwright/test': ^1.61.1
   '@types/node': ^26.1.1
@@ -18,7 +18,7 @@ catalog:
   playwright: ^1.61.1
   vitest: ^4.1.10
   vitest-mock-extended: ^5.0.0
-  wrangler: ^4.110.0
+  wrangler: ^4.112.0
   zod: ^4.4.3
 
 allowBuilds:

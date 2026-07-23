@@ -17,7 +17,7 @@ https://github.com/geek-beyond/trend_diary/pull/1038
 
 同期的な補償（認証ユーザーの削除）にはSupabaseの管理者権限（service_role）が必要だが、公開されるサインアップ経路を処理するWorkerにservice_roleを持たせるべきではないため、これまで補償は行わず孤児を許容していた（`apps/web/src/server/registrations/handler/create.ts` のコメント参照）。
 
-なお、OAuth初回ログインでの登録（`oauthCallback`）は対象外とする。登録に失敗しても次回ログイン時に `resolveActiveUser` → 再登録と自己修復する経路であり、認証ユーザーを削除するとプロバイダ連携ごと失われるため、補償としても不適切なため。
+なお、OAuth初回ログインでの登録（`oauthCallback`）は対象外とする。登録に失敗しても次回ログイン時に `resolveActiveUser` → 再登録と自己修復する経路であり、認証ユーザーを削除するとプロバイダ連携ごと失われて補償としても不適切なため。
 
 前提の変化として、2026-02-04からCloudflare QueuesがWorkers Freeプランで利用可能になった（1日10,000オペレーション、メッセージ保持24時間）。補償メッセージはサインアップ失敗時にしか流れないため、無料枠で十分に収まる。
 

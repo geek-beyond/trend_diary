@@ -1,3 +1,5 @@
+import type { TestUserConfig } from 'vitest/config'
+
 // パッケージ間でカバレッジ方針を統一するための共有プリセット。
 // 個別事情（宣言的スキーマや統合テストで担保する箇所の除外など）は引数で上書きする。
 
@@ -35,5 +37,16 @@ export function coverageConfig(overrides: CoverageOverrides = {}) {
     exclude: [...SHARED_COVERAGE_EXCLUDE, ...exclude],
     // ベタガキしないと、GitHub Actions に閾値が反映されない。
     thresholds: { ...COVERAGE_THRESHOLDS, ...thresholds },
+  }
+}
+
+// パッケージ間で重複する test ブロックのボイラープレート共有プリセット。
+// pool / setupFiles / coverage など個別事情は overrides で足す。
+export function baseTestConfig(overrides: TestUserConfig = {}): TestUserConfig {
+  return {
+    globals: true,
+    include: ['src/**/*.test.ts'],
+    watch: false,
+    ...overrides,
   }
 }

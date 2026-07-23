@@ -1,7 +1,7 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
-import { coverageConfig } from '@trend-diary/config/vitest'
+import { baseTestConfig, coverageConfig } from '@trend-diary/config/vitest'
 import { defineConfig } from 'vitest/config'
 
 // migrations は datastore パッケージで集中管理しているため、パッケージから参照する。
@@ -32,13 +32,10 @@ export default defineConfig(async () => {
 
   return {
     plugins: [cloudflareTest(poolOptions)],
-    test: {
-      globals: true,
+    test: baseTestConfig({
       pool: cloudflarePool(poolOptions),
       setupFiles: ['src/test-helper/setup-d1.ts'],
-      include: ['src/**/*.test.ts'],
-      watch: false,
       coverage: coverageConfig({ provider: 'istanbul' }),
-    },
+    }),
   }
 })

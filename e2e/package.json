@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.110.2",
+    "@supabase/supabase-js": "^2.110.7",
     "@trend-diary/datastore": "workspace:*",
     "@trend-diary/domain": "workspace:*",
     "@trend-diary/std": "workspace:*",

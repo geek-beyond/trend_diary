@@ -33,7 +33,9 @@ describe('storeArticles', () => {
       expect(await countArticles()).toBe(0)
     })
 
-    it('挿入した記事の URL 一覧を返し、ogImageUrl は null で保存する', async () => {
+    // storeArticles は挿入のみを担い、og:image は挿入で判明した新規URLに対してのみ
+    // 後続の updateArticleOgImageUrls が解決・書き戻す。挿入時点で null なのはその二段設計の途中状態
+    it('挿入した記事のURL一覧を返し、og:image解決前のため ogImageUrl は挿入時点では null になる', async () => {
       const result = await storeArticles(
         'qiita',
         [normalizedItem({ url: 'https://example.com/a' })],

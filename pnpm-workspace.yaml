@@ -17,7 +17,7 @@ catalog:
   pino: ^10.3.1
   playwright: ^1.61.1
   vitest: ^4.1.10
-  vitest-mock-extended: ^4.0.0
+  vitest-mock-extended: ^5.0.0
   wrangler: ^4.110.0
   zod: ^4.4.3
 
@@ -27,11 +27,6 @@ allowBuilds:
   workerd: false
 
 minimumReleaseAge: 4320
-
-# import-lint の境界機能(packageDirectory)は 0.1.6 以降でのみ利用でき、
-# 隔離期間(minimumReleaseAge)を満たす旧版では機能しないため、当該パッケージ群のみ隔離対象から除外する。
-minimumReleaseAgeExclude:
-  - '@import-lint/*'
 
 overrides:
   '@esbuild-kit/core-utils>esbuild': ^0.25.0

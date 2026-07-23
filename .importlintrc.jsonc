@@ -26,7 +26,7 @@
       // 境界内の export は既定で同一パッケージ内限定。公開したいものだけ index.ts で再エクスポートする。
       "defaultImportability": "package",
 
-      // 境界にするディレクトリ（プロジェクトルート = application/ からの相対パス、または basename で照合）。
+      // 境界にするディレクトリ（プロジェクトルートからの相対パス、または basename で照合）。
       "packageDirectory": [
         // FSD スライス（Web クライアント）。features / entities の各スライスをカプセル化する。
         "apps/web/src/client/features/*",

@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/application"
+    directory: "/"
     schedule:
       interval: "weekly"
     # pnpm の minimumReleaseAge(3日=4320分) より長くする。

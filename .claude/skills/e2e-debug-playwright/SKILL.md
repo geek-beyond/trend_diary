@@ -15,7 +15,6 @@ Playwright E2Eの「落ちるべきときに落ちる」状態を担保しなが
 最初に静的チェックを通す:
 
 ```bash
-cd application
 pnpm run lint
 pnpm run check
 ```

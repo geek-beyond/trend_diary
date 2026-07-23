@@ -1,6 +1,6 @@
 ---
 paths:
-  - "application/e2e/**/*.ts"
+  - "e2e/**/*.ts"
 ---
 
 # E2E（Playwright）規約

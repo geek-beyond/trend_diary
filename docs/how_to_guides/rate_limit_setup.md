@@ -6,8 +6,8 @@
 
 Cloudflare Workers の [Rate Limiting バインディング](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/) を利用する。エッジで動作し追加コストは発生しない。
 
-- バインディング定義: `application/apps/web/wrangler.toml` の `[[ratelimits]]`（`AUTH_RATE_LIMITER`）
-- ミドルウェア: `application/apps/web/src/middleware/rate-limiter.ts`
+- バインディング定義: `apps/web/wrangler.toml` の `[[ratelimits]]`（`AUTH_RATE_LIMITER`）
+- ミドルウェア: `apps/web/src/middleware/rate-limiter.ts`
 - 適用先: `POST /api/auth/login` / `POST /api/auth/signup`
 
 ## 制限値

@@ -63,10 +63,6 @@ describe('fetchOgImageUrl', () => {
         name: 'og:image の content が URL として不正',
         headContent: ogImageMeta('http://'),
       },
-      {
-        name: 'og:image が最大長を超える（切り詰めると壊れるため null にする）',
-        headContent: ogImageMeta(`https://example.com/${'a'.repeat(2100)}`),
-      },
     ]
 
     it.each(nullCases)('$name の場合は null を返す', async ({ headContent }) => {

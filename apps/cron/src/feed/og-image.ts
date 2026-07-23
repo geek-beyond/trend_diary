@@ -1,4 +1,3 @@
-import { ARTICLE_MAX_LENGTH } from '@trend-diary/domain/article/schema/article-schema'
 import { fetchWithTimeout } from '@trend-diary/runtime/http'
 import { wrapAsyncCall } from '@trend-diary/std/result'
 import { z } from 'zod'
@@ -7,8 +6,8 @@ import { z } from 'zod'
 // リトライもしない（次回 cron で新規記事として扱われることはなく、失敗はプレースホルダー表示に落ちるだけのため）
 const FETCH_TIMEOUT_MS = 10_000
 
-// URL は切り詰めると壊れるため、上限超過も切り詰めではなく null に落とす
-const ogImageUrlSchema = z.string().url().max(ARTICLE_MAX_LENGTH.ogImageUrl)
+// og:image の content は任意の外部HTML由来のため URL 妥当性だけ検証する（長さは現実的に上限を超えない）
+const ogImageUrlSchema = z.string().url()
 
 export async function fetchOgImageUrl(articleUrl: string): Promise<string | null> {
   const responseResult = await wrapAsyncCall(() =>

@@ -37,13 +37,14 @@ export async function storeArticles(
   // media はバッチ全体で不変のため切り詰めをループ外で一度だけ行う
   const truncatedMedia = truncateByCodePoint(media, ARTICLE_MAX_LENGTH.media)
 
+  // title / author / description は本文由来で長くなり得るため上限で切り詰める（プレビュー保存）。
+  // 一方 URL は切り詰めると壊れるうえ現実的に上限を超えないため、そのまま保存する
   const normalized = items.map((item) => ({
     media: truncatedMedia,
     title: truncateByCodePoint(item.title, ARTICLE_MAX_LENGTH.title),
     author: truncateByCodePoint(item.author, ARTICLE_MAX_LENGTH.author),
     description: truncateByCodePoint(item.description, ARTICLE_MAX_LENGTH.description),
-    url: truncateByCodePoint(item.url, ARTICLE_MAX_LENGTH.url),
-    // URL は切り詰めると壊れるため、上限超過は og-image 側で解決時に null へ落とし済み
+    url: item.url,
     ogImageUrl: item.ogImageUrl,
   }))
 

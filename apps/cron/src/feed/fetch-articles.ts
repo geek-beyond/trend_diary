@@ -7,9 +7,6 @@ import { FEED_CONFIGS, type FeedConfig, type NormalizedItem, normalizedItemSchem
 import { fetchOgImageUrl } from './og-image'
 import { fetchRssFeed } from './rss-client'
 
-// 記事ページへの一斉アクセスを避けつつ、逐次では新着数十件で遅くなりすぎない程度の並列度
-const OG_IMAGE_FETCH_CONCURRENCY = 5
-
 // 1件の不正itemでメディア全体の取込を止めないよう、不正itemは警告ログを残してスキップする。
 function selectValidItems(
   media: ArticleMedia,
@@ -53,12 +50,8 @@ function selectValidItems(
 // ogImageUrl を null で残し（プレースホルダー表示）、記事自体は取り込む
 async function resolveOgImages(items: NormalizedItem[]): Promise<ArticleWithOgImage[]> {
   const resolved: ArticleWithOgImage[] = []
-  for (let i = 0; i < items.length; i += OG_IMAGE_FETCH_CONCURRENCY) {
-    const chunkItems = items.slice(i, i + OG_IMAGE_FETCH_CONCURRENCY)
-    const chunkResolved = await Promise.all(
-      chunkItems.map(async (item) => ({ ...item, ogImageUrl: await fetchOgImageUrl(item.url) })),
-    )
-    resolved.push(...chunkResolved)
+  for (const item of items) {
+    resolved.push({ ...item, ogImageUrl: await fetchOgImageUrl(item.url) })
   }
   return resolved
 }

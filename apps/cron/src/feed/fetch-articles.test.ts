@@ -446,7 +446,8 @@ describe('fetchHatenaArticles', () => {
       expect([...saved.description].length).toBe(1024)
     })
 
-    it('最大長を超える URL を切り詰めて保存する', async () => {
+    // URL は切り詰めると壊れるため長さで加工しない（現実的に上限を超えない前提でそのまま保存する）
+    it('長い URL も切り詰めずそのまま保存する', async () => {
       const baseUrl = 'https://example.com/'
       const longUrl = baseUrl + 'a'.repeat(2100 - baseUrl.length)
       stubHatena([{ title: '記事', content: '本文', url: longUrl }])
@@ -454,9 +455,8 @@ describe('fetchHatenaArticles', () => {
       const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
-      const truncatedUrl = [...longUrl].slice(0, 2048).join('')
-      const saved = await findByUrl(truncatedUrl)
-      expect([...saved.url].length).toBe(2048)
+      const saved = await findByUrl(longUrl)
+      expect(saved.url).toBe(longUrl)
     })
 
     it('絵文字をコードポイント単位で切り詰めサロゲートペアを壊さない', async () => {

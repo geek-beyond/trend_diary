@@ -4,6 +4,8 @@ Status: Accepted
 
 Relevant PR:
 
+https://github.com/geek-beyond/trend_diary/pull/1038
+
 # Context
 
 パスワードサインアップ（`POST /api/registrations`）は次の順で処理している。

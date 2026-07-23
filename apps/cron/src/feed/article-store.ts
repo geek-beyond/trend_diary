@@ -91,14 +91,16 @@ export async function updateArticleOgImageUrls(
   const db = getRdbClient(env.DB)
   if (entries.length === 0) return ok(0)
 
-  const [firstStatement, ...restStatements] = entries.map((entry) =>
-    db.update(articles).set({ ogImageUrl: entry.ogImageUrl }).where(eq(articles.url, entry.url)),
-  )
-  // entries 非空なら必ず1文目が存在する。到達したら不変条件の破れなので送出する
-  assertNonNull(firstStatement, 'statements[0] when entries exist')
-
-  // D1 への往復を1回に抑えるため、記事ごとの UPDATE を batch で一括送信する
-  const result = await wrapDbCall(() => db.batch([firstStatement, ...restStatements]))
+  // 対象は新規挿入記事のうち og:image を解決できた分のみで少数のため、逐次 UPDATE で十分。
+  // 挿入経路と同じく1つの wrapDbCall 内で await し、失敗時は最初の送出を err として返す
+  const result = await wrapDbCall(async () => {
+    for (const entry of entries) {
+      await db
+        .update(articles)
+        .set({ ogImageUrl: entry.ogImageUrl })
+        .where(eq(articles.url, entry.url))
+    }
+  })
   if (result.isErr()) {
     return err(result.error)
   }

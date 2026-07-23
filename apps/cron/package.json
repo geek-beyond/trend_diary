@@ -28,7 +28,7 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
-    "@trend-diary/vitest-config": "workspace:*",
+    "@trend-diary/config": "workspace:*",
     "@vitest/coverage-istanbul": "^4.1.9",
     "vitest": "catalog:",
     "wrangler": "catalog:"

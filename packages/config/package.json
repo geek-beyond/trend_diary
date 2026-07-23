@@ -1,10 +1,10 @@
 {
-  "name": "@trend-diary/vitest-config",
+  "name": "@trend-diary/config",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    "./vitest": "./src/vitest.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

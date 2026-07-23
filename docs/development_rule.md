@@ -48,7 +48,7 @@ trend_diary/                    # モノレポルート（pnpm monorepo）
 │   │   ├── migrations/         # DBマイグレーション
 │   │   └── src/                # drizzle-orm（スキーマ）/ rdb（D1クライアント）
 │   ├── notification/           # 通知機能
-│   └── vitest-config/          # 共有 vitest プリセット（カバレッジ方針の集約）
+│   └── config/                 # 共有ツール設定（vitest プリセット等。サブパスで公開）
 ├── supabase/                   # Supabase（Auth）設定
 └── docs/                       # ドキュメント（adr / how_to_guides / system_config）
 ```

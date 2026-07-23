@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
-    "@trend-diary/vitest-config": "workspace:*",
+    "@trend-diary/config": "workspace:*",
     "@types/node": "catalog:",
     "vitest": "catalog:"
   }

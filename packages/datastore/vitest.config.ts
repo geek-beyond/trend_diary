@@ -1,4 +1,4 @@
-import { coverageConfig } from '@trend-diary/vitest-config'
+import { coverageConfig } from '@trend-diary/config/vitest'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({

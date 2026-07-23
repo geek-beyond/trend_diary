@@ -23,7 +23,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
     "@faker-js/faker": "catalog:",
-    "@trend-diary/vitest-config": "workspace:*",
+    "@trend-diary/config": "workspace:*",
     "@types/node": "catalog:",
     "vitest": "catalog:",
     "vitest-mock-extended": "catalog:"

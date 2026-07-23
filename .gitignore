@@ -1,19 +1,45 @@
-# OS
-.DS_Store
+# allowlist（許可リスト）形式で管理する。ルート直下は `/*` で一旦すべて無視し、`!` で追跡対象を明示する。
+# ルート直下に新規のファイル・ディレクトリを追加した場合、ここに `!` を追記しないと無視されたまま気づかない恐れがあるため注意する
+# （apps/ packages/ 等を配下ごと `!` で開けば、その中の新規ファイルは通常どおり追跡されるため深い階層の追記は不要）
+/*
+
+# 追跡対象（ルート直下）
+!/.agents/
+!/.claude/
+!/.github/
+!/.gitconfig-hooks
+!/.gitignore
+!/.importlintrc.jsonc
+!/.node-version
+!/.oxfmtrc.json
+!/.oxlintrc.json
+!/.vscode/
+!/AGENTS.md
+!/CLAUDE.md
+!/README.md
+!/apps/
+!/docs/
+!/e2e/
+!/knip.ts
+!/mise.toml
+!/package.json
+!/packages/
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
+!/scripts/
+!/supabase/
+!/tsconfig.json
 
 # Editor / IDE
-.vscode/*
-!.vscode/launch.json
-!.vscode/*.code-snippets
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea/workspace.xml
-.idea/usage.statistics.xml
-.idea/shelf
+# .vscode配下は個人設定を含みうるため、チームで共有する設定ファイルのみ追跡する
+/.vscode/*
+!/.vscode/launch.json
+!/.vscode/*.code-snippets
+!/.vscode/extensions.json
+!/.vscode/settings.json
 
-# Yarn
-.yarn/
-!.yarn/releases
+# OS
+.DS_Store
 
 # deps
 node_modules/
@@ -27,14 +53,7 @@ node_modules/
 # logs
 logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
 # coverage
 coverage/
-
-# tools
-.serena/cache

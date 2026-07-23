@@ -12,8 +12,6 @@ runs:
   steps:
     - name: pnpmのセットアップ
       uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
-      with:
-        package_json_file: package.json
 
     - name: Node.jsの構築
       uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -24,5 +22,4 @@ runs:
 
     - name: ライブラリのインストール
       shell: bash
-      working-directory: ${{ github.workspace }}
       run: pnpm install --frozen-lockfile

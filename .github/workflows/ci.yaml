@@ -22,7 +22,6 @@ env:
 defaults:
   run:
     shell: bash
-    working-directory: .
 
 jobs:
   changes:
@@ -330,7 +329,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: いずれかのジョブが失敗していないか確認
-        working-directory: ${{ github.workspace }}
         run: |
           results="${{ join(needs.*.result, ' ') }}"
           echo "各ジョブの結果: $results"
@@ -347,7 +345,6 @@ jobs:
     environment: develop
     steps:
       - name: CI失敗をDiscordへ通知
-        working-directory: ${{ github.workspace }}
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

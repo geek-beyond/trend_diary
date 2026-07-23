@@ -1,8 +1,8 @@
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import type Logger from '@trend-diary/logger'
-import { err, ok, type Result } from 'neverthrow'
+import { err, type Result } from 'neverthrow'
 import type { FetchEnv } from '../env'
-import { type ArticleOgImageEntry, storeArticles, updateArticleOgImageUrls } from './article-store'
+import { type ArticleWithOgImage, storeArticles } from './article-store'
 import { FEED_CONFIGS, type FeedConfig, type NormalizedItem, normalizedItemSchema } from './config'
 import { fetchOgImageUrl } from './og-image'
 import { fetchRssFeed } from './rss-client'
@@ -49,20 +49,18 @@ function selectValidItems(
   return validItems
 }
 
-// og:image の解決に失敗した記事はエントリから外れ、og_image_url は NULL のまま（プレースホルダー表示）になる
-async function resolveOgImageEntries(urls: string[]): Promise<ArticleOgImageEntry[]> {
-  const entries: ArticleOgImageEntry[] = []
-  for (let i = 0; i < urls.length; i += OG_IMAGE_FETCH_CONCURRENCY) {
-    const chunkUrls = urls.slice(i, i + OG_IMAGE_FETCH_CONCURRENCY)
-    const results = await Promise.all(
-      chunkUrls.map(async (url) => ({ url, ogImageUrl: await fetchOgImageUrl(url) })),
+// 記事ページへ1件ずつアクセスして og:image を解決する。取得・抽出に失敗した記事は
+// ogImageUrl を null で残し（プレースホルダー表示）、記事自体は取り込む
+async function resolveOgImages(items: NormalizedItem[]): Promise<ArticleWithOgImage[]> {
+  const resolved: ArticleWithOgImage[] = []
+  for (let i = 0; i < items.length; i += OG_IMAGE_FETCH_CONCURRENCY) {
+    const chunkItems = items.slice(i, i + OG_IMAGE_FETCH_CONCURRENCY)
+    const chunkResolved = await Promise.all(
+      chunkItems.map(async (item) => ({ ...item, ogImageUrl: await fetchOgImageUrl(item.url) })),
     )
-    for (const result of results) {
-      if (result.ogImageUrl !== null)
-        entries.push({ url: result.url, ogImageUrl: result.ogImageUrl })
-    }
+    resolved.push(...chunkResolved)
   }
-  return entries
+  return resolved
 }
 
 async function fetchAndStore<RawItem>(
@@ -75,19 +73,9 @@ async function fetchAndStore<RawItem>(
   if (itemsResult.isErr()) return err(itemsResult.error)
 
   const validItems = selectValidItems(media, itemsResult.value.map(config.mapItem), logger)
-  const storeResult = await storeArticles(media, validItems, env)
-  if (storeResult.isErr()) return err(storeResult.error)
-  const insertedUrls = storeResult.value
-
-  // og:image の取得は記事ページへの1件ずつの HTTP アクセスを伴う。フィードは毎回ほぼ同じ記事を
-  // 返すため、全件で取りに行くと既にDBにある記事へ毎実行アクセスし続ける無駄が出る。
-  // どれが新規かは挿入して初めて確定する（既存URLは ON CONFLICT でスキップされ returning に載らない）
-  // ので、挿入で判明した新規分だけを対象に og:image を解決する
-  const ogImageEntries = await resolveOgImageEntries(insertedUrls)
-  const updateResult = await updateArticleOgImageUrls(ogImageEntries, env)
-  if (updateResult.isErr()) return err(updateResult.error)
-
-  return ok(insertedUrls.length)
+  // 記事と og:image をまとめて解決してから1回のバッチで挿入する（挿入後に画像を追記する二段にしない）
+  const itemsWithOgImage = await resolveOgImages(validItems)
+  return storeArticles(media, itemsWithOgImage, env)
 }
 
 export function fetchQiitaArticles(env: FetchEnv, logger: Logger): Promise<Result<number, Error>> {

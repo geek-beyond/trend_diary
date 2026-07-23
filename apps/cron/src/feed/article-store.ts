@@ -3,7 +3,6 @@ import { articles } from '@trend-diary/datastore/schema'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { ARTICLE_MAX_LENGTH } from '@trend-diary/domain/article/schema/article-schema'
 import { assertNonNull } from '@trend-diary/std/contract'
-import { eq } from 'drizzle-orm'
 import { err, ok, type Result } from 'neverthrow'
 import type { FetchEnv } from '../env'
 import type { NormalizedItem } from './config'
@@ -11,6 +10,11 @@ import type { NormalizedItem } from './config'
 // D1のバインドパラメータ上限は1文あたり100個。安全マージンとして上限の80%までを使う
 const MAX_BIND_PARAMETERS = 100
 const BIND_PARAMETER_USAGE_RATIO = 0.8
+
+// og:image を解決済みの記事。画像が無い/取得に失敗した記事は ogImageUrl が null で入る
+export interface ArticleWithOgImage extends NormalizedItem {
+  ogImageUrl: string | null
+}
 
 function* chunk<T>(items: readonly T[], size: number): Generator<T[]> {
   for (let i = 0; i < items.length; i += size) {
@@ -22,16 +26,13 @@ function truncateByCodePoint(text: string, maxLength: number): string {
   return [...text].slice(0, maxLength).join('')
 }
 
-// 挿入できた記事のURL一覧を返す。og:image の取得は既存記事への無駄なアクセスを避けるため
-// 新規挿入分だけに絞りたいが、どれが新規かは ON CONFLICT を通した挿入結果でしか分からない。
-// そのため画像解決は呼び出し側がこの戻り値（新規URL）に対して後続で行う（挿入時は NULL）
 export async function storeArticles(
   media: ArticleMedia,
-  items: NormalizedItem[],
+  items: ArticleWithOgImage[],
   env: FetchEnv,
-): Promise<Result<string[], Error>> {
+): Promise<Result<number, Error>> {
   const db = getRdbClient(env.DB)
-  if (items.length === 0) return ok([])
+  if (items.length === 0) return ok(0)
 
   // media はバッチ全体で不変のため切り詰めをループ外で一度だけ行う
   const truncatedMedia = truncateByCodePoint(media, ARTICLE_MAX_LENGTH.media)
@@ -42,6 +43,8 @@ export async function storeArticles(
     author: truncateByCodePoint(item.author, ARTICLE_MAX_LENGTH.author),
     description: truncateByCodePoint(item.description, ARTICLE_MAX_LENGTH.description),
     url: truncateByCodePoint(item.url, ARTICLE_MAX_LENGTH.url),
+    // URL は切り詰めると壊れるため、上限超過は og-image 側で解決時に null へ落とし済み
+    ogImageUrl: item.ogImageUrl,
   }))
 
   // 同一フィード内のURL重複を除去する（複数行INSERT内の自己重複を避けるため）
@@ -61,8 +64,8 @@ export async function storeArticles(
     (MAX_BIND_PARAMETERS * BIND_PARAMETER_USAGE_RATIO) / Object.keys(firstArticle).length,
   )
 
-  // ON CONFLICT DO NOTHING で既存URLをスキップし、returning した行を挿入分とする
-  const insertedUrls: string[] = []
+  // ON CONFLICT DO NOTHING で既存URLをスキップし、returning した行数を挿入件数とする
+  let insertedCount = 0
   for (const articlesChunk of chunk(uniqueNormalized, chunkSize)) {
     const insertResult = await wrapDbCall(() =>
       db
@@ -74,37 +77,8 @@ export async function storeArticles(
     if (insertResult.isErr()) {
       return err(insertResult.error)
     }
-    insertedUrls.push(...insertResult.value.map((row) => row.url))
+    insertedCount += insertResult.value.length
   }
 
-  return ok(insertedUrls)
-}
-
-export interface ArticleOgImageEntry {
-  url: string
-  ogImageUrl: string
-}
-
-export async function updateArticleOgImageUrls(
-  entries: ArticleOgImageEntry[],
-  env: FetchEnv,
-): Promise<Result<number, Error>> {
-  const db = getRdbClient(env.DB)
-  if (entries.length === 0) return ok(0)
-
-  // 対象は新規挿入記事のうち og:image を解決できた分のみで少数のため、逐次 UPDATE で十分。
-  // 挿入経路と同じく1つの wrapDbCall 内で await し、失敗時は最初の送出を err として返す
-  const result = await wrapDbCall(async () => {
-    for (const entry of entries) {
-      await db
-        .update(articles)
-        .set({ ogImageUrl: entry.ogImageUrl })
-        .where(eq(articles.url, entry.url))
-    }
-  })
-  if (result.isErr()) {
-    return err(result.error)
-  }
-
-  return ok(entries.length)
+  return ok(insertedCount)
 }

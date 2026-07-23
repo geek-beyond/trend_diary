@@ -1,8 +1,8 @@
-import { baseTestConfig, coverageConfig } from '@trend-diary/config/vitest'
+import { coverageConfig, testConfig } from '@trend-diary/config/vitest'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  test: baseTestConfig({
+  test: testConfig({
     coverage: coverageConfig({
       exclude: [
         // D1 を要する薄い factory で、単体では計測に不向き。cron の統合テストで担保する

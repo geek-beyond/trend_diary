@@ -42,7 +42,7 @@ export function coverageConfig(overrides: CoverageOverrides = {}) {
 
 // パッケージ間で重複する test ブロックのボイラープレート共有プリセット。
 // pool / setupFiles / coverage など個別事情は overrides で足す。
-export function baseTestConfig(overrides: TestUserConfig = {}): TestUserConfig {
+export function testConfig(overrides: TestUserConfig = {}): TestUserConfig {
   return {
     globals: true,
     include: ['src/**/*.test.ts'],

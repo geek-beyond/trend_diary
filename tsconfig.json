@@ -1,12 +1,4 @@
 {
   "files": [],
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "noImplicitAny": true,
-    "skipLibCheck": true,
-    "lib": ["ESNext"]
-  }
+  "extends": "./packages/config/tsconfig.json"
 }

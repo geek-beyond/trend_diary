@@ -2,8 +2,8 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
+import { coverageConfig } from '@trend-diary/vitest-config'
 import { defineConfig } from 'vitest/config'
-import { coverageConfig } from '../../vitest.coverage'
 
 // migrations は datastore パッケージで集中管理しているため、パッケージから参照する。
 const MIGRATIONS_DIR = resolve(

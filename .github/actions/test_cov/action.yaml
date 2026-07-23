@@ -11,7 +11,7 @@ runs:
   steps:
     - name: テストの実行
       shell: bash
-      working-directory: ./application/apps/web
+      working-directory: ./apps/web
       run: pnpm run test --project ${{ inputs.target }} --coverage
 
     - name: カバレッジの可視化
@@ -19,5 +19,5 @@ runs:
       uses: davelosert/vitest-coverage-report-action@c0c9b09c93750ee1d8335d14e94ce3d6fc61df50 # v2
       with:
         name: ${{ inputs.target }}
-        working-directory: ./application/apps/web
+        working-directory: ./apps/web
         comment-on: ${{ github.event_name == 'pull_request' && 'pr' || 'commit' }}

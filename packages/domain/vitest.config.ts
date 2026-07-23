@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
+import { coverageConfig } from '@trend-diary/vitest-config'
 import { defineConfig } from 'vitest/config'
-import { coverageConfig } from '../../vitest.coverage'
 
 export default defineConfig({
   test: {

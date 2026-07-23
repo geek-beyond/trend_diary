@@ -24,5 +24,5 @@ runs:
     - name: Playwrightのセットアップ
       if: steps.playwright-cache.outputs.cache-hit != 'true'
       shell: bash
-      working-directory: ./application
+      working-directory: .
       run: pnpm --filter @trend-diary/web exec playwright install chromium --with-deps

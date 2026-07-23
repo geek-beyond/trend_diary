@@ -18,6 +18,12 @@
     "**/supabase",
     "**/migrations/**",
     "**/client/components/shadcn/**",
-    "**/client/components/customized/**"
+    "**/client/components/customized/**",
+    "docs/",
+    ".github/",
+    ".claude/",
+    "README.md",
+    "AGENTS.md",
+    "CLAUDE.md"
   ]
 }

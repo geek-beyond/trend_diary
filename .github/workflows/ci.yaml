@@ -22,7 +22,7 @@ env:
 defaults:
   run:
     shell: bash
-    working-directory: ./application
+    working-directory: .
 
 jobs:
   changes:
@@ -64,17 +64,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          files=$(git diff --name-only HEAD~1 HEAD)
+          # ルート直下の .md（README / CLAUDE 等）はコードに影響しないため差分から除く。
+          # フラット化で root='^[^/]+$' がこれらを拾い、全テスト誤発火するのを防ぐ
+          files=$(git diff --name-only HEAD~1 HEAD | grep -vE '\.md$' || true)
           changed() { grep -qE "$1" <<<"$files"; }
           # web はクライアント/サーバーで実行するテストが分かれる。互いの専用ディレクトリ以外の
           # web 変更(共通設定・ミドルウェア等)と共有コードは両方に影響するとみなす
-          web_changed_except() { grep -E '^application/apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
-          shared='^application/packages/|^application/[^/]+$'
+          web_changed_except() { grep -E '^apps/web/' <<<"$files" | grep -vE "$1" | grep -q .; }
+          shared='^packages/|^[^/]+$'
 
-          client=false; if web_changed_except '^application/apps/web/src/server/' || changed "$shared"; then client=true; fi
-          server=false; if web_changed_except '^application/apps/web/src/client/' || changed "$shared"; then server=true; fi
-          schema=false; if changed '^application/packages/datastore/'; then schema=true; fi
-          e2e=false;    if changed '^application/e2e/' || [[ "${{ steps.deploy.outputs.web }}" == 'true' ]]; then e2e=true; fi
+          client=false; if web_changed_except '^apps/web/src/server/' || changed "$shared"; then client=true; fi
+          server=false; if web_changed_except '^apps/web/src/client/' || changed "$shared"; then server=true; fi
+          schema=false; if changed '^packages/datastore/'; then schema=true; fi
+          e2e=false;    if changed '^e2e/' || [[ "${{ steps.deploy.outputs.web }}" == 'true' ]]; then e2e=true; fi
 
           {
             echo "client=$client"
@@ -313,8 +315,8 @@ jobs:
         with:
           name: playwright-report-${{ github.event_name == 'pull_request' && 'diff' || 'main' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            application/e2e/playwright-report/
-            application/e2e/test-results/
+            e2e/playwright-report/
+            e2e/test-results/
           if-no-files-found: ignore
           retention-days: 30
 

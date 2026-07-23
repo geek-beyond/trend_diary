@@ -1,0 +1,43 @@
+// import-lint（uhyo/import-lint）による import 境界の検査設定。
+//
+// 目的: FSD（Feature-Sliced Design）のスライス境界と、ドメイン集約の境界を守る。
+// 各「パッケージ」（下記 packageDirectory に一致するディレクトリ）は、その内部を
+// 公開 API（index.ts の再エクスポート）経由でのみ外へ晒す。外部から内部実装へ
+// 直接 import すると package-private エラーになる。
+//
+// 仕組み: defaultImportability を "package" とし、境界の内側にある export は
+// 既定で同一パッケージ内からのみ import 可能にする。indexLoophole により、
+// 境界直下の index.ts での素の再エクスポートだけが公開 API として一段外へ昇格する。
+// 境界に一致しないディレクトリはすべて単一のプロジェクトルートパッケージに属し、
+// 相互に自由に import できるため、既存コードへ段階的に導入できる。
+//
+// 注意: import-lint が担保するのは「公開 API 経由でのみ触れる」というカプセル化の
+// 境界であり、FSD のレイヤー方向（features → entities → shared のように上位から
+// 下位へのみ依存可）そのものは強制しない。方向の制約は別途レビュー等で担保する。
+{
+  "include": ["."],
+  "rules": {
+    "package-access": {
+      "severity": "error",
+
+      // 境界直下の index.ts の素の再エクスポートを公開 API として扱う。
+      "indexLoophole": true,
+
+      // 境界内の export は既定で同一パッケージ内限定。公開したいものだけ index.ts で再エクスポートする。
+      "defaultImportability": "package",
+
+      // 境界にするディレクトリ（プロジェクトルートからの相対パス、または basename で照合）。
+      "packageDirectory": [
+        // FSD スライス（Web クライアント）。features / entities の各スライスをカプセル化する。
+        "apps/web/src/client/features/*",
+        "apps/web/src/client/entities/*",
+
+        // ドメイン集約。集約ごと（article / account 等）にカプセル化する。
+        "packages/domain/src/*",
+        // test-helper は集約ではなくテスト用の共有ユーティリティのため、境界にしない
+        // （境界にすると集約のテストから共有 helper を import できなくなる）。
+        "!packages/domain/src/test-helper",
+      ],
+    },
+  },
+}

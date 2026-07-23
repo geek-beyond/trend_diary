@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "useTabs": false,
+  "tabWidth": 2,
+  "printWidth": 100,
+  "singleQuote": true,
+  "jsxSingleQuote": true,
+  "quoteProps": "as-needed",
+  "trailingComma": "all",
+  "semi": false,
+  "arrowParens": "always",
+  "bracketSameLine": false,
+  "bracketSpacing": true,
+  "singleAttributePerLine": false,
+  "sortImports": { "newlinesBetween": false },
+  "ignorePatterns": [
+    "**/.vscode/",
+    "**/supabase",
+    "**/migrations/**",
+    "**/client/components/shadcn/**",
+    "**/client/components/customized/**",
+    "**/*.md",
+    ".github/",
+    ".claude/"
+  ]
+}

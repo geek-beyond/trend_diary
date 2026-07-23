@@ -1,0 +1,30 @@
+{
+  "name": "@trend-diary/datastore",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./rdb": "./src/rdb/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check"
+  },
+  "dependencies": {
+    "@trend-diary/logger": "workspace:*",
+    "@trend-diary/std": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "neverthrow": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@trend-diary/config": "workspace:*",
+    "@types/node": "catalog:",
+    "drizzle-kit": "0.31.10",
+    "vitest": "catalog:"
+  }
+}

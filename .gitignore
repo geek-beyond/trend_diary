@@ -1,16 +1,59 @@
+# allowlist（許可リスト）形式で管理する。ルート直下は `/*` で一旦すべて無視し、`!` で追跡対象を明示する。
+# ルート直下に新規のファイル・ディレクトリを追加した場合、ここに `!` を追記しないと無視されたまま気づかない恐れがあるため注意する
+# （apps/ packages/ 等を配下ごと `!` で開けば、その中の新規ファイルは通常どおり追跡されるため深い階層の追記は不要）
+/*
+
+# 追跡対象（ルート直下）
+!/.agents/
+!/.claude/
+!/.github/
+!/.gitconfig-hooks
+!/.gitignore
+!/.importlintrc.jsonc
+!/.node-version
+!/.oxfmtrc.json
+!/.oxlintrc.json
+!/.vscode/
+!/AGENTS.md
+!/CLAUDE.md
+!/README.md
+!/apps/
+!/docs/
+!/e2e/
+!/knip.ts
+!/mise.toml
+!/package.json
+!/packages/
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
+!/scripts/
+!/supabase/
+!/tsconfig.json
+
+# Editor / IDE
+# .vscode配下は個人設定を含みうるため、チームで共有する設定ファイルのみ追跡する
+/.vscode/*
+!/.vscode/launch.json
+!/.vscode/*.code-snippets
+!/.vscode/extensions.json
+!/.vscode/settings.json
+
 # OS
 .DS_Store
 
-# Editor / IDE
-.vscode/*
-!.vscode/launch.json
-!.vscode/*.code-snippets
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea/workspace.xml
-.idea/usage.statistics.xml
-.idea/shelf
+# deps
+node_modules/
 
-# Yarn
-.yarn/
-!.yarn/releases
+# env
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# logs
+logs/
+*.log
+pnpm-debug.log*
+
+# coverage
+coverage/

@@ -17,7 +17,7 @@ web クライアントは FSD（Feature-Sliced Design）に沿って `features/`
 
 # Decision
 
-import 境界の検査に import-lint（`@import-lint/cli`）を導入する。設定は `application/.importlintrc.jsonc` に置き、`pnpm lint` の一部として実行する（pre-commit フックと CI の code-quality ジョブで担保される）。
+import 境界の検査に import-lint（`@import-lint/cli`）を導入する。設定は `.importlintrc.jsonc` に置き、`pnpm lint` の一部として実行する（pre-commit フックと CI の code-quality ジョブで担保される）。
 
 境界（package）は `packageDirectory` で以下に限定する。
 

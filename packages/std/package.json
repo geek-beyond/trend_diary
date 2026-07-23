@@ -1,0 +1,27 @@
+{
+  "name": "@trend-diary/std",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./contract": "./src/contract/index.ts",
+    "./locale": "./src/locale/index.ts",
+    "./pagination": "./src/pagination/index.ts",
+    "./result": "./src/result/index.ts",
+    "./sanitization": "./src/sanitization/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "neverthrow": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@trend-diary/config": "workspace:*",
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -14,6 +14,8 @@ const config: KnipConfig = {
     'apps/web': {
       // vite の devServer プラグインが読む dev サーバのエントリ。plugin 設定からは追えないため明示する。
       entry: ['src/dev-server.ts'],
+      // ビルド後にのみ生成される react-router のサーバー出力。ビルド前は実体が無く常に未解決になる。
+      ignoreUnresolved: ['../build/server'],
       ignore: [
         // shadcn/ui 由来のプリミティブは一式を意図的に保持する UI ライブラリ的資産で、
         // 未使用の component / export を都度消さない。

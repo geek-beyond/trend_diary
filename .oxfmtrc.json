@@ -19,11 +19,8 @@
     "**/migrations/**",
     "**/client/components/shadcn/**",
     "**/client/components/customized/**",
-    "docs/",
+    "**/*.md",
     ".github/",
-    ".claude/",
-    "README.md",
-    "AGENTS.md",
-    "CLAUDE.md"
+    ".claude/"
   ]
 }

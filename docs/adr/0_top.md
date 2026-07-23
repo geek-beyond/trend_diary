@@ -16,7 +16,6 @@
 - [20260703_passkey認証の導入](20260703_passkey認証の導入.md)
 - [20260720_import-lintでFSDとドメインの境界を守る](20260720_import-lintでFSDとドメインの境界を守る.md)
 - [20260723_サインアップ補償をCloudflare_Queuesで行う](20260723_サインアップ補償をCloudflare_Queuesで行う.md)
-- [20260723_gitignoreをallowlist形式へ移行する](20260723_gitignoreをallowlist形式へ移行する.md)
 
 ADRについては下記を参照されたし。
 

@@ -1,7 +1,6 @@
 import { articles } from '@trend-diary/datastore/schema'
 import Logger from '@trend-diary/logger'
 import { env } from 'cloudflare:test'
-import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildHatenaRdf,
@@ -10,7 +9,7 @@ import {
   type FeedItem,
   rssResponse,
 } from '../test-helper/feed'
-import { countArticles, testRdb as db } from '../test-helper/rdb'
+import { countArticles, findByUrl, testRdb as db } from '../test-helper/rdb'
 import { fetchHatenaArticles, fetchQiitaArticles, fetchZennArticles } from './fetch-articles'
 
 const fetchMock = vi.fn()
@@ -19,13 +18,27 @@ vi.stubGlobal('fetch', fetchMock)
 const cronEnv = { DB: env.DB }
 const logger = new Logger('silent')
 
+// 記事ページ(og:image)の取得も同じ fetch を通るが、rssResponse の簡易オブジェクトは
+// HTMLRewriter に渡せず抽出失敗扱い（ogImageUrl null）になるだけで、フィード取込の検証には影響しない
 function stubFeed(xml: string): void {
   fetchMock.mockResolvedValue(rssResponse(xml))
 }
 
-async function findByUrl(url: string) {
-  const [row] = await db.select().from(articles).where(eq(articles.url, url)).limit(1)
-  return row
+function htmlResponse(html: string): Response {
+  return new Response(html, { status: 200, headers: { 'content-type': 'text/html' } })
+}
+
+// フィードURLにはXMLを、記事URLには対応するHTMLページを返し分ける
+function stubFeedWithPages(xml: string, pagesByUrl: Record<string, string>): void {
+  fetchMock.mockImplementation(async (input: string) => {
+    const page = pagesByUrl[input]
+    if (page !== undefined) return htmlResponse(page)
+    return rssResponse(xml)
+  })
+}
+
+function pageWithOgImage(ogImageUrl: string): string {
+  return `<!DOCTYPE html><html><head><meta property="og:image" content="${ogImageUrl}" /></head><body>本文</body></html>`
 }
 
 beforeEach(async () => {
@@ -63,8 +76,8 @@ describe('fetchQiitaArticles', () => {
       expect(saved.description).toBe('Qiita本文')
     })
 
-    it('Qiita の Atom フィードは画像要素を持たないため imageUrl を null で保存する', async () => {
-      stubFeed(
+    it('新規記事の記事ページから og:image を取得し ogImageUrl として保存する', async () => {
+      stubFeedWithPages(
         buildQiitaAtom([
           {
             title: 'Qiita記事',
@@ -73,12 +86,36 @@ describe('fetchQiitaArticles', () => {
             url: 'https://qiita.com/u/items/q1',
           },
         ]),
+        { 'https://qiita.com/u/items/q1': pageWithOgImage('https://cdn.qiita.com/og/q1.png') },
       )
 
       const result = await fetchQiitaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
-      expect((await findByUrl('https://qiita.com/u/items/q1')).imageUrl).toBeNull()
+      expect((await findByUrl('https://qiita.com/u/items/q1')).ogImageUrl).toBe(
+        'https://cdn.qiita.com/og/q1.png',
+      )
+    })
+
+    it('記事ページに og:image が無い場合は ogImageUrl を null のまま保存する', async () => {
+      stubFeedWithPages(
+        buildQiitaAtom([
+          {
+            title: 'Qiita記事',
+            author: 'qiita_author',
+            content: 'Qiita本文',
+            url: 'https://qiita.com/u/items/q1',
+          },
+        ]),
+        {
+          'https://qiita.com/u/items/q1': '<!DOCTYPE html><html><head></head><body></body></html>',
+        },
+      )
+
+      const result = await fetchQiitaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      expect((await findByUrl('https://qiita.com/u/items/q1')).ogImageUrl).toBeNull()
     })
 
     it('content が欠損した記事は description を空文字で補完して保存する', async () => {
@@ -193,45 +230,6 @@ describe('fetchZennArticles', () => {
       expect(saved.author).toBe('zenn_creator')
       expect(saved.description).toBe('Zenn本文')
     })
-
-    it('enclosure の url を imageUrl として保存する', async () => {
-      stubFeed(
-        buildZennRss([
-          {
-            title: 'Zenn記事',
-            author: 'zenn_creator',
-            content: 'Zenn本文',
-            url: 'https://zenn.dev/u/articles/z1',
-            imageUrl: 'https://res.cloudinary.com/zenn/image/upload/og.png',
-          },
-        ]),
-      )
-
-      const result = await fetchZennArticles(cronEnv, logger)
-
-      expect(result.isOk()).toBe(true)
-      expect((await findByUrl('https://zenn.dev/u/articles/z1')).imageUrl).toBe(
-        'https://res.cloudinary.com/zenn/image/upload/og.png',
-      )
-    })
-
-    it('enclosure が無い記事は imageUrl を null で保存する', async () => {
-      stubFeed(
-        buildZennRss([
-          {
-            title: 'Zenn記事',
-            author: 'zenn_creator',
-            content: 'Zenn本文',
-            url: 'https://zenn.dev/u/articles/z1',
-          },
-        ]),
-      )
-
-      const result = await fetchZennArticles(cronEnv, logger)
-
-      expect(result.isOk()).toBe(true)
-      expect((await findByUrl('https://zenn.dev/u/articles/z1')).imageUrl).toBeNull()
-    })
   })
 
   describe('準正常系', () => {
@@ -280,26 +278,6 @@ describe('fetchZennArticles', () => {
       expect(await countArticles()).toBe(1)
       expect((await findByUrl('https://zenn.dev/u/articles/ok')).title).toBe('Zenn正常')
     })
-
-    it('imageUrl が URL として不正でも記事はスキップせず imageUrl を null にして保存する', async () => {
-      stubFeed(
-        buildZennRss([
-          {
-            title: 'Zenn記事',
-            author: 'zenn_creator',
-            content: 'Zenn本文',
-            url: 'https://zenn.dev/u/articles/z1',
-            imageUrl: 'not-a-url',
-          },
-        ]),
-      )
-
-      const result = await fetchZennArticles(cronEnv, logger)
-
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) expect(result.value).toBe(1)
-      expect((await findByUrl('https://zenn.dev/u/articles/z1')).imageUrl).toBeNull()
-    })
   })
 })
 
@@ -329,27 +307,8 @@ describe('fetchHatenaArticles', () => {
       expect(saved.description).toBe('はてな本文')
     })
 
-    it('hatena:imageurl を imageUrl として保存する', async () => {
-      stubHatena([
-        {
-          title: 'はてな記事',
-          author: 'hatena_creator',
-          content: 'はてな本文',
-          url: 'https://example.com/h1',
-          imageUrl: 'https://cdn-ak-scissors.b.st-hatena.com/image/square/example.png',
-        },
-      ])
-
-      const result = await fetchHatenaArticles(cronEnv, logger)
-
-      expect(result.isOk()).toBe(true)
-      expect((await findByUrl('https://example.com/h1')).imageUrl).toBe(
-        'https://cdn-ak-scissors.b.st-hatena.com/image/square/example.png',
-      )
-    })
-
-    it('hatena:imageurl が無い記事は imageUrl を null で保存する', async () => {
-      stubHatena([
+    it('記事ページの取得に失敗しても記事自体は ogImageUrl を null のまま保存する', async () => {
+      const xml = buildHatenaRdf([
         {
           title: 'はてな記事',
           author: 'hatena_creator',
@@ -357,11 +316,16 @@ describe('fetchHatenaArticles', () => {
           url: 'https://example.com/h1',
         },
       ])
+      fetchMock.mockImplementation(async (input: string) => {
+        if (input === 'https://example.com/h1') throw new Error('page fetch error')
+        return rssResponse(xml)
+      })
 
       const result = await fetchHatenaArticles(cronEnv, logger)
 
       expect(result.isOk()).toBe(true)
-      expect((await findByUrl('https://example.com/h1')).imageUrl).toBeNull()
+      if (result.isOk()) expect(result.value).toBe(1)
+      expect((await findByUrl('https://example.com/h1')).ogImageUrl).toBeNull()
     })
 
     it('新規記事を全件保存する', async () => {
@@ -480,19 +444,6 @@ describe('fetchHatenaArticles', () => {
       expect([...saved.title].length).toBe(100)
       expect([...saved.author].length).toBe(30)
       expect([...saved.description].length).toBe(1024)
-    })
-
-    it('最大長を超える imageUrl は切り詰めると URL として壊れるため null にして保存する', async () => {
-      const baseUrl = 'https://example.com/'
-      const longImageUrl = baseUrl + 'a'.repeat(2100 - baseUrl.length)
-      stubHatena([
-        { title: '記事', content: '本文', url: 'https://example.com/h1', imageUrl: longImageUrl },
-      ])
-
-      const result = await fetchHatenaArticles(cronEnv, logger)
-
-      expect(result.isOk()).toBe(true)
-      expect((await findByUrl('https://example.com/h1')).imageUrl).toBeNull()
     })
 
     it('最大長を超える URL を切り詰めて保存する', async () => {

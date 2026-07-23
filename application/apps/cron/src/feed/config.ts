@@ -1,4 +1,3 @@
-import { ARTICLE_MAX_LENGTH } from '@trend-diary/domain/article/schema/article-schema'
 import extractTrimmed from '@trend-diary/std/sanitization'
 import { z } from 'zod'
 
@@ -15,7 +14,6 @@ export interface NormalizedItem {
   author: string
   description: string
   url: string
-  imageUrl: string | null
 }
 
 // 外部フィードは欠落フィールドを undefined / null で返すため、保存前に実行時検証する。
@@ -31,22 +29,11 @@ export const normalizedItemSchema = z.object({
     .nullish()
     .transform((value) => value ?? ''),
   url: requiredText,
-  // 画像は装飾用途で記事の有効性に影響しないため、欠落・不正・過長の値は記事ごとスキップせず null に縮退させる。
-  // URL は切り詰めると壊れるため、上限超過も切り詰めではなく null に落とす
-  imageUrl: z
-    .string()
-    .url()
-    .max(ARTICLE_MAX_LENGTH.imageUrl)
-    .nullish()
-    .catch(null)
-    .transform((value) => value ?? null),
 })
 
 export interface FeedConfig<RawItem> {
   url: string
   mapItem: (item: RawItem) => NormalizedItem
-  // rss-parser が既定で拾わない名前空間付き要素（hatena:imageurl 等）を必要とするフィードだけ指定する
-  itemCustomFields?: (keyof RawItem & string)[]
 }
 
 interface RawFeedItem {
@@ -62,7 +49,6 @@ interface QiitaRawItem extends RawFeedItem {
 interface ZennRawItem extends RawFeedItem {
   creator: string
   content: string
-  enclosure?: { url?: string }
 }
 
 interface HatenaRawItem extends RawFeedItem {
@@ -70,19 +56,16 @@ interface HatenaRawItem extends RawFeedItem {
   content?: string
   'content:encoded'?: string
   contentSnippet?: string
-  'hatena:imageurl'?: string
 }
 
 export const FEED_CONFIGS = {
   qiita: {
     url: FEED_URL.qiita,
-    // Qiita の Atom フィードは画像要素を持たないため imageUrl は常に null
     mapItem: (item: QiitaRawItem) => ({
       title: item.title,
       author: item.author,
       description: item.content,
       url: item.link,
-      imageUrl: null,
     }),
   } satisfies FeedConfig<QiitaRawItem>,
   zenn: {
@@ -92,7 +75,6 @@ export const FEED_CONFIGS = {
       author: item.creator,
       description: item.content,
       url: item.link,
-      imageUrl: item.enclosure?.url ?? null,
     }),
   } satisfies FeedConfig<ZennRawItem>,
   hatena: {
@@ -106,8 +88,6 @@ export const FEED_CONFIGS = {
         extractTrimmed(item.contentSnippet) ??
         '',
       url: item.link,
-      imageUrl: extractTrimmed(item['hatena:imageurl']) ?? null,
     }),
-    itemCustomFields: ['hatena:imageurl'],
   } satisfies FeedConfig<HatenaRawItem>,
 }

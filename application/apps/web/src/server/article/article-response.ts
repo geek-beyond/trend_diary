@@ -17,7 +17,7 @@ export function toArticleResponse(article: ArticleWithOptionalReadStatus): Artic
     author: article.author,
     description: article.description,
     url: article.url,
-    imageUrl: article.imageUrl,
+    ogImageUrl: article.ogImageUrl,
     createdAt: article.createdAt,
     isRead: article.isRead,
   }

@@ -10,7 +10,7 @@ export const ARTICLE_MAX_LENGTH = {
   author: 30,
   description: 1024,
   url: 2048,
-  imageUrl: 2048,
+  ogImageUrl: 2048,
 } as const
 
 export const articleSchema = z.object({
@@ -22,7 +22,7 @@ export const articleSchema = z.object({
   description: z.string().max(ARTICLE_MAX_LENGTH.description),
   url: z.string().url().max(ARTICLE_MAX_LENGTH.url),
   // フィードに画像が無いメディアや画像追加以前の記事が存在するため、DB 契約（nullable）どおり null を許容する
-  imageUrl: z.string().url().max(ARTICLE_MAX_LENGTH.imageUrl).nullable(),
+  ogImageUrl: z.string().url().max(ARTICLE_MAX_LENGTH.ogImageUrl).nullable(),
   createdAt,
 })
 

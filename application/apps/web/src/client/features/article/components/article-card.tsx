@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardTitle } from '@/client/components/shadcn/card'
 import { cn } from '@/client/components/shadcn/lib/utils'
 import type { Article } from '@/client/features/article/hooks/use-articles'
+import { ARTICLE_CARD_FRAME_CLASS, ARTICLE_THUMBNAIL_FRAME_CLASS } from './article-card-frame'
 import ArticleThumbnail from './article-thumbnail'
 import MediaIcon, { toMediaType } from './media-icon'
 
@@ -19,6 +20,7 @@ export default function ArticleCard({
   isLoggedIn = false,
 }: Props) {
   const isRead = article.isRead ?? false
+  const mediaType = toMediaType(article.media)
 
   const handleToggleRead = () => {
     onToggleRead?.(article.articleId, !isRead)
@@ -29,7 +31,8 @@ export default function ArticleCard({
       data-slot='card'
       data-testid='article-card'
       className={cn(
-        'relative h-56 w-full gap-0 sm:w-64 rounded-3xl border border-border bg-card/30 py-0 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:shadow-xl',
+        ARTICLE_CARD_FRAME_CLASS,
+        'relative transition-all duration-300 hover:shadow-xl',
         isRead && 'opacity-60',
       )}
     >
@@ -42,14 +45,13 @@ export default function ArticleCard({
         className='absolute inset-0 z-0 cursor-pointer rounded-3xl outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]'
       />
 
-      {/* カード自体に overflow-hidden を付けるとフォーカスリングが切れるため、角丸のクリップはサムネイル側で行う */}
-      <div className='h-28 w-full shrink-0 overflow-hidden rounded-t-3xl'>
-        <ArticleThumbnail media={toMediaType(article.media)} imageUrl={article.imageUrl} />
+      <div className={ARTICLE_THUMBNAIL_FRAME_CLASS}>
+        <ArticleThumbnail media={mediaType} ogImageUrl={article.ogImageUrl} />
       </div>
 
       <CardContent className='flex min-h-0 flex-1 flex-col p-4'>
         <CardTitle className='line-clamp-2 flex-1 text-sm leading-relaxed font-bold text-foreground'>
-          <MediaIcon media={toMediaType(article.media)} size='sm' />
+          <MediaIcon media={mediaType} size='sm' />
           <span className='ml-1'>{article.title}</span>
           {isRead && (
             <span

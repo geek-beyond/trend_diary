@@ -1,10 +1,9 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { articles } from '@trend-diary/datastore/schema'
-import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import TEST_ENV from '../test-helper/env'
-import { countArticles, testRdb as db } from '../test-helper/rdb'
-import { storeArticles } from './article-store'
+import { countArticles, findByUrl, testRdb as db } from '../test-helper/rdb'
+import { storeArticles, updateArticleOgImageUrls } from './article-store'
 import type { NormalizedItem } from './config'
 
 function normalizedItem(overrides: Partial<NormalizedItem> = {}): NormalizedItem {
@@ -13,7 +12,6 @@ function normalizedItem(overrides: Partial<NormalizedItem> = {}): NormalizedItem
     author: 'author',
     description: 'description',
     url: 'https://example.com/default',
-    imageUrl: null,
     ...overrides,
   }
 }
@@ -28,36 +26,28 @@ afterAll(async () => {
 
 describe('storeArticles', () => {
   describe('正常系', () => {
-    it('items が空配列の場合は DB へアクセスせず ok(0) を返す', async () => {
+    it('items が空配列の場合は DB へアクセスせず ok(空配列) を返す', async () => {
       const result = await storeArticles('qiita', [], TEST_ENV)
 
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) expect(result.value).toBe(0)
+      expect(result._unsafeUnwrap()).toEqual([])
       expect(await countArticles()).toBe(0)
     })
 
-    const imageUrlCases = [
-      {
-        label: 'imageUrl をそのまま保存する',
-        imageUrl: 'https://example.com/image.png',
-        expected: 'https://example.com/image.png',
-      },
-      { label: 'imageUrl が null の場合は null のまま保存する', imageUrl: null, expected: null },
-    ]
+    it('挿入した記事の URL 一覧を返し、ogImageUrl は null で保存する', async () => {
+      const result = await storeArticles(
+        'qiita',
+        [normalizedItem({ url: 'https://example.com/a' })],
+        TEST_ENV,
+      )
 
-    it.each(imageUrlCases)('$label', async ({ imageUrl, expected }) => {
-      const url = 'https://example.com/image-case'
-      const result = await storeArticles('zenn', [normalizedItem({ url, imageUrl })], TEST_ENV)
-
-      expect(result.isOk()).toBe(true)
-      const [saved] = await db.select().from(articles).where(eq(articles.url, url)).limit(1)
-      expect(saved.imageUrl).toBe(expected)
+      expect(result._unsafeUnwrap()).toEqual(['https://example.com/a'])
+      expect((await findByUrl('https://example.com/a')).ogImageUrl).toBeNull()
     })
 
-    // D1のバインドパラメータ上限100・使用率80%・カラム数6から算出されるチャンクサイズは13件。
+    // D1のバインドパラメータ上限100・使用率80%・カラム数5から算出されるチャンクサイズは16件。
     const chunkBoundaryCases = [
-      { label: 'ちょうどの件数は1回で全件保存する', count: 13 },
-      { label: 'を1件超えると複数回に分けて全件保存する', count: 14 },
+      { label: 'ちょうどの件数は1回で全件保存する', count: 16 },
+      { label: 'を1件超えると複数回に分けて全件保存する', count: 17 },
     ]
 
     it.each(chunkBoundaryCases)(
@@ -69,8 +59,7 @@ describe('storeArticles', () => {
 
         const result = await storeArticles('qiita', items, TEST_ENV)
 
-        expect(result.isOk()).toBe(true)
-        if (result.isOk()) expect(result.value).toBe(count)
+        expect(result._unsafeUnwrap()).toHaveLength(count)
         expect(await countArticles()).toBe(count)
       },
     )
@@ -91,9 +80,69 @@ describe('storeArticles', () => {
         LOG_LEVEL: 'silent',
       })
 
-      expect(result.isErr()).toBe(true)
-      if (result.isErr()) expect(result.error.message).toBe(dbError.message)
+      expect(result._unsafeUnwrapErr().message).toBe(dbError.message)
       expect(await countArticles()).toBe(0)
+    })
+  })
+})
+
+describe('updateArticleOgImageUrls', () => {
+  describe('正常系', () => {
+    it('entries が空配列の場合は DB へアクセスせず ok(0) を返す', async () => {
+      const result = await updateArticleOgImageUrls([], TEST_ENV)
+
+      expect(result._unsafeUnwrap()).toBe(0)
+    })
+
+    it('指定した URL の記事の ogImageUrl を一括更新する', async () => {
+      await storeArticles(
+        'qiita',
+        [
+          normalizedItem({ url: 'https://example.com/a' }),
+          normalizedItem({ url: 'https://example.com/b' }),
+          normalizedItem({ url: 'https://example.com/c' }),
+        ],
+        TEST_ENV,
+      )
+
+      const result = await updateArticleOgImageUrls(
+        [
+          { url: 'https://example.com/a', ogImageUrl: 'https://example.com/a.png' },
+          { url: 'https://example.com/b', ogImageUrl: 'https://example.com/b.png' },
+        ],
+        TEST_ENV,
+      )
+
+      expect(result._unsafeUnwrap()).toBe(2)
+      expect((await findByUrl('https://example.com/a')).ogImageUrl).toBe(
+        'https://example.com/a.png',
+      )
+      expect((await findByUrl('https://example.com/b')).ogImageUrl).toBe(
+        'https://example.com/b.png',
+      )
+      expect((await findByUrl('https://example.com/c')).ogImageUrl).toBeNull()
+    })
+  })
+
+  describe('異常系', () => {
+    it('DB呼び出しが失敗した場合はerrを返す', async () => {
+      const dbError = new Error('D1 connection error')
+      const failingDb: Partial<D1Database> = {
+        prepare: () => {
+          throw dbError
+        },
+      }
+
+      const result = await updateArticleOgImageUrls(
+        [{ url: 'https://example.com/a', ogImageUrl: 'https://example.com/a.png' }],
+        {
+          // oxlint-disable-next-line typescript/consistent-type-assertions -- 外部型の D1Database は多数のプロパティを持つため、prepare のみを実装したモックをアサーションで渡します
+          DB: failingDb as D1Database,
+          LOG_LEVEL: 'silent',
+        },
+      )
+
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
     })
   })
 })

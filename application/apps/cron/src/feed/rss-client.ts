@@ -70,10 +70,7 @@ export function backoffDelayMs(attempt: number): number {
   return Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS)
 }
 
-async function fetchRssFeedOnce<T>(
-  url: string,
-  itemCustomFields?: (keyof T & string)[],
-): Promise<Result<T[], Error>> {
+async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], Error>> {
   const responseResult = await wrapAsyncCall(() =>
     fetchWithTimeout(url, { timeoutMs: FETCH_TIMEOUT_MS }),
   )
@@ -85,10 +82,7 @@ async function fetchRssFeedOnce<T>(
     return err(new RssFetchError(url, diagnostics))
   }
 
-  // 名前空間付き要素（hatena:imageurl 等）は rss-parser が既定では拾わないため、必要なフィードだけ customFields で指定する
-  const parser = new Parser<{ items: T[] }, T>(
-    itemCustomFields ? { customFields: { item: itemCustomFields } } : {},
-  )
+  const parser = new Parser<{ items: T[] }, T>()
   return wrapAsyncCall(async () => {
     const xml = await response.text()
     const feed = await parser.parseString(xml)
@@ -96,14 +90,11 @@ async function fetchRssFeedOnce<T>(
   })
 }
 
-export async function fetchRssFeed<T>(
-  url: string,
-  itemCustomFields?: (keyof T & string)[],
-): Promise<Result<T[], Error>> {
+export async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
   let lastError: Error = new Error(`Failed to fetch rss feed: ${url}`)
 
   for (let attempt = 0; attempt < MAX_FETCH_ATTEMPTS; attempt += 1) {
-    const result = await fetchRssFeedOnce<T>(url, itemCustomFields)
+    const result = await fetchRssFeedOnce<T>(url)
     if (result.isOk()) return result
 
     lastError = result.error

@@ -10,7 +10,7 @@ const defaultArticle: Article = {
   author: 'デフォルト筆者',
   description: 'デフォルトの説明文です',
   url: 'https://example.com',
-  imageUrl: null,
+  ogImageUrl: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
 }
 
@@ -82,7 +82,7 @@ export const ZennArticle: Story = {
 // サムネイルの仕様: 画像があれば表示し、無ければメディア別プレースホルダー、読込失敗時はプレースホルダーへ縮退する
 export const WithOgpImage: Story = {
   args: {
-    article: generateArticle({ imageUrl: '/images/qiita-icon.png' }),
+    article: generateArticle({ ogImageUrl: '/images/qiita-icon.png' }),
   },
   play: async ({ canvas, step }) => {
     await step('OGP画像がサムネイルとして表示されることを確認', async () => {
@@ -117,7 +117,7 @@ export const WithoutOgpImage: Story = {
 
 export const BrokenOgpImage: Story = {
   args: {
-    article: generateArticle({ imageUrl: '/images/this-image-does-not-exist.png' }),
+    article: generateArticle({ ogImageUrl: '/images/this-image-does-not-exist.png' }),
   },
   play: async ({ canvas, step }) => {
     await step('画像の読込失敗時はプレースホルダーへ縮退することを確認', async () => {

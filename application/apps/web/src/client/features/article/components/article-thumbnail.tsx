@@ -4,7 +4,7 @@ import MediaIcon, { type MediaType } from './media-icon'
 
 interface Props {
   media: MediaType
-  imageUrl: string | null
+  ogImageUrl: string | null
 }
 
 // 画像なしを「欠落」ではなくメディア別のデザインとして見せるため、ブランドカラーのグラデーションを敷く
@@ -14,11 +14,11 @@ const placeholderClassMap: Record<MediaType, string> = {
   hatena: 'from-[#00A4DE]/25 to-[#00A4DE]/5',
 }
 
-export default function ArticleThumbnail({ media, imageUrl }: Props) {
+export default function ArticleThumbnail({ media, ogImageUrl }: Props) {
   // 外部画像はリンク切れがあり得るため、読込失敗時はプレースホルダーへ縮退させて枠を保つ
   const [isImageBroken, setIsImageBroken] = useState(false)
 
-  if (imageUrl === null || isImageBroken) {
+  if (ogImageUrl === null || isImageBroken) {
     return (
       <div
         data-testid='article-thumbnail-placeholder'
@@ -37,7 +37,7 @@ export default function ArticleThumbnail({ media, imageUrl }: Props) {
   return (
     <img
       data-testid='article-thumbnail-image'
-      src={imageUrl}
+      src={ogImageUrl}
       // OGP画像は装飾用途でタイトルがテキストとして併記されるため、代替テキストは空にする
       alt=''
       loading='lazy'

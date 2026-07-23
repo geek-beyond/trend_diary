@@ -8,7 +8,7 @@ describe('記事スキーマ', () => {
     author: 'John Doe',
     description: 'This is a test article description.',
     url: 'http://example.com',
-    imageUrl: null,
+    ogImageUrl: null,
     createdAt: new Date(),
   }
 
@@ -225,13 +225,13 @@ describe('記事スキーマ', () => {
     })
   })
 
-  describe('imageUrl のバリデーション', () => {
+  describe('ogImageUrl のバリデーション', () => {
     // フィードに画像が無いメディアや画像追加以前の記事が存在するため、DB 契約どおり null を許容する
     it('nullを受け入れること', () => {
       expect(() => {
         articleSchema.parse({
           ...validArticle,
-          imageUrl: null,
+          ogImageUrl: null,
         })
       }).not.toThrow()
     })
@@ -240,7 +240,7 @@ describe('記事スキーマ', () => {
       expect(() => {
         articleSchema.parse({
           ...validArticle,
-          imageUrl: 'https://example.com/image.png',
+          ogImageUrl: 'https://example.com/image.png',
         })
       }).not.toThrow()
     })
@@ -249,7 +249,7 @@ describe('記事スキーマ', () => {
       expect(() => {
         articleSchema.parse({
           ...validArticle,
-          imageUrl: 'invalid-url',
+          ogImageUrl: 'invalid-url',
         })
       }).toThrow()
     })
@@ -259,7 +259,7 @@ describe('記事スキーマ', () => {
       expect(() => {
         articleSchema.parse({
           ...validArticle,
-          imageUrl: baseUrl + 'a'.repeat(2048 - baseUrl.length),
+          ogImageUrl: baseUrl + 'a'.repeat(2048 - baseUrl.length),
         })
       }).not.toThrow()
     })
@@ -269,13 +269,13 @@ describe('記事スキーマ', () => {
       expect(() => {
         articleSchema.parse({
           ...validArticle,
-          imageUrl: baseUrl + 'a'.repeat(2049 - baseUrl.length),
+          ogImageUrl: baseUrl + 'a'.repeat(2049 - baseUrl.length),
         })
       }).toThrow()
     })
 
-    it('imageUrlがない場合は拒否すること', () => {
-      const { imageUrl: _imageUrl, ...articleWithoutImageUrl } = validArticle
+    it('ogImageUrlがない場合は拒否すること', () => {
+      const { ogImageUrl: _imageUrl, ...articleWithoutImageUrl } = validArticle
       expect(() => {
         articleSchema.parse(articleWithoutImageUrl)
       }).toThrow()
@@ -291,7 +291,7 @@ describe('既読情報付き記事スキーマ', () => {
     author: 'John Doe',
     description: 'This is a test article description.',
     url: 'http://example.com',
-    imageUrl: null,
+    ogImageUrl: null,
     createdAt: new Date(),
     isRead: false,
   }

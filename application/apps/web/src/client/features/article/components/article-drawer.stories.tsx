@@ -11,6 +11,7 @@ const defaultArticle: Article = {
   author: 'デフォルト著者',
   description: 'デフォルトの説明文です',
   url: 'https://example.com',
+  imageUrl: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
 }
 

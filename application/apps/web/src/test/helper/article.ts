@@ -25,6 +25,7 @@ export async function createArticle(options?: {
   author?: string
   description?: string
   url?: string
+  imageUrl?: string | null
   createdAt?: Date
 }) {
   const {
@@ -33,6 +34,7 @@ export async function createArticle(options?: {
     title = faker.lorem.sentence().substring(0, 100),
     author = faker.person.fullName().substring(0, 30),
     description = faker.lorem.paragraph().substring(0, 255),
+    imageUrl = null,
     createdAt = getTodayJstNoon(),
   } = options ?? {}
   const baseUrl = url ?? articleUrlByMedia[media]()
@@ -44,6 +46,7 @@ export async function createArticle(options?: {
     author,
     description,
     url: baseUrl.includes('?') ? `${baseUrl}&${uniqueSuffix}` : `${baseUrl}?${uniqueSuffix}`,
+    imageUrl,
     createdAt,
   }
   const [article] = await rdb.insert(articles).values(data).returning()

@@ -38,6 +38,8 @@ export async function storeArticles(
     author: truncateByCodePoint(item.author, ARTICLE_MAX_LENGTH.author),
     description: truncateByCodePoint(item.description, ARTICLE_MAX_LENGTH.description),
     url: truncateByCodePoint(item.url, ARTICLE_MAX_LENGTH.url),
+    // URL は切り詰めると壊れるため、上限超過はスキーマ検証（normalizedItemSchema.imageUrl）で null に縮退済み
+    imageUrl: item.imageUrl,
   }))
 
   // 同一フィード内のURL重複を除去する（複数行INSERT内の自己重複を避けるため）

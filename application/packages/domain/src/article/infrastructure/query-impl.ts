@@ -28,6 +28,7 @@ interface RawArticleRow {
   author: string
   description: string
   url: string
+  imageUrl: string | null
   // INFO: 生SQL(db.all)はcustomTypeを通らずドライバの素値(文字列/数値)を返す。Dateにはならない
   createdAt: string | number | bigint
   isRead?: number | bigint | boolean | null
@@ -136,6 +137,7 @@ export default class QueryImpl implements Query {
           author,
           description,
           url,
+          image_url as imageUrl,
           created_at as createdAt,
           ${readStatusSql} as isRead,
           COUNT(*) OVER() as total
@@ -219,6 +221,7 @@ export default class QueryImpl implements Query {
           author,
           description,
           url,
+          image_url as imageUrl,
           created_at as createdAt,
           COUNT(*) OVER() as total
         FROM articles
@@ -605,6 +608,7 @@ export default class QueryImpl implements Query {
       author: row.author,
       description: row.description,
       url: row.url,
+      imageUrl: row.imageUrl,
       createdAt: normalizeDateTime(row.createdAt),
     }
   }

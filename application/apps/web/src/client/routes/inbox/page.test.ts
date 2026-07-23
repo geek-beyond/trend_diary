@@ -32,6 +32,7 @@ const buildArticle = (overrides: Partial<InboxArticle> = {}): InboxArticle => ({
   author: 'テスト著者',
   description: 'テスト記事の説明文です',
   url: 'https://example.com/a1',
+  imageUrl: null,
   createdAt: new Date('2026-03-01T00:00:00.000Z'),
   ...overrides,
 })

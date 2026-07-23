@@ -51,7 +51,7 @@ async function fetchAndStore<RawItem>(
   env: FetchEnv,
   logger: Logger,
 ): Promise<Result<number, Error>> {
-  const itemsResult = await fetchRssFeed<RawItem>(config.url)
+  const itemsResult = await fetchRssFeed<RawItem>(config.url, config.itemCustomFields)
   if (itemsResult.isErr()) return err(itemsResult.error)
 
   const validItems = selectValidItems(media, itemsResult.value.map(config.mapItem), logger)

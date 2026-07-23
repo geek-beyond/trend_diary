@@ -55,6 +55,7 @@ describe('GET /api/articles', () => {
       author: zennAuthor,
       description: 'TypeScriptの高度な機能',
       url: 'https://zenn.dev/test2',
+      imageUrl: 'https://res.cloudinary.com/zenn/image/upload/og.png',
       createdAt: new Date('2025-05-12'),
     },
     {
@@ -95,6 +96,17 @@ describe('GET /api/articles', () => {
       expect(data.data[2].title).toBe(qiitaTitle)
       expect(data.hasNext).toBe(false)
       expect(data.hasPrev).toBe(false)
+    })
+
+    it('imageUrl を含めて返し、画像が無い記事は null を返す', async () => {
+      const res = await requestGetArticles('media=qiita&media=zenn')
+
+      expect(res.status).toBe(200)
+      const data: ArticleListResponse = await res.json()
+      const zennArticle = data.data.find((article) => article.media === 'zenn')
+      const qiitaArticle = data.data.find((article) => article.media === 'qiita')
+      expect(zennArticle?.imageUrl).toBe('https://res.cloudinary.com/zenn/image/upload/og.png')
+      expect(qiitaArticle?.imageUrl).toBeNull()
     })
 
     it('titleで検索', async () => {

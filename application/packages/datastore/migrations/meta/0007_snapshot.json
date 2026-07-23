@@ -1,0 +1,517 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "bc707e44-4385-4e24-aad7-cafb48ca7a29",
+  "prevId": "e91a136e-4e8a-4e81-9937-a42b6e5c51b6",
+  "tables": {
+    "articles": {
+      "name": "articles",
+      "columns": {
+        "article_id": {
+          "name": "article_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "media": {
+          "name": "media",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "author": {
+          "name": "author",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "created_at_norm": {
+          "name": "created_at_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "generated": {
+            "as": "(CASE WHEN typeof(\"created_at\") = 'integer' THEN datetime(\"created_at\" / 1000, 'unixepoch') ELSE datetime(\"created_at\") END)",
+            "type": "virtual"
+          }
+        }
+      },
+      "indexes": {
+        "articles_url_key": {
+          "name": "articles_url_key",
+          "columns": [
+            "url"
+          ],
+          "isUnique": true
+        },
+        "idx_articles_created_at_norm": {
+          "name": "idx_articles_created_at_norm",
+          "columns": [
+            "created_at_norm"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "read_histories": {
+      "name": "read_histories",
+      "columns": {
+        "read_history_id": {
+          "name": "read_history_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "read_at": {
+          "name": "read_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "article_id": {
+          "name": "article_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "active_user_id": {
+          "name": "active_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "read_at_norm": {
+          "name": "read_at_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "generated": {
+            "as": "(CASE WHEN typeof(\"read_at\") = 'integer' THEN datetime(\"read_at\" / 1000, 'unixepoch') ELSE datetime(\"read_at\") END)",
+            "type": "virtual"
+          }
+        }
+      },
+      "indexes": {
+        "idx_read_histories_article_user": {
+          "name": "idx_read_histories_article_user",
+          "columns": [
+            "article_id",
+            "active_user_id"
+          ],
+          "isUnique": false
+        },
+        "idx_read_histories_user_read_at_norm": {
+          "name": "idx_read_histories_user_read_at_norm",
+          "columns": [
+            "active_user_id",
+            "read_at_norm"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "read_histories_active_user_id_active_users_active_user_id_fk": {
+          "name": "read_histories_active_user_id_active_users_active_user_id_fk",
+          "tableFrom": "read_histories",
+          "tableTo": "active_users",
+          "columnsFrom": [
+            "active_user_id"
+          ],
+          "columnsTo": [
+            "active_user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "skipped_articles": {
+      "name": "skipped_articles",
+      "columns": {
+        "skipped_article_id": {
+          "name": "skipped_article_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "article_id": {
+          "name": "article_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "active_user_id": {
+          "name": "active_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at_norm": {
+          "name": "created_at_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "generated": {
+            "as": "(CASE WHEN typeof(\"created_at\") = 'integer' THEN datetime(\"created_at\" / 1000, 'unixepoch') ELSE datetime(\"created_at\") END)",
+            "type": "virtual"
+          }
+        }
+      },
+      "indexes": {
+        "uq_skipped_articles_article_user": {
+          "name": "uq_skipped_articles_article_user",
+          "columns": [
+            "article_id",
+            "active_user_id"
+          ],
+          "isUnique": true
+        },
+        "idx_skipped_articles_user_created_at_norm": {
+          "name": "idx_skipped_articles_user_created_at_norm",
+          "columns": [
+            "active_user_id",
+            "created_at_norm"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "skipped_articles_active_user_id_active_users_active_user_id_fk": {
+          "name": "skipped_articles_active_user_id_active_users_active_user_id_fk",
+          "tableFrom": "skipped_articles",
+          "tableTo": "active_users",
+          "columnsFrom": [
+            "active_user_id"
+          ],
+          "columnsTo": [
+            "active_user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "active_users": {
+      "name": "active_users",
+      "columns": {
+        "active_user_id": {
+          "name": "active_user_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "authentication_id": {
+          "name": "authentication_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "active_users_email_key": {
+          "name": "active_users_email_key",
+          "columns": [
+            "email"
+          ],
+          "isUnique": true
+        },
+        "active_users_authentication_id_key": {
+          "name": "active_users_authentication_id_key",
+          "columns": [
+            "authentication_id"
+          ],
+          "isUnique": true
+        },
+        "active_users_user_id_key": {
+          "name": "active_users_user_id_key",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "active_users_user_id_users_user_id_fk": {
+          "name": "active_users_user_id_users_user_id_fk",
+          "tableFrom": "active_users",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "banned_users": {
+      "name": "banned_users",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "banned_at": {
+          "name": "banned_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "banned_users_user_id_key": {
+          "name": "banned_users_user_id_key",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "banned_users_user_id_users_user_id_fk": {
+          "name": "banned_users_user_id_users_user_id_fk",
+          "tableFrom": "banned_users",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "leaved_users": {
+      "name": "leaved_users",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "leaved_users_user_id_key": {
+          "name": "leaved_users_user_id_key",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "leaved_users_user_id_users_user_id_fk": {
+          "name": "leaved_users_user_id_users_user_id_fk",
+          "tableFrom": "leaved_users",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "users": {
+      "name": "users",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "DATETIME",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

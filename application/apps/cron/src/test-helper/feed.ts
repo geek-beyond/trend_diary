@@ -8,6 +8,7 @@ export interface FeedItem {
   author?: string
   content?: string
   contentEncoded?: string
+  imageUrl?: string
 }
 
 export function buildQiitaAtom(items: FeedItem[]): string {
@@ -40,6 +41,9 @@ export function buildZennRss(items: FeedItem[]): string {
         item.url === undefined ? '' : `      <link>${item.url}</link>`,
         item.content === undefined ? '' : `      <description>${item.content}</description>`,
         item.author === undefined ? '' : `      <dc:creator>${item.author}</dc:creator>`,
+        item.imageUrl === undefined
+          ? ''
+          : `      <enclosure url="${item.imageUrl}" length="0" type="image/png"/>`,
         '    </item>',
       ]
         .filter((line) => line !== '')
@@ -67,6 +71,9 @@ export function buildHatenaRdf(items: FeedItem[]): string {
           ? ''
           : `    <content:encoded>${item.contentEncoded}</content:encoded>`,
         item.author === undefined ? '' : `    <dc:creator>${item.author}</dc:creator>`,
+        item.imageUrl === undefined
+          ? ''
+          : `    <hatena:imageurl>${item.imageUrl}</hatena:imageurl>`,
         '  </item>',
       ]
         .filter((line) => line !== '')
@@ -74,7 +81,7 @@ export function buildHatenaRdf(items: FeedItem[]): string {
     )
     .join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>
-<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:hatena="http://www.hatena.ne.jp/info/xmlns#">
   <channel rdf:about="${FEED_URL.hatena}">
     <title>はてなブックマーク - 人気エントリー - テクノロジー</title>
     <link>https://b.hatena.ne.jp/hotentry/it</link>

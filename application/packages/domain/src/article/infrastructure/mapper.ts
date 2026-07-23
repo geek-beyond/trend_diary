@@ -12,6 +12,7 @@ export default function fromRdbToArticle(rdbArticle: RdbArticle): Article {
     author: rdbArticle.author,
     description: rdbArticle.description,
     url: rdbArticle.url,
+    imageUrl: rdbArticle.imageUrl,
     createdAt: rdbArticle.createdAt,
   }
 }

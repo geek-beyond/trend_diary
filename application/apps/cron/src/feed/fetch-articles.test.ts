@@ -63,6 +63,24 @@ describe('fetchQiitaArticles', () => {
       expect(saved.description).toBe('Qiita本文')
     })
 
+    it('Qiita の Atom フィードは画像要素を持たないため imageUrl を null で保存する', async () => {
+      stubFeed(
+        buildQiitaAtom([
+          {
+            title: 'Qiita記事',
+            author: 'qiita_author',
+            content: 'Qiita本文',
+            url: 'https://qiita.com/u/items/q1',
+          },
+        ]),
+      )
+
+      const result = await fetchQiitaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      expect((await findByUrl('https://qiita.com/u/items/q1')).imageUrl).toBeNull()
+    })
+
     it('content が欠損した記事は description を空文字で補完して保存する', async () => {
       stubFeed(
         buildQiitaAtom([
@@ -175,6 +193,45 @@ describe('fetchZennArticles', () => {
       expect(saved.author).toBe('zenn_creator')
       expect(saved.description).toBe('Zenn本文')
     })
+
+    it('enclosure の url を imageUrl として保存する', async () => {
+      stubFeed(
+        buildZennRss([
+          {
+            title: 'Zenn記事',
+            author: 'zenn_creator',
+            content: 'Zenn本文',
+            url: 'https://zenn.dev/u/articles/z1',
+            imageUrl: 'https://res.cloudinary.com/zenn/image/upload/og.png',
+          },
+        ]),
+      )
+
+      const result = await fetchZennArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      expect((await findByUrl('https://zenn.dev/u/articles/z1')).imageUrl).toBe(
+        'https://res.cloudinary.com/zenn/image/upload/og.png',
+      )
+    })
+
+    it('enclosure が無い記事は imageUrl を null で保存する', async () => {
+      stubFeed(
+        buildZennRss([
+          {
+            title: 'Zenn記事',
+            author: 'zenn_creator',
+            content: 'Zenn本文',
+            url: 'https://zenn.dev/u/articles/z1',
+          },
+        ]),
+      )
+
+      const result = await fetchZennArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      expect((await findByUrl('https://zenn.dev/u/articles/z1')).imageUrl).toBeNull()
+    })
   })
 
   describe('準正常系', () => {
@@ -223,6 +280,26 @@ describe('fetchZennArticles', () => {
       expect(await countArticles()).toBe(1)
       expect((await findByUrl('https://zenn.dev/u/articles/ok')).title).toBe('Zenn正常')
     })
+
+    it('imageUrl が URL として不正でも記事はスキップせず imageUrl を null にして保存する', async () => {
+      stubFeed(
+        buildZennRss([
+          {
+            title: 'Zenn記事',
+            author: 'zenn_creator',
+            content: 'Zenn本文',
+            url: 'https://zenn.dev/u/articles/z1',
+            imageUrl: 'not-a-url',
+          },
+        ]),
+      )
+
+      const result = await fetchZennArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) expect(result.value).toBe(1)
+      expect((await findByUrl('https://zenn.dev/u/articles/z1')).imageUrl).toBeNull()
+    })
   })
 })
 
@@ -250,6 +327,41 @@ describe('fetchHatenaArticles', () => {
       expect(saved.media).toBe('hatena')
       expect(saved.author).toBe('hatena_creator')
       expect(saved.description).toBe('はてな本文')
+    })
+
+    it('hatena:imageurl を imageUrl として保存する', async () => {
+      stubHatena([
+        {
+          title: 'はてな記事',
+          author: 'hatena_creator',
+          content: 'はてな本文',
+          url: 'https://example.com/h1',
+          imageUrl: 'https://cdn-ak-scissors.b.st-hatena.com/image/square/example.png',
+        },
+      ])
+
+      const result = await fetchHatenaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      expect((await findByUrl('https://example.com/h1')).imageUrl).toBe(
+        'https://cdn-ak-scissors.b.st-hatena.com/image/square/example.png',
+      )
+    })
+
+    it('hatena:imageurl が無い記事は imageUrl を null で保存する', async () => {
+      stubHatena([
+        {
+          title: 'はてな記事',
+          author: 'hatena_creator',
+          content: 'はてな本文',
+          url: 'https://example.com/h1',
+        },
+      ])
+
+      const result = await fetchHatenaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      expect((await findByUrl('https://example.com/h1')).imageUrl).toBeNull()
     })
 
     it('新規記事を全件保存する', async () => {
@@ -368,6 +480,19 @@ describe('fetchHatenaArticles', () => {
       expect([...saved.title].length).toBe(100)
       expect([...saved.author].length).toBe(30)
       expect([...saved.description].length).toBe(1024)
+    })
+
+    it('最大長を超える imageUrl は切り詰めると URL として壊れるため null にして保存する', async () => {
+      const baseUrl = 'https://example.com/'
+      const longImageUrl = baseUrl + 'a'.repeat(2100 - baseUrl.length)
+      stubHatena([
+        { title: '記事', content: '本文', url: 'https://example.com/h1', imageUrl: longImageUrl },
+      ])
+
+      const result = await fetchHatenaArticles(cronEnv, logger)
+
+      expect(result.isOk()).toBe(true)
+      expect((await findByUrl('https://example.com/h1')).imageUrl).toBeNull()
     })
 
     it('最大長を超える URL を切り詰めて保存する', async () => {

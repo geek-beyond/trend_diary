@@ -17,6 +17,6 @@ export const Default: Story = {
     // ArticleCard と同じ寸法で描画され、切り替え時にレイアウトが揺れないこと
     const skeleton = canvas.getByTestId('article-card-skeleton')
     await expect(skeleton).toBeInTheDocument()
-    await expect(skeleton).toHaveClass('h-32')
+    await expect(skeleton).toHaveClass('h-56')
   },
 }

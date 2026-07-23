@@ -10,6 +10,7 @@ const defaultArticle: Article = {
   author: 'デフォルト筆者',
   description: 'デフォルトの説明文です',
   url: 'https://example.com',
+  imageUrl: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
 }
 
@@ -74,6 +75,55 @@ export const ZennArticle: Story = {
       const mediaIcon = canvas.getByRole('img')
       await expect(mediaIcon).toBeInTheDocument()
       await expect(mediaIcon).toHaveAttribute('src', '/images/zenn-icon.svg')
+    })
+  },
+}
+
+// サムネイルの仕様: 画像があれば表示し、無ければメディア別プレースホルダー、読込失敗時はプレースホルダーへ縮退する
+export const WithOgpImage: Story = {
+  args: {
+    article: generateArticle({ imageUrl: '/images/qiita-icon.png' }),
+  },
+  play: async ({ canvas, step }) => {
+    await step('OGP画像がサムネイルとして表示されることを確認', async () => {
+      const image = canvas.getByTestId('article-thumbnail-image')
+      await expect(image).toBeInTheDocument()
+      await expect(image).toHaveAttribute('src', '/images/qiita-icon.png')
+    })
+
+    await step('プレースホルダーが表示されないことを確認', async () => {
+      const placeholder = canvas.queryByTestId('article-thumbnail-placeholder')
+      await expect(placeholder).not.toBeInTheDocument()
+    })
+  },
+}
+
+export const WithoutOgpImage: Story = {
+  args: {
+    article: qiitaArticle,
+  },
+  play: async ({ canvas, step }) => {
+    await step('画像が無い記事はメディア別プレースホルダーを表示することを確認', async () => {
+      const placeholder = canvas.getByTestId('article-thumbnail-placeholder')
+      await expect(placeholder).toBeInTheDocument()
+    })
+
+    await step('画像が表示されないことを確認', async () => {
+      const image = canvas.queryByTestId('article-thumbnail-image')
+      await expect(image).not.toBeInTheDocument()
+    })
+  },
+}
+
+export const BrokenOgpImage: Story = {
+  args: {
+    article: generateArticle({ imageUrl: '/images/this-image-does-not-exist.png' }),
+  },
+  play: async ({ canvas, step }) => {
+    await step('画像の読込失敗時はプレースホルダーへ縮退することを確認', async () => {
+      await waitFor(async () => {
+        await expect(canvas.getByTestId('article-thumbnail-placeholder')).toBeInTheDocument()
+      })
     })
   },
 }

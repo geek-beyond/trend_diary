@@ -1,5 +1,6 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { articles } from '@trend-diary/datastore/schema'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import TEST_ENV from '../test-helper/env'
 import { countArticles, testRdb as db } from '../test-helper/rdb'
@@ -12,6 +13,7 @@ function normalizedItem(overrides: Partial<NormalizedItem> = {}): NormalizedItem
     author: 'author',
     description: 'description',
     url: 'https://example.com/default',
+    imageUrl: null,
     ...overrides,
   }
 }
@@ -34,10 +36,28 @@ describe('storeArticles', () => {
       expect(await countArticles()).toBe(0)
     })
 
-    // D1のバインドパラメータ上限100・使用率80%・カラム数5から算出されるチャンクサイズは16件。
+    const imageUrlCases = [
+      {
+        label: 'imageUrl をそのまま保存する',
+        imageUrl: 'https://example.com/image.png',
+        expected: 'https://example.com/image.png',
+      },
+      { label: 'imageUrl が null の場合は null のまま保存する', imageUrl: null, expected: null },
+    ]
+
+    it.each(imageUrlCases)('$label', async ({ imageUrl, expected }) => {
+      const url = 'https://example.com/image-case'
+      const result = await storeArticles('zenn', [normalizedItem({ url, imageUrl })], TEST_ENV)
+
+      expect(result.isOk()).toBe(true)
+      const [saved] = await db.select().from(articles).where(eq(articles.url, url)).limit(1)
+      expect(saved.imageUrl).toBe(expected)
+    })
+
+    // D1のバインドパラメータ上限100・使用率80%・カラム数6から算出されるチャンクサイズは13件。
     const chunkBoundaryCases = [
-      { label: 'ちょうどの件数は1回で全件保存する', count: 16 },
-      { label: 'を1件超えると複数回に分けて全件保存する', count: 17 },
+      { label: 'ちょうどの件数は1回で全件保存する', count: 13 },
+      { label: 'を1件超えると複数回に分けて全件保存する', count: 14 },
     ]
 
     it.each(chunkBoundaryCases)(

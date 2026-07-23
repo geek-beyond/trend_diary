@@ -26,7 +26,7 @@ interface CoverageOverrides {
   thresholds?: Partial<typeof COVERAGE_THRESHOLDS>
 }
 
-export function coverageConfig(overrides: CoverageOverrides = {}) {
+function coverageConfig(overrides: CoverageOverrides = {}) {
   const { provider = 'v8', exclude = [], thresholds = {} } = overrides
   return {
     enabled: true,
@@ -40,13 +40,20 @@ export function coverageConfig(overrides: CoverageOverrides = {}) {
   }
 }
 
+interface TestConfigOverrides extends Omit<TestUserConfig, 'coverage'> {
+  // カバレッジを計測しないパッケージ（authentication）向けに false を許容する。
+  coverage?: CoverageOverrides | false
+}
+
 // パッケージ間で重複する test ブロックのボイラープレート共有プリセット。
-// pool / setupFiles / coverage など個別事情は overrides で足す。
-export function testConfig(overrides: TestUserConfig = {}): TestUserConfig {
+// pool / setupFiles など個別事情は overrides で足す。
+export function testConfig(overrides: TestConfigOverrides = {}): TestUserConfig {
+  const { coverage, ...rest } = overrides
   return {
     globals: true,
     include: ['src/**/*.test.ts'],
     watch: false,
-    ...overrides,
+    ...(coverage === false ? {} : { coverage: coverageConfig(coverage) }),
+    ...rest,
   }
 }

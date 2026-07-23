@@ -22,8 +22,9 @@ function truncateByCodePoint(text: string, maxLength: number): string {
   return [...text].slice(0, maxLength).join('')
 }
 
-// 画像URLは記事挿入後に別途解決するため、挿入時点では持たない（og_image_url は NULL で入る）。
-// 挿入できた記事のURL一覧を返し、呼び出し側の画像解決の対象にする
+// 挿入できた記事のURL一覧を返す。og:image の取得は既存記事への無駄なアクセスを避けるため
+// 新規挿入分だけに絞りたいが、どれが新規かは ON CONFLICT を通した挿入結果でしか分からない。
+// そのため画像解決は呼び出し側がこの戻り値（新規URL）に対して後続で行う（挿入時は NULL）
 export async function storeArticles(
   media: ArticleMedia,
   items: NormalizedItem[],

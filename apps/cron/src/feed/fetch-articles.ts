@@ -79,7 +79,10 @@ async function fetchAndStore<RawItem>(
   if (storeResult.isErr()) return err(storeResult.error)
   const insertedUrls = storeResult.value
 
-  // 画像は新規挿入分だけ解決する（既存URLは ON CONFLICT でスキップ済みで、再取得の必要がない）
+  // og:image の取得は記事ページへの1件ずつの HTTP アクセスを伴う。フィードは毎回ほぼ同じ記事を
+  // 返すため、全件で取りに行くと既にDBにある記事へ毎実行アクセスし続ける無駄が出る。
+  // どれが新規かは挿入して初めて確定する（既存URLは ON CONFLICT でスキップされ returning に載らない）
+  // ので、挿入で判明した新規分だけを対象に og:image を解決する
   const ogImageEntries = await resolveOgImageEntries(insertedUrls)
   const updateResult = await updateArticleOgImageUrls(ogImageEntries, env)
   if (updateResult.isErr()) return err(updateResult.error)

@@ -28,11 +28,6 @@ allowBuilds:
 
 minimumReleaseAge: 4320
 
-# import-lint の境界機能(packageDirectory)は 0.1.6 以降でのみ利用でき、
-# 隔離期間(minimumReleaseAge)を満たす旧版では機能しないため、当該パッケージ群のみ隔離対象から除外する。
-minimumReleaseAgeExclude:
-  - '@import-lint/*'
-
 overrides:
   '@esbuild-kit/core-utils>esbuild': ^0.25.0
   '@hono/node-server': ^1.19.13

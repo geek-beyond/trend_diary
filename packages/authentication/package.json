@@ -23,6 +23,7 @@
     "neverthrow": "catalog:"
   },
   "devDependencies": {
+    "@trend-diary/config": "workspace:*",
     "@types/node": "catalog:",
     "vitest": "catalog:"
   }

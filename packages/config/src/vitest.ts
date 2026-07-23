@@ -1,3 +1,5 @@
+import type { TestUserConfig } from 'vitest/config'
+
 // パッケージ間でカバレッジ方針を統一するための共有プリセット。
 // 個別事情（宣言的スキーマや統合テストで担保する箇所の除外など）は引数で上書きする。
 
@@ -24,7 +26,7 @@ interface CoverageOverrides {
   thresholds?: Partial<typeof COVERAGE_THRESHOLDS>
 }
 
-export function coverageConfig(overrides: CoverageOverrides = {}) {
+function coverageConfig(overrides: CoverageOverrides = {}) {
   const { provider = 'v8', exclude = [], thresholds = {} } = overrides
   return {
     enabled: true,
@@ -35,5 +37,23 @@ export function coverageConfig(overrides: CoverageOverrides = {}) {
     exclude: [...SHARED_COVERAGE_EXCLUDE, ...exclude],
     // ベタガキしないと、GitHub Actions に閾値が反映されない。
     thresholds: { ...COVERAGE_THRESHOLDS, ...thresholds },
+  }
+}
+
+interface ConfigOverrides extends Omit<TestUserConfig, 'coverage'> {
+  // カバレッジを計測しない選択も許容する。
+  coverage?: CoverageOverrides | false
+}
+
+// パッケージ間で重複する test ブロックのボイラープレート共有プリセット。
+// pool / setupFiles など個別事情は overrides で足す。
+export function config(overrides: ConfigOverrides = {}): TestUserConfig {
+  const { coverage, ...rest } = overrides
+  return {
+    globals: true,
+    include: ['src/**/*.test.ts'],
+    watch: false,
+    ...(coverage === false ? {} : { coverage: coverageConfig(coverage) }),
+    ...rest,
   }
 }

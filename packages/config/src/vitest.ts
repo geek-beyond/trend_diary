@@ -40,14 +40,14 @@ function coverageConfig(overrides: CoverageOverrides = {}) {
   }
 }
 
-interface TestConfigOverrides extends Omit<TestUserConfig, 'coverage'> {
+interface ConfigOverrides extends Omit<TestUserConfig, 'coverage'> {
   // カバレッジを計測しないパッケージ（authentication）向けに false を許容する。
   coverage?: CoverageOverrides | false
 }
 
 // パッケージ間で重複する test ブロックのボイラープレート共有プリセット。
 // pool / setupFiles など個別事情は overrides で足す。
-export function testConfig(overrides: TestConfigOverrides = {}): TestUserConfig {
+export function config(overrides: ConfigOverrides = {}): TestUserConfig {
   const { coverage, ...rest } = overrides
   return {
     globals: true,

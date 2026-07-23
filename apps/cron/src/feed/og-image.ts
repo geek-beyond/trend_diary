@@ -1,13 +1,9 @@
 import { fetchWithTimeout } from '@trend-diary/runtime/http'
 import { wrapAsyncCall } from '@trend-diary/std/result'
-import { z } from 'zod'
 
 // 画像は装飾用途で記事の有効性に影響しないため、取得・抽出のどの失敗も null に縮退させ取込全体を止めない。
 // リトライもしない（次回 cron で新規記事として扱われることはなく、失敗はプレースホルダー表示に落ちるだけのため）
 const FETCH_TIMEOUT_MS = 10_000
-
-// og:image の content は任意の外部HTML由来のため URL 妥当性だけ検証する（長さは現実的に上限を超えない）
-const ogImageUrlSchema = z.string().url()
 
 export async function fetchOgImageUrl(articleUrl: string): Promise<string | null> {
   const responseResult = await wrapAsyncCall(() =>
@@ -33,14 +29,12 @@ export async function fetchOgImageUrl(articleUrl: string): Promise<string | null
   return normalizeOgImageUrl(content, articleUrl)
 }
 
-// og:image は絶対 URL が仕様だが相対で書くサイトも実在するため、記事 URL 基準で解決してから検証する
+// og:image は絶対 URL が仕様だが相対で書くサイトも実在するため、記事 URL 基準で解決する。
+// new URL が URL 妥当性の検証を兼ね、解決できない content は null に落とす
 function normalizeOgImageUrl(rawContent: string, articleUrl: string): string | null {
-  let resolved: string
   try {
-    resolved = new URL(rawContent, articleUrl).toString()
+    return new URL(rawContent, articleUrl).toString()
   } catch {
     return null
   }
-  const parsed = ogImageUrlSchema.safeParse(resolved)
-  return parsed.success ? parsed.data : null
 }

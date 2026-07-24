@@ -10,6 +10,7 @@ const article: Article = {
   author: 'テスト著者',
   description: 'テストの説明文です',
   url: 'https://example.com',
+  ogImageUrl: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
 }
 

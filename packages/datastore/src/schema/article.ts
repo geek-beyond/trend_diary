@@ -21,6 +21,8 @@ export const articles = sqliteTable(
     author: text('author').notNull(),
     description: text('description').notNull(),
     url: text('url').notNull(),
+    // フィードに画像が無いメディア（Qiita等）や過去記事が存在するため nullable
+    ogImageUrl: text('og_image_url'),
     createdAt: dateTime('created_at')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

@@ -39,6 +39,7 @@ const baseArticle: Article = {
   author: 'tester',
   description: 'これはテスト記事',
   url: 'https://example.com/articles/1',
+  ogImageUrl: null,
   createdAt: new Date('2026-03-08T00:00:00.000Z'),
 }
 

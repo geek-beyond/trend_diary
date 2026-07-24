@@ -44,6 +44,7 @@ describe('QueryImpl', () => {
             author: '山田太郎',
             description: 'TypeScriptの型安全性に関する解説記事です',
             url: 'https://example.com/article/1',
+            ogImageUrl: 'https://example.com/image/1.png',
             createdAt: '2024-01-15T09:30:00.000Z',
             isRead: null,
             total: 2,
@@ -55,6 +56,7 @@ describe('QueryImpl', () => {
             author: '佐藤花子',
             description: 'Reactのフックについて詳しく解説します',
             url: 'https://example.com/article/2',
+            ogImageUrl: null,
             createdAt: '2024-01-14T10:00:00.000Z',
             isRead: null,
             total: 2,
@@ -70,6 +72,8 @@ describe('QueryImpl', () => {
         expect(result.value.total).toBe(2)
         expect(result.value.data).toHaveLength(2)
         expect(result.value.data[0].isRead).toBeUndefined()
+        expect(result.value.data[0].ogImageUrl).toBe('https://example.com/image/1.png')
+        expect(result.value.data[1].ogImageUrl).toBeNull()
       }
     })
 
@@ -83,6 +87,7 @@ describe('QueryImpl', () => {
             author: '山田太郎',
             description: 'TypeScriptの型安全性に関する解説記事です',
             url: 'https://example.com/article/1',
+            ogImageUrl: null,
             createdAt: '2024-01-15T09:30:00.000Z',
             isRead: 1,
             total: 2,
@@ -94,6 +99,7 @@ describe('QueryImpl', () => {
             author: '佐藤花子',
             description: 'Reactのフックについて詳しく解説します',
             url: 'https://example.com/article/2',
+            ogImageUrl: null,
             createdAt: '2024-01-14T10:00:00.000Z',
             isRead: 0,
             total: 2,
@@ -188,6 +194,7 @@ describe('QueryImpl', () => {
             author: '山田',
             description: '当日の記事1',
             url: 'https://example.com/article/1',
+            ogImageUrl: null,
             createdAt: '2026-03-04T15:00:00.000Z',
             total: 2,
           },
@@ -198,6 +205,7 @@ describe('QueryImpl', () => {
             author: '鈴木',
             description: '当日の記事2',
             url: 'https://example.com/article/2',
+            ogImageUrl: null,
             createdAt: '2026-03-05T14:59:59.999Z',
             total: 2,
           },
@@ -226,7 +234,7 @@ describe('QueryImpl', () => {
   describe('findArticleById', () => {
     it('記事をIDで検索できる', async () => {
       // INFO: クエリビルダ(select)の戻り行はカラム順の配列:
-      // article_id, media, title, author, description, url, created_at
+      // article_id, media, title, author, description, url, og_image_url, created_at
       mockRdbExecutor.mockResolvedValue({
         rows: [
           [
@@ -236,6 +244,7 @@ describe('QueryImpl', () => {
             '山田太郎',
             'TypeScriptの型安全性に関する解説記事です',
             'https://example.com/article/1',
+            null,
             '2024-01-15T09:30:00.000Z',
           ],
         ],
@@ -330,6 +339,7 @@ describe('QueryImpl', () => {
             author: 'a',
             description: 'd',
             url: 'https://example.com/unread',
+            ogImageUrl: null,
             createdAt: '2026-03-07T00:00:00.000Z',
             total: 250,
           },
@@ -372,6 +382,7 @@ describe('QueryImpl', () => {
             author: 'a',
             description: 'd',
             url: 'https://example.com/unread',
+            ogImageUrl: null,
             createdAt: '2026-03-07T00:00:00.000Z',
             total: 1,
           },

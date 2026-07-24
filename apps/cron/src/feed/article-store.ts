@@ -11,6 +11,11 @@ import type { NormalizedItem } from './config'
 const MAX_BIND_PARAMETERS = 100
 const BIND_PARAMETER_USAGE_RATIO = 0.8
 
+// og:image を解決済みの記事。画像が無い/取得に失敗した記事は ogImageUrl が null で入る
+export interface ArticleWithOgImage extends NormalizedItem {
+  ogImageUrl: string | null
+}
+
 function* chunk<T>(items: readonly T[], size: number): Generator<T[]> {
   for (let i = 0; i < items.length; i += size) {
     yield items.slice(i, i + size)
@@ -23,7 +28,7 @@ function truncateByCodePoint(text: string, maxLength: number): string {
 
 export async function storeArticles(
   media: ArticleMedia,
-  items: NormalizedItem[],
+  items: ArticleWithOgImage[],
   env: FetchEnv,
 ): Promise<Result<number, Error>> {
   const db = getRdbClient(env.DB)
@@ -32,12 +37,15 @@ export async function storeArticles(
   // media はバッチ全体で不変のため切り詰めをループ外で一度だけ行う
   const truncatedMedia = truncateByCodePoint(media, ARTICLE_MAX_LENGTH.media)
 
+  // title / author / description は本文由来で長くなり得るため上限で切り詰める（プレビュー保存）。
+  // 一方 URL は切り詰めると壊れるうえ現実的に上限を超えないため、そのまま保存する
   const normalized = items.map((item) => ({
     media: truncatedMedia,
     title: truncateByCodePoint(item.title, ARTICLE_MAX_LENGTH.title),
     author: truncateByCodePoint(item.author, ARTICLE_MAX_LENGTH.author),
     description: truncateByCodePoint(item.description, ARTICLE_MAX_LENGTH.description),
-    url: truncateByCodePoint(item.url, ARTICLE_MAX_LENGTH.url),
+    url: item.url,
+    ogImageUrl: item.ogImageUrl,
   }))
 
   // 同一フィード内のURL重複を除去する（複数行INSERT内の自己重複を避けるため）

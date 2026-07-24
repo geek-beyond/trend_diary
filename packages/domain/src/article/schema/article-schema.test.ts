@@ -8,6 +8,7 @@ describe('記事スキーマ', () => {
     author: 'John Doe',
     description: 'This is a test article description.',
     url: 'http://example.com',
+    ogImageUrl: null,
     createdAt: new Date(),
   }
 
@@ -223,6 +224,63 @@ describe('記事スキーマ', () => {
       }).toThrow()
     })
   })
+
+  describe('ogImageUrl のバリデーション', () => {
+    // フィードに画像が無いメディアや画像追加以前の記事が存在するため、DB 契約どおり null を許容する
+    it('nullを受け入れること', () => {
+      expect(() => {
+        articleSchema.parse({
+          ...validArticle,
+          ogImageUrl: null,
+        })
+      }).not.toThrow()
+    })
+
+    it('有効なURLを受け入れること', () => {
+      expect(() => {
+        articleSchema.parse({
+          ...validArticle,
+          ogImageUrl: 'https://example.com/image.png',
+        })
+      }).not.toThrow()
+    })
+
+    it('無効なURLを拒否すること', () => {
+      expect(() => {
+        articleSchema.parse({
+          ...validArticle,
+          ogImageUrl: 'invalid-url',
+        })
+      }).toThrow()
+    })
+
+    it('境界値の長さのURLを受け入れること', () => {
+      const baseUrl = 'https://example.com/'
+      expect(() => {
+        articleSchema.parse({
+          ...validArticle,
+          ogImageUrl: baseUrl + 'a'.repeat(2048 - baseUrl.length),
+        })
+      }).not.toThrow()
+    })
+
+    it('最大長を超えるURLを拒否すること', () => {
+      const baseUrl = 'https://example.com/'
+      expect(() => {
+        articleSchema.parse({
+          ...validArticle,
+          ogImageUrl: baseUrl + 'a'.repeat(2049 - baseUrl.length),
+        })
+      }).toThrow()
+    })
+
+    it('ogImageUrlがない場合は拒否すること', () => {
+      const { ogImageUrl: _imageUrl, ...articleWithoutImageUrl } = validArticle
+      expect(() => {
+        articleSchema.parse(articleWithoutImageUrl)
+      }).toThrow()
+    })
+  })
 })
 
 describe('既読情報付き記事スキーマ', () => {
@@ -233,6 +291,7 @@ describe('既読情報付き記事スキーマ', () => {
     author: 'John Doe',
     description: 'This is a test article description.',
     url: 'http://example.com',
+    ogImageUrl: null,
     createdAt: new Date(),
     isRead: false,
   }

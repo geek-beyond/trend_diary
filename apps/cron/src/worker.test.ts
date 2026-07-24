@@ -1,7 +1,6 @@
 import type { ExecutionContext, ScheduledController } from '@cloudflare/workers-types'
 import { articles } from '@trend-diary/datastore/schema'
 import { ARTICLE_MEDIA } from '@trend-diary/domain/article/media'
-import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import TEST_ENV from './test-helper/env'
 import {
@@ -12,7 +11,7 @@ import {
   type FeedItem,
   rssResponse,
 } from './test-helper/feed'
-import { testRdb as db } from './test-helper/rdb'
+import { findByUrl, testRdb as db } from './test-helper/rdb'
 import worker from './worker'
 
 const fetchMock = vi.fn()
@@ -86,11 +85,6 @@ async function runScheduled(scheduledTime: number): Promise<Promise<void>[]> {
 async function savedUrls(): Promise<string[]> {
   const rows = await db.select({ url: articles.url }).from(articles)
   return rows.map((row) => row.url)
-}
-
-async function findByUrl(url: string) {
-  const [row] = await db.select().from(articles).where(eq(articles.url, url)).limit(1)
-  return row
 }
 
 function discordCallCount(): number {

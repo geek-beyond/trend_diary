@@ -18,6 +18,7 @@ const mockArticle: Article = {
   author: faker.person.fullName(),
   description: faker.lorem.paragraph(),
   url: faker.internet.url(),
+  ogImageUrl: null,
   createdAt: new Date(),
 }
 

@@ -25,8 +25,8 @@ catalogs:
       specifier: 0.45.2
       version: 0.45.2
     hono:
-      specifier: ^4.12.29
-      version: 4.12.30
+      specifier: ^4.12.31
+      version: 4.12.31
     neverthrow:
       specifier: ^8.2.0
       version: 8.2.0
@@ -134,7 +134,7 @@ importers:
     dependencies:
       '@hono/zod-validator':
         specifier: ^0.9.0
-        version: 0.9.0(hono@4.12.30)(zod@4.4.3)
+        version: 0.9.0(hono@4.12.31)(zod@4.4.3)
       '@icons-pack/react-simple-icons':
         specifier: ^13.13.0
         version: 13.13.0(react@19.2.7)
@@ -203,7 +203,7 @@ importers:
         version: 0.45.2(@cloudflare/workers-types@5.20260719.1)(@libsql/client@0.17.3)
       hono:
         specifier: 'catalog:'
-        version: 4.12.30
+        version: 4.12.31
       lucide-react:
         specifier: ^1.25.0
         version: 1.25.0(react@19.2.7)
@@ -261,7 +261,7 @@ importers:
         version: 10.5.0
       '@hono/vite-dev-server':
         specifier: ^0.26.1
-        version: 0.26.1(hono@4.12.30)(miniflare@4.20260714.0)(wrangler@4.112.0(@cloudflare/workers-types@5.20260719.1))
+        version: 0.26.1(hono@4.12.31)(miniflare@4.20260714.0)(wrangler@4.112.0(@cloudflare/workers-types@5.20260719.1))
       '@react-router/dev':
         specifier: ^8.2.0
         version: 8.2.0(react-router@8.2.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@7.0.2)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))(wrangler@4.112.0(@cloudflare/workers-types@5.20260719.1))
@@ -3971,8 +3971,8 @@ packages:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
-  hono@4.12.30:
-    resolution: {integrity: sha512-emn+JoJjrN9YTpRDS5it/UI2SO9BAE37T6I3d963RxcZ81G9A4pr2SZTEiiaiKbzx+NKRg5BZ89fCL7gCJCUog==}
+  hono@4.12.31:
+    resolution: {integrity: sha512-zJIHFrl6bq3RDd2YusFNCDlM8qUprxKswyi/OPzPyzKDdyBXDqWx8bZlZ7R+saTdSTatUmb3O7K4SspGPaEOQg==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@6.0.0:
@@ -5570,22 +5570,22 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@hono/node-server@1.19.14(hono@4.12.30)':
+  '@hono/node-server@1.19.14(hono@4.12.31)':
     dependencies:
-      hono: 4.12.30
+      hono: 4.12.31
 
-  '@hono/vite-dev-server@0.26.1(hono@4.12.30)(miniflare@4.20260714.0)(wrangler@4.112.0(@cloudflare/workers-types@5.20260719.1))':
+  '@hono/vite-dev-server@0.26.1(hono@4.12.31)(miniflare@4.20260714.0)(wrangler@4.112.0(@cloudflare/workers-types@5.20260719.1))':
     dependencies:
-      '@hono/node-server': 1.19.14(hono@4.12.30)
-      hono: 4.12.30
+      '@hono/node-server': 1.19.14(hono@4.12.31)
+      hono: 4.12.31
       minimatch: 9.0.9
     optionalDependencies:
       miniflare: 4.20260714.0
       wrangler: 4.112.0(@cloudflare/workers-types@5.20260719.1)
 
-  '@hono/zod-validator@0.9.0(hono@4.12.30)(zod@4.4.3)':
+  '@hono/zod-validator@0.9.0(hono@4.12.31)(zod@4.4.3)':
     dependencies:
-      hono: 4.12.30
+      hono: 4.12.31
       zod: 4.4.3
 
   '@icons-pack/react-simple-icons@13.13.0(react@19.2.7)':
@@ -7719,7 +7719,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono@4.12.30: {}
+  hono@4.12.31: {}
 
   html-encoding-sniffer@6.0.0:
     dependencies:

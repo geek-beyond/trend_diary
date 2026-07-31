@@ -68,6 +68,5 @@ Gitフックの有効化（必須。git 2.54以上が必要）。commit前にlin
 ## リファレンス
 
 - [React Router](https://reactrouter.com/home)
-- [React Router Hono Adapter](https://github.com/yusukebe/hono-react-router-adapter)
 - [Hono](https://hono.dev/docs/)
 - [TailwindCSS Using Vite](https://tailwindcss.com/docs/installation/using-vite)

@@ -9,6 +9,7 @@ const FETCH_TIMEOUT_MS = 30_000
 const MAX_FETCH_ATTEMPTS = 3
 const RETRY_BASE_DELAY_MS = 1_000
 const RETRY_MAX_DELAY_MS = 30_000
+const TOO_MANY_REQUESTS = 429
 
 // 429 等の失敗要因を後から切り分けられるよう、配信元レスポンスから残す診断情報。
 export interface RssFetchDiagnostics {
@@ -37,6 +38,11 @@ export class RssFetchError extends Error {
     super(`Failed to fetch rss feed: ${url}, status=${diagnostics.status}`)
     this.name = 'RssFetchError'
     this.diagnostics = diagnostics
+  }
+
+  // レート制限は他の失敗と扱いを変える（リトライしない・通知の文面を変える）ため判定を公開する。
+  get isRateLimited(): boolean {
+    return this.diagnostics.status === TOO_MANY_REQUESTS
   }
 }
 
@@ -98,6 +104,9 @@ export async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> 
     if (result.isOk()) return result
 
     lastError = result.error
+    // レート制限の解除は分単位に及び in-run のバックオフ（最大30秒）では明けないうえ、
+    // 制限中の追加リクエストは制限期間を延ばし得るため、リトライせず次回の定期実行に委ねる
+    if (lastError instanceof RssFetchError && lastError.isRateLimited) return err(lastError)
     // INFO: 最終試行後は待機せず失敗を返す
     if (attempt < MAX_FETCH_ATTEMPTS - 1) {
       await delay(backoffDelayMs(attempt))

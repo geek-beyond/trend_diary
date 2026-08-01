@@ -22,6 +22,25 @@ describe('backoffDelayMs', () => {
   })
 })
 
+describe('RssFetchError', () => {
+  describe('正常系', () => {
+    const cases = [
+      { status: 429, expected: true },
+      { status: 403, expected: false },
+      { status: 503, expected: false },
+    ]
+
+    it.each(cases)(
+      'status=$status のとき isRateLimited は $expected を返す',
+      ({ status, expected }) => {
+        const error = new RssFetchError('https://zenn.dev/feed', { status, headers: {} })
+
+        expect(error.isRateLimited).toBe(expected)
+      },
+    )
+  })
+})
+
 describe('fetchRssFeed', () => {
   beforeEach(() => {
     fetchMock.mockReset()
@@ -29,7 +48,6 @@ describe('fetchRssFeed', () => {
 
   describe('異常系', () => {
     it('非ok応答は RssFetchError として status・診断ヘッダ・本文先頭を残す', async () => {
-      vi.useFakeTimers()
       fetchMock.mockResolvedValue({
         ok: false,
         status: 429,
@@ -42,14 +60,12 @@ describe('fetchRssFeed', () => {
         text: async () => 'Rate limited by origin',
       })
 
-      const promise = fetchRssFeed('https://zenn.dev/feed')
-      await vi.runAllTimersAsync()
-      const result = await promise
-      vi.useRealTimers()
+      const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      expect(result.isErr()).toBe(true)
-      if (result.isErr() && result.error instanceof RssFetchError) {
-        expect(result.error.diagnostics).toEqual({
+      const error = result._unsafeUnwrapErr()
+      expect(error).toBeInstanceOf(RssFetchError)
+      expect(error).toMatchObject({
+        diagnostics: {
           status: 429,
           headers: {
             'retry-after': '30',
@@ -58,8 +74,40 @@ describe('fetchRssFeed', () => {
             server: 'cloudflare',
           },
           bodySnippet: 'Rate limited by origin',
-        })
-      }
+        },
+      })
+    })
+
+    it('429応答はリトライせず1回の試行で失敗を返す', async () => {
+      fetchMock.mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: new Headers({ 'retry-after': '281', server: 'cloudflare' }),
+        text: async () => 'error code: 1015',
+      })
+
+      const result = await fetchRssFeed('https://zenn.dev/feed')
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(RssFetchError)
+    })
+
+    it('429以外の非ok応答は上限回数までリトライする', async () => {
+      vi.useFakeTimers()
+      fetchMock.mockResolvedValue({
+        ok: false,
+        status: 503,
+        headers: new Headers({ server: 'cloudflare' }),
+        text: async () => 'Service Unavailable',
+      })
+
+      const promise = fetchRssFeed('https://zenn.dev/feed')
+      await vi.runAllTimersAsync()
+      const result = await promise
+      vi.useRealTimers()
+
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(RssFetchError)
     })
 
     it('本文が上限を超える場合は先頭のみを残す', async () => {
@@ -76,10 +124,9 @@ describe('fetchRssFeed', () => {
       const result = await promise
       vi.useRealTimers()
 
-      expect(result.isErr()).toBe(true)
-      if (result.isErr() && result.error instanceof RssFetchError) {
-        expect(result.error.diagnostics.bodySnippet).toBe(`${'x'.repeat(500)}…`)
-      }
+      const error = result._unsafeUnwrapErr()
+      expect(error).toBeInstanceOf(RssFetchError)
+      expect(error).toMatchObject({ diagnostics: { bodySnippet: `${'x'.repeat(500)}…` } })
     })
   })
 })

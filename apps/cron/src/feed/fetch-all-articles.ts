@@ -15,6 +15,10 @@ export interface FetchAllArticlesParams {
   scheduledTime: number
 }
 
+// レート制限は次回の定期実行（毎時）までに解除される見込みのため、
+// 通知の受け手が即時対応の要否を判断できるよう回復見込みを明示する。
+const RATE_LIMIT_NOTE = '\nnote: rate limited (retry on next scheduled run)'
+
 interface MediaFetchOutcome {
   media: ArticleMedia
   result: Result<number, Error>
@@ -78,8 +82,9 @@ export async function fetchAllArticles({
         error,
       )
       const detail = diagnostics ? formatDiagnostics(diagnostics) : ''
+      const note = error instanceof RssFetchError && error.isRateLimited ? RATE_LIMIT_NOTE : ''
       await discord.sendMessage(
-        `[trend-diary cron] fetch failed\ncron: ${cron}\nmedia: ${media}\nerror: ${error.message}${detail}`,
+        `[trend-diary cron] fetch failed\ncron: ${cron}\nmedia: ${media}\nerror: ${error.message}${detail}${note}`,
       )
       continue
     }

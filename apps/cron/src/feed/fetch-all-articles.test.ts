@@ -99,6 +99,39 @@ describe('fetchAllArticles', () => {
       )
       expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('body: Rate limited'))
     })
+
+    it('レート制限(429)の場合は次回実行で再試行する旨を通知に含める', async () => {
+      const fetchError = new RssFetchError('https://zenn.dev/feed', {
+        status: 429,
+        headers: { 'retry-after': '281' },
+        bodySnippet: 'error code: 1015',
+      })
+      runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
+        media === 'zenn' ? err(fetchError) : ok(1),
+      )
+      const { discord, sendMessageSpy } = buildDiscord()
+
+      await expect(runFetchAllArticles(discord, 5000)).rejects.toThrow()
+
+      expect(sendMessageSpy).toHaveBeenCalledWith(
+        expect.stringContaining('note: rate limited (retry on next scheduled run)'),
+      )
+    })
+
+    it('レート制限以外の失敗では再試行の注記を含めない', async () => {
+      const fetchError = new RssFetchError('https://zenn.dev/feed', {
+        status: 503,
+        headers: {},
+      })
+      runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
+        media === 'zenn' ? err(fetchError) : ok(1),
+      )
+      const { discord, sendMessageSpy } = buildDiscord()
+
+      await expect(runFetchAllArticles(discord, 6000)).rejects.toThrow()
+
+      expect(sendMessageSpy).not.toHaveBeenCalledWith(expect.stringContaining('note: rate limited'))
+    })
   })
 
   describe('異常系', () => {

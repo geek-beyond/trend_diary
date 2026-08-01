@@ -100,38 +100,29 @@ describe('fetchAllArticles', () => {
       expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('body: Rate limited'))
     })
 
-    it('レート制限(429)の場合は次回実行で再試行する旨を通知に含める', async () => {
-      const fetchError = new RssFetchError('https://zenn.dev/feed', {
-        status: 429,
-        headers: { 'retry-after': '281' },
-        bodySnippet: 'error code: 1015',
-      })
-      runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
-        media === 'zenn' ? err(fetchError) : ok(1),
-      )
-      const { discord, sendMessageSpy } = buildDiscord()
+    // レート制限は次回の定期実行で回復する見込みのため、通知の受け手が即時対応の要否を判断できる必要がある
+    const rateLimitNoteCases = [
+      { status: 429, expectsNote: true },
+      { status: 503, expectsNote: false },
+    ]
 
-      await expect(runFetchAllArticles(discord, 5000)).rejects.toThrow()
+    it.each(rateLimitNoteCases)(
+      'status=$status の失敗では通知への再試行注記の有無が $expectsNote になる',
+      async ({ status, expectsNote }) => {
+        const fetchError = new RssFetchError('https://zenn.dev/feed', { status, headers: {} })
+        runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
+          media === 'zenn' ? err(fetchError) : ok(1),
+        )
+        const { discord, sendMessageSpy } = buildDiscord()
 
-      expect(sendMessageSpy).toHaveBeenCalledWith(
-        expect.stringContaining('note: rate limited (retry on next scheduled run)'),
-      )
-    })
+        await expect(runFetchAllArticles(discord, 5000)).rejects.toThrow()
 
-    it('レート制限以外の失敗では再試行の注記を含めない', async () => {
-      const fetchError = new RssFetchError('https://zenn.dev/feed', {
-        status: 503,
-        headers: {},
-      })
-      runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
-        media === 'zenn' ? err(fetchError) : ok(1),
-      )
-      const { discord, sendMessageSpy } = buildDiscord()
-
-      await expect(runFetchAllArticles(discord, 6000)).rejects.toThrow()
-
-      expect(sendMessageSpy).not.toHaveBeenCalledWith(expect.stringContaining('note: rate limited'))
-    })
+        const noted = sendMessageSpy.mock.calls.some(([message]) =>
+          message.includes('note: rate limited (retry on next scheduled run)'),
+        )
+        expect(noted).toBe(expectsNote)
+      },
+    )
   })
 
   describe('異常系', () => {

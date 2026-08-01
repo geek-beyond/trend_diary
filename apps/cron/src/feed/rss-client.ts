@@ -106,7 +106,7 @@ export async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> 
     lastError = result.error
     // レート制限の解除は分単位に及び in-run のバックオフ（最大30秒）では明けないうえ、
     // 制限中の追加リクエストは制限期間を延ばし得るため、リトライせず次回の定期実行に委ねる
-    if (lastError instanceof RssFetchError && lastError.isRateLimited) return err(lastError)
+    if (lastError instanceof RssFetchError && lastError.isRateLimited) return result
     // INFO: 最終試行後は待機せず失敗を返す
     if (attempt < MAX_FETCH_ATTEMPTS - 1) {
       await delay(backoffDelayMs(attempt))

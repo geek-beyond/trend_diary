@@ -75,14 +75,15 @@ export async function fetchAllArticles({
     if (result.isErr()) {
       failedCount += 1
       const error = result.error
+      const rssError = error instanceof RssFetchError ? error : undefined
       // 429 等は status だけでは原因を追えないため、配信元レスポンスの診断情報を併せて残す
-      const diagnostics = error instanceof RssFetchError ? error.diagnostics : undefined
+      const diagnostics = rssError?.diagnostics
       logger.error(
         { msg: 'cron media fetch failed', media, durationMs, ...(diagnostics && { diagnostics }) },
         error,
       )
       const detail = diagnostics ? formatDiagnostics(diagnostics) : ''
-      const note = error instanceof RssFetchError && error.isRateLimited ? RATE_LIMIT_NOTE : ''
+      const note = rssError?.isRateLimited ? RATE_LIMIT_NOTE : ''
       await discord.sendMessage(
         `[trend-diary cron] fetch failed\ncron: ${cron}\nmedia: ${media}\nerror: ${error.message}${detail}${note}`,
       )

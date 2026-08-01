@@ -4,6 +4,20 @@ import { backoffDelayMs, fetchRssFeed, RssFetchError } from './rss-client'
 const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)
 
+function nonOkResponse(status: number, body: string, headers: Record<string, string> = {}) {
+  return { ok: false, status, headers: new Headers(headers), text: async () => body }
+}
+
+// リトライ間のバックオフを実時間で待たないよう、fake timer 下で全試行を進めてから結果を受け取る
+async function fetchRssFeedWithTimersAdvanced(url: string) {
+  vi.useFakeTimers()
+  const promise = fetchRssFeed(url)
+  await vi.runAllTimersAsync()
+  const result = await promise
+  vi.useRealTimers()
+  return result
+}
+
 describe('backoffDelayMs', () => {
   describe('正常系', () => {
     const cases = [
@@ -48,17 +62,14 @@ describe('fetchRssFeed', () => {
 
   describe('異常系', () => {
     it('非ok応答は RssFetchError として status・診断ヘッダ・本文先頭を残す', async () => {
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 429,
-        headers: new Headers({
+      fetchMock.mockResolvedValue(
+        nonOkResponse(429, 'Rate limited by origin', {
           'retry-after': '30',
           'cf-ray': '8abc',
           'cf-mitigated': 'challenge',
           server: 'cloudflare',
         }),
-        text: async () => 'Rate limited by origin',
-      })
+      )
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
@@ -79,12 +90,9 @@ describe('fetchRssFeed', () => {
     })
 
     it('429応答はリトライせず1回の試行で失敗を返す', async () => {
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 429,
-        headers: new Headers({ 'retry-after': '281', server: 'cloudflare' }),
-        text: async () => 'error code: 1015',
-      })
+      fetchMock.mockResolvedValue(
+        nonOkResponse(429, 'error code: 1015', { 'retry-after': '281', server: 'cloudflare' }),
+      )
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
@@ -93,36 +101,18 @@ describe('fetchRssFeed', () => {
     })
 
     it('429以外の非ok応答は上限回数までリトライする', async () => {
-      vi.useFakeTimers()
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 503,
-        headers: new Headers({ server: 'cloudflare' }),
-        text: async () => 'Service Unavailable',
-      })
+      fetchMock.mockResolvedValue(nonOkResponse(503, 'Service Unavailable'))
 
-      const promise = fetchRssFeed('https://zenn.dev/feed')
-      await vi.runAllTimersAsync()
-      const result = await promise
-      vi.useRealTimers()
+      const result = await fetchRssFeedWithTimersAdvanced('https://zenn.dev/feed')
 
       expect(fetchMock).toHaveBeenCalledTimes(3)
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(RssFetchError)
     })
 
     it('本文が上限を超える場合は先頭のみを残す', async () => {
-      vi.useFakeTimers()
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 503,
-        headers: new Headers({ server: 'cloudflare' }),
-        text: async () => 'x'.repeat(600),
-      })
+      fetchMock.mockResolvedValue(nonOkResponse(503, 'x'.repeat(600)))
 
-      const promise = fetchRssFeed('https://zenn.dev/feed')
-      await vi.runAllTimersAsync()
-      const result = await promise
-      vi.useRealTimers()
+      const result = await fetchRssFeedWithTimersAdvanced('https://zenn.dev/feed')
 
       const error = result._unsafeUnwrapErr()
       expect(error).toBeInstanceOf(RssFetchError)

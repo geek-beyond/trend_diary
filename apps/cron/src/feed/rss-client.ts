@@ -3,12 +3,8 @@ import { wrapAsyncCall } from '@trend-diary/std/result'
 import { err, type Result } from 'neverthrow'
 import Parser from 'rss-parser'
 
-// INFO: 外部RSSのハング時に無限待機しないよう1試行あたりのタイムアウトを設ける
+// INFO: 外部RSSのハング時に無限待機しないようタイムアウトを設ける
 const FETCH_TIMEOUT_MS = 30_000
-// INFO: 一時的なネットワークエラーを吸収するためのリトライ回数（初回 + リトライ）
-const MAX_FETCH_ATTEMPTS = 3
-const RETRY_BASE_DELAY_MS = 1_000
-const RETRY_MAX_DELAY_MS = 30_000
 const TOO_MANY_REQUESTS = 429
 
 // 429 等の失敗要因を後から切り分けられるよう、配信元レスポンスから残す診断情報。
@@ -40,7 +36,7 @@ export class RssFetchError extends Error {
     this.diagnostics = diagnostics
   }
 
-  // レート制限は他の失敗と扱いを変える（リトライしない・通知の文面を変える）ため判定を公開する。
+  // レート制限は配信元の障害と違い受け手の対応が不要なため、通知で区別できるよう判定を公開する。
   get isRateLimited(): boolean {
     return this.diagnostics.status === TOO_MANY_REQUESTS
   }
@@ -67,16 +63,9 @@ async function readBodySnippet(response: Response): Promise<string | undefined> 
   return text.length > BODY_SNIPPET_MAX_LENGTH ? `${text.slice(0, BODY_SNIPPET_MAX_LENGTH)}…` : text
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-// 指数バックオフの待機時間(2^attempt × base)を算出し、上限でクランプする。
-export function backoffDelayMs(attempt: number): number {
-  return Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS)
-}
-
-async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], Error>> {
+// 取得失敗は毎時の定期実行が再試行を兼ねるため、run 内でのリトライは行わない。
+// 保存は URL 一意制約で冪等なため、1回分の取得を落としても次回実行で取り込み直せる。
+export async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
   const responseResult = await wrapAsyncCall(() =>
     fetchWithTimeout(url, { timeoutMs: FETCH_TIMEOUT_MS }),
   )
@@ -94,24 +83,4 @@ async function fetchRssFeedOnce<T>(url: string): Promise<Result<T[], Error>> {
     const feed = await parser.parseString(xml)
     return feed.items
   })
-}
-
-export async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
-  let lastError: Error = new Error(`Failed to fetch rss feed: ${url}`)
-
-  for (let attempt = 0; attempt < MAX_FETCH_ATTEMPTS; attempt += 1) {
-    const result = await fetchRssFeedOnce<T>(url)
-    if (result.isOk()) return result
-
-    lastError = result.error
-    // レート制限の解除は分単位に及び in-run のバックオフ（最大30秒）では明けないうえ、
-    // 制限中の追加リクエストは制限期間を延ばし得るため、リトライせず次回の定期実行に委ねる
-    if (lastError instanceof RssFetchError && lastError.isRateLimited) return result
-    // INFO: 最終試行後は待機せず失敗を返す
-    if (attempt < MAX_FETCH_ATTEMPTS - 1) {
-      await delay(backoffDelayMs(attempt))
-    }
-  }
-
-  return err(lastError)
 }

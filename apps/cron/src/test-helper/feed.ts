@@ -87,3 +87,8 @@ ${entries}
 export function rssResponse(xml: string) {
   return { ok: true, status: 200, text: async () => xml }
 }
+
+// 失敗時は診断情報のためヘッダと本文を読むため、実 Response の契約に合わせて双方を備えたモックにする
+export function nonOkResponse(status: number, body: string, headers: Record<string, string> = {}) {
+  return { ok: false, status, headers: new Headers(headers), text: async () => body }
+}

@@ -8,6 +8,7 @@ import {
   buildQiitaAtom,
   buildZennRss,
   type FeedItem,
+  nonOkResponse,
   rssResponse,
 } from '../test-helper/feed'
 import { countArticles, testRdb as db } from '../test-helper/rdb'
@@ -438,54 +439,21 @@ describe('fetchHatenaArticles', () => {
       expect(options?.signal).toBeInstanceOf(AbortSignal)
     })
 
-    it('一時的な取得失敗はリトライし、回復後は成功する', async () => {
-      vi.useFakeTimers()
-      fetchMock
-        .mockRejectedValueOnce(new Error('network error'))
-        .mockResolvedValueOnce(rssResponse(buildHatenaRdf([])))
-
-      const promise = fetchHatenaArticles(cronEnv, logger)
-      await vi.runAllTimersAsync()
-      const result = await promise
-      vi.useRealTimers()
-
-      expect(fetchMock).toHaveBeenCalledTimes(2)
-      expect(result.isOk()).toBe(true)
-    })
-
-    it('全試行が失敗した場合は最大3回試行し err を返し何も保存しない', async () => {
-      vi.useFakeTimers()
+    it('取得に失敗した場合は err を返し何も保存しない', async () => {
       fetchMock.mockRejectedValue(new Error('network error'))
 
-      const promise = fetchHatenaArticles(cronEnv, logger)
-      await vi.runAllTimersAsync()
-      const result = await promise
-      vi.useRealTimers()
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
-      expect(fetchMock).toHaveBeenCalledTimes(3)
-      expect(result.isErr()).toBe(true)
-      if (result.isErr()) expect(result.error).toBeInstanceOf(Error)
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
       expect(await countArticles()).toBe(0)
     })
 
-    it('レスポンスが ok でない場合もリトライ対象とし、最終的に err を返す', async () => {
-      vi.useFakeTimers()
-      // 実 Response の契約（headers・text が必ず存在する）に合わせたモックにする
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 500,
-        headers: new Headers(),
-        text: async () => '',
-      })
+    it('レスポンスが ok でない場合も err を返し何も保存しない', async () => {
+      fetchMock.mockResolvedValue(nonOkResponse(500, ''))
 
-      const promise = fetchHatenaArticles(cronEnv, logger)
-      await vi.runAllTimersAsync()
-      const result = await promise
-      vi.useRealTimers()
+      const result = await fetchHatenaArticles(cronEnv, logger)
 
-      expect(fetchMock).toHaveBeenCalledTimes(3)
-      expect(result.isErr()).toBe(true)
-      if (result.isErr()) expect(result.error.message).toContain('status=500')
+      expect(result._unsafeUnwrapErr().message).toContain('status=500')
       expect(await countArticles()).toBe(0)
     })
   })

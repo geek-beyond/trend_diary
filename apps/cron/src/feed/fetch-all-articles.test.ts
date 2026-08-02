@@ -99,6 +99,30 @@ describe('fetchAllArticles', () => {
       )
       expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('body: Rate limited'))
     })
+
+    // レート制限は次回の定期実行で回復する見込みのため、通知の受け手が即時対応の要否を判断できる必要がある
+    const rateLimitNoteCases = [
+      { status: 429, expectsNote: true },
+      { status: 503, expectsNote: false },
+    ]
+
+    it.each(rateLimitNoteCases)(
+      'status=$status の失敗では通知への再試行注記の有無が $expectsNote になる',
+      async ({ status, expectsNote }) => {
+        const fetchError = new RssFetchError('https://zenn.dev/feed', { status, headers: {} })
+        runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
+          media === 'zenn' ? err(fetchError) : ok(1),
+        )
+        const { discord, sendMessageSpy } = buildDiscord()
+
+        await expect(runFetchAllArticles(discord, 5000)).rejects.toThrow()
+
+        const noted = sendMessageSpy.mock.calls.some(([message]) =>
+          message.includes('note: rate limited (retry on next scheduled run)'),
+        )
+        expect(noted).toBe(expectsNote)
+      },
+    )
   })
 
   describe('異常系', () => {

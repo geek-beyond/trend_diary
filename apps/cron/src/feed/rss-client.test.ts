@@ -1,24 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { backoffDelayMs, fetchRssFeed, RssFetchError } from './rss-client'
+import { nonOkResponse } from '../test-helper/feed'
+import { fetchRssFeed, RssFetchError } from './rss-client'
 
 const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)
 
-describe('backoffDelayMs', () => {
+describe('RssFetchError', () => {
   describe('正常系', () => {
     const cases = [
-      { attempt: 0, expectedMs: 1_000 },
-      { attempt: 1, expectedMs: 2_000 },
-      { attempt: 2, expectedMs: 4_000 },
-      { attempt: 4, expectedMs: 16_000 },
-      // attempt=5以降は理論値(2^attempt×base)が上限を超えるため30,000msにクランプされる
-      { attempt: 5, expectedMs: 30_000 },
-      { attempt: 10, expectedMs: 30_000 },
+      { status: 429, expected: true },
+      { status: 403, expected: false },
+      { status: 503, expected: false },
     ]
 
-    it.each(cases)('attempt=$attempt のとき $expectedMs ms を返す', ({ attempt, expectedMs }) => {
-      expect(backoffDelayMs(attempt)).toBe(expectedMs)
-    })
+    it.each(cases)(
+      'status=$status のとき isRateLimited は $expected を返す',
+      ({ status, expected }) => {
+        const error = new RssFetchError('https://zenn.dev/feed', { status, headers: {} })
+
+        expect(error.isRateLimited).toBe(expected)
+      },
+    )
   })
 })
 
@@ -29,27 +31,21 @@ describe('fetchRssFeed', () => {
 
   describe('異常系', () => {
     it('非ok応答は RssFetchError として status・診断ヘッダ・本文先頭を残す', async () => {
-      vi.useFakeTimers()
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 429,
-        headers: new Headers({
+      fetchMock.mockResolvedValue(
+        nonOkResponse(429, 'Rate limited by origin', {
           'retry-after': '30',
           'cf-ray': '8abc',
           'cf-mitigated': 'challenge',
           server: 'cloudflare',
         }),
-        text: async () => 'Rate limited by origin',
-      })
+      )
 
-      const promise = fetchRssFeed('https://zenn.dev/feed')
-      await vi.runAllTimersAsync()
-      const result = await promise
-      vi.useRealTimers()
+      const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      expect(result.isErr()).toBe(true)
-      if (result.isErr() && result.error instanceof RssFetchError) {
-        expect(result.error.diagnostics).toEqual({
+      const error = result._unsafeUnwrapErr()
+      expect(error).toBeInstanceOf(RssFetchError)
+      expect(error).toMatchObject({
+        diagnostics: {
           status: 429,
           headers: {
             'retry-after': '30',
@@ -58,28 +54,29 @@ describe('fetchRssFeed', () => {
             server: 'cloudflare',
           },
           bodySnippet: 'Rate limited by origin',
-        })
-      }
+        },
+      })
+    })
+
+    it('失敗しても run 内でリトライせず1回の試行で失敗を返す', async () => {
+      fetchMock.mockResolvedValue(
+        nonOkResponse(429, 'error code: 1015', { 'retry-after': '281', server: 'cloudflare' }),
+      )
+
+      const result = await fetchRssFeed('https://zenn.dev/feed')
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(result._unsafeUnwrapErr()).toBeInstanceOf(RssFetchError)
     })
 
     it('本文が上限を超える場合は先頭のみを残す', async () => {
-      vi.useFakeTimers()
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 503,
-        headers: new Headers({ server: 'cloudflare' }),
-        text: async () => 'x'.repeat(600),
-      })
+      fetchMock.mockResolvedValue(nonOkResponse(503, 'x'.repeat(600)))
 
-      const promise = fetchRssFeed('https://zenn.dev/feed')
-      await vi.runAllTimersAsync()
-      const result = await promise
-      vi.useRealTimers()
+      const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      expect(result.isErr()).toBe(true)
-      if (result.isErr() && result.error instanceof RssFetchError) {
-        expect(result.error.diagnostics.bodySnippet).toBe(`${'x'.repeat(500)}…`)
-      }
+      const error = result._unsafeUnwrapErr()
+      expect(error).toBeInstanceOf(RssFetchError)
+      expect(error).toMatchObject({ diagnostics: { bodySnippet: `${'x'.repeat(500)}…` } })
     })
   })
 })

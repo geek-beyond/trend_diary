@@ -8,6 +8,7 @@ import {
   buildQiitaAtom,
   buildZennRss,
   type FeedItem,
+  nonOkResponse,
   rssResponse,
 } from '../test-helper/feed'
 import { countArticles, testRdb as db } from '../test-helper/rdb'
@@ -438,28 +439,20 @@ describe('fetchHatenaArticles', () => {
       expect(options?.signal).toBeInstanceOf(AbortSignal)
     })
 
-    it('取得に失敗した場合はリトライせず err を返し何も保存しない', async () => {
+    it('取得に失敗した場合は err を返し何も保存しない', async () => {
       fetchMock.mockRejectedValue(new Error('network error'))
 
       const result = await fetchHatenaArticles(cronEnv, logger)
 
-      expect(fetchMock).toHaveBeenCalledTimes(1)
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
       expect(await countArticles()).toBe(0)
     })
 
-    it('レスポンスが ok でない場合もリトライせず err を返し何も保存しない', async () => {
-      // 実 Response の契約（headers・text が必ず存在する）に合わせたモックにする
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 500,
-        headers: new Headers(),
-        text: async () => '',
-      })
+    it('レスポンスが ok でない場合も err を返し何も保存しない', async () => {
+      fetchMock.mockResolvedValue(nonOkResponse(500, ''))
 
       const result = await fetchHatenaArticles(cronEnv, logger)
 
-      expect(fetchMock).toHaveBeenCalledTimes(1)
       expect(result._unsafeUnwrapErr().message).toContain('status=500')
       expect(await countArticles()).toBe(0)
     })

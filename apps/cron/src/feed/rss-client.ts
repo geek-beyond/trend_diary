@@ -64,7 +64,6 @@ async function readBodySnippet(response: Response): Promise<string | undefined> 
 }
 
 // 取得失敗は毎時の定期実行が再試行を兼ねるため、run 内でのリトライは行わない。
-// 保存は URL 一意制約で冪等なため、1回分の取得を落としても次回実行で取り込み直せる。
 export async function fetchRssFeed<T>(url: string): Promise<Result<T[], Error>> {
   const responseResult = await wrapAsyncCall(() =>
     fetchWithTimeout(url, { timeoutMs: FETCH_TIMEOUT_MS }),

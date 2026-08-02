@@ -1,12 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nonOkResponse } from '../test-helper/feed'
 import { fetchRssFeed, RssFetchError } from './rss-client'
 
 const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)
-
-function nonOkResponse(status: number, body: string, headers: Record<string, string> = {}) {
-  return { ok: false, status, headers: new Headers(headers), text: async () => body }
-}
 
 describe('RssFetchError', () => {
   describe('正常系', () => {

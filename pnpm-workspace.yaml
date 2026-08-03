@@ -13,12 +13,9 @@ catalog:
   '@supabase/supabase-js': ^2.111.0
   '@types/node': ^26.1.2
   drizzle-orm: 0.45.2
-  hono: ^4.12.32
   neverthrow: ^8.2.0
-  pino: ^10.3.1
   playwright: ^1.62.0
   vitest: ^4.1.10
-  vitest-mock-extended: ^5.0.0
   wrangler: ^4.115.0
   zod: ^4.4.3
 

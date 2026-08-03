@@ -18,6 +18,9 @@ catalogs:
     '@playwright/test':
       specifier: ^1.62.0
       version: 1.62.0
+    '@supabase/supabase-js':
+      specifier: ^2.111.0
+      version: 2.111.0
     '@types/node':
       specifier: ^26.1.2
       version: 26.1.2
@@ -320,7 +323,7 @@ importers:
   e2e:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.111.0
+        specifier: 'catalog:'
         version: 2.111.0
       '@trend-diary/datastore':
         specifier: workspace:*
@@ -363,7 +366,7 @@ importers:
         specifier: ^0.12.4
         version: 0.12.4(@supabase/supabase-js@2.111.0)
       '@supabase/supabase-js':
-        specifier: ^2.111.0
+        specifier: 'catalog:'
         version: 2.111.0
       '@trend-diary/std':
         specifier: workspace:*

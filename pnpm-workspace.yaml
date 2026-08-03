@@ -10,6 +10,7 @@ catalog:
   '@cloudflare/workers-types': ^5.20260729.1
   '@faker-js/faker': ^10.5.0
   '@playwright/test': ^1.62.0
+  '@supabase/supabase-js': ^2.111.0
   '@types/node': ^26.1.2
   drizzle-orm: 0.45.2
   hono: ^4.12.32

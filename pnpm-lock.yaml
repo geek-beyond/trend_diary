@@ -128,7 +128,7 @@ importers:
     dependencies:
       '@hono/zod-validator':
         specifier: ^0.9.0
-        version: 0.9.0(hono@4.12.34)(zod@4.4.3)
+        version: 0.9.0(hono@4.13.0)(zod@4.4.3)
       '@icons-pack/react-simple-icons':
         specifier: ^13.13.0
         version: 13.13.0(react@19.2.8)
@@ -184,8 +184,8 @@ importers:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@5.20260731.1)(@libsql/client@0.17.3)
       hono:
-        specifier: ^4.12.34
-        version: 4.12.34
+        specifier: ^4.13.0
+        version: 4.13.0
       lucide-react:
         specifier: ^1.27.0
         version: 1.27.0(react@19.2.8)
@@ -243,7 +243,7 @@ importers:
         version: 10.5.0
       '@hono/vite-dev-server':
         specifier: ^0.26.1
-        version: 0.26.1(hono@4.12.34)(miniflare@4.20260730.0)(wrangler@4.116.0(@cloudflare/workers-types@5.20260731.1))
+        version: 0.26.1(hono@4.13.0)(miniflare@4.20260730.0)(wrangler@4.116.0(@cloudflare/workers-types@5.20260731.1))
       '@react-router/dev':
         specifier: ^8.3.0
         version: 8.3.0(react-router@8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(typescript@7.0.2)(vite@8.1.5(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))(wrangler@4.116.0(@cloudflare/workers-types@5.20260731.1))
@@ -3754,8 +3754,8 @@ packages:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
-  hono@4.12.34:
-    resolution: {integrity: sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA==}
+  hono@4.13.0:
+    resolution: {integrity: sha512-jhunvfHWxd7J5EFfSgH4xsYJzSe/lfqbUCxiyyeaQasUsXeEHXtzVid+7EOGByc5JnFa23SSFL3Y2RV/z1T+eQ==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@6.0.0:
@@ -4771,18 +4771,6 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.21.3:
-    resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
   wsl-utils@0.1.0:
     resolution: {integrity: sha512-h3Fbisa2nKGPxCpm89Hk33lBLsnaGBvctQopaBSOW/uIs6FTe1ATyAnKFJrzVs9vpGdsTe73WF3V4lIsk4Gacw==}
     engines: {node: '>=18'}
@@ -5354,22 +5342,22 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@hono/node-server@1.19.14(hono@4.12.34)':
+  '@hono/node-server@1.19.14(hono@4.13.0)':
     dependencies:
-      hono: 4.12.34
+      hono: 4.13.0
 
-  '@hono/vite-dev-server@0.26.1(hono@4.12.34)(miniflare@4.20260730.0)(wrangler@4.116.0(@cloudflare/workers-types@5.20260731.1))':
+  '@hono/vite-dev-server@0.26.1(hono@4.13.0)(miniflare@4.20260730.0)(wrangler@4.116.0(@cloudflare/workers-types@5.20260731.1))':
     dependencies:
-      '@hono/node-server': 1.19.14(hono@4.12.34)
-      hono: 4.12.34
+      '@hono/node-server': 1.19.14(hono@4.13.0)
+      hono: 4.13.0
       minimatch: 9.0.9
     optionalDependencies:
       miniflare: 4.20260730.0
       wrangler: 4.116.0(@cloudflare/workers-types@5.20260731.1)
 
-  '@hono/zod-validator@0.9.0(hono@4.12.34)(zod@4.4.3)':
+  '@hono/zod-validator@0.9.0(hono@4.13.0)(zod@4.4.3)':
     dependencies:
-      hono: 4.12.34
+      hono: 4.13.0
       zod: 4.4.3
 
   '@icons-pack/react-simple-icons@13.13.0(react@19.2.8)':
@@ -5578,7 +5566,7 @@ snapshots:
   '@libsql/isomorphic-ws@0.1.5':
     dependencies:
       '@types/ws': 8.18.1
-      ws: 8.21.3
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -7311,7 +7299,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono@4.12.34: {}
+  hono@4.13.0: {}
 
   html-encoding-sniffer@6.0.0:
     dependencies:
@@ -8392,9 +8380,6 @@ snapshots:
   ws@8.21.0: {}
 
   ws@8.21.1: {}
-
-  ws@8.21.3:
-    optional: true
 
   wsl-utils@0.1.0:
     dependencies:

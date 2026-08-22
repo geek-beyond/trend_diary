@@ -30,9 +30,35 @@ defaults:
     shell: bash
 
 jobs:
-  changes:
+  # 変数契約はデプロイ対象の有無に依らない前提条件のため、差分検知より前に置く。
+  # デプロイが発生する回にしか検証しないと、設定不備の発覚がデプロイ直前になる
+  assert:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    environment: production
+    steps:
+      # 契約ファイルをリポジトリから読むため
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          persist-credentials: false
+
+      - name: production 変数の検証
+        uses: rin2yh/gh-assert@78ae0d6e2eac56d4634234eb8b6cce756d8e698e # v0.0.1
+        with:
+          contract: .github/assert/cd_assert.yml
+          version: v0.0.1
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+
+  changes:
+    needs: assert
+    runs-on: ubuntu-latest
     outputs:
       web: ${{ steps.manual.outputs.web || steps.detect.outputs.web }}
       cron: ${{ steps.manual.outputs.cron || steps.detect.outputs.cron }}
@@ -59,35 +85,8 @@ jobs:
           # CIを通過したコミットとその直前との差分をデプロイ対象にする
           base: HEAD~1
 
-  # 3つのデプロイジョブは同じ production 環境の変数に依存するため、契約の検証は
-  # ここへ一本化する。デプロイ着手前に落とすことで中途半端な反映を避ける
-  assert:
-    needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' || needs.changes.outputs.cron == 'true' || needs.changes.outputs.database == 'true' }}
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      # 契約ファイルをリポジトリから読むため
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
-          persist-credentials: false
-
-      - name: production 変数の検証
-        uses: rin2yh/gh-assert@78ae0d6e2eac56d4634234eb8b6cce756d8e698e # v0.0.1
-        with:
-          contract: .github/assert/cd_assert.yml
-          version: v0.0.1
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-
   web:
-    needs: [changes, assert]
+    needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
     environment: production
@@ -166,7 +165,7 @@ jobs:
             "${DISCORD_WEBHOOK_URL}"
 
   cron:
-    needs: [changes, assert]
+    needs: changes
     if: ${{ needs.changes.outputs.cron == 'true' }}
     runs-on: ubuntu-latest
     environment: production
@@ -200,7 +199,7 @@ jobs:
         run: echo "$CMD_OUTPUT"
 
   database:
-    needs: [changes, assert]
+    needs: changes
     if: ${{ needs.changes.outputs.database == 'true' }}
     runs-on: ubuntu-latest
     environment: production

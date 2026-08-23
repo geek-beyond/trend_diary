@@ -44,7 +44,7 @@ jobs:
           persist-credentials: false
 
       - name: production 変数の検証
-        uses: rin2yh/gh-assert@v0.0.2 # v0.0.1
+        uses: rin2yh/gh-assert@c5d6bb18236e6e193d5e8773e4569cf63b09bd1c # v0.0.2
         with:
           contract: .github/assert/cd_assert.yml
           version: v0.0.2

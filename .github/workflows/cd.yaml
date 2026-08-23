@@ -44,10 +44,10 @@ jobs:
           persist-credentials: false
 
       - name: production 変数の検証
-        uses: rin2yh/gh-assert@78ae0d6e2eac56d4634234eb8b6cce756d8e698e # v0.0.1
+        uses: rin2yh/gh-assert@v0.0.2 # v0.0.1
         with:
           contract: .github/assert/cd_assert.yml
-          version: v0.0.1
+          version: v0.0.2
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

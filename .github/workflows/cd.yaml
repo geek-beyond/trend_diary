@@ -55,6 +55,12 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
 
+      - name: 手動デプロイ入力の検証
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: rin2yh/gh-assert@f7a002c160f5125e5de4a4ee817fe57c88850b48 # v0.0.4
+        with:
+          contract: .github/assert/cd_dispatch_assert.yml
+
   changes:
     needs: assert
     runs-on: ubuntu-latest

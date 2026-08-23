@@ -1,0 +1,8 @@
+# workflow_dispatch から受け取る手動デプロイ対象の契約。
+# UI以外から起動された場合も、想定外の対象を後続ジョブへ渡さない。
+inputs:
+  deploy_type:
+    required: true
+    type:
+      string:
+        enum: [web, cron, database]

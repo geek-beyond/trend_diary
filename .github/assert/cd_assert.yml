@@ -4,6 +4,8 @@
 env:
   CLOUDFLARE_API_TOKEN:
     required: true
+    type:
+      string: {}
 
   CLOUDFLARE_ACCOUNT_ID:
     required: true
@@ -22,6 +24,8 @@ env:
 
   SUPABASE_ANON_KEY:
     required: true
+    type:
+      string: {}
 
   DISCORD_WEBHOOK_URL:
     required: true

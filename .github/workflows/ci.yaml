@@ -101,10 +101,10 @@ jobs:
           persist-credentials: false
 
       - name: Lintツールのセットアップ
-        uses: aquaproj/aqua-installer@96a9bc20066c5bf5e275b41019cfc165b25f4e2e # v4.0.5
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
-          aqua_version: v2.60.1
-          policy_allow: true
+          version: 2026.9.0
+          install_args: actionlint ghalint zizmor
 
       - name: actionlint
         run: actionlint

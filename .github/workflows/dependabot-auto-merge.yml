@@ -20,8 +20,10 @@ jobs:
         id: dependabot-metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
 
-      - name: Enable auto-merge for patch updates
-        if: steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch'
+      - name: Enable auto-merge for minor and patch updates
+        if: |
+          steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor'
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           GH_TOKEN: ${{ github.token }}

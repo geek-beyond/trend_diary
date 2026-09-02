@@ -148,7 +148,7 @@ describe('useArticles', () => {
 
     it('loading中はisLoadingがtrueになる', async () => {
       let resolvePromise: () => void
-      // oxlint-disable-next-line typescript/no-explicit-any --　getApiClientForClientの型が面倒なのでanyを使用
+      // oxlint-disable-next-line typescript/no-explicit-any -- getApiClientForClientの型が面倒なのでanyを使用
       const mockPromise = new Promise<any>((resolve) => {
         resolvePromise = () =>
           resolve({

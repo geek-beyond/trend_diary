@@ -236,7 +236,7 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: Playwrightブラウザのキャッシュ
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -324,7 +324,7 @@ jobs:
         run: |
           args=(--fail-on-flaky-tests)
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            args+=(--reporter=github,html)
+            args+=("--reporter=github,html")
             if [[ "$WEB_CHANGED" != "true" ]]; then
               args+=(--only-changed=origin/"$GITHUB_BASE_REF" --pass-with-no-tests)
             fi

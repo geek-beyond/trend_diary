@@ -1,6 +1,9 @@
 [tools]
 node = "22.23.2"
 pnpm = "11.5.1"
+actionlint = "1.7.12"
+ghalint = "1.5.6"
+zizmor = "1.30.0"
 
 [env]
 DISCORD_WEBHOOK_URL = ""

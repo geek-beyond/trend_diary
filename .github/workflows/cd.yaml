@@ -1,5 +1,4 @@
 name: CD
-description: Continuous Delivery
 
 on:
   workflow_run:
@@ -34,6 +33,9 @@ jobs:
   # デプロイが発生する回にしか検証しないと、設定不備の発覚がデプロイ直前になる
   assert:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     environment: production
     steps:
@@ -58,6 +60,9 @@ jobs:
   changes:
     needs: assert
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
     outputs:
       web: ${{ steps.manual.outputs.web || steps.detect.outputs.web }}
       cron: ${{ steps.manual.outputs.cron || steps.detect.outputs.cron }}
@@ -88,6 +93,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -104,7 +112,7 @@ jobs:
 
       - name: デプロイ
         id: deploy
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v3
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -125,7 +133,7 @@ jobs:
       - name: デプロイの出力を表示
         env:
           CMD_OUTPUT: ${{ steps.deploy.outputs.command-output }}
-        run: echo $CMD_OUTPUT
+        run: echo "$CMD_OUTPUT"
 
       - name: スモークテスト(ヘルスチェック)
         env:
@@ -167,6 +175,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.cron == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -181,7 +192,7 @@ jobs:
 
       - name: Cron Workerをデプロイ
         id: deploy
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v3
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -201,6 +212,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.database == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -213,7 +227,7 @@ jobs:
           node-version-file: .node-version
 
       - name: D1のマイグレーション適用
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v3
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -26,6 +26,9 @@ defaults:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
     outputs:
       web: ${{ steps.all.outputs.on || steps.deploy.outputs.web }}
       cron: ${{ steps.all.outputs.on || steps.deploy.outputs.cron }}
@@ -33,6 +36,7 @@ jobs:
       server: ${{ steps.all.outputs.on || steps.split.outputs.server }}
       schema: ${{ steps.all.outputs.on || steps.split.outputs.schema }}
       e2e: ${{ steps.all.outputs.on || steps.split.outputs.e2e }}
+      github_actions_lint: ${{ steps.all.outputs.on || steps.split.outputs.github_actions_lint }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -60,6 +64,8 @@ jobs:
       - name: web内テストと schema の細分化
         id: split
         if: ${{ steps.all.outputs.on != 'true' }}
+        env:
+          DEPLOY_WEB: ${{ steps.deploy.outputs.web }}
         run: |
           set -euo pipefail
 
@@ -75,19 +81,55 @@ jobs:
           client=false; if web_changed_except '^apps/web/src/server/' || changed "$shared"; then client=true; fi
           server=false; if web_changed_except '^apps/web/src/client/' || changed "$shared"; then server=true; fi
           schema=false; if changed '^packages/datastore/'; then schema=true; fi
-          e2e=false;    if changed '^e2e/' || [[ "${{ steps.deploy.outputs.web }}" == 'true' ]]; then e2e=true; fi
+          e2e=false;    if changed '^e2e/' || [[ "$DEPLOY_WEB" == 'true' ]]; then e2e=true; fi
+          github_actions_lint=false; if changed '^mise\.toml$'; then github_actions_lint=true; fi
 
           {
             echo "client=$client"
             echo "server=$server"
             echo "schema=$schema"
             echo "e2e=$e2e"
+            echo "github_actions_lint=$github_actions_lint"
           } >> "$GITHUB_OUTPUT"
-          echo "client=$client server=$server schema=$schema e2e=$e2e"
+          echo "client=$client server=$server schema=$schema e2e=$e2e github_actions_lint=$github_actions_lint"
+
+  github-actions-lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.github_actions_lint == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lintツールのセットアップ
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          version: 2026.9.0
+          install_args: actionlint ghalint zizmor
+
+      - name: actionlint
+        run: actionlint
+
+      - name: ghalint
+        if: ${{ always() }}
+        run: ghalint run
+
+      - name: zizmor
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: zizmor --format=github .github/workflows
 
   code-quality:
     needs: changes
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -116,6 +158,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.cron == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -137,6 +182,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -154,6 +202,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # test_cov のカバレッジコメント投稿に必要
     permissions:
       contents: read
@@ -177,6 +226,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # test_cov のカバレッジコメント投稿に必要
     permissions:
       contents: read
@@ -208,6 +258,8 @@ jobs:
     if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -218,7 +270,7 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: Playwrightブラウザのキャッシュ
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -239,6 +291,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.schema == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -265,6 +320,8 @@ jobs:
     if: ${{ !cancelled() && !failure() && needs.changes.outputs.e2e == 'true' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     environment: develop
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -283,11 +340,11 @@ jobs:
 
       - name: Create .dev.vars for Actions
         run: |
-          cat > apps/web/.dev.vars <<'EOF'
+          cat > apps/web/.dev.vars <<EOF
           # Dev env for Actions (created from secrets)
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL || '' }}
-          SUPABASE_URL=${{ env.SUPABASE_URL || 'http://127.0.0.1:54321' }}
-          SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY || '' }}
+          SUPABASE_URL=${SUPABASE_URL:-http://127.0.0.1:54321}
+          SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
           # 本番sitekeyはheadlessで解けずトークン取得待ちがflakyになる。サーバーはsecret未設定で検証skipのため、空指定でwrangler.tomlの[vars]を上書きしウィジェットごと無効化して整合させる
           TURNSTILE_SITE_KEY=
           # 共有エッジキャッシュはE2Eのテスト間分離を壊すため無効化する（本番は既定で有効）
@@ -301,7 +358,7 @@ jobs:
         run: |
           args=(--fail-on-flaky-tests)
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            args+=(--reporter=github,html)
+            args+=("--reporter=github,html")
             if [[ "$WEB_CHANGED" != "true" ]]; then
               args+=(--only-changed=origin/"$GITHUB_BASE_REF" --pass-with-no-tests)
             fi
@@ -325,8 +382,10 @@ jobs:
 
   gate:
     if: ${{ !cancelled() }}
-    needs: [changes, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e]
+    needs: [changes, github-actions-lint, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
     steps:
       - name: いずれかのジョブが失敗していないか確認
         run: |
@@ -342,6 +401,8 @@ jobs:
     needs: gate
     if: ${{ failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
     environment: develop
     steps:
       - name: CI失敗をDiscordへ通知

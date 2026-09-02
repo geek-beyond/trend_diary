@@ -123,16 +123,14 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
     if (!currentArticle) return
     setIsActionLoading(true)
 
-    try {
-      window.open(currentArticle.url, '_blank', 'noopener,noreferrer')
-      const isReadSuccess = await markAsRead(currentArticle.articleId)
-      if (!isReadSuccess) return
-
-      consumeCurrent()
-      fetchNextBatchIfNeeded()
-    } finally {
+    window.open(currentArticle.url, '_blank', 'noopener,noreferrer')
+    const isReadSuccess = await markAsRead(currentArticle.articleId).finally(() => {
       setIsActionLoading(false)
-    }
+    })
+    if (!isReadSuccess) return
+
+    consumeCurrent()
+    fetchNextBatchIfNeeded()
   }
 
   const handleLater = () => {

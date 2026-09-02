@@ -36,6 +36,7 @@ jobs:
       server: ${{ steps.all.outputs.on || steps.split.outputs.server }}
       schema: ${{ steps.all.outputs.on || steps.split.outputs.schema }}
       e2e: ${{ steps.all.outputs.on || steps.split.outputs.e2e }}
+      github_actions_lint: ${{ steps.all.outputs.on || steps.split.outputs.github_actions_lint }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -81,16 +82,20 @@ jobs:
           server=false; if web_changed_except '^apps/web/src/client/' || changed "$shared"; then server=true; fi
           schema=false; if changed '^packages/datastore/'; then schema=true; fi
           e2e=false;    if changed '^e2e/' || [[ "$DEPLOY_WEB" == 'true' ]]; then e2e=true; fi
+          github_actions_lint=false; if changed '^mise\.toml$'; then github_actions_lint=true; fi
 
           {
             echo "client=$client"
             echo "server=$server"
             echo "schema=$schema"
             echo "e2e=$e2e"
+            echo "github_actions_lint=$github_actions_lint"
           } >> "$GITHUB_OUTPUT"
-          echo "client=$client server=$server schema=$schema e2e=$e2e"
+          echo "client=$client server=$server schema=$schema e2e=$e2e github_actions_lint=$github_actions_lint"
 
   github-actions-lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.github_actions_lint == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

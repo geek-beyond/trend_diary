@@ -114,9 +114,8 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
       fetchNextBatchIfNeeded()
     } catch (skipError) {
       notifyErrorUnlessSessionExpired(skipError, SkipErrorMessage)
-    } finally {
-      setIsActionLoading(false)
     }
+    setIsActionLoading(false)
   }
 
   const handleRead = async () => {

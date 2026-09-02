@@ -17,10 +17,8 @@
       "files": ["src/client/**/*.{ts,tsx}"],
       "rules": {
         "react/capitalized-calls": "error",
-        "react/config": "error",
         "react/error-boundaries": "error",
         "react/exhaustive-effect-dependencies": "error",
-        "react/gating": "error",
         "react/globals": "error",
         "react/hooks": "error",
         "react/immutability": "error",

@@ -1,0 +1,12 @@
+rules:
+  dangerous-triggers:
+    ignore:
+      # CDはmainのCI成功後にproduction secretsを使うためworkflow_runが必要。
+      - cd.yaml
+      # DependabotのPR本体はcheckoutせず、botのみに限定したメタデータ取得とauto-merge設定に限定。
+      - dependabot-auto-merge.yml
+  self-repository:
+    ignore:
+      # `$/` 記法はactionlint v1.7.12が未対応のため、対応するまで従来のlocal action記法を維持。
+      - cd.yaml
+      - ci.yaml

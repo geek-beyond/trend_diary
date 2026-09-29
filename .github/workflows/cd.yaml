@@ -107,37 +107,30 @@ jobs:
         with:
           node-version-file: .node-version
 
-      - name: ビルド
-        run: pnpm run build
+      - name: Worker ビルド
+        run: pnpm --filter @trend-diary/web build:worker
 
-      - name: デプロイ
+      - name: cf でデプロイ
         id: deploy
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./apps/web
-          command: deploy
-          # Secretsで保存するものをActionsで管理し、環境変数として渡す
-          secrets: |
-            SUPABASE_URL
-            SUPABASE_ANON_KEY
-            DISCORD_WEBHOOK_URL
-            TURNSTILE_SECRET_KEY
+        working-directory: apps/web
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-
-      - name: デプロイの出力を表示
-        env:
-          CMD_OUTPUT: ${{ steps.deploy.outputs.command-output }}
-        run: echo "$CMD_OUTPUT"
+        run: |
+          set -euo pipefail
+          secrets_file=$(mktemp)
+          trap 'rm -f "$secrets_file"' EXIT
+          chmod 600 "$secrets_file"
+          node -e 'const fs = require("node:fs"); const keys = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "DISCORD_WEBHOOK_URL", "TURNSTILE_SECRET_KEY"]; fs.writeFileSync(process.argv[1], JSON.stringify(Object.fromEntries(keys.map(key => [key, process.env[key]]))))' "$secrets_file"
+          pnpm exec cf deploy --prebuilt --secrets-file "$secrets_file"
 
       - name: スモークテスト(ヘルスチェック)
         env:
-          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          DEPLOYMENT_URL: https://trend-diary.gtms.workers.dev
         run: |
           set -euo pipefail
 
@@ -190,23 +183,19 @@ jobs:
         with:
           node-version-file: .node-version
 
-      - name: Cron Workerをデプロイ
-        id: deploy
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./apps/cron
-          command: deploy
-          secrets: |
-            DISCORD_WEBHOOK_URL
+      - name: cf で Cron Worker をデプロイ
+        working-directory: apps/cron
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-
-      - name: デプロイの出力を表示
-        env:
-          CMD_OUTPUT: ${{ steps.deploy.outputs.command-output }}
-        run: echo "$CMD_OUTPUT"
+        run: |
+          set -euo pipefail
+          secrets_file=$(mktemp)
+          trap 'rm -f "$secrets_file"' EXIT
+          chmod 600 "$secrets_file"
+          node -e 'const fs = require("node:fs"); fs.writeFileSync(process.argv[1], JSON.stringify({ DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL }))' "$secrets_file"
+          pnpm exec cf deploy --secrets-file "$secrets_file"
 
   database:
     needs: changes

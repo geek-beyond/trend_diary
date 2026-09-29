@@ -16,7 +16,7 @@ catalog:
   neverthrow: ^8.2.0
   playwright: ^1.62.1
   vitest: ^4.1.11
-  wrangler: ^4.127.0
+  wrangler: ^4.136.0
   zod: ^4.4.3
 
 allowBuilds:

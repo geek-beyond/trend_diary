@@ -55,5 +55,9 @@ logs/
 *.log
 pnpm-debug.log*
 
+# generated Cloudflare build output
+**/.cloudflare/
+**/dist/
+
 # coverage
 coverage/

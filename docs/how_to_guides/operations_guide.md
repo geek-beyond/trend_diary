@@ -41,23 +41,22 @@ web / cron いずれの `wrangler.toml` でも Observability を有効化して�
 
 ## アラート経路（Discord）
 
-5xx エラーやデプロイ後ヘルスチェック失敗を Discord Webhook へ通知する。
+5xx エラーを Discord Webhook へ通知する。
 
 ### 通知の種類と発火元
 
 - **アプリの 5xx / 未捕捉エラー**: `apps/web/src/middleware/error-handler.ts` が `DiscordNotifier`（`packages/notification/src/discord.ts`）でエラーメッセージ・リクエスト情報・スタックトレースを embed 送信する。
 - **cron ジョブのエラー**: `apps/cron/src/worker.ts` が `DiscordWebhookClient` で通知する。
-- **デプロイ後のヘルスチェック失敗**: CD（`.github/workflows/cd.yaml`）の web デプロイ後スモークテストが失敗すると、ワークフローが直接 Discord へ通知する。
 
 通知送信はリトライ（429 / 5xx のみ、指数バックオフ）し、恒久エラー（401/404 等）は即時打ち切る。通知の失敗は本処理に影響させず、ログに記録するのみ。Webhook URL 未設定時は警告ログを出して送信をスキップする（無音で障害を見逃さないため）。
 
 ### シークレット管理
 
-`DISCORD_WEBHOOK_URL` は秘匿情報のため `wrangler.toml` には記載しない。
+`DISCORD_WEBHOOK_URL` は秘匿情報のため `wrangler.toml` には記載しない。Worker の Secret として Cloudflare 側で管理する。
 
-- **本番**: GitHub Actions のリポジトリ Secrets（`DISCORD_WEBHOOK_URL`）として保管し、CD（`cd.yaml`）の `wrangler-action` の `secrets:` 経由で各 Worker の Secret に注入する。`SUPABASE_ANON_KEY` も同様に Secret 管理。
+- **本番**: Cloudflare ダッシュボードの Worker Settings → Variables and Secrets で管理する。
 - **ローカル**: `apps/web/.dev.vars` に記載する（`.dev.vars.example` を参照。`.dev.vars` は Git 管理外）。
-- ローテーション時は Discord 側で Webhook を再発行し、GitHub Secrets を更新して再デプロイする。
+- ローテーション時は Discord 側で Webhook を再発行し、Cloudflare 側の Worker Secret を更新する。
 
 ## DB 復旧手順
 
@@ -79,14 +78,14 @@ down で巻き戻すのではなく、誤りを打ち消す新しいマイグレ
 
 1. `packages/datastore/src/drizzle-orm/schema/` を修正
 2. `pnpm --filter @trend-diary/datastore db:generate` で新規 `000N_*.sql` を生成しレビュー
-3. 本番適用は CD の `database` ジョブ（`cd.yaml`、`wrangler d1 migrations apply trend-diary-db --remote`）で行う。手動適用が必要な場合は同コマンドを実行する。
+3. 本番適用は、Cloudflare 側のデプロイ設定では自動化していない。適用が必要な場合は、リリース手順として変更内容を確認したうえで `pnpm --filter @trend-diary/web exec wrangler d1 migrations apply trend-diary-db --remote` を実行する。
 
 ### 3. アプリ／cron の不具合の場合: 直前の正常版へロールバック
 
 DB 変更を伴わないコード起因の障害は、Worker を直前の正常デプロイへ戻す。
 
 - Cloudflare ダッシュボードの対象 Worker → **Deployments** から直前のバージョンへロールバックする（即時反映）。
-- もしくは正常だったコミットを `main` に戻して CD を再実行する。
+- もしくは正常だったコミットを `main` に戻し、Cloudflare Workers Builds から再デプロイする。
 
 ## 関連
 

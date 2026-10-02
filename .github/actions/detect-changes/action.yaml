@@ -1,5 +1,5 @@
 name: Detect Changes
-description: 変更パスから CD 各デプロイの実行要否フラグを算出する
+description: CIでテスト対象となるアプリの変更有無を算出する
 
 inputs:
   base:
@@ -8,14 +8,11 @@ inputs:
 
 outputs:
   web:
-    description: web(＋共有コード)の変更有無。web デプロイの要否
+    description: web (＋共有コード) の変更有無
     value: ${{ steps.detect.outputs.web }}
   cron:
-    description: cron(＋共有コード)の変更有無。cron デプロイの要否
+    description: cron (＋共有コード) の変更有無
     value: ${{ steps.detect.outputs.cron }}
-  database:
-    description: マイグレーションの変更有無。D1 適用の要否
-    value: ${{ steps.detect.outputs.database }}
 
 runs:
   using: composite
@@ -28,8 +25,8 @@ runs:
       run: |
         set -euo pipefail
 
-        # ルート直下の .md（README / CLAUDE 等）はデプロイに影響しないため差分から除く。
-        # フラット化で root='^[^/]+$' がこれらを拾い、web / cron デプロイが誤発火するのを防ぐ
+        # ルート直下の .md（README / CLAUDE 等）はCIに影響しないため差分から除く。
+        # フラット化で root='^[^/]+$' がこれらを拾い、web / cron のテストが誤発火するのを防ぐ
         files=$(git diff --name-only "$BASE" HEAD | grep -vE '\.md$' || true)
         changed() { grep -qE "$1" <<<"$files"; }
 
@@ -40,11 +37,9 @@ runs:
 
         web=false;      if changed "^apps/web/|$pkgs|$root"; then web=true; fi
         cron=false;     if changed "^apps/cron/|$pkgs|$root"; then cron=true; fi
-        database=false; if changed "^packages/datastore/migrations/"; then database=true; fi
 
         {
           echo "web=$web"
           echo "cron=$cron"
-          echo "database=$database"
         } >> "$GITHUB_OUTPUT"
-        echo "web=$web cron=$cron database=$database"
+        echo "web=$web cron=$cron"

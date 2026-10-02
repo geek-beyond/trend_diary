@@ -19,7 +19,7 @@ export default defineConfig(async () => {
 
   const poolOptions = {
     miniflare: {
-      compatibilityDate: '2026-08-22',
+      compatibilityDate: '2026-09-02',
       d1Databases: { DB: 'test-db' },
       bindings: {
         TEST_MIGRATIONS: migrations,

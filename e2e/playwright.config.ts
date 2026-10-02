@@ -25,7 +25,8 @@ export default defineConfig({
   webServer: {
     // dev サーバ(pnpm dev)はルートを初回アクセス時に都度コンパイルするため cold start が不安定。
     // ビルド済みワーカーを wrangler dev で配信し、オンデマンドコンパイル由来の flaky を避ける。
-    command: 'pnpm build && pnpm exec wrangler dev --port 5173',
+    // CI のローカル workerd が認識できる最新日付を指定し、本番の互換性日付は Wrangler 設定に委ねる。
+    command: 'pnpm build && pnpm exec wrangler dev --port 5173 --compatibility-date 2026-09-02',
     // command は web パッケージ(apps/web)ルート基準で実行する（cwd 既定は config ファイルの場所）
     cwd: '../apps/web',
     url: 'http://localhost:5173',

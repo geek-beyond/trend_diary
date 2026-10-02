@@ -27,6 +27,7 @@ allowBuilds:
 minimumReleaseAge: 4320
 
 overrides:
+  '@cloudflare/vitest-pool-workers>miniflare': 5.20260826.0-alpha
   '@esbuild-kit/core-utils>esbuild': ^0.25.0
   '@hono/node-server': ^1.19.13
   brace-expansion: ^2.0.3

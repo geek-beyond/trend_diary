@@ -1,5 +1,4 @@
 [![CI](https://github.com/geek-beyond/trend_diary/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/geek-beyond/trend_diary/actions/workflows/ci.yaml)
-[![CD](https://github.com/geek-beyond/trend_diary/actions/workflows/cd.yaml/badge.svg)](https://github.com/geek-beyond/trend_diary/actions/workflows/cd.yaml)
 
 ## 環境構築
 

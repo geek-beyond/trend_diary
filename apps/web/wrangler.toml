@@ -14,6 +14,10 @@ TURNSTILE_SITE_KEY = "0x4AAAAAADiD2o4io1Au9fnq"
 enabled = true
 head_sampling_rate = 1
 
+[observability.traces]
+enabled = true
+head_sampling_rate = 0.05
+
 [[d1_databases]]
 binding = "DB"
 database_name = "trend-diary-db"

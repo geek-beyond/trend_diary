@@ -45,7 +45,7 @@ jobs:
           persist-credentials: false
 
       # mainへのpush、またはCI設定(.github)の変更は差分を問わず全ジョブを実行する
-      # (CDはこのアクションの検知対象に.githubを含めないためデプロイは走らない)
+      
       - name: 全実行の判定
         id: all
         run: |

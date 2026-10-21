@@ -70,7 +70,7 @@
     "playwright": "catalog:",
     "storybook": "^10.5.10",
     "tailwindcss": "^4.3.3",
-    "vite": "^8.2.2",
+    "vite": "^8.2.4",
     "vite-plugin-babel": "^1.7.3",
     "vitest": "catalog:",
     "wrangler": "catalog:"

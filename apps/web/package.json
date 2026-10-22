@@ -68,7 +68,7 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.0.1",
     "playwright": "catalog:",
-    "storybook": "^10.5.10",
+    "storybook": "^10.6.2",
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.4",
     "vite-plugin-babel": "^1.7.3",

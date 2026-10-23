@@ -197,6 +197,9 @@ jobs:
       - name: ビルド
         run: pnpm run build
 
+      - name: ソースマップの検証
+        run: pnpm test:observability
+
   client-test:
     name: unit-test (web client)
     needs: changes

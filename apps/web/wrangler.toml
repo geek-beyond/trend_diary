@@ -1,6 +1,7 @@
 name = "trend-diary"
 compatibility_date = "2026-09-02"
 main = "./src/worker.ts"
+upload_source_maps = true
 assets = { directory = "./build/client" }
 
 # 本番のログレベル方針。PII を含む debug クエリログを常時出力しないよう info を明示する
@@ -12,6 +13,9 @@ TURNSTILE_SITE_KEY = "0x4AAAAAADiD2o4io1Au9fnq"
 [observability]
 enabled = true
 head_sampling_rate = 1
+
+[observability.issues]
+enabled = true
 
 [observability.traces]
 enabled = true

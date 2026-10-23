@@ -14,6 +14,12 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  // 公開アセットへソースを含めず、Worker の例外を元のコードへ対応付けるため
+  environments: {
+    ssr: {
+      build: { sourcemap: true },
+    },
+  },
   ssr: {
     resolve: {
       externalConditions: ['workerd', 'worker'],
@@ -26,6 +32,7 @@ export default defineConfig({
       include: [/\.[jt]sx?$/],
       exclude: [/node_modules/],
       babelConfig: {
+        sourceMaps: true,
         presets: ['@babel/preset-typescript'],
         plugins: [['babel-plugin-react-compiler', ReactCompilerConfig]],
       },

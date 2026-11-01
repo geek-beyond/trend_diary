@@ -106,7 +106,7 @@ jobs:
           persist-credentials: false
 
       - name: Lintツールのセットアップ
-        uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
           version: 2026.9.0
           install_args: actionlint ghalint zizmor
@@ -244,7 +244,7 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: Supabase Emulator のセットアップ
-        uses: rin2yh/supa-emu@2cdf06de6d58bee6e22adaf6e4c2dad55e414977 # v0.1.8
+        uses: rin2yh/supa-emu@3aea79b6dda513da1e335562d80320bf78a4e8fc # v0.1.9
         with:
           version: v0.1.8
           addr: 127.0.0.1:54321
@@ -369,7 +369,7 @@ jobs:
           pnpm --filter @trend-diary/e2e test "${args[@]}"
 
       - name: Playwrightレポートを保存
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ always() && !cancelled() }}
         with:
           name: playwright-report-${{ github.event_name == 'pull_request' && 'diff' || 'main' }}-${{ github.run_id }}-${{ github.run_attempt }}

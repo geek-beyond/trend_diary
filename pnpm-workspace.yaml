@@ -15,7 +15,7 @@ catalog:
   drizzle-orm: 0.45.2
   neverthrow: ^8.2.0
   playwright: ^1.62.1
-  vitest: ^4.1.11
+  vitest: ^5.0.5
   wrangler: ^4.134.0
   zod: ^4.4.3
 

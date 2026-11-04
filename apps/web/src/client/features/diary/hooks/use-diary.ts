@@ -22,6 +22,7 @@ const emptySources = ARTICLE_MEDIA.map((media) => ({ media, read: 0, skip: 0 }))
 export default function useDiary() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { fetchDiary } = useDiaryApi()
+  // oxlint-disable-next-line react-compiler/purity -- 開いたタブで日付が変わった後の再描画にも当日を反映するため
   const todayJst = toJstDateString(new Date())
 
   const pageParam = searchParams.get('page')

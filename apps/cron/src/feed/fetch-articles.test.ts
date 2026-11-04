@@ -24,6 +24,10 @@ function stubFeed(xml: string): void {
   fetchMock.mockResolvedValue(rssResponse(xml))
 }
 
+function stubHatena(items: FeedItem[]): void {
+  stubFeed(buildHatenaRdf(items))
+}
+
 async function findByUrl(url: string) {
   const [row] = await db.select().from(articles).where(eq(articles.url, url)).limit(1)
   return row
@@ -228,10 +232,6 @@ describe('fetchZennArticles', () => {
 })
 
 describe('fetchHatenaArticles', () => {
-  function stubHatena(items: FeedItem[]): void {
-    stubFeed(buildHatenaRdf(items))
-  }
-
   describe('正常系', () => {
     it('creator を author、content を description にマッピングして保存する', async () => {
       stubHatena([

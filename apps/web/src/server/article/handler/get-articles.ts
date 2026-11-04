@@ -25,7 +25,7 @@ const apiArticleQuerySchema = baseArticleSearchSchema
     message: DATE_RANGE_ERROR_MESSAGE,
   })
 
-export type ApiQueryParams = z.infer<typeof apiArticleQuerySchema>
+type ApiQueryParams = z.infer<typeof apiArticleQuerySchema>
 
 export const apiArticleQueryValidator = zodValidator('query', apiArticleQuerySchema)
 

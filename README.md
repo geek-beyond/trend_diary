@@ -4,16 +4,16 @@
 
 ### 必要なもの
 
-- ローカルでのNodeの実行環境
-- パッケージマネージャーにpnpmを使用（`corepack enable`で有効化、バージョンは`package.json`の`packageManager`に従う）
+- Node.jsとpnpm（miseで管理、バージョンは`mise.toml`に記載）
+- mise（Node.js / pnpmのバージョン管理）
 - Docker実行環境（Macの場合はOrbStack推奨）
 
 ### 手順
 
-pnpmの有効化（初回のみ）
+Node.jsとpnpmのインストール（初回のみ）
 
 ```sh
-corepack enable
+mise install
 ```
 
 Nodeモジュールのインストール

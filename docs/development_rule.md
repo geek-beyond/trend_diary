@@ -13,8 +13,8 @@
 開発に必要なローカルツール。バージョンは`mise.toml` / `.node-version` / `package.json`を正とする（以下は記載時点の参考値）。
 
 - **git** `2.54以上`（config-based hooksによるpre-commit / pre-pushフックに必要。`./scripts/git-hooks/install.sh`での有効化必須）
-- **Node.js** `22.23.2`（`engines`は`>=22.23.2`、`.node-version` や `mise.toml` 等で固定）
-- **pnpm** `11.5.1`（パッケージマネージャー。`corepack enable`で有効化、バージョンは`package.json`の`packageManager`に従う）
+- **Node.js** `26.13.0`（`engines`は`>=26.13.0`、`.node-version` や `mise.toml` 等で固定）
+- **pnpm** `12.17.0`（パッケージマネージャー。miseで有効化し、バージョンは`mise.toml`と`package.json`で固定）
 - **mise**（Node / pnpmのバージョン管理。`mise.toml`で定義）
 - **Docker**（DB等のローカル実行環境。Macの場合はOrbStack推奨）
 - **Supabase CLI**（Auth用途。`supabase start`で起動）

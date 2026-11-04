@@ -15,12 +15,12 @@ vi.mock('recharts', () => ({
       'button',
       {
         type: 'button',
-        'data-testid': 'analytics-chart',
+        'aria-label': '統計グラフ',
         onClick: () => onClick?.({ activeLabel: '2026-03-07' }),
       },
       children,
     ),
-  Bar: () => createElement('div', { 'data-testid': 'analytics-bar' }),
+  Bar: () => createElement('div'),
   CartesianGrid: () => createElement('div'),
   XAxis: () => createElement('div'),
 }))
@@ -114,7 +114,7 @@ describe('AnalyticsPage', () => {
       }),
     )
 
-    fireEvent.click(screen.getByTestId('analytics-chart'))
+    fireEvent.click(screen.getByRole('button', { name: '統計グラフ' }))
     fireEvent.click(screen.getByRole('button', { name: '選択をクリア' }))
 
     expect(onSelectDate).toHaveBeenCalledWith('2026-03-07')
@@ -143,7 +143,7 @@ describe('AnalyticsPage', () => {
       }),
     )
 
-    expect(screen.getByTestId('analytics-chart')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '統計グラフ' })).toBeInTheDocument()
     expect(screen.queryByText('記事タイトル')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '再試行' })).not.toBeInTheDocument()
   })
@@ -170,7 +170,7 @@ describe('AnalyticsPage', () => {
     expect(
       screen.queryByText('エラーが発生しました。時間をおいて再度お試しください。'),
     ).not.toBeInTheDocument()
-    expect(screen.getByTestId('analytics-chart')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '統計グラフ' })).toBeInTheDocument()
     expect(screen.getByRole('status', { name: '統計の詳細を読み込み中' })).toBeInTheDocument()
     expect(screen.queryByText('記事タイトル')).not.toBeInTheDocument()
     expect(screen.queryByText('3件')).not.toBeInTheDocument()

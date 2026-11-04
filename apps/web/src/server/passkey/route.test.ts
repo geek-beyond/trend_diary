@@ -29,6 +29,17 @@ function req(method: string, path: string, cookies?: string) {
   return apiRequest(path, { method, cookies, contentTypeJson: true })
 }
 
+// 認証検証には事前に登録済みpasskeyが要るため、登録 ceremony を通すヘルパ
+async function registerPasskey(cookies: string) {
+  const registerStart = await post('/api/passkey/registration/options', undefined, cookies)
+  const registerStartBody: { challengeId: string } = await registerStart.json()
+  return post(
+    '/api/passkey/registration/verify',
+    { challengeId: registerStartBody.challengeId, credential: { id: CREDENTIAL_ID } },
+    cookies,
+  )
+}
+
 describe('passkey認証', () => {
   const TEST_EMAIL = 'passkey-test@example.com'
   const TEST_PASSWORD = 'Test@password123'
@@ -45,17 +56,6 @@ describe('passkey認証', () => {
     createdIds.userIds.length = 0
     createdIds.authIds.length = 0
   })
-
-  // 認証検証には事前に登録済みpasskeyが要るため、登録 ceremony を通すヘルパ
-  async function registerPasskey(cookies: string) {
-    const registerStart = await post('/api/passkey/registration/options', undefined, cookies)
-    const registerStartBody: { challengeId: string } = await registerStart.json()
-    return post(
-      '/api/passkey/registration/verify',
-      { challengeId: registerStartBody.challengeId, credential: { id: CREDENTIAL_ID } },
-      cookies,
-    )
-  }
 
   describe('registration/options', () => {
     describe('正常系', () => {

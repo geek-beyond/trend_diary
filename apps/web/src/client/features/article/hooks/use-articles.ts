@@ -120,6 +120,7 @@ export default function useArticles(isLoggedIn = false) {
   const isMobile = useIsMobile()
   const { client, apiCall } = createSWRFetcher()
 
+  // oxlint-disable-next-line react-compiler/purity -- 開いたタブで日付が変わった後の再描画にも当日を反映するため
   const date = new Date()
   const todayJstDateString = toJstDateString(date)
 

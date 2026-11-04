@@ -1,4 +1,5 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
+import { wrapAsyncCall } from '@trend-diary/std/result'
 import { useRef, useState } from 'react'
 import useSWR from 'swr'
 import {
@@ -84,31 +85,25 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
 
   const currentArticle = queue[0] ?? null
 
-  const consume = async (request: (article: Article) => Promise<boolean>) => {
+  const consume = async (request: (article: Article) => Promise<boolean>, errorMessage: string) => {
     if (!currentArticle || actionInFlight.current || isActionLoading || isInitialLoading) return
     actionInFlight.current = true
     setIsActionLoading(true)
     setQueue(queue.slice(1))
     setRemaining(Math.max(0, remaining - 1))
 
-    try {
-      const succeeded = await request(currentArticle)
-      if (!succeeded) {
-        setQueue(queue)
-        setRemaining(remaining)
-      } else {
-        if (remaining <= 1) notifyCompleted()
-        actionInFlight.current = false
-        if (queue.length === 1 && remaining > 1) {
-          await mutate().catch(() => {
-            // 取得エラーは SWR の通知から再試行できるため
-          })
-        }
-      }
-    } catch (actionError) {
+    const result = await wrapAsyncCall(() => request(currentArticle))
+    if (!result.unwrapOr(false)) {
       setQueue(queue)
       setRemaining(remaining)
-      notifyErrorUnlessSessionExpired(actionError, '記事の更新に失敗しました')
+      if (result.isErr()) notifyErrorUnlessSessionExpired(result.error, errorMessage)
+    } else {
+      if (remaining <= 1) notifyCompleted()
+      actionInFlight.current = false
+      if (queue.length === 1 && remaining > 1) {
+        // 取得エラーは SWR 側で通知し、成功済みの消化操作は巻き戻さないため
+        await wrapAsyncCall(() => mutate())
+      }
     }
     actionInFlight.current = false
     setIsActionLoading(false)
@@ -116,26 +111,21 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
 
   const handleSkip = () =>
     consume(async (article) => {
-      try {
-        await apiCall(() =>
-          client.articles[':article_id'].skip.$post(
-            { param: { article_id: article.articleId } },
-            { init: { credentials: 'include' } },
-          ),
-        )
-        return true
-      } catch (skipError) {
-        notifyErrorUnlessSessionExpired(skipError, SkipErrorMessage)
-        return false
-      }
-    })
+      await apiCall(() =>
+        client.articles[':article_id'].skip.$post(
+          { param: { article_id: article.articleId } },
+          { init: { credentials: 'include' } },
+        ),
+      )
+      return true
+    }, SkipErrorMessage)
 
   const handleRead = () =>
     consume((article) => {
       // ブラウザのポップアップ制限を避けるため、await より前のクリック処理内で開く
       window.open(article.url, '_blank', 'noopener,noreferrer')
       return markAsRead(article.articleId)
-    })
+    }, '記事の更新に失敗しました')
 
   const handleLater = () => {
     if (actionInFlight.current || isActionLoading || isInitialLoading) return

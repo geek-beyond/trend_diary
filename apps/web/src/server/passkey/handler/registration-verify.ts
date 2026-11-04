@@ -26,7 +26,11 @@ export default createPasskeyActionHandler({
     const valid = c.req.valid('json')
     return passkeyClient.verifyRegistration({
       challengeId: valid.challengeId,
-      credential: valid.credential,
+      // SimpleWebAuthn v14 の拡張可能な transport 型を Supabase の古い型へ変換せず JSON のまま渡すため
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- 境界でのみ型の不一致を吸収するため
+      credential: valid.credential as Parameters<
+        typeof passkeyClient.verifyRegistration
+      >[0]['credential'],
     })
   },
   respond: (c, registered) => {

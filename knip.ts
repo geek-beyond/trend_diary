@@ -27,7 +27,7 @@ const config: KnipConfig = {
       ignoreDependencies: ['isbot'],
     },
     'apps/cron': {
-      // `cloudflare:test` は @cloudflare/vitest-pool-workers が提供する仮想モジュールで、
+      // `cloudflare:test` は @cloudflare/vitest-plugin が提供する仮想モジュールで、
       // npm 依存の cloudflare ではない。
       ignoreDependencies: ['cloudflare'],
     },

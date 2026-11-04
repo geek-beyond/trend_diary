@@ -17,7 +17,24 @@ export const meta: MetaFunction = ({ matches, location }) =>
 
 export default function InboxRoute() {
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia>(ALL_MEDIA)
+  return (
+    <Digestion
+      key={selectedMedia.join(',')}
+      selectedMedia={selectedMedia}
+      onMediaChange={setSelectedMedia}
+    />
+  )
+}
+
+function Digestion({
+  selectedMedia,
+  onMediaChange,
+}: {
+  selectedMedia: SelectedMedia
+  onMediaChange: (media: SelectedMedia) => void
+}) {
   const {
+    isActionLoading,
     isLoading,
     hasError,
     isJustCompleted,
@@ -32,6 +49,7 @@ export default function InboxRoute() {
     <InboxPage
       article={currentArticle}
       isLoading={isLoading}
+      isActionLoading={isActionLoading}
       hasError={hasError}
       isJustCompleted={isJustCompleted}
       remainingCount={remainingCount}
@@ -39,7 +57,7 @@ export default function InboxRoute() {
       onRead={handleRead}
       onLater={handleLater}
       selectedMedia={selectedMedia}
-      onMediaChange={setSelectedMedia}
+      onMediaChange={onMediaChange}
     />
   )
 }

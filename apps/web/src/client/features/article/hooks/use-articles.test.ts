@@ -107,6 +107,113 @@ describe('useArticles', () => {
     vi.clearAllMocks()
   })
 
+  it('ページ・フィルタを即時変更し、取得完了までは旧一覧と旧ページを維持する', async () => {
+    mockApiClient.articles.$get.mockResolvedValueOnce(
+      generateFakeResponse({ articles: [generateFakeArticle()], page: 2, totalPages: 4 }),
+    )
+    const { result } = setupHook(['/trends?page=2'])
+    await waitFor(() => expect(result.current.articles).toHaveLength(1))
+    let finish!: (value: ReturnType<typeof generateFakeResponse>) => void
+    mockApiClient.articles.$get.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    act(() =>
+      result.current.handleFiltersApply({
+        media: ['zenn'],
+        readStatus: 'all',
+        datePreset: 'last7days',
+      }),
+    )
+    await waitFor(() => expect(mockApiClient.articles.$get).toHaveBeenCalledTimes(2))
+    expect(result.current.selectedMedia).toEqual(['zenn'])
+    expect(result.current.selectedDatePreset).toBe('last7days')
+    expect(result.current.page).toBe(2)
+    expect(result.current.isStale).toBe(true)
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.isUpdating).toBe(true)
+    const request = vi.fn()
+    await act(async () => {
+      await result.current.updateArticleReadState('1', true, request)
+    })
+    expect(request).not.toHaveBeenCalled()
+    await act(async () => {
+      finish(
+        generateFakeResponse({
+          articles: [generateFakeArticle({ articleId: '2', media: 'zenn' })],
+          page: 1,
+        }),
+      )
+    })
+    await waitFor(() => expect(result.current.isStale).toBe(false))
+    expect(result.current.page).toBe(1)
+    expect(result.current.articles[0].articleId).toBe('2')
+  })
+
+  it('変更後の取得失敗でも旧一覧を保持し、再試行成功で新ページに切り替える', async () => {
+    mockApiClient.articles.$get.mockResolvedValueOnce(
+      generateFakeResponse({ articles: [generateFakeArticle()], totalPages: 3 }),
+    )
+    const { result } = setupHook()
+    await waitFor(() => expect(result.current.articles).toHaveLength(1))
+    mockApiClient.articles.$get.mockRejectedValueOnce(new Error('offline'))
+    act(() => result.current.toNextPage(1))
+    await waitFor(() => expect(result.current.hasError).toBe(true))
+    expect(result.current.page).toBe(1)
+    expect(result.current.articles).toHaveLength(1)
+    expect(result.current.isStale).toBe(true)
+    mockApiClient.articles.$get.mockResolvedValueOnce(
+      generateFakeResponse({ articles: [], page: 2 }),
+    )
+    act(() => result.current.retry())
+    await waitFor(() => expect(result.current.page).toBe(2))
+    expect(result.current.isStale).toBe(false)
+    expect(result.current.articles).toHaveLength(0)
+  })
+
+  it('連続フィルタ変更で遅れて届いた旧リクエストの結果を表示しない', async () => {
+    mockApiClient.articles.$get.mockResolvedValueOnce(
+      generateFakeResponse({ articles: [generateFakeArticle()] }),
+    )
+    const { result } = setupHook()
+    await waitFor(() => expect(result.current.articles).toHaveLength(1))
+    let finishOld!: (value: ReturnType<typeof generateFakeResponse>) => void
+    mockApiClient.articles.$get.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishOld = resolve
+        }),
+    )
+    act(() =>
+      result.current.handleFiltersApply({
+        media: ['qiita'],
+        readStatus: 'all',
+        datePreset: 'today',
+      }),
+    )
+    await waitFor(() => expect(mockApiClient.articles.$get).toHaveBeenCalledTimes(2))
+    mockApiClient.articles.$get.mockResolvedValueOnce(
+      generateFakeResponse({
+        articles: [generateFakeArticle({ articleId: 'zenn', media: 'zenn' })],
+      }),
+    )
+    act(() =>
+      result.current.handleFiltersApply({
+        media: ['zenn'],
+        readStatus: 'all',
+        datePreset: 'today',
+      }),
+    )
+    await waitFor(() => expect(result.current.articles[0].articleId).toBe('zenn'))
+    await act(async () => {
+      finishOld(generateFakeResponse({ articles: [generateFakeArticle({ articleId: 'old' })] }))
+    })
+    expect(result.current.articles[0].articleId).toBe('zenn')
+    expect(result.current.selectedMedia).toEqual(['zenn'])
+  })
+
   describe('基本動作', () => {
     it('初期化時に今日の日付で記事一覧が取得できる', async () => {
       const fakeArticles = [

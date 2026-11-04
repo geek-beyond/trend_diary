@@ -10,7 +10,7 @@ function mockMatchMedia() {
   // jsdom は matchMedia を実装しないため、フックが購読するAPIを差し替える
   vi.stubGlobal('matchMedia', (query: string) => {
     return {
-      matches: window.innerWidth < 768,
+      get matches() { return window.innerWidth < 768 },
       media: query,
       onchange: null,
       addEventListener: (_type: string, listener: MediaQueryListener) => {
@@ -26,6 +26,7 @@ function mockMatchMedia() {
   })
 
   return {
+    listeners,
     // 実際の viewport 変更を模して innerWidth を書き換えてから change を通知する
     resize(width: number) {
       Object.defineProperty(window, 'innerWidth', { value: width, configurable: true })
@@ -58,6 +59,28 @@ describe('useIsMobile', () => {
 
       // 初回レンダーで確定し、副作用後の再レンダー（ちらつき）を伴わない
       expect(result.current).toBe(expected)
+    })
+
+    it('同じ MediaQueryList を再利用しアンマウント時に購読を解除する', () => {
+      const { listeners } = mockMatchMedia()
+      const spy = vi.spyOn(window, 'matchMedia')
+      const { rerender, unmount } = renderHook(() => useIsMobile())
+      rerender()
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(listeners.size).toBe(1)
+      unmount()
+      expect(listeners.size).toBe(0)
+    })
+
+    it('innerWidth と異なる場合も matchMedia の matches を正とする', () => {
+      vi.stubGlobal('matchMedia', () => ({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }))
+      Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true })
+      const { result } = renderHook(() => useIsMobile())
+      expect(result.current).toBe(true)
     })
 
     it('viewportの変化に追従して値を更新する', () => {

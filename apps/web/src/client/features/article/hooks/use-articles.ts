@@ -44,6 +44,7 @@ export interface FilterParams {
 }
 
 interface ArticlesResponse {
+  requestKey?: string
   data: Article[]
   page: number
   limit: number
@@ -152,8 +153,9 @@ export default function useArticles(isLoggedIn = false) {
   const dateRange = getDateRangeByPreset(params.datePreset, todayJstDateString)
   const query = buildArticlesQuery(params, dateRange, isLoggedIn)
 
+  const requestKey = JSON.stringify(query)
   const swrKey = ['api/articles', query]
-  const { data, error, isLoading, mutate } = useSWR<ArticlesResponse>(
+  const { data, error, isLoading, isValidating, mutate } = useSWR<ArticlesResponse>(
     swrKey,
     async () => {
       const result = await apiCall<ArticlesResponse>(() =>
@@ -166,6 +168,7 @@ export default function useArticles(isLoggedIn = false) {
 
       return {
         ...result,
+        requestKey,
         data: result.data.map((article) => ({
           ...article,
           createdAt: new Date(article.createdAt),
@@ -173,6 +176,7 @@ export default function useArticles(isLoggedIn = false) {
       }
     },
     {
+      keepPreviousData: true,
       onError: (swrError) => {
         if (swrError instanceof Error) {
           notifyFetchError(swrError, TOAST_ID.ARTICLES_ERROR, () => retry())
@@ -222,6 +226,7 @@ export default function useArticles(isLoggedIn = false) {
     isRead: boolean,
     request: () => Promise<boolean>,
   ) => {
+    if (isStale) return
     const shouldRemoveFromList = params.readStatus === 'unread' && isRead
     const applyReadState = applyReadStateToCache(articleId, isRead, shouldRemoveFromList)
 
@@ -304,6 +309,7 @@ export default function useArticles(isLoggedIn = false) {
     setSearchParams(newParams)
   }
 
+  const isStale = isDisplayedDataStale(data, requestKey)
   const view = resolveOrFallback(data, params)
 
   return {
@@ -315,7 +321,9 @@ export default function useArticles(isLoggedIn = false) {
     nextPageHref: buildPagePath(view.page + 1),
     limit: view.limit,
     totalPages: view.totalPages,
-    isLoading,
+    isLoading: isLoading && !data,
+    isUpdating: isValidating,
+    isStale,
     hasError: !!error,
     retry,
     setSearchParams,
@@ -358,4 +366,8 @@ function resolveOrFallback(data: ArticlesResponse | undefined, params: Params): 
     limit: data?.limit || params.limit,
     totalPages: data?.totalPages || 1,
   }
+}
+
+function isDisplayedDataStale(displayed: ArticlesResponse | undefined, requestKey: string) {
+  return !!displayed && displayed.requestKey !== requestKey
 }

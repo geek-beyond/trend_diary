@@ -90,6 +90,7 @@ export default function useAnalytics() {
       }
     },
     {
+      keepPreviousData: false,
       onError: (error) => notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
       onSuccess: () => dismissFetchError(TOAST_ID.DIARY_ANALYTICS_ERROR),
     },
@@ -108,6 +109,7 @@ export default function useAnalytics() {
     ([, date, currentPage]: ['api/articles/diary', string, number]) =>
       fetchDiary(date, currentPage),
     {
+      keepPreviousData: false,
       onError: (error) => notifyFetchError(error, TOAST_ID.DIARY_ANALYTICS_ERROR, () => retry()),
       // 週次・日次のどちらかが成功したらトーストを閉じる。まだ失敗中の側があれば
       // SWR のエラーリトライで再度 onError が発火し、同一 id のトーストが出直る

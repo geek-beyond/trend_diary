@@ -307,6 +307,94 @@ describe('useUnreadDigestion', () => {
     expect(result.current.isJustCompleted).toBe(false)
   })
 
+  it.each(['read', 'skip'] as const)(
+    '%s は応答前に次を表示し、連続操作を防ぎ、失敗時に記事と残件数を戻す',
+    async (operation) => {
+      const next = { ...baseArticle, articleId: 'next', title: '次の記事' }
+      mockUnreadDigestionGet.mockResolvedValue({ data: [baseArticle, next], total: 2 })
+      let fail!: (reason: Error) => void
+      const pending = new Promise<never>((_resolve, reject) => {
+        fail = reject
+      })
+      if (operation === 'skip') mockSkipPost.mockReturnValueOnce(pending)
+      else mockMarkAsRead.mockReturnValueOnce(pending)
+      const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+      await waitFor(() => expect(result.current.remainingCount).toBe(2))
+      let action!: Promise<void>
+      act(() => {
+        action = operation === 'skip' ? result.current.handleSkip() : result.current.handleRead()
+        void result.current.handleSkip()
+        void result.current.handleRead()
+        result.current.handleLater()
+      })
+      expect(result.current.currentArticle?.articleId).toBe('next')
+      expect(result.current.remainingCount).toBe(1)
+      expect(result.current.isLoading).toBe(false)
+      expect(result.current.isActionLoading).toBe(true)
+      expect(mockSkipPost.mock.calls.length + mockMarkAsRead.mock.calls.length).toBe(1)
+      expect(window.open).toHaveBeenCalledTimes(operation === 'read' ? 1 : 0)
+      await act(async () => {
+        fail(new Error('offline'))
+        await action
+      })
+      expect(result.current.currentArticle?.articleId).toBe(baseArticle.articleId)
+      expect(result.current.remainingCount).toBe(2)
+      expect(result.current.isActionLoading).toBe(false)
+      expect(result.current.isJustCompleted).toBe(false)
+      expect(toast.error).toHaveBeenCalled()
+    },
+  )
+
+  it('最後の1件の完了演出はAPI成功後だけ確定する', async () => {
+    mockUnreadDigestionGet.mockResolvedValue({ data: [baseArticle], total: 1 })
+    let finish!: (success: boolean) => void
+    mockMarkAsRead.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    await waitFor(() => expect(result.current.remainingCount).toBe(1))
+    let action!: Promise<void>
+    act(() => {
+      action = result.current.handleRead()
+    })
+    expect(window.open).toHaveBeenCalledWith(baseArticle.url, '_blank', 'noopener,noreferrer')
+    expect(result.current.remainingCount).toBe(0)
+    expect(result.current.isJustCompleted).toBe(false)
+    expect(result.current.isLoading).toBe(true)
+    await act(async () => {
+      finish(true)
+      await action
+    })
+    expect(result.current.isJustCompleted).toBe(true)
+    expect(result.current.isActionLoading).toBe(false)
+  })
+
+  it('次バッチ取得失敗では消化済み記事を戻さず、再試行で残りの記事を表示する', async () => {
+    mockUnreadDigestionGet
+      .mockResolvedValueOnce({ data: [baseArticle], total: 2 })
+      .mockRejectedValueOnce(new Error('offline'))
+    mockSkipPost.mockResolvedValue({ status: 201 })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    await waitFor(() => expect(result.current.remainingCount).toBe(2))
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.hasError).toBe(true))
+    expect(result.current.currentArticle).toBeNull()
+    expect(result.current.remainingCount).toBe(1)
+    expect(result.current.isJustCompleted).toBe(false)
+    mockUnreadDigestionGet.mockResolvedValueOnce({
+      data: [{ ...baseArticle, articleId: 'next' }],
+      total: 1,
+    })
+    act(() => result.current.retry())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('next'))
+    expect(result.current.hasError).toBe(false)
+  })
+
   describe('異常系', () => {
     it('未読一覧の取得に失敗するとエラーのトーストを表示する', async () => {
       mockUnreadDigestionGet.mockRejectedValue(new Error('取得に失敗しました'))

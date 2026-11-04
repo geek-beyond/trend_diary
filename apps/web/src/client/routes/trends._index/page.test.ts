@@ -56,6 +56,39 @@ const buildProps = (overrides: Partial<TrendsPageProps> = {}): TrendsPageProps =
 })
 
 describe('TrendsPage', () => {
+  it('旧一覧の表示中は更新ラベルと旧ページを表示し、フィルタは操作可能にする', () => {
+    render(
+      createElement(
+        TrendsPage,
+        buildProps({
+          articles: [buildArticle()],
+          isStale: true,
+          isUpdating: true,
+          page: 2,
+          totalPages: 3,
+        }),
+      ),
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('変更前の条件・ページの結果')
+    expect(screen.getByText('テスト記事タイトル')).toBeInTheDocument()
+    expect(screen.getByText('ページ 2 / 3')).toBeInTheDocument()
+    expect(screen.getByText('ページ 2 / 3').closest('[inert]')).not.toBeNull()
+    expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument()
+  })
+
+  it('更新失敗時も旧結果を保持し、失敗と旧条件を明示する', () => {
+    render(
+      createElement(
+        TrendsPage,
+        buildProps({ articles: [buildArticle()], isStale: true, hasError: true }),
+      ),
+    )
+    expect(screen.getByRole('status')).toHaveTextContent(
+      '更新に失敗しました。変更前の条件・ページの結果',
+    )
+    expect(screen.getByText('テスト記事タイトル')).toBeInTheDocument()
+  })
+
   it('読み込み中は記事カード型のスケルトンを表示し空文言を表示しない', () => {
     render(createElement(TrendsPage, buildProps({ isLoading: true })))
 

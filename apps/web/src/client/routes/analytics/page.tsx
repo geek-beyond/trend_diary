@@ -8,6 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/client/components/shadcn/chart'
+import { Skeleton } from '@/client/components/shadcn/skeleton'
 import PageCard from '@/client/components/ui/layout/page-card'
 import {
   DiaryReadListSection,
@@ -85,72 +86,78 @@ export default function AnalyticsPage({
 
   return (
     <PageCard title={pageTitle}>
-      {/* 取得エラー時は誤解を招く空表示を避けるため本文を出さない。エラーの案内と再試行はトーストに集約する */}
-      {hasError && !isLoading ? null : (
-        <>
-          <div className='mt-5'>
-            <h2 className='text-sm font-semibold text-foreground'>グラフ</h2>
-            <div
-              className='mt-2 rounded-lg border border-border bg-card p-4'
-              data-slot='diary-analytics'
-            >
-              <div className='flex min-h-8 items-center gap-2'>
-                <p className='text-sm font-semibold text-foreground'>
-                  選択日: {selectedDate ? toJaDateString(toJstDate(selectedDate)) : '未選択'}
-                </p>
-                {selectedDate && (
-                  <button
-                    type='button'
-                    onClick={onClearSelectedDate}
-                    className='w-24 rounded border border-border bg-card px-2 py-1 text-xs text-foreground hover:bg-muted'
-                    data-slot='diary-clear-selected-date'
-                  >
-                    選択をクリア
-                  </button>
-                )}
-              </div>
-              <ChartContainer config={chartConfig} className='mt-3 h-56 w-full'>
-                <BarChart data={summaryRange} onClick={handleChartClick}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey='date'
-                    tickLine={false}
-                    tickMargin={8}
-                    axisLine={false}
-                    tickFormatter={formatSummaryDateTick}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <ChartLegend content={<ChartLegendContent />} />
-                  <Bar
-                    dataKey='read'
-                    fill='var(--color-read)'
-                    radius={4}
-                    className='cursor-pointer'
-                  />
-                  <Bar
-                    dataKey='skip'
-                    fill='var(--color-skip)'
-                    radius={4}
-                    className='cursor-pointer'
-                  />
-                </BarChart>
-              </ChartContainer>
+      <>
+        <div className='mt-5'>
+          <h2 className='text-sm font-semibold text-foreground'>グラフ</h2>
+          <div
+            className='mt-2 rounded-lg border border-border bg-card p-4'
+            data-slot='diary-analytics'
+          >
+            <div className='flex min-h-8 items-center gap-2'>
+              <p className='text-sm font-semibold text-foreground'>
+                選択日: {selectedDate ? toJaDateString(toJstDate(selectedDate)) : '未選択'}
+              </p>
+              {selectedDate && (
+                <button
+                  type='button'
+                  onClick={onClearSelectedDate}
+                  className='w-24 rounded border border-border bg-card px-2 py-1 text-xs text-foreground hover:bg-muted'
+                  data-slot='diary-clear-selected-date'
+                >
+                  選択をクリア
+                </button>
+              )}
             </div>
+            <ChartContainer config={chartConfig} className='mt-3 h-56 w-full'>
+              <BarChart data={summaryRange} onClick={handleChartClick}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey='date'
+                  tickLine={false}
+                  tickMargin={8}
+                  axisLine={false}
+                  tickFormatter={formatSummaryDateTick}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar
+                  dataKey='read'
+                  fill='var(--color-read)'
+                  radius={4}
+                  className='cursor-pointer'
+                />
+                <Bar
+                  dataKey='skip'
+                  fill='var(--color-skip)'
+                  radius={4}
+                  className='cursor-pointer'
+                />
+              </BarChart>
+            </ChartContainer>
           </div>
-          <DiarySummarySection sources={sources} displaySummary={displaySummary} />
-          <DiaryReadListSection
-            isLoading={isLoading}
-            shouldShowDailyDetails={shouldShowDailyDetails}
-            reads={reads}
-          />
-          <DiaryReadPagination
-            onNextPage={onNextPage}
-            onPrevPage={onPrevPage}
-            readPagination={readPagination}
-            shouldShowDailyDetails={shouldShowDailyDetails}
-          />
-        </>
-      )}
+        </div>
+        {isLoading ? (
+          <div role='status' aria-label='統計の詳細を読み込み中' className='mt-4 space-y-4'>
+            <Skeleton className='h-32 w-full' />
+            <Skeleton className='h-48 w-full' />
+          </div>
+        ) : hasError ? null : (
+          <>
+            <DiarySummarySection sources={sources} displaySummary={displaySummary} />
+            <DiaryReadListSection
+              isLoading={isLoading}
+              shouldShowDailyDetails={shouldShowDailyDetails}
+              reads={reads}
+            />
+            <DiaryReadPagination
+              onNextPage={onNextPage}
+              onPrevPage={onPrevPage}
+              readPagination={readPagination}
+              shouldShowDailyDetails={shouldShowDailyDetails}
+            />
+          </>
+        )}
+      </>
     </PageCard>
   )
 }

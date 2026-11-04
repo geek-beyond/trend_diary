@@ -69,13 +69,15 @@ const mockDailyDiary: DailyDiary = {
   },
 }
 
-const queryMock = mockDeep<Query>()
-const commandMock = mockDeep<Command>()
+let queryMock = mockDeep<Query>()
+let commandMock = mockDeep<Command>()
 
 describe('ArticleUseCase', () => {
-  const useCase = new UseCase(queryMock, commandMock)
+  let useCase = new UseCase(queryMock, commandMock)
   beforeEach(() => {
-    vi.clearAllMocks()
+    queryMock = mockDeep<Query>()
+    commandMock = mockDeep<Command>()
+    useCase = new UseCase(queryMock, commandMock)
   })
 
   describe('searchArticles', () => {

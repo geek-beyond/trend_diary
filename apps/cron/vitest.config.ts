@@ -1,6 +1,6 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
+import { cloudflarePool, cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin'
 import { config } from '@trend-diary/config/vitest'
 import { defineConfig } from 'vitest/config'
 

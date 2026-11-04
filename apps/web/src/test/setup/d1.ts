@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { readD1Migrations } from '@cloudflare/vitest-pool-workers'
+import { readD1Migrations } from '@cloudflare/vitest-plugin'
 import { afterAll } from 'vitest'
 import { disposePlatformProxy, platformEnv } from '@/test/setup/platform-proxy'
 

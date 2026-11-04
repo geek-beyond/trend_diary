@@ -23,11 +23,11 @@ const config: KnipConfig = {
         // 静的配信されるアセットは import されず追跡できないため対象外にする。
         'public/**',
       ],
-      // react-router / babel のツールチェーンが暗黙に要求するが、コードからは直接 import しない依存。
-      ignoreDependencies: ['isbot', '@babel/preset-typescript'],
+      // React Router が内部で参照する依存はコードから追えないため除外する。
+      ignoreDependencies: ['isbot'],
     },
     'apps/cron': {
-      // `cloudflare:test` は @cloudflare/vitest-pool-workers が提供する仮想モジュールで、
+      // `cloudflare:test` は @cloudflare/vitest-plugin が提供する仮想モジュールで、
       // npm 依存の cloudflare ではない。
       ignoreDependencies: ['cloudflare'],
     },

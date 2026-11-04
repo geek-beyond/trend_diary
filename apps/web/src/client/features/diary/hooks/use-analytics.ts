@@ -30,6 +30,7 @@ export default function useAnalytics() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { fetchDiary, fetchDiaryRange } = useDiaryApi()
 
+  // oxlint-disable-next-line react-compiler/purity -- 開いたタブで日付が変わった後の再描画にも当日を反映するため
   const todayJst = toJstDateString(new Date())
 
   const availableDates = buildAvailableDates(todayJst)

@@ -1,24 +1,18 @@
-import { useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 
-const MOBILE_BREAKPOINT = 768
-
-function subscribe(onStoreChange: () => void) {
-  const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-  mql.addEventListener('change', onStoreChange)
-  return () => {
-    mql.removeEventListener('change', onStoreChange)
-  }
-}
-
-function getSnapshot() {
-  return window.innerWidth < MOBILE_BREAKPOINT
-}
-
-// SSR ではデスクトップ扱いにし、クライアント側の初回スナップショットと突き合わせる
-function getServerSnapshot() {
-  return false
-}
+const MOBILE_QUERY = '(max-width: 767px)'
+const getServerSnapshot = () => false
 
 export function useIsMobile() {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  const [store] = useState(() => {
+    const media = typeof window === 'undefined' ? undefined : window.matchMedia(MOBILE_QUERY)
+    return {
+      subscribe(onStoreChange: () => void) {
+        media?.addEventListener('change', onStoreChange)
+        return () => media?.removeEventListener('change', onStoreChange)
+      },
+      getSnapshot: () => media?.matches ?? false,
+    }
+  })
+  return useSyncExternalStore(store.subscribe, store.getSnapshot, getServerSnapshot)
 }

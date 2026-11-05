@@ -57,6 +57,8 @@ export default function TrendsPage({
   articles,
   openDrawer,
   isLoading,
+  isUpdating = false,
+  isStale = false,
   hasError,
   page,
   totalPages,
@@ -98,6 +100,8 @@ export default function TrendsPage({
         isLoggedIn={isLoggedIn}
       />
       <ArticleList
+        isUpdating={isUpdating}
+        isStale={isStale}
         isLoading={isLoading}
         hasError={hasError}
         articles={articles}
@@ -118,6 +122,8 @@ export default function TrendsPage({
 }
 
 interface ArticleListProps {
+  isUpdating?: boolean
+  isStale?: boolean
   isLoading: boolean
   hasError: boolean
   articles: Article[]
@@ -136,6 +142,8 @@ interface ArticleListProps {
 
 function ArticleList({
   isLoading,
+  isUpdating,
+  isStale,
   hasError,
   articles,
   hasActiveFilters,
@@ -152,13 +160,13 @@ function ArticleList({
 }: ArticleListProps) {
   if (isLoading) return <ArticleListSkeleton />
   // 取得エラー時は誤解を招く空表示（0件表示）を避けるため一覧を出さない。案内と再試行はトーストに集約する
-  if (hasError) return null
-  if (articles.length === 0) {
+  if (hasError && !isStale) return null
+  if (articles.length === 0 && !isStale && !isUpdating) {
     return <EmptyArticleList hasActiveFilters={hasActiveFilters} onResetFilters={onResetFilters} />
   }
 
-  const isPrevDisabled = page <= 1
-  const isNextDisabled = page >= totalPages
+  const isPrevDisabled = isStale || page <= 1
+  const isNextDisabled = isStale || page >= totalPages
 
   const handlePrevPageClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (isModifiedClick(event)) return
@@ -175,43 +183,46 @@ function ArticleList({
   }
 
   return (
-    <div>
-      <div className='flex flex-wrap gap-6'>
-        {articles.map((article) => (
-          <ArticleCard
-            key={article.articleId}
-            article={article}
-            onCardClick={onCardClick}
-            onToggleRead={onToggleRead}
-            isLoggedIn={isLoggedIn}
-          />
-        ))}
+    <div aria-busy={isUpdating}>
+      <UpdateStatus isUpdating={isUpdating} isStale={isStale} hasError={hasError} />
+      <div inert={isStale} data-stale={isStale} className='data-[stale=true]:opacity-60'>
+        <div className='flex flex-wrap gap-6'>
+          {articles.map((article) => (
+            <ArticleCard
+              key={article.articleId}
+              article={article}
+              onCardClick={onCardClick}
+              onToggleRead={onToggleRead}
+              isLoggedIn={isLoggedIn}
+            />
+          ))}
+        </div>
+        <Pagination className='mt-6'>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href={prevPageHref}
+                disabled={isPrevDisabled}
+                className={PAGINATION_LINK_CLASS}
+                onClick={handlePrevPageClick}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className='mx-4 text-sm'>
+                ページ {page} / {totalPages}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                href={nextPageHref}
+                disabled={isNextDisabled}
+                className={PAGINATION_LINK_CLASS}
+                onClick={handleNextPageClick}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
-      <Pagination className='mt-6'>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              href={prevPageHref}
-              disabled={isPrevDisabled}
-              className={PAGINATION_LINK_CLASS}
-              onClick={handlePrevPageClick}
-            />
-          </PaginationItem>
-          <PaginationItem>
-            <span className='mx-4 text-sm'>
-              ページ {page} / {totalPages}
-            </span>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationNext
-              href={nextPageHref}
-              disabled={isNextDisabled}
-              className={PAGINATION_LINK_CLASS}
-              onClick={handleNextPageClick}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
     </div>
   )
 }
@@ -241,5 +252,25 @@ function ArticleListSkeleton() {
         <ArticleCardSkeleton key={key} />
       ))}
     </div>
+  )
+}
+
+function getUpdateMessage(isStale = false, hasError = false, isUpdating = false) {
+  if (!isStale) return '更新中です。'
+  if (hasError && !isUpdating)
+    return '更新に失敗しました。変更前の条件・ページの結果を表示しています。'
+  return '更新中です。変更前の条件・ページの結果を表示しています。'
+}
+
+function UpdateStatus({
+  isUpdating,
+  isStale,
+  hasError,
+}: Pick<ArticleListProps, 'isUpdating' | 'isStale' | 'hasError'>) {
+  if (!isUpdating && !isStale) return null
+  return (
+    <p role='status' className='mb-3 text-sm text-muted-foreground'>
+      {getUpdateMessage(isStale, hasError, isUpdating)}
+    </p>
   )
 }

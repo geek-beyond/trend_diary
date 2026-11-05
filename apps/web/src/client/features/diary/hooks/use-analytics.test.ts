@@ -76,6 +76,39 @@ describe('useAnalytics', () => {
     vi.clearAllMocks()
   })
 
+  it('日付変更は即時に反映し、取得中はグラフを維持して旧日付の詳細を消す', async () => {
+    const dates = buildDates(toJstDateString(new Date()))
+    const fetchDiaryRange = vi
+      .fn()
+      .mockResolvedValue(dates.map((date) => buildRangeItemResponse(date, 1, 0)))
+    let finish!: (value: DiaryResponse) => void
+    const fetchDiary = vi
+      .fn()
+      .mockResolvedValueOnce(buildDailyResponse(dates[5], 2, 1))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve
+          }),
+      )
+    mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange })
+    const { result } = setupHook([`/analytics?date=${dates[5]}&page=2`])
+    await waitFor(() => expect(result.current.reads).toHaveLength(1))
+    const chart = result.current.summaryRange
+    act(() => result.current.selectDate(dates[6]))
+    expect(result.current.selectedDate).toBe(dates[6])
+    expect(result.current.summaryRange).toEqual(chart)
+    expect(result.current.reads).toEqual([])
+    expect(result.current.isLoading).toBe(true)
+    await waitFor(() => expect(fetchDiary).toHaveBeenLastCalledWith(dates[6], 1))
+    await act(async () => {
+      finish(buildDailyResponse(dates[6], 4, 0))
+    })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.dailySummary).toEqual({ read: 4, skip: 0 })
+    expect(fetchDiaryRange).toHaveBeenCalledTimes(1)
+  })
+
   it('日付未選択時は過去1週間の集計を表示する', async () => {
     const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
       const dates = buildDates(to).filter((date) => date >= from)

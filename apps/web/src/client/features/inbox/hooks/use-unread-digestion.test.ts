@@ -50,6 +50,71 @@ function wrapper({ children }: { children: ReactNode }) {
   )
 }
 
+function makeArticle(articleId: string, title = articleId): Article {
+  return { ...baseArticle, articleId, title }
+}
+
+function makeArticles(...articleIds: string[]): Article[] {
+  return articleIds.map((articleId) => makeArticle(articleId))
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (error: Error) => void
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+  return { promise, resolve, reject }
+}
+
+function createControlledSkipRequests() {
+  const pending = new Map<string, ReturnType<typeof deferred<{ status: number }>>>()
+  mockSkipPost.mockImplementation(({ param }: { param: { article_id: string } }) => {
+    const request = deferred<{ status: number }>()
+    pending.set(param.article_id, request)
+    return request.promise
+  })
+
+  const getRequest = (articleId: string) => {
+    const request = pending.get(articleId)
+    if (!request) throw new Error(`スキップAPIが未開始です: ${articleId}`)
+    return request
+  }
+
+  return {
+    resolve: (articleId: string) => getRequest(articleId).resolve({ status: 201 }),
+    reject: (articleId: string, error: Error) => getRequest(articleId).reject(error),
+  }
+}
+
+async function renderLoadedQueue(articles: Article[], total = articles.length) {
+  const firstArticle = articles[0]
+  if (!firstArticle) throw new Error('記事が必要です')
+  mockUnreadDigestionGet.mockResolvedValue({ data: articles, total })
+  const rendered = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+  await waitFor(() => {
+    expect(rendered.result.current.currentArticle?.articleId).toBe(firstArticle.articleId)
+    expect(rendered.result.current.remainingCount).toBe(total)
+  })
+  return rendered
+}
+
+function startAction(action: () => Promise<void>): Promise<void> {
+  let pending!: Promise<void>
+  act(() => {
+    pending = action()
+  })
+  return pending
+}
+
+async function settleAction(action: Promise<void>, settleRequest: () => void): Promise<void> {
+  await act(async () => {
+    settleRequest()
+    await action
+  })
+}
+
 describe('useUnreadDigestion', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -305,6 +370,210 @@ describe('useUnreadDigestion', () => {
 
     expect(result.current.remainingCount).toBe(1)
     expect(result.current.isJustCompleted).toBe(false)
+  })
+
+  it.each(['read', 'skip'] as const)(
+    '%s は応答前に次を表示し、失敗時に対象記事と残件数を戻す',
+    async (operation) => {
+      const next = makeArticle('next', '次の記事')
+      const request = deferred<never>()
+      if (operation === 'skip') mockSkipPost.mockReturnValueOnce(request.promise)
+      else mockMarkAsRead.mockReturnValueOnce(request.promise)
+      const { result } = await renderLoadedQueue([baseArticle, next], 2)
+      let action!: Promise<void>
+      act(() => {
+        action = operation === 'skip' ? result.current.handleSkip() : result.current.handleRead()
+        result.current.handleLater()
+      })
+      await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('next'))
+      expect(result.current.remainingCount).toBe(1)
+      expect(result.current.isLoading).toBe(false)
+      expect(result.current.isActionPending).toBe(true)
+      expect(mockSkipPost.mock.calls.length + mockMarkAsRead.mock.calls.length).toBe(1)
+      expect(window.open).toHaveBeenCalledTimes(operation === 'read' ? 1 : 0)
+      await settleAction(action, () => request.reject(new Error('offline')))
+      expect(result.current.currentArticle?.articleId).toBe(baseArticle.articleId)
+      expect(result.current.remainingCount).toBe(2)
+      expect(result.current.isActionPending).toBe(false)
+      expect(result.current.isJustCompleted).toBe(false)
+      expect(toast.error).toHaveBeenCalled()
+    },
+  )
+
+  it('後で読むの並べ替えを確定状態に残す', async () => {
+    const next = makeArticle('article-2', '次の記事')
+    const last = makeArticle('article-3', '最後の記事')
+    mockSkipPost.mockResolvedValue({ status: 201 })
+    const { result } = await renderLoadedQueue([baseArticle, next, last])
+
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    expect(result.current.remainingCount).toBe(3)
+
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
+  })
+
+  it('後で読むを連打しても確定状態の順序を保つ', async () => {
+    const { result } = await renderLoadedQueue(
+      makeArticles('article-1', 'article-2', 'article-3', 'article-4'),
+    )
+
+    act(() => {
+      result.current.handleLater()
+      result.current.handleLater()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-4'))
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
+  })
+
+  it('別の記事が処理中に後で読むを選び、失敗記事を戻しても並べ替えを保つ', async () => {
+    const next = makeArticle('article-2', '次の記事')
+    const last = makeArticle('article-3', '最後の記事')
+    const firstRequest = deferred<{ status: number }>()
+    mockSkipPost.mockReturnValueOnce(firstRequest.promise)
+    mockSkipPost.mockResolvedValue({ status: 201 })
+    const { result } = await renderLoadedQueue([baseArticle, next, last])
+
+    const firstAction = startAction(result.current.handleSkip)
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+
+    await settleAction(firstAction, () => firstRequest.reject(new Error('offline')))
+    expect(result.current.currentArticle?.articleId).toBe('article-1')
+    expect(result.current.remainingCount).toBe(3)
+
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+  })
+
+  it('別の記事操作を並行でき、先の操作が失敗しても後の成功を巻き戻さない', async () => {
+    const next = makeArticle('article-2', '次の記事')
+    const last = makeArticle('article-3', '最後の記事')
+    const requests = createControlledSkipRequests()
+    const { result } = await renderLoadedQueue([baseArticle, next, last])
+
+    const firstAction = startAction(result.current.handleSkip)
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    const secondAction = startAction(result.current.handleSkip)
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+    expect(result.current.remainingCount).toBe(1)
+    expect(result.current.isActionPending).toBe(true)
+    expect(mockSkipPost).toHaveBeenCalledTimes(2)
+
+    await settleAction(secondAction, () => requests.resolve('article-2'))
+    expect(result.current.isActionPending).toBe(true)
+    expect(result.current.currentArticle?.articleId).toBe('article-3')
+    expect(result.current.remainingCount).toBe(1)
+
+    await settleAction(firstAction, () => requests.reject('article-1', new Error('offline')))
+    expect(result.current.currentArticle?.articleId).toBe('article-1')
+    expect(result.current.remainingCount).toBe(2)
+    expect(result.current.isActionPending).toBe(false)
+    expect(result.current.isJustCompleted).toBe(false)
+  })
+
+  it('3つの操作が逆順で成功・失敗しても、成功済みだけを確定し失敗記事を戻す', async () => {
+    const articles = makeArticles('article-1', 'article-2', 'article-3', 'article-4')
+    const requests = createControlledSkipRequests()
+    const { result } = await renderLoadedQueue(articles)
+
+    const first = startAction(result.current.handleSkip)
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    const second = startAction(result.current.handleSkip)
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+    const third = startAction(result.current.handleSkip)
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-4'))
+
+    await settleAction(third, () => requests.resolve('article-3'))
+    await settleAction(second, () => requests.reject('article-2', new Error('offline')))
+    await settleAction(first, () => requests.resolve('article-1'))
+
+    expect(result.current.currentArticle?.articleId).toBe('article-2')
+    expect(result.current.remainingCount).toBe(2)
+    expect(result.current.isActionPending).toBe(false)
+    expect(result.current.isJustCompleted).toBe(false)
+  })
+
+  it('最後の2記事を並行消化し、一方の失敗中は完了演出を出さない', async () => {
+    const next = makeArticle('article-2', '最後の記事')
+    const requests = createControlledSkipRequests()
+    const { result } = await renderLoadedQueue([baseArticle, next])
+    const first = startAction(result.current.handleSkip)
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    const last = startAction(result.current.handleSkip)
+    expect(result.current.remainingCount).toBe(0)
+    expect(result.current.isJustCompleted).toBe(false)
+
+    await settleAction(last, () => requests.resolve('article-2'))
+    expect(result.current.isJustCompleted).toBe(false)
+    expect(result.current.remainingCount).toBe(0)
+    await settleAction(first, () => requests.reject('article-1', new Error('offline')))
+    expect(result.current.currentArticle?.articleId).toBe('article-1')
+    expect(result.current.remainingCount).toBe(1)
+    expect(result.current.isJustCompleted).toBe(false)
+
+    mockSkipPost.mockResolvedValueOnce({ status: 201 })
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.isJustCompleted).toBe(true))
+    expect(result.current.remainingCount).toBe(0)
+  })
+
+  it('最後の1件の完了演出はAPI成功後だけ確定する', async () => {
+    const request = deferred<boolean>()
+    mockMarkAsRead.mockReturnValueOnce(request.promise)
+    const { result } = await renderLoadedQueue([baseArticle], 1)
+    const action = startAction(result.current.handleRead)
+    expect(window.open).toHaveBeenCalledWith(baseArticle.url, '_blank', 'noopener,noreferrer')
+    expect(result.current.remainingCount).toBe(0)
+    expect(result.current.isJustCompleted).toBe(false)
+    expect(result.current.isLoading).toBe(true)
+    await settleAction(action, () => request.resolve(true))
+    expect(result.current.isJustCompleted).toBe(true)
+    await waitFor(() => expect(result.current.isActionPending).toBe(false))
+  })
+
+  it('次バッチ取得失敗では消化済み記事を戻さず、再試行で残りの記事を表示する', async () => {
+    mockUnreadDigestionGet
+      .mockResolvedValueOnce({ data: [baseArticle], total: 2 })
+      .mockRejectedValueOnce(new Error('offline'))
+    mockSkipPost.mockResolvedValue({ status: 201 })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    await waitFor(() => expect(result.current.remainingCount).toBe(2))
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.hasError).toBe(true))
+    expect(result.current.currentArticle).toBeNull()
+    expect(result.current.remainingCount).toBe(1)
+    expect(result.current.isJustCompleted).toBe(false)
+    mockUnreadDigestionGet.mockResolvedValueOnce({
+      data: [{ ...baseArticle, articleId: 'next' }],
+      total: 1,
+    })
+    act(() => result.current.retry())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('next'))
+    expect(result.current.hasError).toBe(false)
   })
 
   describe('異常系', () => {

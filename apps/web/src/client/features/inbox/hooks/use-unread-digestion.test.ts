@@ -325,7 +325,7 @@ describe('useUnreadDigestion', () => {
         action = operation === 'skip' ? result.current.handleSkip() : result.current.handleRead()
         result.current.handleLater()
       })
-      expect(result.current.currentArticle?.articleId).toBe('next')
+      await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('next'))
       expect(result.current.remainingCount).toBe(1)
       expect(result.current.isLoading).toBe(false)
       expect(result.current.isActionPending).toBe(true)
@@ -342,6 +342,68 @@ describe('useUnreadDigestion', () => {
       expect(toast.error).toHaveBeenCalled()
     },
   )
+
+  it('後で読むの並べ替えを確定状態に残す', async () => {
+    const next = { ...baseArticle, articleId: 'article-2', title: '次の記事' }
+    const last = { ...baseArticle, articleId: 'article-3', title: '最後の記事' }
+    mockUnreadDigestionGet.mockResolvedValue({ data: [baseArticle, next, last], total: 3 })
+    mockSkipPost.mockResolvedValue({ status: 201 })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
+
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    expect(result.current.remainingCount).toBe(3)
+
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
+  })
+
+  it('別の記事が処理中に後で読むを選び、失敗記事を戻しても並べ替えを保つ', async () => {
+    const next = { ...baseArticle, articleId: 'article-2', title: '次の記事' }
+    const last = { ...baseArticle, articleId: 'article-3', title: '最後の記事' }
+    mockUnreadDigestionGet.mockResolvedValue({ data: [baseArticle, next, last], total: 3 })
+    let failFirst!: (error: Error) => void
+    mockSkipPost.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          failFirst = reject
+        }),
+    )
+    mockSkipPost.mockResolvedValue({ status: 201 })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
+
+    let firstAction!: Promise<void>
+    act(() => {
+      firstAction = result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+
+    await act(async () => {
+      failFirst(new Error('offline'))
+      await firstAction
+    })
+    expect(result.current.currentArticle?.articleId).toBe('article-1')
+    expect(result.current.remainingCount).toBe(3)
+
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+  })
 
   it('別の記事操作を並行でき、先の操作が失敗しても後の成功を巻き戻さない', async () => {
     const next = { ...baseArticle, articleId: 'article-2', title: '次の記事' }

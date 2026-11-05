@@ -106,7 +106,7 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
   const handleLater = () => {
     if (!currentArticle || inFlightArticleIds.current.has(currentArticle.articleId)) return
     const action: OptimisticAction = { type: 'later', articleId: currentArticle.articleId }
-    startAction(() => dispatchOptimistic(action))
+    void updateConfirmedBatch(action, mutate)
   }
 
   const isLoading = shouldShowLoading({

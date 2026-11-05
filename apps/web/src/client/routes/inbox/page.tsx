@@ -5,7 +5,7 @@ import { InboxBody, InboxBodySkeleton, type InboxBodyProps } from '@/client/feat
 interface Props extends InboxBodyProps {
   isLoading: boolean
   hasError: boolean
-  pendingActionCount?: number
+  isActionPending?: boolean
   remainingCount: number
   selectedMedia: SelectedMedia
   onMediaChange: (media: SelectedMedia) => void
@@ -13,7 +13,7 @@ interface Props extends InboxBodyProps {
 
 export default function InboxPage({
   article,
-  pendingActionCount = 0,
+  isActionPending = false,
   isLoading,
   hasError,
   isJustCompleted,
@@ -27,16 +27,16 @@ export default function InboxPage({
   return (
     <PageCard title='未読消化'>
       <p className='mt-0.5 text-sm text-muted-foreground'>未読記事を1件ずつ確認できます。</p>
-      <fieldset aria-busy={pendingActionCount > 0}>
+      <fieldset aria-busy={isActionPending}>
         <div className='mt-2'>
           <p className='mb-2 text-sm text-muted-foreground'>メディア</p>
           <MediaMultiFilter selectedMedia={selectedMedia} onMediaChange={onMediaChange} />
         </div>
         <p className='mt-1 text-sm text-muted-foreground'>残り {remainingCount} 件</p>
 
-        {pendingActionCount > 0 && (
+        {isActionPending && (
           <p role='status' className='text-sm text-muted-foreground'>
-            {pendingActionCount} 件を保存中です…
+            保存中です…
           </p>
         )}
         <InboxContent

@@ -39,11 +39,11 @@ const buildArticle = (overrides: Partial<InboxArticle> = {}): InboxArticle => ({
 describe('InboxPage', () => {
   it('保存中も次の記事を表示し、続けて操作できる状態を保つ', () => {
     renderInboxPage(
-      buildProps({ article: buildArticle(), pendingActionCount: 1, remainingCount: 2 }),
+      buildProps({ article: buildArticle(), isActionPending: true, remainingCount: 2 }),
     )
     expect(screen.getByText('テスト記事タイトル')).toBeInTheDocument()
     expect(screen.getByText('残り 2 件')).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent('1 件を保存中')
+    expect(screen.getByRole('status')).toHaveTextContent('保存中')
     for (const name of ['スキップ', '読む', '後で'])
       expect(screen.getByRole('button', { name })).toBeEnabled()
     expect(screen.getByText('メディア').closest('fieldset')).toHaveAttribute('aria-busy', 'true')

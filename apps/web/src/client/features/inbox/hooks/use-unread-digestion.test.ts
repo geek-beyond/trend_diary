@@ -328,7 +328,7 @@ describe('useUnreadDigestion', () => {
       expect(result.current.currentArticle?.articleId).toBe('next')
       expect(result.current.remainingCount).toBe(1)
       expect(result.current.isLoading).toBe(false)
-      expect(result.current.pendingActionCount).toBe(1)
+      expect(result.current.isActionPending).toBe(true)
       expect(mockSkipPost.mock.calls.length + mockMarkAsRead.mock.calls.length).toBe(1)
       expect(window.open).toHaveBeenCalledTimes(operation === 'read' ? 1 : 0)
       await act(async () => {
@@ -337,7 +337,7 @@ describe('useUnreadDigestion', () => {
       })
       expect(result.current.currentArticle?.articleId).toBe(baseArticle.articleId)
       expect(result.current.remainingCount).toBe(2)
-      expect(result.current.pendingActionCount).toBe(0)
+      expect(result.current.isActionPending).toBe(false)
       expect(result.current.isJustCompleted).toBe(false)
       expect(toast.error).toHaveBeenCalled()
     },
@@ -371,14 +371,14 @@ describe('useUnreadDigestion', () => {
     })
     await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
     expect(result.current.remainingCount).toBe(1)
-    expect(result.current.pendingActionCount).toBe(2)
+    expect(result.current.isActionPending).toBe(true)
     expect(mockSkipPost).toHaveBeenCalledTimes(2)
 
     await act(async () => {
       pending.get('article-2')?.resolve()
       await secondAction
     })
-    expect(result.current.pendingActionCount).toBe(1)
+    expect(result.current.isActionPending).toBe(true)
     expect(result.current.currentArticle?.articleId).toBe('article-3')
     expect(result.current.remainingCount).toBe(1)
 
@@ -388,8 +388,112 @@ describe('useUnreadDigestion', () => {
     })
     expect(result.current.currentArticle?.articleId).toBe('article-1')
     expect(result.current.remainingCount).toBe(2)
-    expect(result.current.pendingActionCount).toBe(0)
+    expect(result.current.isActionPending).toBe(false)
     expect(result.current.isJustCompleted).toBe(false)
+  })
+
+  it('3つの操作が逆順で成功・失敗しても、成功済みだけを確定し失敗記事を戻す', async () => {
+    const articles = ['article-1', 'article-2', 'article-3', 'article-4'].map((articleId) => ({
+      ...baseArticle,
+      articleId,
+      title: articleId,
+    }))
+    mockUnreadDigestionGet.mockResolvedValue({ data: articles, total: 4 })
+    const requests = new Map<string, { resolve: () => void; reject: (error: Error) => void }>()
+    mockSkipPost.mockImplementation(
+      ({ param }: { param: { article_id: string } }) =>
+        new Promise((resolve, reject) => {
+          requests.set(param.article_id, {
+            resolve: () => resolve({ status: 201 }),
+            reject,
+          })
+        }),
+    )
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
+
+    let first!: Promise<void>
+    act(() => {
+      first = result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    let second!: Promise<void>
+    act(() => {
+      second = result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+    let third!: Promise<void>
+    act(() => {
+      third = result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-4'))
+
+    await act(async () => {
+      requests.get('article-3')?.resolve()
+      await third
+    })
+    await act(async () => {
+      requests.get('article-2')?.reject(new Error('offline'))
+      await second
+    })
+    await act(async () => {
+      requests.get('article-1')?.resolve()
+      await first
+    })
+
+    expect(result.current.currentArticle?.articleId).toBe('article-2')
+    expect(result.current.remainingCount).toBe(2)
+    expect(result.current.isActionPending).toBe(false)
+    expect(result.current.isJustCompleted).toBe(false)
+  })
+
+  it('最後の2記事を並行消化し、一方の失敗中は完了演出を出さない', async () => {
+    const next = { ...baseArticle, articleId: 'article-2', title: '最後の記事' }
+    mockUnreadDigestionGet.mockResolvedValue({ data: [baseArticle, next], total: 2 })
+    const requests = new Map<string, { resolve: () => void; reject: (error: Error) => void }>()
+    mockSkipPost.mockImplementation(
+      ({ param }: { param: { article_id: string } }) =>
+        new Promise((resolve, reject) => {
+          requests.set(param.article_id, {
+            resolve: () => resolve({ status: 201 }),
+            reject,
+          })
+        }),
+    )
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
+    let first!: Promise<void>
+    act(() => {
+      first = result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    let last!: Promise<void>
+    act(() => {
+      last = result.current.handleSkip()
+    })
+    expect(result.current.remainingCount).toBe(0)
+    expect(result.current.isJustCompleted).toBe(false)
+
+    await act(async () => {
+      requests.get('article-2')?.resolve()
+      await last
+    })
+    expect(result.current.isJustCompleted).toBe(false)
+    expect(result.current.remainingCount).toBe(0)
+    await act(async () => {
+      requests.get('article-1')?.reject(new Error('offline'))
+      await first
+    })
+    expect(result.current.currentArticle?.articleId).toBe('article-1')
+    expect(result.current.remainingCount).toBe(1)
+    expect(result.current.isJustCompleted).toBe(false)
+
+    mockSkipPost.mockResolvedValueOnce({ status: 201 })
+    await act(async () => {
+      await result.current.handleSkip()
+    })
+    await waitFor(() => expect(result.current.isJustCompleted).toBe(true))
+    expect(result.current.remainingCount).toBe(0)
   })
 
   it('最後の1件の完了演出はAPI成功後だけ確定する', async () => {
@@ -416,7 +520,7 @@ describe('useUnreadDigestion', () => {
       await action
     })
     expect(result.current.isJustCompleted).toBe(true)
-    expect(result.current.pendingActionCount).toBe(0)
+    await waitFor(() => expect(result.current.isActionPending).toBe(false))
   })
 
   it('次バッチ取得失敗では消化済み記事を戻さず、再試行で残りの記事を表示する', async () => {

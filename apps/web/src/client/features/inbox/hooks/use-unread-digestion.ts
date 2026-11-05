@@ -1,6 +1,6 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { wrapAsyncCall } from '@trend-diary/std/result'
-import { startTransition, useEffect, useOptimistic, useRef, useState } from 'react'
+import { useOptimistic, useRef, useTransition } from 'react'
 import useSWR from 'swr'
 import {
   dismissFetchError,
@@ -21,28 +21,18 @@ interface UnreadDigestionResponse {
   total: number
 }
 
-interface DigestionState {
-  queue: Article[]
-  remaining: number
-}
-
 type OptimisticAction =
   | { type: 'consume'; articleId: string }
   | { type: 'later'; articleId: string }
 
 const SkipErrorMessage = 'スキップに失敗しました'
 const ReadErrorMessage = '記事の更新に失敗しました'
-const initialState: DigestionState = { queue: [], remaining: 0 }
 
 export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
   const { client, apiCall } = createSWRFetcher()
   const { markAsRead } = useReadArticle()
-  const [syncedBatch, setSyncedBatch] = useState<UnreadDigestionResponse>()
-  const [state, setState] = useState<DigestionState>(initialState)
-  const [pendingActionCount, setPendingActionCount] = useState(0)
-  const queueRef = useRef<Article[]>([])
-  const remainingRef = useRef(0)
   const inFlightArticleIds = useRef(new Set<string>())
+  const [isPending, startAction] = useTransition()
   const swrKey = ['api/articles/unread-digestion', selectedMedia]
   const {
     data,
@@ -52,29 +42,11 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
     mutate,
   } = useSWR<UnreadDigestionResponse>(
     swrKey,
-    async () => {
-      const query = isAllMediaSelected(selectedMedia) ? {} : { media: selectedMedia }
-      const result = await apiCall<UnreadDigestionResponse>(() =>
-        client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
-      )
-
-      if (!result) {
-        throw new Error('未読消化データの取得に失敗しました')
-      }
-
-      return {
-        data: result.data.map((article) => ({
-          ...article,
-          createdAt: new Date(article.createdAt),
-        })),
-        total: result.total,
-      }
-    },
+    () => fetchUnreadBatch(client, apiCall, selectedMedia),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       isPaused: () => inFlightArticleIds.current.size > 0,
-      // 明示的な再試行で同一バッチが返ってもキューを同期し直すため
       compare: Object.is,
       onError: (swrError) =>
         notifyFetchError(swrError, TOAST_ID.UNREAD_DIGESTION_ERROR, () => retry()),
@@ -82,66 +54,32 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
     },
   )
 
-  if (data && data !== syncedBatch) {
-    setSyncedBatch(data)
-    setState({ queue: data.data, remaining: data.total })
-  }
-
-  useEffect(() => {
-    if (!data || data !== syncedBatch) return
-    queueRef.current = data.data
-    remainingRef.current = data.total
-  }, [data, syncedBatch])
-
-  const [optimisticState, dispatchOptimistic] = useOptimistic(state, reduceDigestionState)
+  const [batch, dispatchOptimistic] = useOptimistic(data, reduceBatch)
   const { isJustCompleted, notifyCompleted } = useCompletionCelebration({
-    queueLength: optimisticState.queue.length,
+    queueLength: batch?.data.length ?? 0,
   })
-  const currentArticle = optimisticState.queue[0] ?? null
+  const currentArticle = batch?.data[0] ?? null
 
   const consume = (request: (article: Article) => Promise<boolean>, errorMessage: string) => {
-    if (
-      !currentArticle ||
-      inFlightArticleIds.current.has(currentArticle.articleId) ||
-      isInitialLoading
-    ) {
+    if (!canStartConsume(currentArticle, inFlightArticleIds.current, isInitialLoading)) {
       return Promise.resolve()
     }
 
     const article = currentArticle
     const action: OptimisticAction = { type: 'consume', articleId: article.articleId }
     inFlightArticleIds.current.add(article.articleId)
-    setPendingActionCount(inFlightArticleIds.current.size)
 
     return new Promise<void>((resolve) => {
-      startTransition(async () => {
+      startAction(async () => {
         dispatchOptimistic(action)
-        const result = await wrapAsyncCall(() => request(article))
-
-        if (result.isErr()) {
-          notifyErrorUnlessSessionExpired(result.error, errorMessage)
-        } else if (result.value) {
-          queueRef.current = reduceDigestionState(
-            { queue: queueRef.current, remaining: remainingRef.current },
-            action,
-          ).queue
-          remainingRef.current = Math.max(0, remainingRef.current - 1)
-          setState((previous) => reduceDigestionState(previous, action))
-          if (remainingRef.current === 0) notifyCompleted()
-        }
-
-        inFlightArticleIds.current.delete(article.articleId)
-        setPendingActionCount(inFlightArticleIds.current.size)
-
-        if (
-          result.isOk() &&
-          result.value &&
-          queueRef.current.length === 0 &&
-          remainingRef.current > 0
-        ) {
-          // 残件は残っているが今のバッチを消化した後だけ、次のバッチを取得するため
-          await wrapAsyncCall(() => mutate())
-        }
+        await settleConsume({
+          request: () => request(article),
+          action,
+          errorMessage,
+          mutate,
+          inFlightArticleIds: inFlightArticleIds.current,
+          notifyCompleted,
+        })
         resolve()
       })
     })
@@ -168,20 +106,16 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
   const handleLater = () => {
     if (!currentArticle || inFlightArticleIds.current.has(currentArticle.articleId)) return
     const action: OptimisticAction = { type: 'later', articleId: currentArticle.articleId }
-    startTransition(() => {
-      dispatchOptimistic(action)
-      queueRef.current = reduceDigestionState(
-        { queue: queueRef.current, remaining: remainingRef.current },
-        action,
-      ).queue
-      setState((previous) => reduceDigestionState(previous, action))
-    })
+    startAction(() => dispatchOptimistic(action))
   }
 
-  const isLoading =
-    isInitialLoading ||
-    (optimisticState.queue.length === 0 &&
-      (pendingActionCount > 0 || isValidating || (optimisticState.remaining > 0 && !error)))
+  const isLoading = shouldShowLoading({
+    isInitialLoading,
+    batch,
+    isPending,
+    isValidating,
+    hasError: !!error,
+  })
 
   const retry = () => {
     if (inFlightArticleIds.current.size === 0) void mutate()
@@ -189,31 +123,137 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
 
   return {
     isLoading,
-    pendingActionCount,
+    isActionPending: isPending,
     hasError: !!error,
     retry,
     isJustCompleted,
     currentArticle,
-    remainingCount: optimisticState.remaining,
+    remainingCount: batch?.total ?? 0,
     handleSkip,
     handleRead,
     handleLater,
   }
 }
 
-function reduceDigestionState(state: DigestionState, action: OptimisticAction): DigestionState {
+function canStartConsume(
+  article: Article | null,
+  inFlightArticleIds: Set<string>,
+  isInitialLoading: boolean,
+): article is Article {
+  return !!article && !inFlightArticleIds.has(article.articleId) && !isInitialLoading
+}
+
+function shouldShowLoading({
+  isInitialLoading,
+  batch,
+  isPending,
+  isValidating,
+  hasError,
+}: {
+  isInitialLoading: boolean
+  batch: UnreadDigestionResponse | undefined
+  isPending: boolean
+  isValidating: boolean
+  hasError: boolean
+}): boolean {
+  return (
+    isInitialLoading ||
+    (batch?.data.length === 0 &&
+      (isPending || isValidating || ((batch?.total ?? 0) > 0 && !hasError)))
+  )
+}
+
+async function fetchUnreadBatch(
+  client: ReturnType<typeof createSWRFetcher>['client'],
+  apiCall: ReturnType<typeof createSWRFetcher>['apiCall'],
+  selectedMedia: SelectedMedia,
+): Promise<UnreadDigestionResponse> {
+  const query = isAllMediaSelected(selectedMedia) ? {} : { media: selectedMedia }
+  const result = await apiCall<UnreadDigestionResponse>(() =>
+    client.articles['unread-digestion'].$get({ query }, { init: { credentials: 'include' } }),
+  )
+  if (!result) throw new Error('未読消化データの取得に失敗しました')
+
+  return {
+    data: result.data.map((article) => ({ ...article, createdAt: new Date(article.createdAt) })),
+    total: result.total,
+  }
+}
+
+async function settleConsume({
+  request,
+  action,
+  errorMessage,
+  mutate,
+  inFlightArticleIds,
+  notifyCompleted,
+}: {
+  request: () => Promise<boolean>
+  action: OptimisticAction
+  errorMessage: string
+  mutate: ReturnType<typeof useSWR<UnreadDigestionResponse>>['mutate']
+  inFlightArticleIds: Set<string>
+  notifyCompleted: () => void
+}): Promise<void> {
+  const result = await wrapAsyncCall(request)
+  const updatedBatch =
+    result.isOk() && result.value ? await updateConfirmedBatch(action, mutate) : undefined
+
+  if (result.isErr()) notifyErrorUnlessSessionExpired(result.error, errorMessage)
+  if (updatedBatch?.total === 0) notifyCompleted()
+
+  inFlightArticleIds.delete(action.articleId)
+  if (shouldFetchNextBatch(result.isOk() && result.value, updatedBatch, inFlightArticleIds.size)) {
+    // 次バッチは全操作が確定し、表示中のバッチが空になった後に取得するため
+    await wrapAsyncCall(() => mutate())
+  }
+}
+
+async function updateConfirmedBatch(
+  action: OptimisticAction,
+  mutate: ReturnType<typeof useSWR<UnreadDigestionResponse>>['mutate'],
+): Promise<UnreadDigestionResponse | undefined> {
+  const updateResult = await wrapAsyncCall(() =>
+    mutate((current) => (current ? reduceBatch(current, action) : current), { revalidate: false }),
+  )
+  if (updateResult.isOk()) return updateResult.value
+
+  notifyFetchError(updateResult.error, TOAST_ID.UNREAD_DIGESTION_ERROR, () => void mutate())
+  const refreshResult = await wrapAsyncCall(() => mutate())
+  return refreshResult.unwrapOr(undefined)
+}
+
+function shouldFetchNextBatch(
+  succeeded: boolean,
+  updatedBatch: UnreadDigestionResponse | undefined,
+  otherPendingActions: number,
+): boolean {
+  return (
+    succeeded &&
+    updatedBatch?.data.length === 0 &&
+    updatedBatch.total > 0 &&
+    otherPendingActions === 0
+  )
+}
+
+function reduceBatch(
+  batch: UnreadDigestionResponse | undefined,
+  action: OptimisticAction,
+): UnreadDigestionResponse | undefined {
+  if (!batch) return batch
+
   if (action.type === 'consume') {
-    if (!state.queue.some((article) => article.articleId === action.articleId)) return state
+    if (!batch.data.some((article) => article.articleId === action.articleId)) return batch
     return {
-      queue: state.queue.filter((article) => article.articleId !== action.articleId),
-      remaining: Math.max(0, state.remaining - 1),
+      data: batch.data.filter((article) => article.articleId !== action.articleId),
+      total: Math.max(0, batch.total - 1),
     }
   }
 
-  const article = state.queue.find((item) => item.articleId === action.articleId)
-  if (!article || state.queue.length < 2) return state
+  const article = batch.data.find((item) => item.articleId === action.articleId)
+  if (!article || batch.data.length < 2) return batch
   return {
-    ...state,
-    queue: [...state.queue.filter((item) => item.articleId !== action.articleId), article],
+    ...batch,
+    data: [...batch.data.filter((item) => item.articleId !== action.articleId), article],
   }
 }

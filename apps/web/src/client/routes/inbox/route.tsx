@@ -34,7 +34,7 @@ function Digestion({
   onMediaChange: (media: SelectedMedia) => void
 }) {
   const {
-    isActionLoading,
+    pendingActionCount,
     isLoading,
     hasError,
     isJustCompleted,
@@ -49,7 +49,7 @@ function Digestion({
     <InboxPage
       article={currentArticle}
       isLoading={isLoading}
-      isActionLoading={isActionLoading}
+      pendingActionCount={pendingActionCount}
       hasError={hasError}
       isJustCompleted={isJustCompleted}
       remainingCount={remainingCount}

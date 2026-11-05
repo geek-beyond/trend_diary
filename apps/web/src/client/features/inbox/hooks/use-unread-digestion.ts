@@ -1,6 +1,6 @@
 import type { ArticleOutput } from '@trend-diary/domain/article/schema/article-schema'
 import { wrapAsyncCall } from '@trend-diary/std/result'
-import { useRef, useState } from 'react'
+import { startTransition, useEffect, useOptimistic, useRef, useState } from 'react'
 import useSWR from 'swr'
 import {
   dismissFetchError,
@@ -21,18 +21,28 @@ interface UnreadDigestionResponse {
   total: number
 }
 
+interface DigestionState {
+  queue: Article[]
+  remaining: number
+}
+
+type OptimisticAction =
+  | { type: 'consume'; articleId: string }
+  | { type: 'later'; articleId: string }
+
 const SkipErrorMessage = 'スキップに失敗しました'
+const ReadErrorMessage = '記事の更新に失敗しました'
+const initialState: DigestionState = { queue: [], remaining: 0 }
 
 export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
   const { client, apiCall } = createSWRFetcher()
   const { markAsRead } = useReadArticle()
-  const [queue, setQueue] = useState<Article[]>([])
-  // バッチ件数ではなく未読総数。残件表示と完了判定の基準にする
-  const [remaining, setRemaining] = useState(0)
-  const actionInFlight = useRef(false)
-  const [isActionLoading, setIsActionLoading] = useState(false)
-  // 直近で同期済みのバッチ。SWR が新しい応答を返したか（参照が変わったか）の判定に使う
   const [syncedBatch, setSyncedBatch] = useState<UnreadDigestionResponse>()
+  const [state, setState] = useState<DigestionState>(initialState)
+  const [pendingActionCount, setPendingActionCount] = useState(0)
+  const queueRef = useRef<Article[]>([])
+  const remainingRef = useRef(0)
+  const inFlightArticleIds = useRef(new Set<string>())
   const swrKey = ['api/articles/unread-digestion', selectedMedia]
   const {
     data,
@@ -63,8 +73,8 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      isPaused: () => actionInFlight.current,
-      // 消化済みのローカルキューと同一応答でも、明示的な再試行では同期し直す必要があるため
+      isPaused: () => inFlightArticleIds.current.size > 0,
+      // 明示的な再試行で同一バッチが返ってもキューを同期し直すため
       compare: Object.is,
       onError: (swrError) =>
         notifyFetchError(swrError, TOAST_ID.UNREAD_DIGESTION_ERROR, () => retry()),
@@ -72,41 +82,69 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
     },
   )
 
-  // 明示的なバッチ取得だけを同期し、消化中のキューを背景再検証で巻き戻さないため
   if (data && data !== syncedBatch) {
     setSyncedBatch(data)
-    setRemaining(data.total)
-    setQueue(data.data)
+    setState({ queue: data.data, remaining: data.total })
   }
 
+  useEffect(() => {
+    if (!data || data !== syncedBatch) return
+    queueRef.current = data.data
+    remainingRef.current = data.total
+  }, [data, syncedBatch])
+
+  const [optimisticState, dispatchOptimistic] = useOptimistic(state, reduceDigestionState)
   const { isJustCompleted, notifyCompleted } = useCompletionCelebration({
-    queueLength: queue.length,
+    queueLength: optimisticState.queue.length,
   })
+  const currentArticle = optimisticState.queue[0] ?? null
 
-  const currentArticle = queue[0] ?? null
-
-  const consume = async (request: (article: Article) => Promise<boolean>, errorMessage: string) => {
-    if (!currentArticle || actionInFlight.current || isActionLoading || isInitialLoading) return
-    actionInFlight.current = true
-    setIsActionLoading(true)
-    setQueue(queue.slice(1))
-    setRemaining(Math.max(0, remaining - 1))
-
-    const result = await wrapAsyncCall(() => request(currentArticle))
-    if (!result.unwrapOr(false)) {
-      setQueue(queue)
-      setRemaining(remaining)
-      if (result.isErr()) notifyErrorUnlessSessionExpired(result.error, errorMessage)
-    } else {
-      if (remaining <= 1) notifyCompleted()
-      actionInFlight.current = false
-      if (queue.length === 1 && remaining > 1) {
-        // 取得エラーは SWR 側で通知し、成功済みの消化操作は巻き戻さないため
-        await wrapAsyncCall(() => mutate())
-      }
+  const consume = (request: (article: Article) => Promise<boolean>, errorMessage: string) => {
+    if (
+      !currentArticle ||
+      inFlightArticleIds.current.has(currentArticle.articleId) ||
+      isInitialLoading
+    ) {
+      return Promise.resolve()
     }
-    actionInFlight.current = false
-    setIsActionLoading(false)
+
+    const article = currentArticle
+    const action: OptimisticAction = { type: 'consume', articleId: article.articleId }
+    inFlightArticleIds.current.add(article.articleId)
+    setPendingActionCount(inFlightArticleIds.current.size)
+
+    return new Promise<void>((resolve) => {
+      startTransition(async () => {
+        dispatchOptimistic(action)
+        const result = await wrapAsyncCall(() => request(article))
+
+        if (result.isErr()) {
+          notifyErrorUnlessSessionExpired(result.error, errorMessage)
+        } else if (result.value) {
+          queueRef.current = reduceDigestionState(
+            { queue: queueRef.current, remaining: remainingRef.current },
+            action,
+          ).queue
+          remainingRef.current = Math.max(0, remainingRef.current - 1)
+          setState((previous) => reduceDigestionState(previous, action))
+          if (remainingRef.current === 0) notifyCompleted()
+        }
+
+        inFlightArticleIds.current.delete(article.articleId)
+        setPendingActionCount(inFlightArticleIds.current.size)
+
+        if (
+          result.isOk() &&
+          result.value &&
+          queueRef.current.length === 0 &&
+          remainingRef.current > 0
+        ) {
+          // 残件は残っているが今のバッチを消化した後だけ、次のバッチを取得するため
+          await wrapAsyncCall(() => mutate())
+        }
+        resolve()
+      })
+    })
   }
 
   const handleSkip = () =>
@@ -125,36 +163,57 @@ export default function useUnreadDigestion(selectedMedia: SelectedMedia) {
       // ブラウザのポップアップ制限を避けるため、await より前のクリック処理内で開く
       window.open(article.url, '_blank', 'noopener,noreferrer')
       return markAsRead(article.articleId)
-    }, '記事の更新に失敗しました')
+    }, ReadErrorMessage)
 
   const handleLater = () => {
-    if (actionInFlight.current || isActionLoading || isInitialLoading) return
-    setQueue((prev) => {
-      if (prev.length <= 1) return prev
-      const [head, ...rest] = prev
-      return [...rest, head]
+    if (!currentArticle || inFlightArticleIds.current.has(currentArticle.articleId)) return
+    const action: OptimisticAction = { type: 'later', articleId: currentArticle.articleId }
+    startTransition(() => {
+      dispatchOptimistic(action)
+      queueRef.current = reduceDigestionState(
+        { queue: queueRef.current, remaining: remainingRef.current },
+        action,
+      ).queue
+      setState((previous) => reduceDigestionState(previous, action))
     })
   }
 
-  // 保存中も次の記事を読めるよう、キューが空の場合だけスケルトンを表示する
-  const isFetchingNextBatch = isValidating && queue.length === 0
   const isLoading =
-    isInitialLoading || (isActionLoading && queue.length === 0) || isFetchingNextBatch
+    isInitialLoading ||
+    (optimisticState.queue.length === 0 &&
+      (pendingActionCount > 0 || isValidating || (optimisticState.remaining > 0 && !error)))
 
   const retry = () => {
-    if (!actionInFlight.current) void mutate()
+    if (inFlightArticleIds.current.size === 0) void mutate()
   }
 
   return {
     isLoading,
-    isActionLoading,
+    pendingActionCount,
     hasError: !!error,
     retry,
     isJustCompleted,
     currentArticle,
-    remainingCount: remaining,
+    remainingCount: optimisticState.remaining,
     handleSkip,
     handleRead,
     handleLater,
+  }
+}
+
+function reduceDigestionState(state: DigestionState, action: OptimisticAction): DigestionState {
+  if (action.type === 'consume') {
+    if (!state.queue.some((article) => article.articleId === action.articleId)) return state
+    return {
+      queue: state.queue.filter((article) => article.articleId !== action.articleId),
+      remaining: Math.max(0, state.remaining - 1),
+    }
+  }
+
+  const article = state.queue.find((item) => item.articleId === action.articleId)
+  if (!article || state.queue.length < 2) return state
+  return {
+    ...state,
+    queue: [...state.queue.filter((item) => item.articleId !== action.articleId), article],
   }
 }

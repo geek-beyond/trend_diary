@@ -365,6 +365,29 @@ describe('useUnreadDigestion', () => {
     await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
   })
 
+  it('後で読むを連打しても確定状態の順序を保つ', async () => {
+    const articles = ['article-1', 'article-2', 'article-3', 'article-4'].map((articleId) => ({
+      ...baseArticle,
+      articleId,
+      title: articleId,
+    }))
+    mockUnreadDigestionGet.mockResolvedValue({ data: articles, total: articles.length })
+    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
+
+    act(() => {
+      result.current.handleLater()
+      result.current.handleLater()
+    })
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-4'))
+    act(() => result.current.handleLater())
+    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-1'))
+  })
+
   it('別の記事が処理中に後で読むを選び、失敗記事を戻しても並べ替えを保つ', async () => {
     const next = { ...baseArticle, articleId: 'article-2', title: '次の記事' }
     const last = { ...baseArticle, articleId: 'article-3', title: '最後の記事' }

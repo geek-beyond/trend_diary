@@ -27,8 +27,7 @@ theorem deduplicate_preserves_nonempty [BEq α] [LawfulBEq α] (items : List α)
 def maxRowsForParameters (parameterBudget columnsPerRow : Nat) : Nat :=
   parameterBudget / columnsPerRow
 
-theorem maxRows_respects_parameter_budget (parameterBudget columnsPerRow : Nat)
-    (positiveColumns : 0 < columnsPerRow) :
+theorem maxRows_respects_parameter_budget (parameterBudget columnsPerRow : Nat) :
     maxRowsForParameters parameterBudget columnsPerRow * columnsPerRow ≤ parameterBudget := by
   exact Nat.div_mul_le_self parameterBudget columnsPerRow
 

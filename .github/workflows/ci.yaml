@@ -36,6 +36,7 @@ jobs:
       server: ${{ steps.all.outputs.on || steps.split.outputs.server }}
       schema: ${{ steps.all.outputs.on || steps.split.outputs.schema }}
       e2e: ${{ steps.all.outputs.on || steps.split.outputs.e2e }}
+      lean: ${{ steps.all.outputs.on || steps.split.outputs.lean }}
       github_actions_lint: ${{ steps.all.outputs.on || steps.split.outputs.github_actions_lint }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -82,6 +83,7 @@ jobs:
           server=false; if web_changed_except '^apps/web/src/client/' || changed "$shared"; then server=true; fi
           schema=false; if changed '^packages/datastore/'; then schema=true; fi
           e2e=false;    if changed '^e2e/' || [[ "$DEPLOY_WEB" == 'true' ]]; then e2e=true; fi
+          lean=false; if changed '^formal-verification/'; then lean=true; fi
           github_actions_lint=false; if changed '^mise\.toml$'; then github_actions_lint=true; fi
 
           {
@@ -89,9 +91,34 @@ jobs:
             echo "server=$server"
             echo "schema=$schema"
             echo "e2e=$e2e"
+            echo "lean=$lean"
             echo "github_actions_lint=$github_actions_lint"
           } >> "$GITHUB_OUTPUT"
-          echo "client=$client server=$server schema=$schema e2e=$e2e github_actions_lint=$github_actions_lint"
+          echo "client=$client server=$server schema=$schema e2e=$e2e lean=$lean github_actions_lint=$github_actions_lint"
+
+  lean:
+    needs: changes
+    if: ${{ needs.changes.outputs.lean == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lean build, test, lint
+        uses: leanprover/lean-action@ba3fdfe5c4476c925da13bf11a005ddb47e47aee # v1
+        with:
+          lake-package-directory: formal-verification
+          build: true
+          test: true
+          lint: true
+
+      - name: Lean format check
+        working-directory: formal-verification
+        run: lake exe lean-fmt format --check
 
   github-actions-lint:
     needs: changes
@@ -385,7 +412,7 @@ jobs:
 
   gate:
     if: ${{ !cancelled() }}
-    needs: [changes, github-actions-lint, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e]
+    needs: [changes, github-actions-lint, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e, lean]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

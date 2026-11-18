@@ -1,4 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types'
+import { eq } from 'drizzle-orm'
 import { articles } from '@trend-diary/datastore/schema'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import TEST_ENV from '../test-helper/env'
@@ -32,6 +33,21 @@ describe('storeArticles', () => {
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(0)
       expect(await countArticles()).toBe(0)
+    })
+
+    it('同一URLは最初の項目を残して1件だけ保存する', async () => {
+      const url = 'https://example.com/duplicate'
+      const result = await storeArticles(
+        'qiita',
+        [normalizedItem({ url, title: 'first' }), normalizedItem({ url, title: 'second' })],
+        TEST_ENV,
+      )
+
+      expect(result.isOk()).toBe(true)
+      if (result.isOk()) expect(result.value).toBe(1)
+      expect(await countArticles()).toBe(1)
+      const [stored] = await db.select().from(articles).where(eq(articles.url, url)).limit(1)
+      expect(stored?.title).toBe('first')
     })
 
     // D1のバインドパラメータ上限100・使用率80%・カラム数5から算出されるチャンクサイズは16件。

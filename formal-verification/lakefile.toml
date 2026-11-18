@@ -1,0 +1,6 @@
+name = "article-store"
+version = "0.1.0"
+defaultTargets = ["ArticleStore"]
+
+[[lean_lib]]
+name = "ArticleStore"

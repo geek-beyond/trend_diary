@@ -2,7 +2,7 @@ import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { articles } from '@trend-diary/datastore/schema'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { ARTICLE_MAX_LENGTH } from '@trend-diary/domain/article/schema/article-schema'
-import { assertNonNull } from '@trend-diary/std/contract'
+import { assert, assertNonNull } from '@trend-diary/std/contract'
 import { err, ok, type Result } from 'neverthrow'
 import type { FetchEnv } from '../env'
 import type { NormalizedItem } from './config'
@@ -56,6 +56,8 @@ export async function storeArticles(
   const chunkSize = Math.floor(
     (MAX_BIND_PARAMETERS * BIND_PARAMETER_USAGE_RATIO) / Object.keys(firstArticle).length,
   )
+  // D1 の列数が上限を超える場合は、空のチャンクを成功扱いせず前提違反として検出する
+  assert(chunkSize >= 1, 'article insert chunk size must be positive')
 
   // ON CONFLICT DO NOTHING で既存URLをスキップし、returning した行数を挿入件数とする
   let insertedCount = 0

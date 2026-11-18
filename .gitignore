@@ -20,6 +20,7 @@
 !/apps/
 !/docs/
 !/e2e/
+!/formal-verification/
 !/knip.ts
 !/mise.toml
 !/package.json

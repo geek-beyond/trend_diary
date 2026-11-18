@@ -9,7 +9,7 @@ function isVisibleElement(
   return 'tagName' in node && !hiddenElements.has(node.tagName)
 }
 
-export function rssDescriptionToText(description: string): string {
+export function extractRssDescriptionText(description: string): string {
   const pending: (DefaultTreeAdapterTypes.ChildNode | '\n')[] =
     parseFragment(description).childNodes.toReversed()
   const text: string[] = []

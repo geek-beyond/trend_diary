@@ -3,7 +3,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/client/components/sha
 // barrel 経由だと article のデータ取得フック群まで読み込まれるため、表示専用の MediaIcon は実体を直接参照する
 import MediaIcon, { toMediaType } from '@/client/features/article/components/media-icon'
 import type { Article } from '../hooks/use-unread-digestion'
-import { rssDescriptionToText } from './rss-description'
+import { extractRssDescriptionText } from './rss-description'
 
 interface Props {
   article: Article
@@ -26,7 +26,7 @@ export default function InboxArticleCard({ article, onSkip, onRead, onLater }: P
       </div>
       <p className='mt-3 h-24 overflow-y-auto overflow-x-hidden whitespace-pre-wrap wrap-anywhere pr-1 text-sm leading-relaxed text-foreground md:h-56'>
         {article.media === 'hatena'
-          ? rssDescriptionToText(article.description)
+          ? extractRssDescriptionText(article.description)
           : article.description}
       </p>
       <div className='sticky bottom-0 -mx-5 mt-3 flex flex-wrap gap-2 border-t border-border bg-card/95 px-5 pt-3 pb-1 md:static md:mx-0 md:mt-4 md:border-0 md:bg-transparent md:p-0'>

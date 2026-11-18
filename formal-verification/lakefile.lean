@@ -8,11 +8,9 @@ package «article-store» where
   lintDriver := "«lean-fmt»/«lean-fmt»"
   lintDriverArgs := #["check"]
 
-require «lean-fmt» from git
-  "https://github.com/jcreinhold/lean-fmt" @ "v4.36.0-fmt.1"
+require «lean-fmt» from git "https://github.com/jcreinhold/lean-fmt"@"v4.36.0-fmt.1"
 
-@[default_target]
-lean_lib ArticleStore
+@[default_target] lean_lib ArticleStore
 
 lean_exe ArticleStoreTests where
   root := `ArticleStoreTests

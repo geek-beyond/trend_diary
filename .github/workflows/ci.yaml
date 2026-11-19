@@ -52,7 +52,7 @@ jobs:
         run: |
           if [[ "$GITHUB_REF" == 'refs/heads/main' ]] || git diff --name-only HEAD~1 HEAD | grep -qE '^\.github/'; then
             echo "on=true" >> "$GITHUB_OUTPUT"
-            echo 'projects=["packages/authentication","packages/datastore","packages/domain","packages/logger","packages/notification","packages/runtime","apps/cron","apps/web"]' >> "$GITHUB_OUTPUT"
+            echo 'projects=["packages/authentication","packages/datastore","packages/domain","packages/logger","packages/notification","packages/runtime","apps/web"]' >> "$GITHUB_OUTPUT"
           fi
 
       - name: デプロイ対象の検知
@@ -104,10 +104,10 @@ jobs:
           changed() { grep -qE "$1" <<<"$files"; }
           projects=()
 
+          # cron の Cloudflare Workers pool は Mutator の Vitest adapter で起動できないため通常テストに任せる
           if changed '^packages/|^[^/]+$'; then
-            projects=(packages/authentication packages/datastore packages/domain packages/logger packages/notification packages/runtime apps/cron apps/web)
+            projects=(packages/authentication packages/datastore packages/domain packages/logger packages/notification packages/runtime apps/web)
           else
-            if changed '^apps/cron/'; then projects+=(apps/cron); fi
             if changed '^apps/web/'; then projects+=(apps/web); fi
           fi
 
@@ -225,7 +225,7 @@ jobs:
   mutation-test-packages:
     name: mutation-test (${{ matrix.project }})
     needs: changes
-    if: ${{ needs.changes.outputs.cron == 'true' || needs.changes.outputs.web == 'true' }}
+    if: ${{ needs.changes.outputs.mutation_projects != '[]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:

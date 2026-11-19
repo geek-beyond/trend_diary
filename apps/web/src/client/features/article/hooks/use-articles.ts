@@ -51,15 +51,11 @@ interface ArticlesResponse {
   totalPages: number
 }
 
-const DATE_STRING_REGEX = /^\d{4}-\d{2}-\d{2}$/
-
 const DATE_PRESET_MAP: Record<DatePresetType, number> = {
   today: 0,
   last3days: 2,
   last7days: 6,
 }
-
-const isValidDateString = (value: string | null) => !!value && DATE_STRING_REGEX.test(value)
 
 const parseSelectedMedia = (mediaParams: string[]): SelectedMedia => {
   const selected = [...new Set(mediaParams.filter(isArticleMedia))]
@@ -76,8 +72,6 @@ const parseDatePreset = (
   toParam: string | null,
   todayJstDateString: string,
 ): DatePresetType => {
-  if (!isValidDateString(fromParam) || !isValidDateString(toParam)) return 'today'
-
   const matchedPreset = DATE_PRESETS.find((preset) => {
     const range = getDateRangeByPreset(preset, todayJstDateString)
     return range.from === fromParam && range.to === toParam

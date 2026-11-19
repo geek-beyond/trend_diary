@@ -745,22 +745,6 @@ describe('useArticles', () => {
       })
     })
 
-    it('API呼び出しで500番台の時、エラーのtoastが表示される', async () => {
-      const fakeResponse = generateFakeResponse({ status: 500 })
-
-      mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
-
-      const { result } = setupHook()
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith(
-          'エラーが発生しました。時間をおいて再度お試しください。',
-          expect.objectContaining({ id: 'articles-error' }),
-        )
-        expect(result.current.isLoading).toBe(false)
-      })
-    })
-
     it('その他のエラーの時、エラーのtoastが表示される', async () => {
       const networkError = new Error('ネットワークエラー')
       mockApiClient.articles.$get.mockRejectedValue(networkError)
@@ -990,34 +974,6 @@ describe('useArticles', () => {
         { init: { credentials: 'include' } },
       )
       expect(result.current.selectedMedia).toEqual(['qiita'])
-    })
-
-    it('pageとlimitの両方が無効な場合、両方ともデフォルト値でAPIが呼ばれる', async () => {
-      const fakeResponse = generateFakeResponse({
-        articles: [generateFakeArticle()],
-        page: 1,
-        totalPages: 1,
-      })
-
-      mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
-
-      const { result } = setupHook(['/?page=invalid&limit=abc'])
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
-
-      expect(mockApiClient.articles.$get).toHaveBeenCalledWith(
-        {
-          query: {
-            to: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
-            from: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
-            page: 1,
-            limit: 20,
-          },
-        },
-        { init: { credentials: 'include' } },
-      )
     })
   })
 

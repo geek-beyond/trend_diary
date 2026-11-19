@@ -285,6 +285,31 @@ jobs:
           MUTATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
         run: pnpm run mutate:package
 
+  mutation-discovery:
+    name: full-mutation (${{ matrix.project }})
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [apps/cron, apps/web]
+    steps:
+      - *checkout-full-history
+      - *setup-node
+      - name: Full mutation discovery
+        env:
+          MUTATION_PROJECT: ${{ matrix.project }}
+        run: |
+          pnpm exec mutator \
+            --root "$MUTATION_PROJECT" \
+            --exclude '**/*.stories.*' \
+            --no-typecheck \
+            --reporter text \
+            --reporter simplify
+
   web-build:
     needs: changes
     if: ${{ needs.changes.outputs.web == 'true' }}

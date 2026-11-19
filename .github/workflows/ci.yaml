@@ -212,10 +212,14 @@ jobs:
         # web は client/server/component の専用ジョブ、e2e は E2E ジョブで実行するため含めない
         package: [authentication, cron, datastore, domain, logger, notification, runtime, std]
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # mutation ジョブでも使うセットアップ
+      - &checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Node.jsの構築
+
+      - &setup-node
+        name: Node.jsの構築
         uses: ./.github/actions/setup_node
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
@@ -232,13 +236,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Node.jsの構築
-        uses: ./.github/actions/setup_node
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
+      - *checkout
+      - *setup-node
       - name: Mutation testing
         run: pnpm run mutate:std
 
@@ -255,14 +254,12 @@ jobs:
       matrix:
         project: ${{ fromJSON(needs.changes.outputs.mutation_projects) }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - &checkout-full-history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Node.jsの構築
-        uses: ./.github/actions/setup_node
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
+      - *setup-node
       - name: Mutation testing
         env:
           MUTATION_PROJECT: ${{ matrix.project }}
@@ -282,14 +279,8 @@ jobs:
       matrix:
         project: ${{ fromJSON(needs.changes.outputs.mutation_app_projects) }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Node.jsの構築
-        uses: ./.github/actions/setup_node
-        with:
-          node-version-file: ${{ env.NODE_VERSION_FILE }}
+      - *checkout-full-history
+      - *setup-node
       - name: Mutation testing
         env:
           MUTATION_PROJECT: ${{ matrix.project.root }}

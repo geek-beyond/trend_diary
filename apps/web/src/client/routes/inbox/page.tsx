@@ -27,7 +27,7 @@ export default function InboxPage({
   return (
     <PageCard title='未読消化'>
       <p className='mt-0.5 text-sm text-muted-foreground'>未読記事を1件ずつ確認できます。</p>
-      <fieldset aria-busy={isActionPending}>
+      <fieldset className='min-w-0' aria-busy={isActionPending}>
         <div className='mt-2'>
           <p className='mb-2 text-sm text-muted-foreground'>メディア</p>
           <MediaMultiFilter selectedMedia={selectedMedia} onMediaChange={onMediaChange} />

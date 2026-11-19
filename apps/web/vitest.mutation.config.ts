@@ -1,8 +1,19 @@
 import { defineConfig } from 'vitest/config'
-import { clientProject } from './vitest.client-project.ts'
 
 export default defineConfig({
   test: {
-    projects: [clientProject],
+    projects: [
+      {
+        resolve: { tsconfigPaths: true },
+        test: {
+          name: 'client',
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: ['./src/test/setup/client.ts'],
+          include: ['src/client/**/*.test.ts'],
+          passWithNoTests: true,
+        },
+      },
+    ],
   },
 })

@@ -13,7 +13,12 @@ const config: KnipConfig = {
     },
     'apps/web': {
       // vite の devServer プラグインが読む dev サーバのエントリ。plugin 設定からは追えないため明示する。
-      entry: ['src/dev-server.ts'],
+      entry: [
+        'src/dev-server.ts',
+        // Mutator と mutator.config.ts が動的に読む専用設定。
+        'mutator.config.ts',
+        'vitest.mutation.config.ts',
+      ],
       // ビルド後にのみ生成される react-router のサーバー出力。ビルド前は実体が無く常に未解決になる。
       ignoreUnresolved: ['../build/server'],
       ignore: [

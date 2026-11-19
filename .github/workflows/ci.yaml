@@ -55,7 +55,7 @@ jobs:
             {
               echo "on=true"
               echo 'projects=["packages/authentication","packages/datastore","packages/domain","packages/logger","packages/notification","packages/runtime"]'
-              echo 'app_projects=[{"root":"apps/cron"},{"root":"apps/web","vitest_project":"client"},{"root":"apps/web","vitest_project":"server"},{"root":"apps/web","vitest_project":"storybook"}]'
+              echo 'app_projects=[{"root":"apps/cron"},{"root":"apps/web","vitest_project":"client"}]'
             } >> "$GITHUB_OUTPUT"
           fi
 
@@ -116,7 +116,7 @@ jobs:
             app_projects+=('{"root":"apps/cron"}')
           fi
           if changed '^apps/web/|^packages/|^[^/]+$'; then
-            for vitest_project in client server storybook; do
+            for vitest_project in client; do
               app_projects+=("{\"root\":\"apps/web\",\"vitest_project\":\"$vitest_project\"}")
             done
           fi
@@ -290,26 +290,6 @@ jobs:
         uses: ./.github/actions/setup_node
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
-      - name: Supabase Emulator のセットアップ
-        if: ${{ matrix.project.vitest_project == 'server' }}
-        uses: rin2yh/supa-emu@3aea79b6dda513da1e335562d80320bf78a4e8fc # v0.1.9
-        with:
-          version: v0.1.8
-          addr: 127.0.0.1:54321
-          webauthn-rp-id: 127.0.0.1
-      - name: Playwrightブラウザのキャッシュ
-        if: ${{ matrix.project.vitest_project == 'storybook' }}
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - name: Playwrightのセットアップ(キャッシュミス)
-        if: ${{ matrix.project.vitest_project == 'storybook' && steps.playwright-cache.outputs.cache-hit != 'true' }}
-        run: pnpm --filter @trend-diary/web exec playwright install chromium --with-deps
-      - name: Playwright依存のセットアップ(キャッシュヒット)
-        if: ${{ matrix.project.vitest_project == 'storybook' && steps.playwright-cache.outputs.cache-hit == 'true' }}
-        run: pnpm --filter @trend-diary/web exec playwright install-deps chromium
       - name: Mutation testing
         env:
           MUTATION_PROJECT: ${{ matrix.project.root }}
@@ -323,7 +303,7 @@ jobs:
             relative_file=${file#"$MUTATION_PROJECT"/}
             [[ "$relative_file" =~ \.(ts|tsx)$ && ! "$relative_file" =~ \.(test|spec|stories)\. && ! "$relative_file" =~ \.d\.ts$ ]] || continue
             case "$MUTATION_VITEST_PROJECT:$relative_file" in
-              client:src/client/*|storybook:src/client/*|server:src/server.ts|server:src/server/*|server:src/middleware/*|server:src/common/*|'':src/*) ;;
+              client:src/client/*|'':src/*) ;;
               *) continue ;;
             esac
             mutation_sources+=("$relative_file")

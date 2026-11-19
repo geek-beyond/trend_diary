@@ -52,7 +52,7 @@ jobs:
         run: |
           if [[ "$GITHUB_REF" == 'refs/heads/main' ]] || git diff --name-only HEAD~1 HEAD | grep -qE '^\.github/'; then
             echo "on=true" >> "$GITHUB_OUTPUT"
-            echo 'projects=["packages/authentication","packages/datastore","packages/domain","packages/logger","packages/notification","packages/runtime","apps/web"]' >> "$GITHUB_OUTPUT"
+            echo 'projects=["packages/authentication","packages/datastore","packages/domain","packages/logger","packages/notification","packages/runtime"]' >> "$GITHUB_OUTPUT"
           fi
 
       - name: デプロイ対象の検知
@@ -104,11 +104,10 @@ jobs:
           changed() { grep -qE "$1" <<<"$files"; }
           projects=()
 
-          # cron の Cloudflare Workers pool は Mutator の Vitest adapter で起動できないため通常テストに任せる
+          # cron の Cloudflare Workers pool と web の複数 Vitest project は Mutator 0.2 で
+          # ベースラインテストを実行できないため通常テストに任せる
           if changed '^packages/|^[^/]+$'; then
-            projects=(packages/authentication packages/datastore packages/domain packages/logger packages/notification packages/runtime apps/web)
-          else
-            if changed '^apps/web/'; then projects+=(apps/web); fi
+            projects=(packages/authentication packages/datastore packages/domain packages/logger packages/notification packages/runtime)
           fi
 
           if ((${#projects[@]} == 0)); then
@@ -243,19 +242,6 @@ jobs:
         uses: ./.github/actions/setup_node
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
-      - name: Playwrightブラウザのキャッシュ
-        if: ${{ matrix.project == 'apps/web' }}
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - name: Playwrightのセットアップ(キャッシュミス)
-        if: ${{ matrix.project == 'apps/web' && steps.playwright-cache.outputs.cache-hit != 'true' }}
-        run: pnpm --filter @trend-diary/web exec playwright install chromium --with-deps
-      - name: Playwright依存のセットアップ(キャッシュヒット)
-        if: ${{ matrix.project == 'apps/web' && steps.playwright-cache.outputs.cache-hit == 'true' }}
-        run: pnpm --filter @trend-diary/web exec playwright install-deps chromium
       - name: Mutation testing
         env:
           MUTATION_PROJECT: ${{ matrix.project }}

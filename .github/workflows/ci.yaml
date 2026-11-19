@@ -55,7 +55,7 @@ jobs:
             {
               echo "on=true"
               echo 'projects=["packages/authentication","packages/datastore","packages/domain","packages/logger","packages/notification","packages/runtime"]'
-              echo 'app_projects=[{"root":"apps/cron"},{"root":"apps/web","vitest_project":"client"}]'
+              echo 'app_projects=[{"root":"apps/cron"},{"root":"apps/web","label":"client"}]'
             } >> "$GITHUB_OUTPUT"
           fi
 
@@ -116,9 +116,7 @@ jobs:
             app_projects+=('{"root":"apps/cron"}')
           fi
           if changed '^apps/web/|^packages/|^[^/]+$'; then
-            for vitest_project in client; do
-              app_projects+=("{\"root\":\"apps/web\",\"vitest_project\":\"$vitest_project\"}")
-            done
+            app_projects+=('{"root":"apps/web","label":"client"}')
           fi
 
           if ((${#app_projects[@]} == 0)); then
@@ -267,7 +265,7 @@ jobs:
         run: pnpm run mutate:package
 
   mutation-test-apps:
-    name: mutation-test (${{ matrix.project.root }}${{ matrix.project.vitest_project && format(' / {0}', matrix.project.vitest_project) || '' }})
+    name: mutation-test (${{ matrix.project.root }}${{ matrix.project.label && format(' / {0}', matrix.project.label) || '' }})
     needs: changes
     if: ${{ needs.changes.outputs.mutation_app_projects != '[]' }}
     runs-on: ubuntu-latest
@@ -284,31 +282,8 @@ jobs:
       - name: Mutation testing
         env:
           MUTATION_PROJECT: ${{ matrix.project.root }}
-          MUTATION_VITEST_PROJECT: ${{ matrix.project.vitest_project || '' }}
           MUTATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
-        run: |
-          set -euo pipefail
-          mutation_sources=()
-          while IFS= read -r file; do
-            [[ -n "$file" && -f "$file" ]] || continue
-            relative_file=${file#"$MUTATION_PROJECT"/}
-            [[ "$relative_file" =~ \.(ts|tsx)$ && ! "$relative_file" =~ \.(test|spec|stories)\. && ! "$relative_file" =~ \.d\.ts$ ]] || continue
-            case "$MUTATION_VITEST_PROJECT:$relative_file" in
-              client:src/client/*|'':src/*) ;;
-              *) continue ;;
-            esac
-            mutation_sources+=("$relative_file")
-          done < <(git diff --name-only "$MUTATION_BASE" -- "$MUTATION_PROJECT/src")
-
-          if ((${#mutation_sources[@]} == 0)); then
-            MUTATION_INCLUDE='__mutator_no_changed_sources__'
-          else
-            MUTATION_INCLUDE=$(printf '%s\n' "${mutation_sources[@]}" | jq -Rsc 'split("\n") | map(select(length > 0)) | if length == 1 then .[0] else "{" + join(",") + "}" end')
-          fi
-          MUTATION_CRITICAL=$MUTATION_INCLUDE
-          export MUTATION_INCLUDE MUTATION_CRITICAL
-          echo "Mutation sources: ${mutation_sources[*]:-(none)}"
-          pnpm run mutate:package
+        run: pnpm run mutate:package
 
   web-build:
     needs: changes

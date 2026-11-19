@@ -7,7 +7,7 @@
     "lint": "oxlint && oxfmt --check && import-lint && pnpm -r typecheck",
     "test:observability": "node --test scripts/observability.test.mjs",
     "mutate:std": "mutator --root packages/std --config packages/std/vitest.config.ts --include 'src/**/*.ts' --no-typecheck --threshold-break 80",
-    "mutate:package": "mutator --root \"$MUTATION_PROJECT\" --config \"$MUTATION_PROJECT/vitest.config.ts\" --include \"${MUTATION_INCLUDE:-src/**/*.{ts,tsx}}\" --exclude '**/*.stories.*' --no-typecheck --since \"$MUTATION_BASE\" --critical \"${MUTATION_CRITICAL:-${MUTATION_INCLUDE:-src/**/*.{ts,tsx}}}\"",
+    "mutate:package": "mutator --root \"$MUTATION_PROJECT\" --exclude '**/*.stories.*' --no-typecheck --since \"$MUTATION_BASE\" --critical 'src/**/*.{ts,tsx}'",
     "import-lint": "import-lint",
     "knip": "knip",
     "similarity": "similarity-ts apps packages --no-types --threshold 0.9 --exclude '**/components/shadcn/**' --exclude '**/components/customized/**' --exclude '**/migrations/**' --fail-on-duplicates",

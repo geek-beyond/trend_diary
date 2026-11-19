@@ -38,6 +38,7 @@ jobs:
       e2e: ${{ steps.all.outputs.on || steps.split.outputs.e2e }}
       github_actions_lint: ${{ steps.all.outputs.on || steps.split.outputs.github_actions_lint }}
       mutation_projects: ${{ steps.all.outputs.projects || steps.mutation.outputs.projects || '[]' }}
+      mutation_app_projects: ${{ steps.all.outputs.app_projects || steps.mutation.outputs.app_projects || '[]' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -53,6 +54,7 @@ jobs:
           if [[ "$GITHUB_REF" == 'refs/heads/main' ]] || git diff --name-only HEAD~1 HEAD | grep -qE '^\.github/'; then
             echo "on=true" >> "$GITHUB_OUTPUT"
             echo 'projects=["packages/authentication","packages/datastore","packages/domain","packages/logger","packages/notification","packages/runtime"]' >> "$GITHUB_OUTPUT"
+            echo 'app_projects=[{"root":"apps/cron"},{"root":"apps/web","vitest_project":"client"},{"root":"apps/web","vitest_project":"server"},{"root":"apps/web","vitest_project":"storybook"}]' >> "$GITHUB_OUTPUT"
           fi
 
       - name: デプロイ対象の検知
@@ -104,10 +106,24 @@ jobs:
           changed() { grep -qE "$1" <<<"$files"; }
           projects=()
 
-          # cron の Cloudflare Workers pool と web の複数 Vitest project は Mutator 0.2 で
-          # ベースラインテストを実行できないため通常テストに任せる
           if changed '^packages/|^[^/]+$'; then
             projects=(packages/authentication packages/datastore packages/domain packages/logger packages/notification packages/runtime)
+          fi
+          app_projects=()
+          if changed '^apps/cron/|^packages/|^[^/]+$'; then
+            app_projects+=('{"root":"apps/cron"}')
+          fi
+          if changed '^apps/web/|^packages/|^[^/]+$'; then
+            for vitest_project in client server storybook; do
+              app_projects+=("{\"root\":\"apps/web\",\"vitest_project\":\"$vitest_project\"}")
+            done
+          fi
+
+          if ((${#app_projects[@]} == 0)); then
+            echo 'app_projects=[]' >> "$GITHUB_OUTPUT"
+          else
+            app_projects_json=$(printf '%s\n' "${app_projects[@]}" | jq -sc 'map(fromjson)')
+            echo "app_projects=$app_projects_json" >> "$GITHUB_OUTPUT"
           fi
 
           if ((${#projects[@]} == 0)); then
@@ -245,6 +261,47 @@ jobs:
       - name: Mutation testing
         env:
           MUTATION_PROJECT: ${{ matrix.project }}
+          MUTATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: pnpm run mutate:package
+
+  mutation-test-apps:
+    name: mutation-test (${{ matrix.project.root }}${{ matrix.project.vitest_project && format(' / {0}', matrix.project.vitest_project) || '' }})
+    needs: changes
+    if: ${{ needs.changes.outputs.mutation_app_projects != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.changes.outputs.mutation_app_projects) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+      - name: Playwrightブラウザのキャッシュ
+        if: ${{ matrix.project.vitest_project == 'storybook' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Playwrightのセットアップ(キャッシュミス)
+        if: ${{ matrix.project.vitest_project == 'storybook' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+        run: pnpm --filter @trend-diary/web exec playwright install chromium --with-deps
+      - name: Playwright依存のセットアップ(キャッシュヒット)
+        if: ${{ matrix.project.vitest_project == 'storybook' && steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: pnpm --filter @trend-diary/web exec playwright install-deps chromium
+      - name: Mutation testing
+        env:
+          MUTATION_PROJECT: ${{ matrix.project.root }}
+          MUTATION_VITEST_PROJECT: ${{ matrix.project.vitest_project || '' }}
           MUTATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
         run: pnpm run mutate:package
 
@@ -455,7 +512,7 @@ jobs:
 
   gate:
     if: ${{ !cancelled() }}
-    needs: [changes, github-actions-lint, code-quality, unit-test, mutation-test, mutation-test-packages, web-build, client-test, server-test, component-test, schema, e2e]
+    needs: [changes, github-actions-lint, code-quality, unit-test, mutation-test, mutation-test-packages, mutation-test-apps, web-build, client-test, server-test, component-test, schema, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

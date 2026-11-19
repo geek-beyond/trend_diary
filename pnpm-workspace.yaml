@@ -3,6 +3,9 @@ packages:
   - 'packages/*'
   - 'e2e'
 
+patchedDependencies:
+  '@mizchi/mutator-vitest@0.2.0': .github/patches/mutator-vitest@0.2.0.patch
+
 # パッケージ間で共有する依存のバージョンを集中管理する。
 # 各パッケージでは "<dep>": "catalog:" と宣言してここのバージョンを参照する。
 catalog:

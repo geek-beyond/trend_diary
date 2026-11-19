@@ -1,87 +1,103 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import storybookTest from '@storybook/addon-vitest/vitest-plugin'
-import tailwindcss from '@tailwindcss/vite'
-import { playwright } from '@vitest/browser-playwright'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, type TestProjectConfiguration } from 'vitest/config'
 
 const rootDir = dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig(() => {
+export default defineConfig(async () => {
+  const mutationProject = process.env.MUTATION_VITEST_PROJECT
+  const projects: TestProjectConfiguration[] = [
+    {
+      resolve: { tsconfigPaths: true },
+      test: {
+        name: 'client',
+        globals: true,
+        environment: 'jsdom',
+        setupFiles: ['./src/test/setup/client.ts'],
+        include: ['src/client/**/*.test.ts'],
+        passWithNoTests: true,
+      },
+    },
+    {
+      resolve: { tsconfigPaths: true },
+      test: {
+        name: 'server',
+        globals: true,
+        environment: 'node',
+        setupFiles: ['src/test/setup/d1.ts'],
+        include: [
+          'src/server.test.ts',
+          'src/server/**/*.test.ts',
+          'src/middleware/**/*.test.ts',
+          'src/common/**/*.test.ts',
+        ],
+      },
+    },
+  ]
+
+  if (!mutationProject || mutationProject === 'storybook') {
+    const [{ default: storybookTest }, { default: tailwindcss }, { playwright }] =
+      await Promise.all([
+        import('@storybook/addon-vitest/vitest-plugin'),
+        import('@tailwindcss/vite'),
+        import('@vitest/browser-playwright'),
+      ])
+    projects.push({
+      plugins: [tailwindcss(), storybookTest({ configDir: resolve(rootDir, '.storybook') })],
+      resolve: { tsconfigPaths: true },
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [
+          'react',
+          'react-dom',
+          'react-dom/client',
+          'react/jsx-runtime',
+          'react/jsx-dev-runtime',
+          'react-router',
+          '@radix-ui/react-dialog',
+          '@radix-ui/react-label',
+          '@radix-ui/react-separator',
+          '@radix-ui/react-slot',
+          '@radix-ui/react-tooltip',
+          'class-variance-authority',
+          'clsx',
+          'tailwind-merge',
+          'lucide-react',
+          'sonner',
+          'vaul',
+          'neverthrow',
+          'zod',
+          'swr/mutation',
+          'hono/client',
+          'storybook/test',
+          'storybook/preview-api',
+          '@storybook/react-vite',
+          'react-dom/test-utils',
+        ],
+      },
+      test: {
+        name: 'storybook',
+        globals: true,
+        browser: {
+          enabled: true,
+          headless: true,
+          provider: playwright(),
+          instances: [{ browser: 'chromium' }],
+        },
+      },
+    })
+  }
+
+  const selectedProjects = mutationProject
+    ? projects.filter((project) => project.test.name === mutationProject)
+    : projects
+  if (mutationProject && selectedProjects.length === 0) {
+    throw new Error(`Unknown MUTATION_VITEST_PROJECT: ${mutationProject}`)
+  }
+
   return {
     test: {
-      projects: [
-        {
-          resolve: { tsconfigPaths: true },
-          test: {
-            name: 'client',
-            globals: true,
-            environment: 'jsdom',
-            setupFiles: ['./src/test/setup/client.ts'],
-            include: ['src/client/**/*.test.ts'],
-            passWithNoTests: true,
-          },
-        },
-        {
-          resolve: { tsconfigPaths: true },
-          test: {
-            name: 'server',
-            globals: true,
-            environment: 'node',
-            setupFiles: ['src/test/setup/d1.ts'],
-            include: [
-              'src/server.test.ts',
-              'src/server/**/*.test.ts',
-              'src/middleware/**/*.test.ts',
-              'src/common/**/*.test.ts',
-            ],
-          },
-        },
-        {
-          plugins: [tailwindcss(), storybookTest({ configDir: resolve(rootDir, '.storybook') })],
-          resolve: { tsconfigPaths: true },
-          optimizeDeps: {
-            noDiscovery: true,
-            include: [
-              'react',
-              'react-dom',
-              'react-dom/client',
-              'react/jsx-runtime',
-              'react/jsx-dev-runtime',
-              'react-router',
-              '@radix-ui/react-dialog',
-              '@radix-ui/react-label',
-              '@radix-ui/react-separator',
-              '@radix-ui/react-slot',
-              '@radix-ui/react-tooltip',
-              'class-variance-authority',
-              'clsx',
-              'tailwind-merge',
-              'lucide-react',
-              'sonner',
-              'vaul',
-              'neverthrow',
-              'zod',
-              'swr/mutation',
-              'hono/client',
-              'storybook/test',
-              'storybook/preview-api',
-              '@storybook/react-vite',
-              'react-dom/test-utils',
-            ],
-          },
-          test: {
-            name: 'storybook',
-            globals: true,
-            browser: {
-              enabled: true,
-              headless: true,
-              provider: playwright(),
-              instances: [{ browser: 'chromium' }],
-            },
-          },
-        },
-      ],
+      projects: selectedProjects,
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json-summary', 'json'],

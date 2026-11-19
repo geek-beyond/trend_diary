@@ -1,0 +1,22 @@
+diff --git a/src/session.ts b/src/session.ts
+--- a/src/session.ts
++++ b/src/session.ts
+@@ -199,7 +199,7 @@ async function start(options: SessionOptions, registry: MutantRegistry): Promise<{ vitest: Vitest; watch: FailureWatch }> {
+       bail: 0,
+       isolate: true,
+-      pool: options.pool ?? 'forks',
++      ...(options.pool ? { pool: options.pool } : {}),
+       includeTaskLocation: true,
+       coverage: { enabled: false },
+       onConsoleLog: () => false,
+diff --git a/dist/session.js b/dist/session.js
+--- a/dist/session.js
++++ b/dist/session.js
+@@ -153,8 +153,8 @@ async function start(options, registry) {
+         bail: 0,
+         isolate: true,
+-        pool: options.pool ?? 'forks',
++        ...(options.pool ? { pool: options.pool } : {}),
+         includeTaskLocation: true,
+         coverage: { enabled: false },
+         onConsoleLog: () => false,

@@ -57,3 +57,6 @@ pnpm-debug.log*
 
 # coverage
 coverage/
+
+# mutation testing cache and reports
+**/.mutator/

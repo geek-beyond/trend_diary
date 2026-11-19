@@ -40,18 +40,10 @@ export async function storeArticles(
     url: truncateByCodePoint(item.url, ARTICLE_MAX_LENGTH.url),
   }))
 
-  // 同一フィード内のURL重複を除去する（複数行INSERT内の自己重複を避けるため）
-  const feedUrlSet = new Set<string>()
-  const uniqueNormalized: typeof normalized = []
-  for (const article of normalized) {
-    if (feedUrlSet.has(article.url)) continue
-    feedUrlSet.add(article.url)
-    uniqueNormalized.push(article)
-  }
-
-  const [firstArticle] = uniqueNormalized
-  // items 非空なら重複除去後も必ず1件残る。到達したら不変条件の破れなので0件成功に偽装せず送出する
-  assertNonNull(firstArticle, 'uniqueNormalized[0] when items exist')
+  // ON CONFLICT DO NOTHING が同一フィード内の重複URLもスキップする。
+  const [firstArticle] = normalized
+  // items 非空なら必ず1件残る。到達したら不変条件の破れなので0件成功に偽装せず送出する
+  assertNonNull(firstArticle, 'normalized[0] when items exist')
   // スキーマ変更に追従できるよう、チャンクサイズは1行のカラム数から動的に算出する
   const chunkSize = Math.floor(
     (MAX_BIND_PARAMETERS * BIND_PARAMETER_USAGE_RATIO) / Object.keys(firstArticle).length,
@@ -59,7 +51,7 @@ export async function storeArticles(
 
   // ON CONFLICT DO NOTHING で既存URLをスキップし、returning した行数を挿入件数とする
   let insertedCount = 0
-  for (const articlesChunk of chunk(uniqueNormalized, chunkSize)) {
+  for (const articlesChunk of chunk(normalized, chunkSize)) {
     const insertResult = await wrapDbCall(() =>
       db
         .insert(articles)

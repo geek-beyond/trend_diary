@@ -299,7 +299,8 @@ jobs:
     steps:
       - *checkout-full-history
       - *setup-node
-      - name: Full mutation discovery
+      - name: Full mutation discovery (web)
+        if: ${{ matrix.project == 'apps/web' }}
         env:
           MUTATION_PROJECT: ${{ matrix.project }}
         run: |
@@ -307,6 +308,18 @@ jobs:
             --root "$MUTATION_PROJECT" \
             --exclude '**/*.stories.*' \
             --no-typecheck \
+            --reporter text \
+            --reporter simplify
+      - name: Full mutation discovery and test matrix (cron)
+        if: ${{ matrix.project == 'apps/cron' }}
+        env:
+          MUTATION_PROJECT: ${{ matrix.project }}
+        run: |
+          pnpm exec mutator \
+            --root "$MUTATION_PROJECT" \
+            --exclude '**/*.stories.*' \
+            --no-typecheck \
+            --kill-matrix \
             --reporter text \
             --reporter simplify
 

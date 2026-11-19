@@ -78,5 +78,15 @@ describe('fetchRssFeed', () => {
       expect(error).toBeInstanceOf(RssFetchError)
       expect(error).toMatchObject({ diagnostics: { bodySnippet: `${'x'.repeat(500)}…` } })
     })
+
+    it('本文が上限と同じ長さなら省略記号を付けない', async () => {
+      fetchMock.mockResolvedValue(nonOkResponse(503, 'x'.repeat(500)))
+
+      const result = await fetchRssFeed('https://zenn.dev/feed')
+
+      const error = result._unsafeUnwrapErr()
+      expect(error).toBeInstanceOf(RssFetchError)
+      expect(error).toMatchObject({ diagnostics: { bodySnippet: 'x'.repeat(500) } })
+    })
   })
 })

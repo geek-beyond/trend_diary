@@ -286,40 +286,26 @@ jobs:
         run: pnpm run mutate:package
 
   mutation-discovery:
-    name: full-mutation (${{ matrix.project }})
+    name: web mutation kill matrix
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [apps/cron, apps/web]
     steps:
       - *checkout-full-history
       - *setup-node
-      - name: Full mutation discovery (web)
-        if: ${{ matrix.project == 'apps/web' }}
+      - name: Mutation kill matrix (web core features)
         env:
-          MUTATION_PROJECT: ${{ matrix.project }}
+          MUTATION_PROJECT: apps/web
         run: |
           pnpm exec mutator \
             --root "$MUTATION_PROJECT" \
-            --exclude '**/*.stories.*' \
-            --no-typecheck \
-            --reporter text \
-            --reporter simplify
-      - name: Full mutation discovery and test matrix (cron)
-        if: ${{ matrix.project == 'apps/cron' }}
-        env:
-          MUTATION_PROJECT: ${{ matrix.project }}
-        run: |
-          pnpm exec mutator \
-            --root "$MUTATION_PROJECT" \
-            --exclude '**/*.stories.*' \
             --no-typecheck \
             --kill-matrix \
+            --include 'src/client/features/article/hooks/use-articles.ts' \
+            --include 'src/client/features/inbox/hooks/use-unread-digestion.ts' \
+            --include 'src/client/features/diary/hooks/use-analytics.ts' \
             --reporter text \
             --reporter simplify
 

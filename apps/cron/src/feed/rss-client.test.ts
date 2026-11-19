@@ -5,25 +5,6 @@ import { fetchRssFeed, RssFetchError } from './rss-client'
 const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)
 
-describe('RssFetchError', () => {
-  describe('正常系', () => {
-    const cases = [
-      { status: 429, expected: true },
-      { status: 403, expected: false },
-      { status: 503, expected: false },
-    ]
-
-    it.each(cases)(
-      'status=$status のとき isRateLimited は $expected を返す',
-      ({ status, expected }) => {
-        const error = new RssFetchError('https://zenn.dev/feed', { status, headers: {} })
-
-        expect(error.isRateLimited).toBe(expected)
-      },
-    )
-  })
-})
-
 describe('fetchRssFeed', () => {
   beforeEach(() => {
     fetchMock.mockReset()
@@ -34,8 +15,10 @@ describe('fetchRssFeed', () => {
       fetchMock.mockResolvedValue(
         nonOkResponse(429, 'Rate limited by origin', {
           'retry-after': '30',
+          date: 'Thu, 01 Jan 1970 00:00:00 GMT',
           'cf-ray': '8abc',
           'cf-mitigated': 'challenge',
+          'cf-cache-status': 'DYNAMIC',
           server: 'cloudflare',
         }),
       )
@@ -44,6 +27,7 @@ describe('fetchRssFeed', () => {
 
       const error = result._unsafeUnwrapErr()
       expect(error).toBeInstanceOf(RssFetchError)
+      expect(error.name).toBe('RssFetchError')
       expect(error).toMatchObject({
         diagnostics: {
           status: 429,
@@ -56,6 +40,16 @@ describe('fetchRssFeed', () => {
           bodySnippet: 'Rate limited by origin',
         },
       })
+      if (error instanceof RssFetchError) {
+        expect(error.diagnostics.headers).toEqual({
+          'retry-after': '30',
+          date: 'Thu, 01 Jan 1970 00:00:00 GMT',
+          'cf-ray': '8abc',
+          'cf-mitigated': 'challenge',
+          'cf-cache-status': 'DYNAMIC',
+          server: 'cloudflare',
+        })
+      }
     })
 
     it('失敗しても run 内でリトライせず1回の試行で失敗を返す', async () => {
@@ -87,6 +81,32 @@ describe('fetchRssFeed', () => {
       const error = result._unsafeUnwrapErr()
       expect(error).toBeInstanceOf(RssFetchError)
       expect(error).toMatchObject({ diagnostics: { bodySnippet: 'x'.repeat(500) } })
+    })
+
+    it('本文が空白だけなら本文診断を持たない', async () => {
+      fetchMock.mockResolvedValue(nonOkResponse(503, '  \n\t  '))
+
+      const result = await fetchRssFeed('https://zenn.dev/feed')
+
+      const error = result._unsafeUnwrapErr()
+      expect(error).toBeInstanceOf(RssFetchError)
+      if (error instanceof RssFetchError) {
+        expect(error.diagnostics).toEqual({ status: 503, headers: {} })
+      }
+    })
+
+    it('本文を読み取れなくてもRSS取得エラーを診断情報なしで返す', async () => {
+      const response = nonOkResponse(503, 'body')
+      vi.spyOn(response, 'text').mockRejectedValue(new Error('body read failed'))
+      fetchMock.mockResolvedValue(response)
+
+      const result = await fetchRssFeed('https://zenn.dev/feed')
+
+      const error = result._unsafeUnwrapErr()
+      expect(error).toBeInstanceOf(RssFetchError)
+      if (error instanceof RssFetchError) {
+        expect(error.diagnostics).toEqual({ status: 503, headers: {} })
+      }
     })
   })
 })

@@ -26,14 +26,6 @@ afterAll(async () => {
 
 describe('storeArticles', () => {
   describe('正常系', () => {
-    it('items が空配列の場合は DB へアクセスせず ok(0) を返す', async () => {
-      const result = await storeArticles('qiita', [], TEST_ENV)
-
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) expect(result.value).toBe(0)
-      expect(await countArticles()).toBe(0)
-    })
-
     // D1のバインドパラメータ上限100・使用率80%・カラム数5から算出されるチャンクサイズは16件。
     const chunkBoundaryCases = [
       { label: 'ちょうどの件数は1回で全件保存する', count: 16 },

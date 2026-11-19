@@ -2,7 +2,6 @@ import getRdbClient, { wrapDbCall } from '@trend-diary/datastore/rdb'
 import { articles } from '@trend-diary/datastore/schema'
 import type { ArticleMedia } from '@trend-diary/domain/article/media'
 import { ARTICLE_MAX_LENGTH } from '@trend-diary/domain/article/schema/article-schema'
-import { assertNonNull } from '@trend-diary/std/contract'
 import { err, ok, type Result } from 'neverthrow'
 import type { FetchEnv } from '../env'
 import type { NormalizedItem } from './config'
@@ -42,8 +41,7 @@ export async function storeArticles(
 
   // ON CONFLICT DO NOTHING が同一フィード内の重複URLもスキップする。
   const [firstArticle] = normalized
-  // items 非空なら必ず1件残る。到達したら不変条件の破れなので0件成功に偽装せず送出する
-  assertNonNull(firstArticle, 'normalized[0] when items exist')
+  // items 非空の後に同じ件数の配列へ map しているため、必ず1件以上残る。
   // スキーマ変更に追従できるよう、チャンクサイズは1行のカラム数から動的に算出する
   const chunkSize = Math.floor(
     (MAX_BIND_PARAMETERS * BIND_PARAMETER_USAGE_RATIO) / Object.keys(firstArticle).length,

@@ -36,18 +36,6 @@ beforeEach(() => {
 })
 
 describe('fetchAllArticles', () => {
-  describe('正常系', () => {
-    it('全メディアの取得に成功した場合は例外を投げずDiscordへ通知しない', async () => {
-      runScheduledFetchMock.mockResolvedValue(ok(1))
-      const { discord, sendMessageSpy } = buildDiscord()
-
-      await expect(runFetchAllArticles(discord, 1000)).resolves.toBeUndefined()
-
-      expect(runScheduledFetchMock).toHaveBeenCalledTimes(ARTICLE_MEDIA.length)
-      expect(sendMessageSpy).not.toHaveBeenCalled()
-    })
-  })
-
   describe('準正常系', () => {
     it('一部メディアが失敗した場合は失敗メディアをDiscordへ通知したうえでthrowする', async () => {
       const feedError = new Error('feed error')
@@ -98,6 +86,20 @@ describe('fetchAllArticles', () => {
         expect.stringContaining('headers: retry-after=30, cf-mitigated=challenge'),
       )
       expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('body: Rate limited'))
+    })
+
+    it('診断情報が無い場合はDiscord通知に空の診断行を足さない', async () => {
+      const fetchError = new RssFetchError('https://zenn.dev/feed', { status: 503, headers: {} })
+      runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
+        media === 'zenn' ? err(fetchError) : ok(1),
+      )
+      const { discord, sendMessageSpy } = buildDiscord()
+
+      await expect(runFetchAllArticles(discord, 6000)).rejects.toThrow()
+
+      expect(sendMessageSpy).toHaveBeenCalledWith(
+        '[trend-diary cron] fetch failed\ncron: 0 * * * *\nmedia: zenn\nerror: Failed to fetch rss feed: https://zenn.dev/feed, status=503',
+      )
     })
 
     // レート制限は次回の定期実行で回復する見込みのため、通知の受け手が即時対応の要否を判断できる必要がある

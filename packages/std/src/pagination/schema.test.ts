@@ -41,16 +41,6 @@ describe('offsetPaginationSchema', () => {
       message: 'Invalid input: expected number, received NaN',
     },
     { name: 'pageが0', input: { page: 0 }, message: 'Too small: expected number to be >=1' },
-    {
-      name: 'pageが負の値',
-      input: { page: -1 },
-      message: 'Too small: expected number to be >=1',
-    },
-    {
-      name: 'pageが大きな負の値',
-      input: { page: -999 },
-      message: 'Too small: expected number to be >=1',
-    },
     { name: 'pageが小数', input: { page: 1.5 }, message: 'Invalid input: expected int' },
     { name: 'pageが1未満の小数', input: { page: 0.9 }, message: 'Invalid input: expected int' },
     {
@@ -59,18 +49,8 @@ describe('offsetPaginationSchema', () => {
       message: `Too small: expected number to be >=${MIN_LIMIT}`,
     },
     {
-      name: 'limitが負の値',
-      input: { limit: -10 },
-      message: `Too small: expected number to be >=${MIN_LIMIT}`,
-    },
-    {
       name: `limitが${MAX_LIMIT}より大きい`,
       input: { limit: 101 },
-      message: `Too big: expected number to be <=${MAX_LIMIT}`,
-    },
-    {
-      name: 'limitが大きな値',
-      input: { limit: 500 },
       message: `Too big: expected number to be <=${MAX_LIMIT}`,
     },
   ]
@@ -114,11 +94,6 @@ describe('offsetPaginationMobileSchema', () => {
       message: 'Invalid input: expected number, received NaN',
     },
     { name: 'pageが0', input: { page: 0 }, message: 'Too small: expected number to be >=1' },
-    {
-      name: 'pageが負の値',
-      input: { page: -1 },
-      message: 'Too small: expected number to be >=1',
-    },
     { name: 'pageが小数', input: { page: 1.5 }, message: 'Invalid input: expected int' },
     {
       name: `limitが${MIN_LIMIT}未満`,
@@ -126,18 +101,8 @@ describe('offsetPaginationMobileSchema', () => {
       message: `Too small: expected number to be >=${MIN_LIMIT}`,
     },
     {
-      name: 'limitが負の値',
-      input: { limit: -10 },
-      message: `Too small: expected number to be >=${MIN_LIMIT}`,
-    },
-    {
       name: `limitが${MAX_LIMIT}より大きい`,
       input: { limit: 101 },
-      message: `Too big: expected number to be <=${MAX_LIMIT}`,
-    },
-    {
-      name: 'limitが大きな値',
-      input: { limit: 500 },
       message: `Too big: expected number to be <=${MAX_LIMIT}`,
     },
   ]

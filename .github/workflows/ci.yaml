@@ -37,6 +37,8 @@ jobs:
       schema: ${{ steps.all.outputs.on || steps.split.outputs.schema }}
       e2e: ${{ steps.all.outputs.on || steps.split.outputs.e2e }}
       github_actions_lint: ${{ steps.all.outputs.on || steps.split.outputs.github_actions_lint }}
+      mutation_projects: ${{ steps.all.outputs.projects || steps.mutation.outputs.projects || '[]' }}
+      mutation_app_projects: ${{ steps.all.outputs.app_projects || steps.mutation.outputs.app_projects || '[]' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -50,7 +52,11 @@ jobs:
         id: all
         run: |
           if [[ "$GITHUB_REF" == 'refs/heads/main' ]] || git diff --name-only HEAD~1 HEAD | grep -qE '^\.github/'; then
-            echo "on=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "on=true"
+              echo 'projects=["packages/authentication","packages/datastore","packages/domain","packages/logger","packages/notification","packages/runtime"]'
+              echo 'app_projects=[{"root":"apps/cron"},{"root":"apps/web","label":"client"}]'
+            } >> "$GITHUB_OUTPUT"
           fi
 
       - name: デプロイ対象の検知
@@ -92,6 +98,43 @@ jobs:
             echo "github_actions_lint=$github_actions_lint"
           } >> "$GITHUB_OUTPUT"
           echo "client=$client server=$server schema=$schema e2e=$e2e github_actions_lint=$github_actions_lint"
+
+      - name: Mutation対象の検知
+        id: mutation
+        if: ${{ steps.all.outputs.on != 'true' }}
+        run: |
+          set -euo pipefail
+          files=$(git diff --name-only HEAD~1 HEAD | grep -vE '\.md$' || true)
+          changed() { grep -qE "$1" <<<"$files"; }
+          projects=()
+
+          if changed '^packages/|^[^/]+$'; then
+            projects=(packages/authentication packages/datastore packages/domain packages/logger packages/notification packages/runtime)
+          fi
+          app_projects=()
+          if changed '^apps/cron/|^packages/|^[^/]+$'; then
+            app_projects+=('{"root":"apps/cron"}')
+          fi
+          if changed '^apps/web/|^packages/|^[^/]+$'; then
+            app_projects+=('{"root":"apps/web","label":"client"}')
+          fi
+
+          if ((${#app_projects[@]} == 0)); then
+            app_projects_json='[]'
+          else
+            app_projects_json=$(printf '%s\n' "${app_projects[@]}" | jq -sc 'map(fromjson)')
+          fi
+
+          if ((${#projects[@]} == 0)); then
+            projects_json='[]'
+          else
+            projects_json=$(printf '%s\n' "${projects[@]}" | jq -R . | jq -sc .)
+          fi
+
+          {
+            echo "app_projects=$app_projects_json"
+            echo "projects=$projects_json"
+          } >> "$GITHUB_OUTPUT"
 
   github-actions-lint:
     needs: changes
@@ -167,16 +210,80 @@ jobs:
         # web は client/server/component の専用ジョブ、e2e は E2E ジョブで実行するため含めない
         package: [authentication, cron, datastore, domain, logger, notification, runtime, std]
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # mutation ジョブでも使うセットアップ
+      - &checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Node.jsの構築
+
+      - &setup-node
+        name: Node.jsの構築
         uses: ./.github/actions/setup_node
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
 
       - name: テスト
         run: pnpm --filter @trend-diary/${{ matrix.package }} test
+
+  mutation-test:
+    name: mutation-test (std)
+    needs: changes
+    if: ${{ needs.changes.outputs.cron == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - *checkout
+      - *setup-node
+      - name: Mutation testing
+        run: pnpm run mutate:std
+
+  mutation-test-packages:
+    name: mutation-test (${{ matrix.project }})
+    needs: changes
+    if: ${{ needs.changes.outputs.mutation_projects != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.changes.outputs.mutation_projects) }}
+    steps:
+      - &checkout-full-history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - *setup-node
+      - name: Mutation testing
+        env:
+          MUTATION_PROJECT: ${{ matrix.project }}
+          MUTATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: pnpm run mutate:package
+
+  mutation-test-apps:
+    name: mutation-test (${{ matrix.project.root }}${{ matrix.project.label && format(' / {0}', matrix.project.label) || '' }})
+    needs: changes
+    if: ${{ needs.changes.outputs.mutation_app_projects != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.changes.outputs.mutation_app_projects) }}
+    steps:
+      - *checkout-full-history
+      - *setup-node
+      - name: Mutation testing
+        env:
+          MUTATION_PROJECT: ${{ matrix.project.root }}
+          MUTATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: pnpm run mutate:package
 
   web-build:
     needs: changes
@@ -385,7 +492,7 @@ jobs:
 
   gate:
     if: ${{ !cancelled() }}
-    needs: [changes, github-actions-lint, code-quality, unit-test, web-build, client-test, server-test, component-test, schema, e2e]
+    needs: [changes, github-actions-lint, code-quality, unit-test, mutation-test, mutation-test-packages, mutation-test-apps, web-build, client-test, server-test, component-test, schema, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

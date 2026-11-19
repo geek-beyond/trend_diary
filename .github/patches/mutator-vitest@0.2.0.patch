@@ -1,0 +1,159 @@
+diff --git a/dist/session.js b/dist/session.js
+index 28b922e..b187a78 100644
+--- a/dist/session.js
++++ b/dist/session.js
+@@ -156 +156 @@ async function start(options, registry) {
+-        pool: options.pool ?? 'forks',
++        ...(options.pool ? { pool: options.pool } : {}),
+@@ -282 +282 @@ function report(result, root, testIds, observed, idOf) {
+-//# sourceMappingURL=session.js.map
+\ No newline at end of file
++//# sourceMappingURL=session.js.map
+diff --git a/dist/setup.js b/dist/setup.js
+index a7e252f..9c5659a 100644
+--- a/dist/setup.js
++++ b/dist/setup.js
+@@ -3,3 +2,0 @@
+-import { createRequire, syncBuiltinESMExports } from 'node:module';
+-import { resolve } from 'node:path';
+-import { fileURLToPath } from 'node:url';
+@@ -29,0 +27,2 @@ const ORIGINAL = Symbol.for('mutator.original');
++let resolvePath;
++let fileURLToPath;
+@@ -33 +32 @@ function recordSpawn(name, args) {
+-    if (!state?.collect || state.testId === null)
++    if (!state?.collect || state.testId === null || !resolvePath || !fileURLToPath)
+@@ -42 +41 @@ function recordSpawn(name, args) {
+-        (state.spawns[state.testId] ??= []).push({ argv, cwd: resolve(cwd instanceof URL ? fileURLToPath(cwd) : typeof cwd === 'string' ? cwd : process.cwd()) });
++        (state.spawns[state.testId] ??= []).push({ argv, cwd: resolvePath(cwd instanceof URL ? fileURLToPath(cwd) : typeof cwd === 'string' ? cwd : process.cwd()) });
+@@ -49,14 +48,28 @@ if (ns.collect) {
+-    const childProcess = createRequire(import.meta.url)('node:child_process');
+-    for (const name of SPAWNERS) {
+-        // Re-wrap the original: a reused worker must not stack wrappers.
+-        const original = (childProcess[name][ORIGINAL] ?? childProcess[name]);
+-        const wrap = (fn) => function (...args) {
+-            recordSpawn(name, args);
+-            return fn.apply(this, args);
+-        };
+-        const wrapped = wrap(original);
+-        wrapped[ORIGINAL] = original;
+-        // util.promisify.custom (exec, execFile)
+-        for (const key of Object.getOwnPropertySymbols(original)) {
+-            const value = original[key];
+-            wrapped[key] = typeof value === 'function' ? wrap(value) : value;
++    try {
++        // Browser and Workers test projects do not provide Node builtins. Load these
++        // only in runtimes that support them so the setup remains usable there.
++        const importRuntimeModule = (name) => import(/* @vite-ignore */ name);
++        const [moduleApi, pathApi, urlApi] = await Promise.all([
++            importRuntimeModule('node:module'),
++            importRuntimeModule('node:path'),
++            importRuntimeModule('node:url'),
++        ]);
++        const { createRequire, syncBuiltinESMExports } = moduleApi;
++        resolvePath = pathApi.resolve;
++        fileURLToPath = urlApi.fileURLToPath;
++        const childProcess = createRequire(import.meta.url)('node:child_process');
++        for (const name of SPAWNERS) {
++            // Re-wrap the original: a reused worker must not stack wrappers.
++            const original = (childProcess[name][ORIGINAL] ?? childProcess[name]);
++            const wrap = (fn) => function (...args) {
++                recordSpawn(name, args);
++                return fn.apply(this, args);
++            };
++            const wrapped = wrap(original);
++            wrapped[ORIGINAL] = original;
++            // util.promisify.custom (exec, execFile)
++            for (const key of Object.getOwnPropertySymbols(original)) {
++                const value = original[key];
++                wrapped[key] = typeof value === 'function' ? wrap(value) : value;
++            }
++            childProcess[name] = wrapped;
+@@ -64 +77,5 @@ if (ns.collect) {
+-        childProcess[name] = wrapped;
++        // ESM named imports of node:child_process see the wrappers too.
++        syncBuiltinESMExports();
++    }
++    catch {
++        // Browser and Workers runtimes may not expose Node builtins.
+@@ -66,2 +82,0 @@ if (ns.collect) {
+-    // ESM named imports of node:child_process see the wrappers too.
+-    syncBuiltinESMExports();
+diff --git a/src/session.ts b/src/session.ts
+index d89a648..4d1d238 100644
+--- a/src/session.ts
++++ b/src/session.ts
+@@ -202 +202 @@ async function start(options: SessionOptions, registry: MutantRegistry): Promise
+-      pool: options.pool ?? 'forks',
++      ...(options.pool ? { pool: options.pool } : {}),
+diff --git a/src/setup.ts b/src/setup.ts
+index 796b7e0..c38c98e 100644
+--- a/src/setup.ts
++++ b/src/setup.ts
+@@ -3,3 +2,0 @@
+-import { createRequire, syncBuiltinESMExports } from 'node:module';
+-import { resolve } from 'node:path';
+-import { fileURLToPath } from 'node:url';
+@@ -36,0 +34,2 @@ type Fn = ((...args: unknown[]) => unknown) & Record<symbol, unknown>;
++let resolvePath: typeof import('node:path').resolve | undefined;
++let fileURLToPath: typeof import('node:url').fileURLToPath | undefined;
+@@ -41 +40 @@ function recordSpawn(name: (typeof SPAWNERS)[number], args: unknown[]): void {
+-  if (!state?.collect || state.testId === null) return;
++  if (!state?.collect || state.testId === null || !resolvePath || !fileURLToPath) return;
+@@ -49 +48 @@ function recordSpawn(name: (typeof SPAWNERS)[number], args: unknown[]): void {
+-    (state.spawns[state.testId] ??= []).push({ argv, cwd: resolve(cwd instanceof URL ? fileURLToPath(cwd) : typeof cwd === 'string' ? cwd : process.cwd()) });
++    (state.spawns[state.testId] ??= []).push({ argv, cwd: resolvePath(cwd instanceof URL ? fileURLToPath(cwd) : typeof cwd === 'string' ? cwd : process.cwd()) });
+@@ -56,15 +55,29 @@ if (ns.collect) {
+-  const childProcess = createRequire(import.meta.url)('node:child_process') as Record<string, Fn>;
+-  for (const name of SPAWNERS) {
+-    // Re-wrap the original: a reused worker must not stack wrappers.
+-    const original = (childProcess[name]![ORIGINAL] ?? childProcess[name]) as Fn;
+-    const wrap = (fn: Fn) =>
+-      function (this: unknown, ...args: unknown[]) {
+-        recordSpawn(name, args);
+-        return fn.apply(this, args);
+-      } as Fn;
+-    const wrapped = wrap(original);
+-    wrapped[ORIGINAL] = original;
+-    // util.promisify.custom (exec, execFile)
+-    for (const key of Object.getOwnPropertySymbols(original)) {
+-      const value = original[key];
+-      wrapped[key] = typeof value === 'function' ? wrap(value as Fn) : value;
++  try {
++    // Browser and Workers test projects do not provide Node builtins. Load these
++    // only in runtimes that support them so the setup remains usable there.
++    const importRuntimeModule = (name: string) => import(/* @vite-ignore */ name);
++    const [moduleApi, pathApi, urlApi] = await Promise.all([
++      importRuntimeModule('node:module'),
++      importRuntimeModule('node:path'),
++      importRuntimeModule('node:url'),
++    ]);
++    const { createRequire, syncBuiltinESMExports } = moduleApi as typeof import('node:module');
++    resolvePath = (pathApi as typeof import('node:path')).resolve;
++    fileURLToPath = (urlApi as typeof import('node:url')).fileURLToPath;
++    const childProcess = createRequire(import.meta.url)('node:child_process') as Record<string, Fn>;
++    for (const name of SPAWNERS) {
++      // Re-wrap the original: a reused worker must not stack wrappers.
++      const original = (childProcess[name]![ORIGINAL] ?? childProcess[name]) as Fn;
++      const wrap = (fn: Fn) =>
++        function (this: unknown, ...args: unknown[]) {
++          recordSpawn(name, args);
++          return fn.apply(this, args);
++        } as Fn;
++      const wrapped = wrap(original);
++      wrapped[ORIGINAL] = original;
++      // util.promisify.custom (exec, execFile)
++      for (const key of Object.getOwnPropertySymbols(original)) {
++        const value = original[key];
++        wrapped[key] = typeof value === 'function' ? wrap(value as Fn) : value;
++      }
++      childProcess[name] = wrapped;
+@@ -72 +85,4 @@ if (ns.collect) {
+-    childProcess[name] = wrapped;
++    // ESM named imports of node:child_process see the wrappers too.
++    syncBuiltinESMExports();
++  } catch {
++    // Browser and Workers runtimes may not expose Node builtins.
+@@ -74,2 +89,0 @@ if (ns.collect) {
+-  // ESM named imports of node:child_process see the wrappers too.
+-  syncBuiltinESMExports();

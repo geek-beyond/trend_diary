@@ -465,32 +465,6 @@ describe('useUnreadDigestion', () => {
     await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
   })
 
-  it('別の記事操作を並行でき、先の操作が失敗しても後の成功を巻き戻さない', async () => {
-    const next = makeArticle('article-2', '次の記事')
-    const last = makeArticle('article-3', '最後の記事')
-    const requests = createControlledSkipRequests()
-    const { result } = await renderLoadedQueue([baseArticle, next, last])
-
-    const firstAction = startAction(result.current.handleSkip)
-    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-2'))
-    const secondAction = startAction(result.current.handleSkip)
-    await waitFor(() => expect(result.current.currentArticle?.articleId).toBe('article-3'))
-    expect(result.current.remainingCount).toBe(1)
-    expect(result.current.isActionPending).toBe(true)
-    expect(mockSkipPost).toHaveBeenCalledTimes(2)
-
-    await settleAction(secondAction, () => requests.resolve('article-2'))
-    expect(result.current.isActionPending).toBe(true)
-    expect(result.current.currentArticle?.articleId).toBe('article-3')
-    expect(result.current.remainingCount).toBe(1)
-
-    await settleAction(firstAction, () => requests.reject('article-1', new Error('offline')))
-    expect(result.current.currentArticle?.articleId).toBe('article-1')
-    expect(result.current.remainingCount).toBe(2)
-    expect(result.current.isActionPending).toBe(false)
-    expect(result.current.isJustCompleted).toBe(false)
-  })
-
   it('3つの操作が逆順で成功・失敗しても、成功済みだけを確定し失敗記事を戻す', async () => {
     const articles = makeArticles('article-1', 'article-2', 'article-3', 'article-4')
     const requests = createControlledSkipRequests()

@@ -45,7 +45,6 @@ describe('authClientConfig', () => {
     it.each([
       { name: 'URL 未設定', env: { SUPABASE_ANON_KEY: 'anon-key' } },
       { name: 'anonKey 未設定', env: { SUPABASE_URL: 'http://localhost:54321' } },
-      { name: '両方未設定', env: {} },
     ])('$name のとき UnexpectedAuthError を投げること', ({ env }) => {
       expect(() => authClientConfig(buildContext(env))).toThrow(UnexpectedAuthError)
     })

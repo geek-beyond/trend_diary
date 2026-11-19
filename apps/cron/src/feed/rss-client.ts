@@ -46,7 +46,7 @@ async function collectDiagnostics(response: Response): Promise<RssFetchDiagnosti
   const headers: Record<string, string> = {}
   for (const name of DIAGNOSTIC_HEADER_NAMES) {
     const value = response.headers.get(name)
-    if (value !== null && value !== undefined) headers[name] = value
+    if (value !== null) headers[name] = value
   }
 
   const bodySnippet = await readBodySnippet(response)

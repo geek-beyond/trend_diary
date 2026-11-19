@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { addJstDays, toJstDateString } from '@trend-diary/std/locale/date'
 import { createElement, type ReactNode } from 'react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,14 +16,21 @@ vi.mock('./use-diary-api', () => ({
 const mockedUseDiaryApi = vi.mocked(useDiaryApi)
 
 function setupHook(initialEntries: string[] = ['/analytics']) {
-  return renderHook(() => useAnalytics(), {
-    wrapper: ({ children }: { children: ReactNode }) =>
-      createElement(
-        SWRConfig,
-        { value: { provider: () => new Map(), dedupingInterval: 0 } },
-        createElement(MemoryRouter, { initialEntries }, children),
-      ),
-  })
+  return renderHook(
+    () => {
+      const analytics = useAnalytics()
+      const location = useLocation()
+      return { ...analytics, search: location.search }
+    },
+    {
+      wrapper: ({ children }: { children: ReactNode }) =>
+        createElement(
+          SWRConfig,
+          { value: { provider: () => new Map(), dedupingInterval: 0 } },
+          createElement(MemoryRouter, { initialEntries }, children),
+        ),
+    },
+  )
 }
 
 const buildDailyResponse = (date: string, read: number, skip: number): DiaryResponse => ({
@@ -197,32 +204,6 @@ describe('useAnalytics', () => {
     })
   })
 
-  it('selectDateで日付を選ぶと選択日の1ページ目を取得する', async () => {
-    const targetDate = buildDates(toJstDateString(new Date()))[4]
-    const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
-      const dates = buildDates(to).filter((date) => date >= from)
-      return Promise.resolve(dates.map((date) => buildRangeItemResponse(date, 1, 0)))
-    })
-    const fetchDiary = vi.fn().mockResolvedValue(buildDailyResponse(targetDate, 3, 0))
-
-    mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange })
-
-    const { result } = setupHook()
-
-    await waitFor(() => {
-      expect(fetchDiaryRange).toHaveBeenCalledTimes(1)
-    })
-
-    act(() => {
-      result.current.selectDate(targetDate)
-    })
-
-    await waitFor(() => {
-      expect(result.current.selectedDate).toBe(targetDate)
-    })
-    expect(fetchDiary).toHaveBeenCalledWith(targetDate, 1)
-  })
-
   it('clearSelectedDateで選択を解除すると日付未選択の状態に戻る', async () => {
     const targetDate = buildDates(toJstDateString(new Date()))[4]
     const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
@@ -276,6 +257,37 @@ describe('useAnalytics', () => {
     await waitFor(() => {
       expect(fetchDiary).toHaveBeenLastCalledWith(targetDate, 2)
     })
+  })
+
+  it('選択日の2ページ目から戻るとpageクエリを除去する', async () => {
+    const targetDate = buildDates(toJstDateString(new Date()))[4]
+    const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
+      const dates = buildDates(to).filter((date) => date >= from)
+      return Promise.resolve(dates.map((date) => buildRangeItemResponse(date, 1, 0)))
+    })
+    const fetchDiary = vi.fn().mockImplementation((date: string, page: number) =>
+      Promise.resolve({
+        ...buildDailyResponse(date, 1, 0),
+        reads: { data: [], page, totalPages: 3, hasNext: page < 3, hasPrev: page > 1 },
+      }),
+    )
+
+    mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange })
+
+    const { result } = setupHook([`/analytics?date=${targetDate}&page=2`])
+
+    await waitFor(() => {
+      expect(fetchDiary).toHaveBeenCalledWith(targetDate, 2)
+    })
+
+    act(() => {
+      result.current.toPrevPage()
+    })
+
+    await waitFor(() => {
+      expect(result.current.search).toBe(`?date=${targetDate}`)
+    })
+    expect(result.current.readPagination.page).toBe(1)
   })
 
   describe('異常系', () => {

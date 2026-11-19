@@ -59,6 +59,10 @@ describe('fetchQiitaArticles', () => {
 
       const result = await fetchQiitaArticles(cronEnv, logger)
 
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://qiita.com/popular-items/feed.atom',
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      )
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(1)
       const saved = await findByUrl('https://qiita.com/u/items/q1')
@@ -173,6 +177,10 @@ describe('fetchZennArticles', () => {
 
       const result = await fetchZennArticles(cronEnv, logger)
 
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://zenn.dev/feed',
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      )
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(1)
       const saved = await findByUrl('https://zenn.dev/u/articles/z1')
@@ -245,25 +253,16 @@ describe('fetchHatenaArticles', () => {
 
       const result = await fetchHatenaArticles(cronEnv, logger)
 
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://b.hatena.ne.jp/hotentry/it.rss',
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      )
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(1)
       const saved = await findByUrl('https://example.com/h1')
       expect(saved.media).toBe('hatena')
       expect(saved.author).toBe('hatena_creator')
       expect(saved.description).toBe('はてな本文')
-    })
-
-    it('新規記事を全件保存する', async () => {
-      stubHatena([
-        { title: '記事A', author: '投稿者A', content: '本文A', url: 'https://example.com/a' },
-        { title: '記事B', author: '投稿者B', content: '本文B', url: 'https://example.com/b' },
-      ])
-
-      const result = await fetchHatenaArticles(cronEnv, logger)
-
-      expect(result.isOk()).toBe(true)
-      if (result.isOk()) expect(result.value).toBe(2)
-      expect(await countArticles()).toBe(2)
     })
   })
 

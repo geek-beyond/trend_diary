@@ -314,10 +314,30 @@ jobs:
         env:
           MUTATION_PROJECT: ${{ matrix.project.root }}
           MUTATION_VITEST_PROJECT: ${{ matrix.project.vitest_project || '' }}
-          MUTATION_INCLUDE: ${{ (matrix.project.vitest_project == 'client' || matrix.project.vitest_project == 'storybook') && 'src/client/**/*.{ts,tsx}' || matrix.project.vitest_project == 'server' && 'src/{server.ts,server/**/*.ts,server/**/*.tsx,middleware/**/*.ts,middleware/**/*.tsx,common/**/*.ts,common/**/*.tsx}' || '' }}
-          MUTATION_CRITICAL: ${{ (matrix.project.vitest_project == 'client' || matrix.project.vitest_project == 'storybook') && 'src/client/**/*.{ts,tsx}' || matrix.project.vitest_project == 'server' && 'src/{server.ts,server/**/*.ts,server/**/*.tsx,middleware/**/*.ts,middleware/**/*.tsx,common/**/*.ts,common/**/*.tsx}' || '' }}
           MUTATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
-        run: pnpm run mutate:package
+        run: |
+          set -euo pipefail
+          mutation_sources=()
+          while IFS= read -r file; do
+            [[ -n "$file" && -f "$file" ]] || continue
+            relative_file=${file#"$MUTATION_PROJECT"/}
+            [[ "$relative_file" =~ \.(ts|tsx)$ && ! "$relative_file" =~ \.(test|spec|stories)\. && ! "$relative_file" =~ \.d\.ts$ ]] || continue
+            case "$MUTATION_VITEST_PROJECT:$relative_file" in
+              client:src/client/*|storybook:src/client/*|server:src/server.ts|server:src/server/*|server:src/middleware/*|server:src/common/*|'':src/*) ;;
+              *) continue ;;
+            esac
+            mutation_sources+=("$relative_file")
+          done < <(git diff --name-only "$MUTATION_BASE" -- "$MUTATION_PROJECT/src")
+
+          if ((${#mutation_sources[@]} == 0)); then
+            MUTATION_INCLUDE='__mutator_no_changed_sources__'
+          else
+            MUTATION_INCLUDE=$(printf '%s\n' "${mutation_sources[@]}" | jq -Rsc 'split("\n") | map(select(length > 0)) | if length == 1 then .[0] else "{" + join(",") + "}" end')
+          fi
+          MUTATION_CRITICAL=$MUTATION_INCLUDE
+          export MUTATION_INCLUDE MUTATION_CRITICAL
+          echo "Mutation sources: ${mutation_sources[*]:-(none)}"
+          pnpm run mutate:package
 
   web-build:
     needs: changes

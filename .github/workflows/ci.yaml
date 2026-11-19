@@ -37,6 +37,7 @@ jobs:
       schema: ${{ steps.all.outputs.on || steps.split.outputs.schema }}
       e2e: ${{ steps.all.outputs.on || steps.split.outputs.e2e }}
       github_actions_lint: ${{ steps.all.outputs.on || steps.split.outputs.github_actions_lint }}
+      mutation_projects: ${{ steps.all.outputs.projects || steps.mutation.outputs.projects || '[]' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -51,6 +52,7 @@ jobs:
         run: |
           if [[ "$GITHUB_REF" == 'refs/heads/main' ]] || git diff --name-only HEAD~1 HEAD | grep -qE '^\.github/'; then
             echo "on=true" >> "$GITHUB_OUTPUT"
+            echo 'projects=["packages/authentication","packages/datastore","packages/domain","packages/logger","packages/notification","packages/runtime","apps/cron","apps/web"]' >> "$GITHUB_OUTPUT"
           fi
 
       - name: デプロイ対象の検知
@@ -92,6 +94,29 @@ jobs:
             echo "github_actions_lint=$github_actions_lint"
           } >> "$GITHUB_OUTPUT"
           echo "client=$client server=$server schema=$schema e2e=$e2e github_actions_lint=$github_actions_lint"
+
+      - name: Mutation対象の検知
+        id: mutation
+        if: ${{ steps.all.outputs.on != 'true' }}
+        run: |
+          set -euo pipefail
+          files=$(git diff --name-only HEAD~1 HEAD | grep -vE '\.md$' || true)
+          changed() { grep -qE "$1" <<<"$files"; }
+          projects=()
+
+          if changed '^packages/|^[^/]+$'; then
+            projects=(packages/authentication packages/datastore packages/domain packages/logger packages/notification packages/runtime apps/cron apps/web)
+          else
+            if changed '^apps/cron/'; then projects+=(apps/cron); fi
+            if changed '^apps/web/'; then projects+=(apps/web); fi
+          fi
+
+          if ((${#projects[@]} == 0)); then
+            echo 'projects=[]' >> "$GITHUB_OUTPUT"
+          else
+            projects_json=$(printf '%s\n' "${projects[@]}" | jq -R . | jq -sc .)
+            echo "projects=$projects_json" >> "$GITHUB_OUTPUT"
+          fi
 
   github-actions-lint:
     needs: changes
@@ -196,6 +221,46 @@ jobs:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
       - name: Mutation testing
         run: pnpm run mutate:std
+
+  mutation-test-packages:
+    name: mutation-test (${{ matrix.project }})
+    needs: changes
+    if: ${{ needs.changes.outputs.cron == 'true' || needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.changes.outputs.mutation_projects) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Node.jsの構築
+        uses: ./.github/actions/setup_node
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+      - name: Playwrightブラウザのキャッシュ
+        if: ${{ matrix.project == 'apps/web' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Playwrightのセットアップ(キャッシュミス)
+        if: ${{ matrix.project == 'apps/web' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+        run: pnpm --filter @trend-diary/web exec playwright install chromium --with-deps
+      - name: Playwright依存のセットアップ(キャッシュヒット)
+        if: ${{ matrix.project == 'apps/web' && steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: pnpm --filter @trend-diary/web exec playwright install-deps chromium
+      - name: Mutation testing
+        env:
+          MUTATION_PROJECT: ${{ matrix.project }}
+          MUTATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: pnpm run mutate:package
 
   web-build:
     needs: changes
@@ -404,7 +469,7 @@ jobs:
 
   gate:
     if: ${{ !cancelled() }}
-    needs: [changes, github-actions-lint, code-quality, unit-test, mutation-test, web-build, client-test, server-test, component-test, schema, e2e]
+    needs: [changes, github-actions-lint, code-quality, unit-test, mutation-test, mutation-test-packages, web-build, client-test, server-test, component-test, schema, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

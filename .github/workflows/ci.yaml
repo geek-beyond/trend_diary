@@ -290,6 +290,13 @@ jobs:
         uses: ./.github/actions/setup_node
         with:
           node-version-file: ${{ env.NODE_VERSION_FILE }}
+      - name: Supabase Emulator のセットアップ
+        if: ${{ matrix.project.vitest_project == 'server' }}
+        uses: rin2yh/supa-emu@3aea79b6dda513da1e335562d80320bf78a4e8fc # v0.1.9
+        with:
+          version: v0.1.8
+          addr: 127.0.0.1:54321
+          webauthn-rp-id: 127.0.0.1
       - name: Playwrightブラウザのキャッシュ
         if: ${{ matrix.project.vitest_project == 'storybook' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -307,6 +314,8 @@ jobs:
         env:
           MUTATION_PROJECT: ${{ matrix.project.root }}
           MUTATION_VITEST_PROJECT: ${{ matrix.project.vitest_project || '' }}
+          MUTATION_INCLUDE: ${{ (matrix.project.vitest_project == 'client' || matrix.project.vitest_project == 'storybook') && 'src/client/**/*.{ts,tsx}' || matrix.project.vitest_project == 'server' && 'src/{server.ts,server/**/*.ts,server/**/*.tsx,middleware/**/*.ts,middleware/**/*.tsx,common/**/*.ts,common/**/*.tsx}' || '' }}
+          MUTATION_CRITICAL: ${{ (matrix.project.vitest_project == 'client' || matrix.project.vitest_project == 'storybook') && 'src/client/**/*.{ts,tsx}' || matrix.project.vitest_project == 'server' && 'src/{server.ts,server/**/*.ts,server/**/*.tsx,middleware/**/*.ts,middleware/**/*.tsx,common/**/*.ts,common/**/*.tsx}' || '' }}
           MUTATION_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
         run: pnpm run mutate:package
 

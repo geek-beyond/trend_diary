@@ -209,7 +209,7 @@ overrides:
   undici@>=7.0.0 <7.29.1: ^7.29.1
 
 patchedDependencies:
-  '@mizchi/mutator-vitest@0.2.0': ee93e19288ea9a159f95182ebcd9546eeac50e015554dbfa488986ad176ac213
+  '@mizchi/mutator-vitest@0.2.0': 18d1e6db4226ca52e190a24d010d6b509a56a10ef1673c94c4da91ffeecae6ee
 
 importers:
 
@@ -6417,7 +6417,7 @@ snapshots:
     dependencies:
       '@mizchi/mutator-core': 0.2.0
 
-  '@mizchi/mutator-vitest@0.2.0(patch_hash=ee93e19288ea9a159f95182ebcd9546eeac50e015554dbfa488986ad176ac213)(vitest@5.0.5)':
+  '@mizchi/mutator-vitest@0.2.0(patch_hash=18d1e6db4226ca52e190a24d010d6b509a56a10ef1673c94c4da91ffeecae6ee)(vitest@5.0.5)':
     dependencies:
       '@mizchi/mutator-core': 0.2.0
     optionalDependencies:
@@ -6429,7 +6429,7 @@ snapshots:
       '@mizchi/mutator-jest': 0.2.0
       '@mizchi/mutator-playwright': 0.2.0(@playwright/test@1.64.1)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
       '@mizchi/mutator-typecheck': 0.2.0
-      '@mizchi/mutator-vitest': 0.2.0(patch_hash=ee93e19288ea9a159f95182ebcd9546eeac50e015554dbfa488986ad176ac213)(vitest@5.0.5)
+      '@mizchi/mutator-vitest': 0.2.0(patch_hash=18d1e6db4226ca52e190a24d010d6b509a56a10ef1673c94c4da91ffeecae6ee)(vitest@5.0.5)
     transitivePeerDependencies:
       - '@playwright/test'
       - jest

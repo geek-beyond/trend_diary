@@ -18,6 +18,7 @@ const config: KnipConfig = {
         // Mutator と mutator.config.ts が動的に読む専用設定。
         'mutator.config.ts',
         'vitest.mutation.config.ts',
+        'vitest.mutation.server.config.ts',
       ],
       // ビルド後にのみ生成される react-router のサーバー出力。ビルド前は実体が無く常に未解決になる。
       ignoreUnresolved: ['../build/server'],

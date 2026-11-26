@@ -28,7 +28,7 @@ describe('DiscordWebhookClient', () => {
 
   describe('send', () => {
     describe('正常系', () => {
-      it('指定したペイロードをDiscord Webhookに送信する', async () => {
+      it('指定したペイロードをsignal付きで1回だけ送信する', async () => {
         const client = new DiscordWebhookClient(webhookUrl, createMockLogger())
         mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
 
@@ -52,26 +52,10 @@ describe('DiscordWebhookClient', () => {
             headers: { 'Content-Type': 'application/json' },
           }),
         )
+        expect(mockFetch).toHaveBeenCalledTimes(1)
+        expect(mockFetch.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
         const body = JSON.parse(mockFetch.mock.calls[0][1].body)
         expect(body).toEqual(payload)
-      })
-
-      it('送信が成功した場合はリトライしない', async () => {
-        const client = new DiscordWebhookClient(webhookUrl, createMockLogger(), noDelay)
-        mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
-
-        await client.send({ content: 'test' })
-
-        expect(mockFetch).toHaveBeenCalledTimes(1)
-      })
-
-      it('ハング防止のためAbortControllerのsignalを付与して送信する', async () => {
-        const client = new DiscordWebhookClient(webhookUrl, createMockLogger())
-        mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
-
-        await client.send({ content: 'test' })
-
-        expect(mockFetch.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
       })
     })
 
@@ -163,6 +147,8 @@ describe('DiscordWebhookClient', () => {
 
         await client.sendMessage('hello')
 
+        expect(mockFetch).toHaveBeenCalledTimes(1)
+        expect(mockFetch.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
         const body = JSON.parse(mockFetch.mock.calls[0][1].body)
         expect(body).toEqual({ content: 'hello' })
       })

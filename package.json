@@ -15,7 +15,8 @@
     "check:fix": "oxlint --fix && oxfmt",
     "supabase:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
     "supabase:status": "supabase status",
-    "supabase:stop": "supabase stop"
+    "supabase:stop": "supabase stop",
+    "mutate:audit": "node scripts/mutation/audit.mjs"
   },
   "devDependencies": {
     "@import-lint/cli": "0.1.10",

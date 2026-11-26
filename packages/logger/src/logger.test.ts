@@ -52,20 +52,13 @@ describe('Logger', () => {
     restore()
 
     const entries = parseLogObjects(logs)
-    expect(entries[0]).toMatchObject({ traceId: 'base', requestId: 'child', msg: 'child-msg' })
+    expect(entries[0]).toMatchObject({
+      traceId: 'base',
+      requestId: 'child',
+      msg: 'child-msg',
+      level: 'info',
+    })
     expect(entries[1]).toMatchObject({ traceId: 'base', msg: 'parent-msg' })
-  })
-
-  it('文字列メッセージでもコンテキストが出力される', async () => {
-    const logger = new Logger('debug')
-    const { logs, restore } = StdTestHelper.captureStdout(vi)
-
-    logger.with({ requestId: 'abc' }).info('hello world')
-
-    restore()
-
-    const [entry] = parseLogObjects(logs)
-    expect(entry).toMatchObject({ requestId: 'abc', msg: 'hello world', level: 'info' })
   })
 
   it('オブジェクトメッセージはコンテキストとマージされる', async () => {

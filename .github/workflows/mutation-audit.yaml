@@ -3,6 +3,7 @@ name: Mutation audit
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened]
     branches: [main]
     paths:
       - '.github/workflows/mutation-audit.yaml'

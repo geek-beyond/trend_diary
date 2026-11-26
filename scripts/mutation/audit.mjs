@@ -65,6 +65,10 @@ const args = [
   ...include.flatMap((glob) => ['--include', glob]),
   ...(config ? ['--config', resolve(config)] : []),
 ]
-const result = spawnSync('pnpm', args, { stdio: 'inherit' })
+// Vitestのprogrammatic APIはCLIと異なりNODE_ENVを設定しないため。
+const result = spawnSync('pnpm', args, {
+  stdio: 'inherit',
+  env: { ...process.env, NODE_ENV: 'test' },
+})
 if (result.error) console.error(result.error)
 process.exit(result.status ?? 1)

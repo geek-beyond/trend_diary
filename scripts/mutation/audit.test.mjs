@@ -12,7 +12,7 @@ function run(project, exitCode = 0) {
     const capture = join(dir, 'args.json')
     writeFileSync(
       join(dir, 'pnpm'),
-      `#!/usr/bin/env node\nrequire('node:fs').writeFileSync(process.env.AUDIT_CAPTURE, JSON.stringify(process.argv.slice(2))); process.exit(${exitCode})\n`,
+      `#!/usr/bin/env node\nrequire('node:fs').writeFileSync(process.env.AUDIT_CAPTURE, JSON.stringify({ args: process.argv.slice(2), nodeEnv: process.env.NODE_ENV })); process.exit(${exitCode})\n`,
       { mode: 0o755 },
     )
     const result = spawnSync(process.execPath, [script.pathname, project], {
@@ -24,7 +24,10 @@ function run(project, exitCode = 0) {
       },
       encoding: 'utf8',
     })
-    return { ...result, args: result.status === 1 ? [] : JSON.parse(readFileSync(capture, 'utf8')) }
+    return {
+      ...result,
+      ...(result.status === 1 ? { args: [] } : JSON.parse(readFileSync(capture, 'utf8'))),
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -43,8 +46,9 @@ test('共有7パッケージ・web両層・cronを差分指定なしの全件kil
     'web-server',
     'cron',
   ]) {
-    const { status, args } = run(project)
+    const { status, args, nodeEnv } = run(project)
     assert.equal(status, 0)
+    assert.equal(nodeEnv, 'test')
     assert.ok(args.includes('--full-dry-run'))
     assert.ok(args.includes('--kill-matrix'))
     assert.ok(!args.includes('--since'))

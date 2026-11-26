@@ -36,8 +36,9 @@ describe('mapToActiveUser', () => {
       expect(result.userId).toBe(rdbActiveUser.userId)
       expect(result.email).toBe(rdbActiveUser.email)
       expect(result.displayName).toBe(rdbActiveUser.displayName)
-      expect(result.createdAt).toEqual(rdbActiveUser.createdAt)
-      expect(result.updatedAt).toEqual(rdbActiveUser.updatedAt)
+      expect(result).not.toBe(rdbActiveUser)
+      expect(result.createdAt).toBe(rdbActiveUser.createdAt)
+      expect(result.updatedAt).toBe(rdbActiveUser.updatedAt)
     })
 
     it('最小限の必須フィールドのみでActiveUserインスタンスが正常生成されること', () => {
@@ -54,25 +55,6 @@ describe('mapToActiveUser', () => {
       expect(result.displayName).toBeNull()
       expect(result.createdAt).toEqual(rdbActiveUser.createdAt)
       expect(result.updatedAt).toEqual(rdbActiveUser.updatedAt)
-    })
-
-    it('結果オブジェクトがRDBオブジェクトとは独立したActiveUserインスタンスであること', () => {
-      const rdbActiveUser = createMockRdbActiveUser()
-
-      const result = mapToActiveUser(rdbActiveUser)
-
-      expect(result).not.toBe(rdbActiveUser)
-      expect(result).toBeDefined()
-
-      // Dateオブジェクトは同じ参照を持つ（mapperの実装仕様）
-      expect(result.createdAt).toBe(rdbActiveUser.createdAt)
-      expect(result.updatedAt).toBe(rdbActiveUser.updatedAt)
-
-      // プリミティブ値は値で比較される
-      expect(result.activeUserId).toBe(rdbActiveUser.activeUserId)
-      expect(result.userId).toBe(rdbActiveUser.userId)
-      expect(result.email).toBe(rdbActiveUser.email)
-      expect(result.displayName).toBe(rdbActiveUser.displayName)
     })
   })
 

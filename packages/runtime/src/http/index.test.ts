@@ -21,33 +21,21 @@ describe('fetchWithTimeout', () => {
     mockFetch.mockResolvedValue({ ok: true, status: 200 })
   })
 
-  it('指定したinputとinitでfetchを呼び出すこと', async () => {
-    await fetchWithTimeout('https://example.com', { method: 'POST' })
+  it('input・init・signalを渡し、timeoutMsを除いて元のResponseを返すこと', async () => {
+    const response = { ok: true, status: 200 }
+    mockFetch.mockResolvedValueOnce(response)
+
+    const result = await fetchWithTimeout('https://example.com', {
+      method: 'POST',
+      timeoutMs: 1000,
+    })
 
     expect(mockFetch).toHaveBeenCalledWith(
       'https://example.com',
       expect.objectContaining({ method: 'POST' }),
     )
-  })
-
-  it('ハング防止のためAbortSignalを付与すること', async () => {
-    await fetchWithTimeout('https://example.com')
-
     expect(mockFetch.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
-  })
-
-  it('timeoutMsにはfetchへ渡すinitを含めないこと', async () => {
-    await fetchWithTimeout('https://example.com', { method: 'GET', timeoutMs: 1000 })
-
     expect(mockFetch.mock.calls[0][1]).not.toHaveProperty('timeoutMs')
-  })
-
-  it('成功時はResponseをそのまま返すこと', async () => {
-    const response = { ok: true, status: 200 }
-    mockFetch.mockResolvedValueOnce(response)
-
-    const result = await fetchWithTimeout('https://example.com')
-
     expect(result).toBe(response)
   })
 

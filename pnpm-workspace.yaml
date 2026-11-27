@@ -3,9 +3,6 @@ packages:
   - 'packages/*'
   - 'e2e'
 
-patchedDependencies:
-  '@mizchi/mutator-vitest@0.2.0': .github/patches/mutator-vitest@0.2.0.patch
-
 # パッケージ間で共有する依存のバージョンを集中管理する。
 # 各パッケージでは "<dep>": "catalog:" と宣言してここのバージョンを参照する。
 catalog:
@@ -28,6 +25,16 @@ allowBuilds:
   workerd: false
 
 minimumReleaseAge: 4320
+# 指定された最新版だけを先行導入し、他の依存の待機期間を維持するため。
+minimumReleaseAgeExclude:
+  - '@mizchi/mutator@0.5.5'
+  - '@mizchi/mutator-bun@0.5.5'
+  - '@mizchi/mutator-core@0.5.5'
+  - '@mizchi/mutator-jest@0.5.5'
+  - '@mizchi/mutator-playwright@0.5.5'
+  - '@mizchi/mutator-typecheck@0.5.5'
+  - '@mizchi/mutator-vitest@0.5.5'
+  - '@mizchi/test-impact@0.5.5'
 
 overrides:
   '@esbuild-kit/core-utils>esbuild': ^0.25.0
@@ -35,3 +42,5 @@ overrides:
   glob: ^14.0.3
   sharp@<0.35.4: ^0.35.4
   undici@>=7.0.0 <7.29.1: ^7.29.1
+patchedDependencies:
+  '@mizchi/mutator-vitest@0.5.5': .github/patches/mutator-vitest@0.5.5.patch

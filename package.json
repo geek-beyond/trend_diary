@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@import-lint/cli": "0.1.10",
-    "@mizchi/mutator": "^0.2.0",
+    "@mizchi/mutator": "^0.5.5",
     "knip": "^6.43.0",
     "oxfmt": "^0.75.0",
     "oxlint": "^1.90.0",

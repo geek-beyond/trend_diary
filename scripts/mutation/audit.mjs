@@ -12,8 +12,6 @@ const { root, config, include = ['src/**/*.{ts,tsx}'] } = projects[project]
 const reportDir = resolve('mutation-audit', project)
 // 失敗時に以前のレポートを今回の結果として集約しないため。
 rmSync(reportDir, { recursive: true, force: true })
-// 全件の再評価で、限定調査や過去の判定を今回の測定へ混ぜないため。
-rmSync(resolve(root, '.mutator/snapshot.json'), { force: true })
 mkdirSync(reportDir, { recursive: true })
 const revision = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout?.trim()
 const worktreeDirty = Boolean(

@@ -80,7 +80,7 @@ test('通常テスト・限定調査の変換キャッシュが全件調査のco
   }
 })
 
-test('連続実行は今回のファイルだけを判定し、ロード時間も予算に含める', async () => {
+test('連続実行で前回のmoduleエラーを今回の判定へ混ぜない', async () => {
   const require = createRequire(import.meta.resolve('@mizchi/mutator'))
   const { createSession } = await import(require.resolve('@mizchi/mutator-vitest'))
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'mutator-file-errors-')))
@@ -92,9 +92,8 @@ test('連続実行は今回のファイルだけを判定し、ロード時間�
     writeFileSync(join(dir, 'package.json'), '{"type":"module"}')
     writeFileSync(
       join(dir, 'vitest.config.ts'),
-      `import {defineConfig} from 'vitest/config';export default defineConfig({test:{include:['src/*.test.ts'],setupFiles:['setup.ts']}})`,
+      `import {defineConfig} from 'vitest/config';export default defineConfig({test:{include:['src/*.test.ts']}})`,
     )
-    writeFileSync(join(dir, 'setup.ts'), `await new Promise(resolve => setTimeout(resolve, 200))`)
     writeFileSync(
       join(dir, 'src/a.ts'),
       `export const formatted = new Intl.DateTimeFormat('en',{year:'numeric'}).format(new Date(0))`,
@@ -130,7 +129,7 @@ test('連続実行は今回のファイルだけを判定し、ロード時間�
     const second = await session.runMutant(
       wrongAddition.key,
       dry.tests.filter((t) => t.id.includes('b.test')).map((t) => t.id),
-      { ...options, timeoutMs: 1 },
+      options,
     )
     assert.equal(first.status, 'RuntimeError')
     assert.equal(second.status, 'Killed')

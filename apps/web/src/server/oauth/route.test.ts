@@ -7,7 +7,7 @@ describe('OAuthプロバイダのparam検証', () => {
     it.each([
       { name: 'login', path: '/api/oauth/google/login' },
       { name: 'callback', path: '/api/oauth/google/callback' },
-    ])('未対応プロバイダの$name は422を返す', async ({ path }) => {
+    ])('未対応プロバイダの$nameは422を返す', async ({ path }) => {
       const res = await apiRequest(path)
 
       expect(res.status).toBe(422)

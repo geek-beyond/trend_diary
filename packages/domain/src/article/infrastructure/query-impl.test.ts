@@ -648,7 +648,7 @@ describe('QueryImpl', () => {
       { name: 'fromDateJstが不正', from: 'invalid', to: '2026-03-08', invalid: 'invalid' },
       // toDateJstが不正だと辞書順比較で常にcurrentより大きく、Date上限まで巨大ループになるのを防ぐ
       { name: 'toDateJstが不正', from: '2026-03-06', to: 'invalid', invalid: 'invalid' },
-    ])('$name な場合は契約違反として送出する', ({ from, to, invalid }) => {
+    ])('$nameな場合は契約違反として送出する', ({ from, to, invalid }) => {
       expect(() => dateRangeEnumerator.enumerateJstDateRange(from, to)).toThrow(
         `enumerateJstDateRange received an invalid date string: ${invalid}`,
       )

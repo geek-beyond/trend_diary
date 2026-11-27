@@ -10,7 +10,7 @@ describe('resolveLoginRedirectTarget', () => {
         input: '/settings#security',
         expected: '/settings#security',
       },
-    ])('$outline はそのまま返す', ({ input, expected }) => {
+    ])('$outlineはそのまま返す', ({ input, expected }) => {
       expect(resolveLoginRedirectTarget(input)).toBe(expected)
     })
   })
@@ -30,7 +30,7 @@ describe('resolveLoginRedirectTarget', () => {
       { outline: 'ログイン画面自身', input: '/login' },
       { outline: 'クエリ付きのログイン画面自身', input: '/login?foo=bar' },
       { outline: '新規登録画面', input: '/signup' },
-    ])('$outline はundefinedを返す', ({ input }) => {
+    ])('$outlineはundefinedを返す', ({ input }) => {
       expect(resolveLoginRedirectTarget(input)).toBeUndefined()
     })
   })

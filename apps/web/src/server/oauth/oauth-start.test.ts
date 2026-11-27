@@ -90,7 +90,7 @@ describe('createOAuthStartHandler', () => {
     })
 
     it.each([{ flow: OAUTH_FLOW.login }, { flow: OAUTH_FLOW.link }])(
-      'フロー種別Cookieに$flow をOAuthスコープ限定で保存すること',
+      'フロー種別Cookieに$flowをOAuthスコープ限定で保存すること',
       async ({ flow }) => {
         const handler = createOAuthStartHandler({ ...baseConfig(ok({ url: AUTHORIZE_URL })), flow })
 

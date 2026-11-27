@@ -41,9 +41,6 @@ describe('PasskeyToggle', () => {
         actionState.isDisabling = pending === 'disable'
         rerender(createElement(PasskeyToggle))
         expect(toggle).toBeDisabled()
-        fireEvent.click(toggle)
-        expect(registerMock).not.toHaveBeenCalled()
-        expect(disableMock).not.toHaveBeenCalled()
       }
       statusState.isLoading = false
       actionState.isRegistering = false

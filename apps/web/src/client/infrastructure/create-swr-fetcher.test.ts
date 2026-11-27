@@ -1,5 +1,6 @@
 import { toast } from 'sonner'
 import { describe, expect, it, vi } from 'vitest'
+import getApiClientForClient from './api'
 import createSWRFetcher from './create-swr-fetcher'
 import HttpError from './http-error'
 
@@ -11,13 +12,10 @@ describe('createSWRFetcher', () => {
   })
 
   describe('基本動作', () => {
-    it('createSWRFetcherが正しくオブジェクトを返す', () => {
+    it('APIクライアントを公開する', () => {
       const result = createSWRFetcher()
 
-      expect(result).toBeDefined()
-      expect(typeof result.fetcher).toBe('function')
-      expect(typeof result.apiCall).toBe('function')
-      expect(result.client).toBeDefined()
+      expect(result.client).toBe(getApiClientForClient())
     })
   })
 

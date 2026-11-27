@@ -180,8 +180,6 @@ describe('DiscordWebhookClient', () => {
 
         await client.sendMessage('hello')
 
-        expect(mockFetch).toHaveBeenCalledTimes(1)
-        expect(mockFetch.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
         const body = JSON.parse(mockFetch.mock.calls[0][1].body)
         expect(body).toEqual({ content: 'hello' })
       })

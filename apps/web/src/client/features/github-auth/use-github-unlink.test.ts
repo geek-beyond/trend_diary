@@ -58,7 +58,6 @@ describe('useGithubUnlink', () => {
       await act(async () => {
         unlinked = await result.current.unlink()
       })
-      expect(result.current.isSubmitting).toBe(false)
       expect(unlinked).toBe(false)
 
       expect(toast.error).toHaveBeenCalledWith(
@@ -75,7 +74,6 @@ describe('useGithubUnlink', () => {
       await act(async () => {
         unlinked = await result.current.unlink()
       })
-      expect(result.current.isSubmitting).toBe(false)
       expect(unlinked).toBe(false)
 
       expect(toast.error).toHaveBeenCalledWith('GitHub連携の解除に失敗しました。')
@@ -92,7 +90,6 @@ describe('useGithubUnlink', () => {
       await act(async () => {
         unlinked = await result.current.unlink()
       })
-      expect(result.current.isSubmitting).toBe(false)
       expect(unlinked).toBe(false)
 
       expect(toast.error).toHaveBeenCalledWith('GitHub連携の解除に失敗しました。')

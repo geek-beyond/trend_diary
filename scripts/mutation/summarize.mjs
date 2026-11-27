@@ -33,7 +33,7 @@ function reportCounts(report) {
     duplicates: killMatrix.duplicates.length,
     subsumed: killMatrix.subsumed.length,
     noKills: killMatrix.noKills.length,
-    timeout: count('Timeout'),
+    timeout: Math.max(count('Timeout'), killMatrix.mutants?.timeout ?? 0),
     warning: report.warnings?.length ?? 0,
     incomplete: Math.max(
       killMatrix.mutants?.incomplete ?? 0,

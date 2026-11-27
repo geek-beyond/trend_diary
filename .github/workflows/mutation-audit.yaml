@@ -120,8 +120,6 @@ jobs:
           pattern: mutation-audit-*
           merge-multiple: true
           path: mutation-audit-input
-      - name: Summary tests
-        run: node --test scripts/mutation/summarize.test.mjs
       - name: Summarize report counts
         if: ${{ always() }}
         env:

@@ -10,7 +10,7 @@ description: ミューテーションテストの結果を全件調査し、不�
 ## 全件を取得して判断する
 
 1. まず既存artifactとローカル結果から全対象の調査結果を取得する。結果がない対象や変更の影響を受ける対象は、ローカルで mutatorのCLI を実行する。修正のたびに全10対象を再実行しない。CIの全件調査は初回、大きなテスト整理、計測設定の変更など、全体の比較が必要な節目にまとめて使う。`node scripts/mutation/summarize.mjs <取得先>` で集約する。Job Summaryの抜粋やログの末尾だけで調査範囲を決めない。全対象の `mutation.json` を読み、対象欠落・古い実行結果・調査未完了を0件と混同しない。
-2. survived、noCoverage、duplicates、subsumed、noKills、timeout、incompleteを分け、元JSONの変異ID・ファイル位置、関係するテストを確認する。timeoutやmoduleロード失敗はテスト単位の比較が成立した証拠にはならない。
+2. survived、noCoverage、duplicates、subsumed、noKills、timeout、incomplete、warningを分け、元JSONの変異ID・ファイル位置、関係するテストを確認する。timeoutやmoduleロード失敗はテスト単位の比較が成立した証拠にはならない。
 3. 各項目について実装・テスト・仕様・呼び出し側を読む。同じ原因の項目はまとめて調査してよいが、PRコメントでの判断は全検出項目を対象とする。根拠なしに分類単位で一括承認しない。
 4. survivedでは不要な実装の削除・条件の簡略化を先に検討する。必要な仕様の検証が欠けている場合にテストを改善する。warningを消すためだけにテストを増やさない。
 5. duplicates・subsumedでは入力と期待値を比較し、重複した検証を削減する。ケース単位だけでなく、同じ責務のアサーションを複数ケース・レイヤーで繰り返していないか確認する。未検証の仕様や期待値の具体化は残し、共通処理の詳細な契約は担当するテストへ集約する。別APIや独立した分岐の検証は、書式が同じだけでは削除しない。kill setの一致だけでは固有の仕様が不要になったとは判断できない。nullと空文字列、成功と失敗、異なるAPIの契約などを残す必要がある場合は理由を記録する。
@@ -49,7 +49,7 @@ JSON・HTMLの出力先は `mutation-audit/<対象>/`。対象別artifactには�
 ## 集約と判断記録の形式
 
 - レポート欠落・形式不正は「—」、有効な計測で検出がない場合は0件。`partial` は未完了や旧コミットの結果を含む。`complete` は計測の状態であり、判断完了を意味しない。
-- survived・noCoverage・timeoutは変異数、duplicatesはテスト群数、subsumed・noKillsはテスト数。incompleteは未比較変異や実行警告の件数。
+- survived・noCoverage・timeoutは変異数、duplicatesはテスト群数、subsumed・noKillsはテスト数。incompleteは未比較変異数、warningは元JSONのwarningsの件数。両者は別々に集計する。
 - 元JSONのfilesにはsource・location・変異ID・killedByがあり、killMatrixにはテストIDがある。変異の内容やkill setは必要な際にこれらを参照する。独自の検出IDは生成しない。
 - 共通の根拠はPRコメントでまとめてよいが、該当する全変異ID・テストIDと計測コミット・artifactを明示する。修正後は対応状況と未対応理由を追記する。元JSONは検出結果を示すものであり、判断完了を自動判定しない。
 - timeout・incompleteの理由を判断しても、未実施の比較が完了したことにはならない。

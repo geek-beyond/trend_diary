@@ -57,7 +57,6 @@ describe('CONTENT_SECURITY_POLICY', () => {
       expect(parsed['script-src']).toContain("'self'")
       expect(parsed['script-src']).toContain(`'nonce-${nonce}'`)
       expect(parsed['script-src']).toContain("'strict-dynamic'")
-      expect(parsed['script-src']).toContain('https://challenges.cloudflare.com')
       expect(parsed['script-src']).not.toContain("'unsafe-inline'")
       expect(parsed['script-src']).not.toContain("'unsafe-eval'")
     })

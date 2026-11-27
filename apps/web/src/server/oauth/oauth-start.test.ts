@@ -99,10 +99,19 @@ describe('createOAuthStartHandler', () => {
 
         const flowCookie = findSetCookie(setCookies, 'oauth_flow=')
         expect(flowCookie).toContain(`oauth_flow=${flow}`)
-        expect(flowCookie).toContain('Path=/api/oauth')
-        expect(flowCookie).toContain('HttpOnly')
       },
     )
+
+    it('フローCookieにOAuth限定のパスとセキュリティ属性を付ける', async () => {
+      const handler = createOAuthStartHandler(baseConfig(ok({ url: AUTHORIZE_URL })))
+      const { c, setCookies } = buildContext()
+      await handler(c)
+      const flowCookie = findSetCookie(setCookies, 'oauth_flow=')
+      expect(flowCookie).toContain('Path=/api/oauth')
+      expect(flowCookie).toContain('HttpOnly')
+      expect(flowCookie).toContain('Secure')
+      expect(flowCookie).toContain('SameSite=Lax')
+    })
 
     // 戻り先Cookieの保存/クリアはフローごとの仕様のため、各ハンドラーのテストで検証する
     it('戻り先Cookieの制御を設定に委譲してコンテキストを渡すこと', async () => {

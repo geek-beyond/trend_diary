@@ -72,16 +72,27 @@ describe('InboxPage', () => {
     expect(screen.queryByText('未読記事はありません')).not.toBeInTheDocument()
   })
 
-  it('未読記事があるとタイトル・著者・本文と操作ボタンを表示する', () => {
-    renderInboxPage(buildProps({ article: buildArticle(), remainingCount: 1 }))
+  it.each([
+    { media: 'qiita' as const, expected: '<p>テスト記事の説明文です &amp; 続き</p>' },
+    { media: 'hatena' as const, expected: 'テスト記事の説明文です & 続き' },
+  ])(
+    '$media の未読記事を表示し、はてなのRSS本文だけHTMLから可視テキストへ変換する',
+    ({ media, expected }) => {
+      renderInboxPage(
+        buildProps({
+          article: buildArticle({ media, description: '<p>テスト記事の説明文です &amp; 続き</p>' }),
+          remainingCount: 1,
+        }),
+      )
 
-    expect(screen.getByText('テスト記事タイトル')).toBeInTheDocument()
-    expect(screen.getByText('著者: テスト著者')).toBeInTheDocument()
-    expect(screen.getByText('テスト記事の説明文です')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'スキップ' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '読む' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '後で' })).toBeInTheDocument()
-  })
+      expect(screen.getByText('テスト記事タイトル')).toBeInTheDocument()
+      expect(screen.getByText('著者: テスト著者')).toBeInTheDocument()
+      expect(screen.getByText(expected)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'スキップ' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '読む' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '後で' })).toBeInTheDocument()
+    },
+  )
 
   it('取得エラー時は本文を表示しない（エラーの案内と再試行はトーストに集約する）', () => {
     renderInboxPage(buildProps({ hasError: true, remainingCount: 3 }))

@@ -1,19 +1,21 @@
 import { toast } from 'sonner'
 import { describe, expect, it, vi } from 'vitest'
+import getApiClientForClient from './api'
 import createSWRFetcher from './create-swr-fetcher'
 import HttpError from './http-error'
 
 global.fetch = vi.fn()
 
 describe('createSWRFetcher', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('基本動作', () => {
-    it('createSWRFetcherが正しくオブジェクトを返す', () => {
+    it('APIクライアントを公開する', () => {
       const result = createSWRFetcher()
 
-      expect(result).toBeDefined()
-      expect(typeof result.fetcher).toBe('function')
-      expect(typeof result.apiCall).toBe('function')
-      expect(result.client).toBeDefined()
+      expect(result.client).toBe(getApiClientForClient())
     })
   })
 
@@ -54,6 +56,10 @@ describe('createSWRFetcher', () => {
       const promise = fetcher('http://example.com/api')
       await expect(promise).rejects.toBeInstanceOf(HttpError)
       await expect(promise).rejects.toHaveProperty('status', 404)
+      expect(toast.error).not.toHaveBeenCalledWith(
+        'セッションの有効期限が切れました。再度ログインしてください。',
+        { id: 'session-expired' },
+      )
     })
 
     it('401の場合はセッション切れの案内トーストを表示する', async () => {
@@ -91,53 +97,13 @@ describe('createSWRFetcher', () => {
       expect(result).toEqual({ data: 'typed' })
     })
 
-    describe('正常なレスポンス(200番台)', () => {
-      const testCases: Array<{
-        outline: string
-        status: number
-        json: object | null
-        expected: object | null
-        expect: string
-      }> = [
-        {
-          outline: '204 OKの場合 (JSONが含まれていない)',
-          status: 204,
-          json: null,
-          expected: null,
-          expect: 'nullを返す',
-        },
-        {
-          outline: '204 OKの場合 (JSONが含まれている)',
-          status: 204,
-          json: { dummy: 'data' },
-          expected: null,
-          expect: 'nullを返す',
-        },
-        {
-          outline: '204 以外の場合',
-          status: 200,
-          json: { success: true },
-          expected: { success: true },
-          expect: 'JSONデータを返す',
-        },
-      ]
-
-      testCases.forEach((testCase) => {
-        it(`${testCase.outline}-${testCase.expect}`, async () => {
-          const mockResponse = {
-            ok: true,
-            status: testCase.status,
-            json: vi.fn().mockResolvedValue(testCase.json),
-          }
-          const mockApiFunction = vi.fn().mockResolvedValue(mockResponse)
-
-          const { apiCall } = createSWRFetcher()
-          const result = await apiCall(mockApiFunction)
-
-          expect(mockApiFunction).toHaveBeenCalled()
-          expect(result).toEqual(testCase.expected)
-        })
-      })
+    it('204ではJSON解析を呼ばずnullを返す', async () => {
+      const json = vi.fn().mockRejectedValue(new SyntaxError('Unexpected end of JSON input'))
+      const request = vi.fn().mockResolvedValue({ ok: true, status: 204, json })
+      const { apiCall } = createSWRFetcher()
+      expect(await apiCall(request)).toBeNull()
+      expect(request).toHaveBeenCalledOnce()
+      expect(json).not.toHaveBeenCalled()
     })
 
     it('エラーレスポンスで例外を投げる', async () => {

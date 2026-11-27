@@ -16,6 +16,7 @@ describe('ActiveUserスキーマ', () => {
 
       const result = activeUserSchema.safeParse(validData)
       expect(result.success).toBe(true)
+      expect(result.data).toEqual(validData)
     })
 
     it('有効なActiveUserInputを検証できる', () => {
@@ -26,6 +27,7 @@ describe('ActiveUserスキーマ', () => {
 
       const result = activeUserInputSchema.safeParse(validInput)
       expect(result.success).toBe(true)
+      expect(result.data).toEqual(validInput)
     })
 
     it('displayNameがnullでも検証に成功する', () => {
@@ -36,6 +38,7 @@ describe('ActiveUserスキーマ', () => {
 
       const result = activeUserInputSchema.safeParse(validInput)
       expect(result.success).toBe(true)
+      expect(result.data).toEqual(validInput)
     })
   })
 

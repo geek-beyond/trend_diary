@@ -1,0 +1,36 @@
+diff --git a/dist/session.js b/dist/session.js
+--- a/dist/session.js
++++ b/dist/session.js
+@@ -71 +71,4 @@
+-        return vitest.runTestSpecifications(specs);
++        const result = await vitest.runTestSpecifications(specs);
++        // Vitest retains earlier module errors; only this run's files belong to its verdict.
++        const selected = new Set(specs.map((spec) => spec.moduleId));
++        return { ...result, testModules: result.testModules.filter((module) => selected.has(module.moduleId)) };
+@@ -205 +208 @@
+-        pool: options.pool ?? 'forks',
++        ...(options.pool ? { pool: options.pool } : {}),
+@@ -245,0 +249,5 @@
++    // Custom pools must drain in-flight RPC before disposing their transport.
++    if (vitest.projects.some((project) => !['threads', 'forks', 'vmThreads', 'vmForks'].includes(project.config.pool))) {
++        await within(10000, vitest.close());
++        return;
++    }
+diff --git a/src/session.ts b/src/session.ts
+--- a/src/session.ts
++++ b/src/session.ts
+@@ -107 +107,4 @@
+-    return vitest.runTestSpecifications(specs);
++    const result = await vitest.runTestSpecifications(specs);
++    // Vitest retains earlier module errors; only this run's files belong to its verdict.
++    const selected = new Set(specs.map((spec) => spec.moduleId));
++    return { ...result, testModules: result.testModules.filter((module) => selected.has(module.moduleId)) };
+@@ -244 +247 @@
+-      pool: options.pool ?? 'forks',
++      ...(options.pool ? { pool: options.pool } : {}),
+@@ -283,0 +287,5 @@
++  // Custom pools must drain in-flight RPC before disposing their transport.
++  if (vitest.projects.some((project) => !['threads', 'forks', 'vmThreads', 'vmForks'].includes(project.config.pool))) {
++    await within(10000, vitest.close());
++    return;
++  }

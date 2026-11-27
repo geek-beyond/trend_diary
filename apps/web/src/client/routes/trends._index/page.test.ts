@@ -64,12 +64,14 @@ describe('TrendsPage', () => {
           articles: [buildArticle()],
           isStale: true,
           isUpdating: true,
+          hasError: true,
           page: 2,
           totalPages: 3,
         }),
       ),
     )
     expect(screen.getByRole('status')).toHaveTextContent('変更前の条件・ページの結果')
+    expect(screen.getByRole('status')).not.toHaveTextContent('更新に失敗しました')
     expect(screen.getByText('テスト記事タイトル')).toBeInTheDocument()
     expect(screen.getByText('ページ 2 / 3')).toBeInTheDocument()
     expect(screen.getByText('ページ 2 / 3').closest('[inert]')).not.toBeNull()
@@ -102,6 +104,7 @@ describe('TrendsPage', () => {
 
     expect(screen.getByText('テスト記事タイトル')).toBeInTheDocument()
     expect(screen.getByText('ページ 1 / 2')).toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
     expect(screen.queryByRole('status', { name: '記事を読み込み中' })).not.toBeInTheDocument()
   })
 
@@ -198,6 +201,7 @@ describe('TrendsPage', () => {
 
     it('次へを押すと既定挙動を抑止して次ページへ SPA 遷移する', () => {
       const toNextPage = vi.fn()
+      const scrollCallsBefore = vi.mocked(window.scrollTo).mock.calls.length
       render(
         createElement(
           TrendsPage,
@@ -210,11 +214,14 @@ describe('TrendsPage', () => {
       fireEvent(nextLink, clickEvent)
 
       expect(toNextPage).toHaveBeenCalledWith(1)
+      expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
+      expect(window.scrollTo).toHaveBeenCalledTimes(scrollCallsBefore + 1)
       expect(clickEvent.defaultPrevented).toBe(true)
     })
 
     it('前へを押すと既定挙動を抑止して前ページへ SPA 遷移する', () => {
       const toPreviousPage = vi.fn()
+      const scrollCallsBefore = vi.mocked(window.scrollTo).mock.calls.length
       render(
         createElement(
           TrendsPage,
@@ -227,28 +234,42 @@ describe('TrendsPage', () => {
       fireEvent(prevLink, clickEvent)
 
       expect(toPreviousPage).toHaveBeenCalledWith(2)
+      expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
+      expect(window.scrollTo).toHaveBeenCalledTimes(scrollCallsBefore + 1)
       expect(clickEvent.defaultPrevented).toBe(true)
     })
 
-    it('修飾キー付きクリックはブラウザ標準挙動に任せ SPA 遷移へ差し替えない', () => {
+    it.each([
+      { name: '修飾キー付きクリック', options: { metaKey: true } },
+      { name: '中ボタンクリック', options: { button: 1 } },
+    ])('$name はブラウザ標準挙動に任せ SPA 遷移へ差し替えない', ({ options }) => {
       const toNextPage = vi.fn()
+      const toPreviousPage = vi.fn()
       render(
         createElement(
           TrendsPage,
-          buildProps({ articles: [buildArticle()], page: 1, totalPages: 3, toNextPage }),
+          buildProps({
+            articles: [buildArticle()],
+            page: 2,
+            totalPages: 3,
+            toNextPage,
+            toPreviousPage,
+          }),
         ),
       )
 
-      const nextLink = screen.getByRole('link', { name: 'Go to next page' })
-      const clickEvent = new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        metaKey: true,
-      })
-      fireEvent(nextLink, clickEvent)
-
+      for (const name of ['Go to next page', 'Go to previous page']) {
+        const link = screen.getByRole('link', { name })
+        const clickEvent = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          ...options,
+        })
+        fireEvent(link, clickEvent)
+        expect(clickEvent.defaultPrevented).toBe(false)
+      }
       expect(toNextPage).not.toHaveBeenCalled()
-      expect(clickEvent.defaultPrevented).toBe(false)
+      expect(toPreviousPage).not.toHaveBeenCalled()
     })
   })
 })

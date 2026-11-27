@@ -27,10 +27,6 @@ export const articleWithReadStatusSchema = articleSchema.extend({
   isRead: z.boolean(),
 })
 
-export const articleWithOptionalReadStatusSchema = articleSchema.extend({
-  isRead: z.boolean().optional(),
-})
-
 // 未読消化は1件ずつ消化するため一覧はLIMITで分割取得する。
 // 残件表示と「全消化したか」の判定にはバッチ件数ではなく未読総数が要るため併せて返す
 export interface UnreadDigestionResult {
@@ -43,7 +39,5 @@ export type ArticleInput = Omit<z.infer<typeof articleSchema>, 'articleId' | 'cr
 export type ArticleOutput = z.output<typeof articleSchema>
 export type ArticleWithReadStatus = z.infer<typeof articleWithReadStatusSchema>
 export type ArticleWithReadStatusOutput = z.output<typeof articleWithReadStatusSchema>
-export type ArticleWithOptionalReadStatus = z.infer<typeof articleWithOptionalReadStatusSchema>
-export type ArticleWithOptionalReadStatusOutput = z.output<
-  typeof articleWithOptionalReadStatusSchema
->
+export type ArticleWithOptionalReadStatus = Article & { isRead?: boolean | undefined }
+export type ArticleWithOptionalReadStatusOutput = ArticleWithOptionalReadStatus

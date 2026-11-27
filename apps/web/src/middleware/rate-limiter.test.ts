@@ -1,49 +1,65 @@
+import Logger from '@trend-diary/logger'
 import type { Env } from '@/env'
+import serverApp from '@/server'
 import TEST_ENV from '@/test/env'
-import { apiRequest } from '@/test/helper/request'
 
 // limit()の結果を制御してレートリミットの挙動を検証する
 function buildEnv(success: boolean): Env['Bindings'] {
   return {
     ...TEST_ENV,
     AUTH_RATE_LIMITER: {
-      limit: async () => ({ success }),
+      limit: vi.fn(async () => ({ success })),
     },
   }
 }
 
 // limit()が例外をスローする障害時を再現する
-function buildErrorEnv(): Env['Bindings'] {
+function buildErrorEnv(error: Error): Env['Bindings'] {
   return {
     ...TEST_ENV,
     AUTH_RATE_LIMITER: {
       limit: async () => {
-        throw new Error('rate limiter unavailable')
+        throw error
       },
     },
   }
 }
 
-function requestAuth(path: string, env: Env['Bindings']) {
-  return apiRequest(path, {
-    method: 'POST',
-    json: { email: 'rate-limit-test@example.com', password: 'Test@password123' },
+function requestAuth(path: string, env: Env['Bindings'], ip?: string) {
+  const headers = new Headers({ 'Content-Type': 'application/json' })
+  if (ip) headers.set('CF-Connecting-IP', ip)
+  return serverApp.request(
+    path,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ email: 'invalid-email', password: 'short' }),
+    },
     env,
-  })
+  )
 }
 
 describe('レートリミットミドルウェア', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   describe('正常系', () => {
-    // 後続のログイン処理で401となるが、ここでは制限されず429にならないことを確認する
+    // 認証サービスの状態に依存せず、後続の入力検証まで到達したことを判別するため不正入力を使う。
     const testCases: Array<{ name: string; env: Env['Bindings'] }> = [
       { name: '制限内なら後続処理に進む', env: buildEnv(true) },
       { name: 'バインディング未設定ならスキップする', env: TEST_ENV },
     ]
 
     testCases.forEach(({ name, env }) => {
-      it(`${name}（429にならない）`, async () => {
-        const res = await requestAuth('/api/sessions', env)
-        expect(res.status).not.toBe(429)
+      it(`${name}（入力検証の422まで進む）`, async () => {
+        const res = await requestAuth('/api/sessions', env, '203.0.113.8')
+        expect(res.status).toBe(422)
+        if (env.AUTH_RATE_LIMITER) {
+          expect(env.AUTH_RATE_LIMITER.limit).toHaveBeenCalledWith({
+            key: '/api/sessions:203.0.113.8',
+          })
+        }
       })
     })
   })
@@ -56,8 +72,10 @@ describe('レートリミットミドルウェア', () => {
 
     testCases.forEach(({ name, path }) => {
       it(`${name} は制限超過時に429を返す`, async () => {
-        const res = await requestAuth(path, buildEnv(false))
+        const env = buildEnv(false)
+        const res = await requestAuth(path, env)
         expect(res.status).toBe(429)
+        expect(env.AUTH_RATE_LIMITER?.limit).toHaveBeenCalledWith({ key: `${path}:unknown` })
       })
     })
   })
@@ -71,8 +89,18 @@ describe('レートリミットミドルウェア', () => {
 
     testCases.forEach(({ name, path }) => {
       it(`${name} はレートリミッター障害時にフェイルセーフで503を返す`, async () => {
-        const res = await requestAuth(path, buildErrorEnv())
+        const failure = new Error('rate limiter unavailable')
+        const errorLog = vi.spyOn(Logger.prototype, 'error')
+        const res = await requestAuth(path, buildErrorEnv(failure))
         expect(res.status).toBe(503)
+        expect(errorLog).toHaveBeenCalledWith(
+          expect.objectContaining({ event: 'rate_limiter_fail_closed', path }),
+          failure,
+        )
+        expect(errorLog).toHaveBeenCalledWith(
+          expect.objectContaining({ status: 503 }),
+          expect.objectContaining({ cause: failure }),
+        )
       })
     })
   })

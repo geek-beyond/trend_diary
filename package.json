@@ -7,7 +7,7 @@
     "lint": "oxlint && oxfmt --check && import-lint && pnpm -r typecheck",
     "test:observability": "node --test scripts/observability.test.mjs",
     "mutate:std": "mutator --root packages/std --config packages/std/vitest.config.ts --include 'src/**/*.ts' --no-typecheck --threshold-break 80",
-    "mutate:package": "mutator --root \"$MUTATION_PROJECT\" --exclude '**/*.stories.*' --no-typecheck --since \"$MUTATION_BASE\" --critical 'src/**/*.{ts,tsx}'",
+    "mutate:package": "mutator --root \"$MUTATION_PROJECT\" --exclude '**/*.stories.*' --exclude '**/test*/**' --no-typecheck --since \"$MUTATION_BASE\" --critical 'src/**/*.{ts,tsx}'",
     "import-lint": "import-lint",
     "knip": "knip",
     "similarity": "similarity-ts apps packages --no-types --threshold 0.9 --exclude '**/components/shadcn/**' --exclude '**/components/customized/**' --exclude '**/migrations/**' --fail-on-duplicates",
@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@import-lint/cli": "0.1.10",
-    "@mizchi/mutator": "^0.2.0",
+    "@mizchi/mutator": "^0.5.5",
     "knip": "^6.43.0",
     "oxfmt": "^0.75.0",
     "oxlint": "^1.90.0",

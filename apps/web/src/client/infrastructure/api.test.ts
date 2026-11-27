@@ -1,50 +1,32 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import getApiClient from '@/infrastructure/api'
 
-describe('api', () => {
-  describe('getApiClientForClient', () => {
-    it('ブラウザ環境でAPIクライアントを取得できる', async () => {
-      // ブラウザ環境をモック
-      Object.defineProperty(global, 'document', {
-        value: {},
-        writable: true,
-      })
-      Object.defineProperty(global, 'window', {
-        value: {
-          location: {
-            protocol: 'https:',
-            host: 'example.com',
-          },
-        },
-        writable: true,
-      })
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.resetModules()
+})
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
-      // モジュールを動的にインポートしてブラウザ環境の条件を適用
-      const { default: getApiClientForClient } = await import('./api')
-      const result = getApiClientForClient()
+describe('APIクライアントの生成', () => {
+  it('ブラウザでは同じオリジンを使い、繰り返し取得しても同じクライアントを返す', async () => {
+    vi.stubGlobal('window', { location: { protocol: 'https:', host: 'example.com' } })
+    const { default: getApiClientForClient } = await import('./api')
 
-      expect(result).toBeDefined()
-    })
+    const client = getApiClientForClient()
 
-    it('サーバー環境でAPIクライアントを取得できる', async () => {
-      // サーバー環境をモック（documentが存在しない）
-      Object.defineProperty(global, 'document', {
-        value: undefined,
-        writable: true,
-      })
+    expect(client).toBeDefined()
+    expect(getApiClientForClient()).toBe(client)
+    expect(getApiClient).toHaveBeenCalledExactlyOnceWith('https://example.com')
+  })
 
-      // モジュールを再インポート
-      vi.resetModules()
-      const { default: getApiClientForClient } = await import('./api')
-      const result = getApiClientForClient()
+  it('サーバーではブラウザのオリジンを参照せず、空の基底URLでクライアントを生成する', async () => {
+    vi.stubGlobal('document', undefined)
+    vi.stubGlobal('window', undefined)
+    const { default: getApiClientForClient } = await import('./api')
 
-      expect(result).toBeDefined()
-    })
-
-    it('関数が呼び出し可能である', async () => {
-      const { default: getApiClientForClient } = await import('./api')
-
-      expect(() => getApiClientForClient()).not.toThrow()
-      expect(typeof getApiClientForClient).toBe('function')
-    })
+    expect(getApiClientForClient()).toBeDefined()
+    expect(getApiClient).toHaveBeenCalledExactlyOnceWith('')
   })
 })

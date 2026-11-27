@@ -351,13 +351,19 @@ describe('GET /api/articles 既読情報', () => {
     expect(data.data.map((article) => article.title)).toEqual(['未読記事', '既読記事'])
   })
 
-  it('ログイン時にread_status=0を指定すると未読記事のみ返る', async () => {
-    const res = await requestGetArticles('read_status=0', authCookies)
+  it.each([
+    { status: '0', title: '未読記事', isRead: false },
+    { status: '1', title: '既読記事', isRead: true },
+  ])(
+    'ログイン時のread_status=$status で指定した既読状態の記事だけ返す',
+    async ({ status, title, isRead }) => {
+      const res = await requestGetArticles(`read_status=${status}`, authCookies)
 
-    expect(res.status).toBe(200)
-    const data: { data: ArticleWithReadStatusResponse[] } = await res.json()
-    expect(data.data).toHaveLength(1)
-    expect(data.data[0].title).toBe('未読記事')
-    expect(data.data[0].isRead).toBe(false)
-  })
+      expect(res.status).toBe(200)
+      const data: { data: ArticleWithReadStatusResponse[] } = await res.json()
+      expect(data.data).toHaveLength(1)
+      expect(data.data[0].title).toBe(title)
+      expect(data.data[0].isRead).toBe(isRead)
+    },
+  )
 })

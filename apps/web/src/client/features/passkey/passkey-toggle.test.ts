@@ -7,15 +7,16 @@ const registerMock = vi.fn()
 const disableMock = vi.fn()
 const mutateMock = vi.fn()
 const statusState = { hasPasskey: false, isLoading: false }
+const actionState = { isRegistering: false, isDisabling: false }
 
 vi.mock('@/client/features/passkey/use-passkey-status', () => ({
   default: () => ({ ...statusState, mutate: mutateMock }),
 }))
 vi.mock('@/client/features/passkey/use-passkey-register', () => ({
-  default: () => ({ isSubmitting: false, register: registerMock }),
+  default: () => ({ isSubmitting: actionState.isRegistering, register: registerMock }),
 }))
 vi.mock('@/client/features/passkey/use-passkey-disable', () => ({
-  default: () => ({ isSubmitting: false, disable: disableMock }),
+  default: () => ({ isSubmitting: actionState.isDisabling, disable: disableMock }),
 }))
 
 describe('PasskeyToggle', () => {
@@ -23,15 +24,29 @@ describe('PasskeyToggle', () => {
     vi.clearAllMocks()
     statusState.hasPasskey = false
     statusState.isLoading = false
+    actionState.isRegistering = false
+    actionState.isDisabling = false
   })
 
   describe('正常系', () => {
-    it('未登録ならトグルはOFF、ONにすると登録し状態を取り直す', async () => {
+    it('未登録ならOFF、処理中は操作できず、ONにすると登録し状態を取り直す', async () => {
       registerMock.mockResolvedValue(true)
 
-      render(createElement(PasskeyToggle))
+      const { rerender } = render(createElement(PasskeyToggle))
       const toggle = screen.getByRole('switch')
       expect(toggle).toHaveAttribute('aria-checked', 'false')
+      for (const pending of ['status', 'register', 'disable']) {
+        statusState.isLoading = pending === 'status'
+        actionState.isRegistering = pending === 'register'
+        actionState.isDisabling = pending === 'disable'
+        rerender(createElement(PasskeyToggle))
+        expect(toggle).toBeDisabled()
+      }
+      statusState.isLoading = false
+      actionState.isRegistering = false
+      actionState.isDisabling = false
+      rerender(createElement(PasskeyToggle))
+      expect(toggle).toBeEnabled()
 
       fireEvent.click(toggle)
 

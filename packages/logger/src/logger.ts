@@ -21,13 +21,8 @@ export default class Logger {
       formatters: {
         level: (label) => ({ level: label }),
       },
-      timestamp: () => `,"time":${Date.now()}`,
       messageKey: 'msg',
-      // * pinoでエラーを表示する場合に使用する
-      serializers: {
-        err: pino.stdSerializers.err,
-        error: pino.stdSerializers.err,
-      },
+      serializers: { error: pino.stdSerializers.err },
     })
   }
 

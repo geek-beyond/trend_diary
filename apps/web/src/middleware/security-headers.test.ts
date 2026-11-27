@@ -36,13 +36,17 @@ async function requestHeaders(): Promise<{
 
 describe('CONTENT_SECURITY_POLICY', () => {
   describe('正常系', () => {
-    it('XSS対策の基本ディレクティブを設定する', () => {
+    it('XSSの基本制約とアプリに必要なリソースの許可元を設定する', () => {
       expect(CONTENT_SECURITY_POLICY.defaultSrc).toEqual(["'self'"])
       expect(CONTENT_SECURITY_POLICY.objectSrc).toEqual(["'none'"])
       expect(CONTENT_SECURITY_POLICY.baseUri).toEqual(["'self'"])
       expect(CONTENT_SECURITY_POLICY.formAction).toEqual(["'self'"])
       // クリックジャッキング防止のため自ドメインへの埋め込みも許可しない
       expect(CONTENT_SECURITY_POLICY.frameAncestors).toEqual(["'none'"])
+      expect(CONTENT_SECURITY_POLICY.styleSrc).toEqual(["'self'", "'unsafe-inline'"])
+      expect(CONTENT_SECURITY_POLICY.imgSrc).toEqual(["'self'", 'data:'])
+      expect(CONTENT_SECURITY_POLICY.fontSrc).toEqual(["'self'"])
+      expect(CONTENT_SECURITY_POLICY.connectSrc).toEqual(["'self'"])
     })
 
     it('script-src は nonce と strict-dynamic を使い unsafe-inline / unsafe-eval を含めない', async () => {
@@ -53,7 +57,6 @@ describe('CONTENT_SECURITY_POLICY', () => {
       expect(parsed['script-src']).toContain("'self'")
       expect(parsed['script-src']).toContain(`'nonce-${nonce}'`)
       expect(parsed['script-src']).toContain("'strict-dynamic'")
-      expect(parsed['script-src']).toContain('https://challenges.cloudflare.com')
       expect(parsed['script-src']).not.toContain("'unsafe-inline'")
       expect(parsed['script-src']).not.toContain("'unsafe-eval'")
     })

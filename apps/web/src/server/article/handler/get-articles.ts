@@ -76,8 +76,6 @@ function convertApiQueryParams(params: ApiQueryParams): QueryParams {
     readStatus = true
   } else if (params.read_status === '0') {
     readStatus = false
-  } else {
-    readStatus = undefined
   }
 
   return {

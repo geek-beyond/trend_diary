@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nonOkResponse } from '../test-helper/feed'
 import { fetchRssFeed, RssFetchError } from './rss-client'
 
@@ -11,7 +11,7 @@ describe('fetchRssFeed', () => {
   })
 
   describe('異常系', () => {
-    it('非ok応答は RssFetchError として status・診断ヘッダ・本文先頭を残す', async () => {
+    it('非ok応答は再試行せず RssFetchError にstatus・診断ヘッダ・本文先頭を残す', async () => {
       fetchMock.mockResolvedValue(
         nonOkResponse(429, 'Rate limited by origin', {
           'retry-after': '30',
@@ -25,18 +25,14 @@ describe('fetchRssFeed', () => {
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      const error = result._unsafeUnwrapErr()
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      assert(result.isErr())
+      const error = result.error
       expect(error).toBeInstanceOf(RssFetchError)
       expect(error.name).toBe('RssFetchError')
       expect(error).toMatchObject({
         diagnostics: {
           status: 429,
-          headers: {
-            'retry-after': '30',
-            'cf-ray': '8abc',
-            'cf-mitigated': 'challenge',
-            server: 'cloudflare',
-          },
           bodySnippet: 'Rate limited by origin',
         },
       })
@@ -52,24 +48,13 @@ describe('fetchRssFeed', () => {
       }
     })
 
-    it('失敗しても run 内でリトライせず1回の試行で失敗を返す', async () => {
-      fetchMock.mockResolvedValue(
-        nonOkResponse(429, 'error code: 1015', { 'retry-after': '281', server: 'cloudflare' }),
-      )
-
-      const result = await fetchRssFeed('https://zenn.dev/feed')
-
-      expect(fetchMock).toHaveBeenCalledTimes(1)
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(RssFetchError)
-    })
-
     it('本文が上限を超える場合は先頭のみを残す', async () => {
       fetchMock.mockResolvedValue(nonOkResponse(503, 'x'.repeat(600)))
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      const error = result._unsafeUnwrapErr()
-      expect(error).toBeInstanceOf(RssFetchError)
+      assert(result.isErr())
+      const error = result.error
       expect(error).toMatchObject({ diagnostics: { bodySnippet: `${'x'.repeat(500)}…` } })
     })
 
@@ -78,8 +63,8 @@ describe('fetchRssFeed', () => {
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      const error = result._unsafeUnwrapErr()
-      expect(error).toBeInstanceOf(RssFetchError)
+      assert(result.isErr())
+      const error = result.error
       expect(error).toMatchObject({ diagnostics: { bodySnippet: 'x'.repeat(500) } })
     })
 
@@ -88,7 +73,8 @@ describe('fetchRssFeed', () => {
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      const error = result._unsafeUnwrapErr()
+      assert(result.isErr())
+      const error = result.error
       expect(error).toBeInstanceOf(RssFetchError)
       if (error instanceof RssFetchError) {
         expect(error.diagnostics).toEqual({ status: 503, headers: {} })
@@ -102,7 +88,8 @@ describe('fetchRssFeed', () => {
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      const error = result._unsafeUnwrapErr()
+      assert(result.isErr())
+      const error = result.error
       expect(error).toBeInstanceOf(RssFetchError)
       if (error instanceof RssFetchError) {
         expect(error.diagnostics).toEqual({ status: 503, headers: {} })

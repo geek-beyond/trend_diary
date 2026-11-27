@@ -29,8 +29,7 @@ export interface FetchWithTimeoutOptions {
 
 const noop = () => undefined
 
-// AbortSignal.any 未対応環境向けに、複数signalのいずれかの中断を伝播する合成signalを生成する。
-// 中断後はリスナーを解放できるよう、解放用のクリーンアップ関数もあわせて返す。
+// リクエスト完了後に呼び出し元のsignalへリスナーを残さないよう、解放処理を返す。
 const combineSignals = (signals: AbortSignal[]): { signal: AbortSignal; cleanup: () => void } => {
   const controller = new AbortController()
 
@@ -69,14 +68,7 @@ export const fetchWithTimeout = (
     return fetch(input, { ...rest, signal: timeoutSignal }).then(attachSafeJson)
   }
 
-  // AbortSignal.any はリスナー解放まで内部で面倒を見るため、対応環境では優先利用する
-  if (typeof AbortSignal.any === 'function') {
-    return fetch(input, { ...rest, signal: AbortSignal.any([signal, timeoutSignal]) }).then(
-      attachSafeJson,
-    )
-  }
-
-  // iOS 16 等の AbortSignal.any 未対応環境ではリスナーリークを避けつつ手動で合成する
+  // iOS 16等でも同じ中断伝播・リスナー解放を保証するため、合成処理を共通化する。
   const { signal: combinedSignal, cleanup } = combineSignals([signal, timeoutSignal])
   return fetch(input, { ...rest, signal: combinedSignal })
     .finally(cleanup)

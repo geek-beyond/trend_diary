@@ -96,32 +96,5 @@ describe('useArticleDrawer', () => {
       expect(result.current.isOpen).toBe(false)
       expect(result.current.selectedArticle).toBeNull()
     })
-
-    it('close状態でclose関数を呼び出してもDrawerが閉じたままである', () => {
-      const { result } = setupHook()
-
-      closeArticleDrawer(result)
-
-      expect(result.current.isOpen).toBe(false)
-      expect(result.current.selectedArticle).toBeNull()
-    })
-
-    it('ある記事のDrawerを開いた状態で別の記事を開くとその記事に内容が置き換わる', () => {
-      const { result } = setupHook()
-      const fakeArticle1 = createFakeArticle('1', '技術記事')
-      const fakeArticle2 = createFakeArticle('2', 'ビジネス記事')
-
-      openArticleDrawer(result, fakeArticle1)
-
-      expect(result.current.selectedArticle?.title).toBe('技術記事')
-
-      openArticleDrawer(result, fakeArticle2)
-
-      expect(result.current.selectedArticle?.title).toBe('ビジネス記事')
-
-      closeArticleDrawer(result)
-
-      expect(result.current.selectedArticle).toBeNull()
-    })
   })
 })

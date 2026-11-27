@@ -14,13 +14,14 @@ interface RequestInfo {
 const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
   const logger = mustGet(c, CONTEXT_KEY.APP_LOG)
 
-  const requestInfo: RequestInfo = {
-    url: c.req.url,
-    method: c.req.method,
-    userAgent: c.req.header('User-Agent') || '',
+  const notifyError = () => {
+    const requestInfo: RequestInfo = {
+      url: c.req.url,
+      method: c.req.method,
+      userAgent: c.req.header('User-Agent') || '',
+    }
+    return new DiscordNotifier(c.env.DISCORD_WEBHOOK_URL, logger).error(err, requestInfo)
   }
-
-  const discordNotifier = new DiscordNotifier(c.env.DISCORD_WEBHOOK_URL, logger)
 
   if (err instanceof HTTPException) {
     const meta = {
@@ -32,7 +33,7 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
 
     if (err.status >= 500) {
       logger.error(meta, err)
-      await discordNotifier.error(err, requestInfo)
+      await notifyError()
     } else {
       logger.warn(meta)
     }
@@ -51,13 +52,13 @@ const errorHandler = async (err: Error, c: Context<Env>): Promise<Response> => {
   // 原因の切り分けを早める。応答・通知は他の 5xx と同じく Internal Server Error とする
   if (err instanceof AssertionError) {
     logger.error({ msg: 'contract violation', path: c.req.path, method: c.req.method }, err)
-    await discordNotifier.error(err, requestInfo)
+    await notifyError()
 
     return c.json('Internal Server Error', { status: 500 })
   }
 
   logger.error('Unhandled error', err)
-  await discordNotifier.error(err, requestInfo)
+  await notifyError()
 
   return c.json('Internal Server Error', { status: 500 })
 }

@@ -1,5 +1,5 @@
 import type { LoggerType } from '@trend-diary/logger'
-import { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout } from '@trend-diary/runtime/http'
+import { fetchWithTimeout } from '@trend-diary/runtime/http'
 
 export interface DiscordEmbedField {
   name: string
@@ -40,14 +40,14 @@ export class DiscordWebhookClient {
 
   private readonly baseDelayMs: number
 
-  private readonly timeoutMs: number
+  private readonly timeoutMs: number | undefined
 
   constructor(webhookUrl: string, logger: LoggerType, options: DiscordWebhookClientOptions = {}) {
     this.webhookUrl = webhookUrl
     this.logger = logger
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES
     this.baseDelayMs = options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS
-    this.timeoutMs = options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS
+    this.timeoutMs = options.timeoutMs
   }
 
   async send(payload: DiscordWebhookPayload): Promise<void> {
@@ -117,7 +117,7 @@ export interface ErrorRequestInfo {
 export class DiscordNotifier {
   private readonly client: DiscordWebhookClient
 
-  private readonly maxFieldLength = 1018 // Discord field limit (1024) minus code block chars (6)
+  private readonly maxFieldLength = 1024
 
   constructor(webhookUrl: string, logger: LoggerType, options: DiscordWebhookClientOptions = {}) {
     this.client = new DiscordWebhookClient(webhookUrl, logger, options)
@@ -164,7 +164,7 @@ export class DiscordNotifier {
     const truncatedSuffix = '...(truncated)'
     const maxContentLength = this.maxFieldLength - codeBlockChars - truncatedSuffix.length
 
-    if (text.length <= maxContentLength) {
+    if (text.length <= this.maxFieldLength - codeBlockChars) {
       return text
     }
 

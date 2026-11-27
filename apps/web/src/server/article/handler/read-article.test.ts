@@ -20,21 +20,26 @@ describe('API ReadHistoryスキーマ', () => {
 
     describe('正常系', () => {
       const validCases = [
-        { name: '現在時刻付近のISO8601文字列を受け入れること', read_at: new Date().toISOString() },
+        { name: '現在時刻のISO8601文字列を受け入れること', offset: 0 },
         {
-          name: '時計ずれ許容内の近未来（数分先）を受け入れること',
-          read_at: new Date(Date.now() + 2 * MS_PER_MINUTE).toISOString(),
+          name: '時計ずれ許容上限の5分先を受け入れること',
+          offset: 5 * MS_PER_MINUTE,
         },
         {
-          name: 'ダイアリー窓内の過去日時を受け入れること',
-          read_at: new Date(Date.now() - 1 * MS_PER_DAY).toISOString(),
+          name: 'ダイアリー窓の下限の7日前を受け入れること',
+          offset: -7 * MS_PER_DAY,
         },
       ]
 
-      it.each(validCases)('$name', ({ read_at }) => {
-        expect(() => {
-          createReadHistoryApiSchema.parse({ read_at })
-        }).not.toThrow()
+      it.each(validCases)('$name', ({ offset }) => {
+        const now = Date.now()
+        const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
+        try {
+          const read_at = new Date(now + offset).toISOString()
+          expect(() => createReadHistoryApiSchema.parse({ read_at })).not.toThrow()
+        } finally {
+          clock.mockRestore()
+        }
       })
     })
 
@@ -70,18 +75,10 @@ describe('API ReadHistoryスキーマ', () => {
       expect(result.article_id).toBe(123456789n)
     })
 
-    it('無効な文字列を拒否すること', () => {
-      expect(() => {
-        articleIdParamSchema.parse({
-          article_id: 'not-a-number',
-        })
-      }).toThrow()
-
-      expect(() => {
-        articleIdParamSchema.parse({
-          article_id: '',
-        })
-      }).toThrow()
+    it('数値以外を含む文字列と空文字列を入力エラーとして拒否すること', () => {
+      for (const article_id of ['not-a-number', '', 'prefix1', '1suffix']) {
+        expect(articleIdParamSchema.safeParse({ article_id }).success).toBe(false)
+      }
     })
 
     it('article_idフィールドが必須であること', () => {

@@ -17,7 +17,9 @@ const config: KnipConfig = {
         'src/dev-server.ts',
         // Mutator と mutator.config.ts が動的に読む専用設定。
         'mutator.config.ts',
+        'mutator.audit*.ts',
         'vitest.mutation.config.ts',
+        'vitest.mutation.server.config.ts',
       ],
       // ビルド後にのみ生成される react-router のサーバー出力。ビルド前は実体が無く常に未解決になる。
       ignoreUnresolved: ['../build/server'],
@@ -33,7 +35,7 @@ const config: KnipConfig = {
     },
     'apps/cron': {
       // Mutator が動的に読む専用設定。
-      entry: ['mutator.config.ts'],
+      entry: ['mutator.config.ts', 'mutator.audit*.ts', 'vitest.mutation.config.ts'],
       // `cloudflare:test` は @cloudflare/vitest-plugin が提供する仮想モジュールで、
       // npm 依存の cloudflare ではない。
       ignoreDependencies: ['cloudflare'],

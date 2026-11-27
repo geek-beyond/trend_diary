@@ -23,14 +23,27 @@ describe('useGithubUnlink', () => {
 
   describe('正常系', () => {
     it('解除に成功すると成功トーストを出す', async () => {
-      mockApiClient.oauth[':provider'].$delete.mockResolvedValue({ ok: true, status: 204 })
+      const response = Promise.withResolvers<{ ok: boolean; status: number }>()
+      mockApiClient.oauth[':provider'].$delete.mockReturnValue(response.promise)
 
       const { result } = renderHook(() => useGithubUnlink())
 
-      await act(async () => {
-        await result.current.unlink()
+      expect(result.current.isSubmitting).toBe(false)
+      let pending: Promise<boolean> | undefined
+      act(() => {
+        pending = result.current.unlink()
       })
-
+      expect(result.current.isSubmitting).toBe(true)
+      let unlinked: boolean | undefined
+      await act(async () => {
+        response.resolve({ ok: true, status: 204 })
+        unlinked = await pending
+      })
+      expect(result.current.isSubmitting).toBe(false)
+      expect(unlinked).toBe(true)
+      expect(mockApiClient.oauth[':provider'].$delete).toHaveBeenCalledWith({
+        param: { provider: 'github' },
+      })
       expect(toast.success).toHaveBeenCalledWith('GitHub連携を解除しました')
     })
   })
@@ -41,9 +54,11 @@ describe('useGithubUnlink', () => {
 
       const { result } = renderHook(() => useGithubUnlink())
 
+      let unlinked: boolean | undefined
       await act(async () => {
-        await result.current.unlink()
+        unlinked = await result.current.unlink()
       })
+      expect(unlinked).toBe(false)
 
       expect(toast.error).toHaveBeenCalledWith(
         'GitHubが唯一のログイン方法のため、連携を解除できません。',
@@ -55,9 +70,11 @@ describe('useGithubUnlink', () => {
 
       const { result } = renderHook(() => useGithubUnlink())
 
+      let unlinked: boolean | undefined
       await act(async () => {
-        await result.current.unlink()
+        unlinked = await result.current.unlink()
       })
+      expect(unlinked).toBe(false)
 
       expect(toast.error).toHaveBeenCalledWith('GitHub連携の解除に失敗しました。')
     })
@@ -69,9 +86,11 @@ describe('useGithubUnlink', () => {
 
       const { result } = renderHook(() => useGithubUnlink())
 
+      let unlinked: boolean | undefined
       await act(async () => {
-        await result.current.unlink()
+        unlinked = await result.current.unlink()
       })
+      expect(unlinked).toBe(false)
 
       expect(toast.error).toHaveBeenCalledWith('GitHub連携の解除に失敗しました。')
     })

@@ -1,5 +1,5 @@
 import { err, ok } from 'neverthrow'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockDeep } from 'vitest-mock-extended'
 import { AccountRepositoryError, ActiveUserNotFoundError } from './error'
 import type { Command, Notifier, Query } from './port'
@@ -38,7 +38,8 @@ describe('AccountUseCase', () => {
           notifierMock,
         )
 
-        expect(result._unsafeUnwrap()).toEqual(mockActiveUser)
+        assert(result.isOk())
+        expect(result.value).toEqual(mockActiveUser)
         expect(commandMock.createActiveWithAuthenticationId).toHaveBeenCalledWith(
           'test@example.com',
           'auth-user-id-123',
@@ -60,7 +61,8 @@ describe('AccountUseCase', () => {
           notifierMock,
         )
 
-        expect(result._unsafeUnwrapErr()).toBeInstanceOf(AccountRepositoryError)
+        assert(result.isErr())
+        expect(result.error).toBeInstanceOf(AccountRepositoryError)
       })
     })
   })
@@ -72,7 +74,8 @@ describe('AccountUseCase', () => {
 
         const result = await useCase.resolveActiveUser('auth-user-id-123')
 
-        expect(result._unsafeUnwrap()).toEqual(mockActiveUser)
+        assert(result.isOk())
+        expect(result.value).toEqual(mockActiveUser)
       })
     })
 
@@ -82,19 +85,22 @@ describe('AccountUseCase', () => {
 
         const result = await useCase.resolveActiveUser('auth-user-id-123')
 
-        expect(result._unsafeUnwrapErr()).toBeInstanceOf(ActiveUserNotFoundError)
+        assert(result.isErr())
+        expect(result.error).toBeInstanceOf(ActiveUserNotFoundError)
       })
     })
 
     describe('異常系', () => {
       it('クエリが失敗した場合はエラーを返す', async () => {
-        queryMock.findActiveByAuthenticationId.mockResolvedValue(
-          err(new AccountRepositoryError('db down')),
-        )
+        const cause = new Error('db down')
+        const error = new AccountRepositoryError(cause)
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(err(error))
 
         const result = await useCase.resolveActiveUser('auth-user-id-123')
 
-        expect(result._unsafeUnwrapErr()).toBeInstanceOf(AccountRepositoryError)
+        assert(result.isErr())
+        expect(result.error).toBe(error)
+        expect(error.cause).toBe(cause)
       })
     })
   })

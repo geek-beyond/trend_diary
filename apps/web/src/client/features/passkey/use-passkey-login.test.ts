@@ -37,7 +37,10 @@ describe('usePasskeyLogin', () => {
     mockGetApiClientForClient.mockReturnValue(mockApiClient)
     mockApiClient.passkey.authentication.options.$post.mockResolvedValue({
       ok: true,
-      json: async () => ({ challengeId: 'challenge-1', options: {} }),
+      json: async () => ({
+        challengeId: 'challenge-1',
+        options: { challenge: 'server-challenge' },
+      }),
     })
     startAuthenticationMock.mockResolvedValue({ id: 'credential-1' })
     mockApiClient.passkey.authentication.verify.$post.mockResolvedValue({ ok: true, status: 200 })
@@ -45,10 +48,32 @@ describe('usePasskeyLogin', () => {
 
   describe('正常系', () => {
     it('start→ceremony→verifyが成功するとセッションを再検証して/trendsへ遷移する', async () => {
+      const response = {
+        ok: true,
+        json: async () => ({
+          challengeId: 'challenge-1',
+          options: { challenge: 'server-challenge' },
+        }),
+      }
+      const options = Promise.withResolvers<typeof response>()
+      mockApiClient.passkey.authentication.options.$post.mockReturnValue(options.promise)
       const { result } = renderHook(() => usePasskeyLogin())
+      expect(result.current.isSubmitting).toBe(false)
+      let pending: Promise<void> | undefined
+      act(() => {
+        pending = result.current.login()
+      })
+      expect(result.current.isSubmitting).toBe(true)
 
       await act(async () => {
-        await result.current.login()
+        options.resolve(response)
+        await pending
+      })
+      expect(startAuthenticationMock).toHaveBeenCalledWith({
+        optionsJSON: { challenge: 'server-challenge' },
+      })
+      expect(mockApiClient.passkey.authentication.verify.$post).toHaveBeenCalledWith({
+        json: { challengeId: 'challenge-1', credential: { id: 'credential-1' } },
       })
 
       expect(mutateMock).toHaveBeenCalledWith(SESSION_SWR_KEY, true, { revalidate: false })
@@ -69,9 +94,11 @@ describe('usePasskeyLogin', () => {
 
   describe('準正常系', () => {
     it('startが非OKならログイン失敗を表示し遷移しない', async () => {
+      const json = vi.fn()
       mockApiClient.passkey.authentication.options.$post.mockResolvedValue({
         ok: false,
         status: 500,
+        json,
       })
       const { result } = renderHook(() => usePasskeyLogin())
 
@@ -79,11 +106,15 @@ describe('usePasskeyLogin', () => {
         await result.current.login()
       })
 
+      expect(json).not.toHaveBeenCalled()
+      expect(result.current.isSubmitting).toBe(false)
       expect(result.current.formError).toBe('パスキーでのログインに失敗しました。')
+      expect(startAuthenticationMock).not.toHaveBeenCalled()
+      expect(mockApiClient.passkey.authentication.verify.$post).not.toHaveBeenCalled()
       expect(navigateMock).not.toHaveBeenCalled()
     })
 
-    it('ceremonyがキャンセルされたら中断案内を表示し遷移しない', async () => {
+    it('ceremonyのキャンセル時は案内を表示し、再試行で案内を消してログインできる', async () => {
       startAuthenticationMock.mockRejectedValue(new Error('canceled'))
       const { result } = renderHook(() => usePasskeyLogin())
 
@@ -91,8 +122,15 @@ describe('usePasskeyLogin', () => {
         await result.current.login()
       })
 
+      expect(result.current.isSubmitting).toBe(false)
       expect(result.current.formError).toBe('パスキーの操作がキャンセルされました。')
       expect(navigateMock).not.toHaveBeenCalled()
+      startAuthenticationMock.mockResolvedValue({ id: 'credential-2' })
+      await act(async () => {
+        await result.current.login()
+      })
+      expect(result.current.formError).toBeUndefined()
+      expect(navigateMock).toHaveBeenCalledWith('/trends')
     })
 
     it('verifyが非OKならログイン失敗を表示し遷移しない', async () => {
@@ -106,6 +144,7 @@ describe('usePasskeyLogin', () => {
         await result.current.login()
       })
 
+      expect(result.current.isSubmitting).toBe(false)
       expect(result.current.formError).toBe('パスキーでのログインに失敗しました。')
       expect(navigateMock).not.toHaveBeenCalled()
     })

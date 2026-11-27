@@ -21,6 +21,7 @@ describe('resolveLoginRedirectTarget', () => {
       { outline: 'null', input: null },
       { outline: '空文字', input: '' },
       { outline: 'スキーム付きの外部URL', input: 'https://evil.example.com' },
+      { outline: '不正なホストのプロトコル相対URL', input: '//[invalid' },
       { outline: 'プロトコル相対URL', input: '//evil.example.com' },
       { outline: 'バックスラッシュ始まりのURL', input: '/\\evil.example.com' },
       { outline: 'スラッシュから始まらない相対パス', input: 'diary' },

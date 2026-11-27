@@ -10,7 +10,11 @@
     "src/client/components/customized/**"
   ],
   "rules": {
-    "react/forbid-elements": ["error", { "forbid": ["a"] }]
+    "react/forbid-elements": ["error", { "forbid": ["a"] }],
+    "import/no-unassigned-import": [
+      "warn",
+      { "allow": ["**/*.css", "@testing-library/jest-dom/vitest"] }
+    ]
   },
   "overrides": [
     {

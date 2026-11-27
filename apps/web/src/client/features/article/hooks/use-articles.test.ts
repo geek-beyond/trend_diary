@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { addJstDays, toJstDateString } from '@trend-diary/std/locale/date'
 import type { ReactNode } from 'react'
 import { createElement } from 'react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { SWRConfig } from 'swr'
 import type { MockedFunction } from 'vitest'
@@ -87,19 +87,29 @@ function setupHook(
     isLoggedIn?: boolean
   },
 ) {
-  return renderHook(() => useArticles(options?.isLoggedIn), {
-    wrapper: ({ children }: { children: ReactNode }) =>
-      createElement(
-        SWRConfig,
-        { value: { provider: () => new Map(), dedupingInterval: 0 } },
-        createElement(MemoryRouter, { initialEntries }, children),
-      ),
-  })
+  return renderHook(
+    () => {
+      const articles = useArticles(options?.isLoggedIn)
+      const location = useLocation()
+      const navigate = useNavigate()
+      return { ...articles, search: location.search, navigate }
+    },
+    {
+      wrapper: ({ children }: { children: ReactNode }) =>
+        createElement(
+          SWRConfig,
+          { value: { provider: () => new Map(), dedupingInterval: 0 } },
+          createElement(MemoryRouter, { initialEntries }, children),
+        ),
+    },
+  )
 }
 
 describe('useArticles', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // 変異で途中失敗しても、未消費のOnce応答を次のケースへ持ち越さないため。
+    mockApiClient.articles.$get.mockReset()
     mockGetApiClientForClient.mockReturnValue(mockApiClient)
   })
 
@@ -354,7 +364,7 @@ describe('useArticles', () => {
       expect(result.current.articles[0].title).toBe('2ページ目の記事')
     })
 
-    it('setSearchParamsでURLパラメータを変更すると、新しいパラメータでAPIが呼ばれる', async () => {
+    it('URLを変更すると、新しいパラメータでAPIが呼ばれる', async () => {
       const initialResponse = generateFakeResponse({
         page: 1,
         totalPages: 3,
@@ -379,7 +389,7 @@ describe('useArticles', () => {
       mockApiClient.articles.$get.mockResolvedValueOnce(nextPageResponse)
 
       await act(async () => {
-        result.current.setSearchParams(new URLSearchParams({ page: '2' }))
+        result.current.navigate('?page=2')
       })
 
       await waitFor(() => {
@@ -483,7 +493,10 @@ describe('useArticles', () => {
       )
     })
 
-    it('from/toがプリセット外の場合、todayとしてAPIが呼ばれる', async () => {
+    it.each([
+      { name: '開始日', invalidFrom: true },
+      { name: '終了日', invalidFrom: false },
+    ])('$name がプリセットと合わない場合、todayとしてAPIが呼ばれる', async ({ invalidFrom }) => {
       const fakeResponse = generateFakeResponse({
         articles: [generateFakeArticle()],
         page: 1,
@@ -492,8 +505,8 @@ describe('useArticles', () => {
       mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
 
       const today = toJstDateString(new Date())
-      const customFrom = addJstDays(today, -4)
-      const customTo = addJstDays(today, -1)
+      const customFrom = addJstDays(today, invalidFrom ? -4 : -6)
+      const customTo = invalidFrom ? today : addJstDays(today, -1)
       const { result } = setupHook([`/?from=${customFrom}&to=${customTo}`])
 
       await waitFor(() => {
@@ -595,6 +608,10 @@ describe('useArticles', () => {
       await waitFor(() => {
         expect(result.current.selectedDatePreset).toBe('today')
       })
+      const search = new URLSearchParams(result.current.search)
+      expect(search.has('from')).toBe(false)
+      expect(search.has('to')).toBe(false)
+      expect(search.has('page')).toBe(false)
       expect(mockApiClient.articles.$get).toHaveBeenLastCalledWith(
         {
           query: {
@@ -760,7 +777,7 @@ describe('useArticles', () => {
       })
     })
 
-    it('取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
+    it('取得に失敗するとhasErrorがtrueになり、retry成功でエラー状態と案内を解消する', async () => {
       mockApiClient.articles.$get.mockRejectedValueOnce(new Error('ネットワークエラー'))
 
       const { result } = setupHook()
@@ -768,9 +785,12 @@ describe('useArticles', () => {
       await waitFor(() => {
         expect(result.current.hasError).toBe(true)
       })
+      const createdToast = vi.mocked(toast.error).mock.calls.at(-1)?.[1]?.id
+      expect(createdToast).toBeDefined()
 
       mockApiClient.articles.$get.mockResolvedValueOnce(generateFakeResponse())
 
+      vi.mocked(toast.dismiss).mockClear()
       await act(async () => {
         await result.current.retry()
       })
@@ -778,6 +798,7 @@ describe('useArticles', () => {
       await waitFor(() => {
         expect(result.current.hasError).toBe(false)
       })
+      expect(toast.dismiss).toHaveBeenCalledWith(createdToast)
     })
 
     it('API呼び出しで401の時、セッション切れの案内トーストのみが表示される', async () => {
@@ -978,82 +999,74 @@ describe('useArticles', () => {
   })
 
   describe('既読状態管理', () => {
-    it('isRead付きの記事を取得できる', async () => {
-      const fakeArticles = [
-        generateFakeArticle({ articleId: '1', title: '既読記事' }),
-        generateFakeArticle({ articleId: '2', title: '未読記事' }),
+    it('取得した既読状態を対象の記事だけ更新する', async () => {
+      const articles = [
+        generateFakeArticle({ articleId: '1', isRead: true }),
+        generateFakeArticle({ articleId: '2', isRead: false }),
       ]
-
-      const fakeResponse = {
-        status: 200,
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          data: [
-            { ...fakeArticles[0], articleId: '1', isRead: true },
-            { ...fakeArticles[1], articleId: '2', isRead: false },
-          ],
-          page: 1,
-          limit: 20,
-          total: 2,
-          totalPages: 1,
-          hasNext: false,
-          hasPrev: false,
-        }),
-      }
-
-      mockApiClient.articles.$get.mockResolvedValue(fakeResponse)
-
-      const { result } = setupHook()
-
-      await waitFor(() => {
-        expect(result.current.articles).toHaveLength(2)
+      mockApiClient.articles.$get.mockResolvedValue(generateFakeResponse({ articles }))
+      const { result } = setupHook(undefined, { isLoggedIn: true })
+      await waitFor(() => expect(result.current.articles).toHaveLength(2))
+      expect(result.current.articles.map((article) => article.isRead)).toEqual([true, false])
+      await act(async () => {
+        await result.current.updateArticleReadState('1', false, async () => true)
       })
+      expect(result.current.articles.map((article) => article.isRead)).toEqual([false, false])
+    })
 
-      expect(result.current.articles[0].isRead).toBe(true)
-      expect(result.current.articles[1].isRead).toBe(false)
+    it('既読更新に失敗したら楽観更新した対象を元に戻す', async () => {
+      const articles = ['1', '2'].map((articleId) =>
+        generateFakeArticle({ articleId, isRead: false }),
+      )
+      mockApiClient.articles.$get.mockResolvedValue(generateFakeResponse({ articles }))
+      const { result } = setupHook(undefined, { isLoggedIn: true })
+      await waitFor(() => expect(result.current.articles).toHaveLength(2))
+      const response = Promise.withResolvers<boolean>()
+      let pending: Promise<void> | undefined
+      act(() => {
+        pending = result.current.updateArticleReadState('1', true, () => response.promise)
+      })
+      await waitFor(() => {
+        expect(result.current.articles.map((article) => article.isRead)).toEqual([true, false])
+      })
+      await act(async () => {
+        response.resolve(false)
+        await pending
+      })
+      expect(result.current.articles.map((article) => article.isRead)).toEqual([false, false])
+    })
+
+    it('未読一覧で既読にした記事を除き、再取得して次の記事を補充する', async () => {
+      const articles = ['1', '2'].map((articleId) =>
+        generateFakeArticle({ articleId, isRead: false }),
+      )
+      const refresh = Promise.withResolvers<ReturnType<typeof generateFakeResponse>>()
+      mockApiClient.articles.$get
+        .mockResolvedValueOnce(generateFakeResponse({ articles, totalPages: 2 }))
+        .mockReturnValueOnce(refresh.promise)
+      const { result } = setupHook(['/?read_status=0'], { isLoggedIn: true })
+      await waitFor(() => expect(result.current.articles).toHaveLength(2))
+      let pending: Promise<void> | undefined
+      act(() => {
+        pending = result.current.updateArticleReadState('1', true, async () => true)
+      })
+      await waitFor(() => {
+        expect(result.current.articles.map((article) => article.articleId)).toEqual(['2'])
+        expect(mockApiClient.articles.$get).toHaveBeenCalledTimes(2)
+      })
+      await act(async () => {
+        refresh.resolve(
+          generateFakeResponse({
+            articles: [articles[1], generateFakeArticle({ articleId: '3', isRead: false })],
+          }),
+        )
+        await pending
+      })
+      expect(result.current.articles.map((article) => article.articleId)).toEqual(['2', '3'])
     })
   })
 
   describe('既読状態フィルタ', () => {
-    it('未読を選ぶとread_status=0でAPIが呼ばれる', async () => {
-      const initialResponse = generateFakeResponse({
-        page: 2,
-        totalPages: 3,
-      })
-      const unreadResponse = generateFakeResponse({
-        page: 1,
-        totalPages: 1,
-      })
-      mockApiClient.articles.$get.mockResolvedValueOnce(initialResponse)
-
-      const { result } = setupHook(['/?page=2'], { isLoggedIn: true })
-
-      await waitFor(() => {
-        expect(result.current.page).toBe(2)
-      })
-
-      mockApiClient.articles.$get.mockResolvedValueOnce(unreadResponse)
-
-      await act(async () => {
-        result.current.handleReadStatusChange('unread')
-      })
-
-      await waitFor(() => {
-        expect(mockApiClient.articles.$get).toHaveBeenLastCalledWith(
-          {
-            query: {
-              to: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
-              from: expect.stringMatching(/\d{4}-\d{2}-\d{2}/),
-              page: 1,
-              limit: 20,
-              read_status: '0',
-            },
-          },
-          { init: { credentials: 'include' } },
-        )
-      })
-    })
-
     it('未ログインでread_status指定時はフィルタを無視してAPIが呼ばれる', async () => {
       const fakeResponse = generateFakeResponse({
         articles: [generateFakeArticle()],

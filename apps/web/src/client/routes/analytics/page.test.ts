@@ -3,20 +3,27 @@ import type { ReactNode } from 'react'
 import { createElement } from 'react'
 import AnalyticsPage from './page'
 
+const chartState = vi.hoisted(() => {
+  const state: { value: { activeLabel?: string | number } | null } = {
+    value: { activeLabel: '2026-03-07' },
+  }
+  return state
+})
+
 vi.mock('recharts', () => ({
   BarChart: ({
     children,
     onClick,
   }: {
     children: ReactNode
-    onClick?: (state: { activeLabel?: string }) => void
+    onClick?: (state: { activeLabel?: string | number } | null) => void
   }) =>
     createElement(
       'button',
       {
         type: 'button',
         'aria-label': '統計グラフ',
-        onClick: () => onClick?.({ activeLabel: '2026-03-07' }),
+        onClick: () => onClick?.(chartState.value),
       },
       children,
     ),
@@ -57,6 +64,10 @@ const reads = [
 ]
 
 describe('AnalyticsPage', () => {
+  beforeEach(() => {
+    chartState.value = { activeLabel: '2026-03-07' }
+  })
+
   it('日付未選択時は週次集計を表示し、一覧は案内文を表示する', () => {
     render(
       createElement(AnalyticsPage, {
@@ -81,6 +92,7 @@ describe('AnalyticsPage', () => {
 
     expect(screen.getByRole('heading', { name: '統計' })).toBeInTheDocument()
     expect(screen.getByText('20件')).toBeInTheDocument()
+    expect(screen.getByText('選択日: 未選択')).toBeInTheDocument()
     expect(
       screen.getByText('グラフの日付をクリックすると、読了記事一覧を表示します。'),
     ).toBeInTheDocument()
@@ -115,9 +127,16 @@ describe('AnalyticsPage', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: '統計グラフ' }))
+    chartState.value = null
+    fireEvent.click(screen.getByRole('button', { name: '統計グラフ' }))
+    chartState.value = { activeLabel: 42 }
+    fireEvent.click(screen.getByRole('button', { name: '統計グラフ' }))
     fireEvent.click(screen.getByRole('button', { name: '選択をクリア' }))
 
     expect(onSelectDate).toHaveBeenCalledWith('2026-03-07')
+    expect(onSelectDate).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('選択日: 2026/3/8')).toBeInTheDocument()
+    expect(screen.queryByText('20件')).not.toBeInTheDocument()
     expect(onClearSelectedDate).toHaveBeenCalledTimes(1)
     expect(screen.getByText('記事タイトル')).toBeInTheDocument()
     expect(screen.getByText('2 / 3')).toBeInTheDocument()

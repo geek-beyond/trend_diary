@@ -116,10 +116,23 @@ describe('useAnalytics', () => {
     expect(fetchDiaryRange).toHaveBeenCalledTimes(1)
   })
 
-  it('日付未選択時は過去1週間の集計を表示する', async () => {
+  it.each([
+    { name: '日付未指定', url: '/analytics' },
+    { name: '範囲外の日付指定', url: '/analytics?date=1900-01-01' },
+  ])('$name は過去1週間の媒体別集計を表示する', async ({ url }) => {
     const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
       const dates = buildDates(to).filter((date) => date >= from)
-      return Promise.resolve(dates.map((date, index) => buildRangeItemResponse(date, index + 1, 0)))
+      return Promise.resolve(
+        dates.map((date, index) => ({
+          date,
+          summary: { read: index + 3, skip: (index % 2) + 4 },
+          sources: [
+            { media: 'qiita', read: index + 1, skip: index % 2 },
+            { media: 'zenn', read: 2, skip: 3 },
+            { media: 'hatena', read: 0, skip: 1 },
+          ],
+        })),
+      )
     })
 
     const fetchDiary = vi.fn()
@@ -129,7 +142,7 @@ describe('useAnalytics', () => {
       fetchDiaryRange,
     })
 
-    const { result } = setupHook()
+    const { result } = setupHook([url])
 
     await waitFor(() => {
       expect(fetchDiaryRange).toHaveBeenCalledTimes(1)
@@ -139,12 +152,19 @@ describe('useAnalytics', () => {
     expect(fetchDiaryRange).toHaveBeenCalledWith(expectedDates[0], expectedDates[6])
     expect(result.current.selectedDate).toBeNull()
     expect(result.current.summaryRange).toHaveLength(7)
-    expect(result.current.weeklySummary).toEqual({ read: 28, skip: 0 })
-    expect(result.current.sources[0]).toEqual({ media: 'qiita', read: 28, skip: 0 })
+    expect(result.current.weeklySummary).toEqual({ read: 42, skip: 31 })
+    expect(result.current.sources).toEqual([
+      { media: 'qiita', read: 28, skip: 3 },
+      { media: 'zenn', read: 14, skip: 21 },
+      { media: 'hatena', read: 0, skip: 7 },
+    ])
     expect(fetchDiary).not.toHaveBeenCalled()
   })
 
-  it('選択日の1ページ目は日次集計を表示する', async () => {
+  it.each([
+    { name: 'ページ未指定', query: '' },
+    { name: '不正なページ指定', query: '&page=invalid' },
+  ])('$name は1ページ目の日次集計を表示する', async ({ query }) => {
     const targetDate = buildDates(toJstDateString(new Date()))[5]
     const fetchDiaryRange = vi.fn().mockImplementation((from: string, to: string) => {
       const dates = buildDates(to).filter((date) => date >= from)
@@ -163,7 +183,7 @@ describe('useAnalytics', () => {
       fetchDiaryRange,
     })
 
-    const { result } = setupHook([`/analytics?date=${targetDate}`])
+    const { result } = setupHook([`/analytics?date=${targetDate}${query}`])
 
     await waitFor(() => {
       expect(result.current.selectedDate).toBe(targetDate)
@@ -214,7 +234,7 @@ describe('useAnalytics', () => {
 
     mockedUseDiaryApi.mockReturnValue({ fetchDiary, fetchDiaryRange })
 
-    const { result } = setupHook([`/analytics?date=${targetDate}`])
+    const { result } = setupHook([`/analytics?date=${targetDate}&page=2&view=chart`])
 
     await waitFor(() => {
       expect(result.current.selectedDate).toBe(targetDate)
@@ -227,6 +247,10 @@ describe('useAnalytics', () => {
     await waitFor(() => {
       expect(result.current.selectedDate).toBeNull()
     })
+    const search = new URLSearchParams(result.current.search)
+    expect(search.has('date')).toBe(false)
+    expect(search.has('page')).toBe(false)
+    expect(search.get('view')).toBe('chart')
   })
 
   it('選択日でtoNextPageを呼ぶと次ページの日次APIを取得する', async () => {
@@ -327,7 +351,7 @@ describe('useAnalytics', () => {
       })
     })
 
-    it('週次集計の取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
+    it('週次集計の取得に失敗するとhasErrorがtrueになり、retry成功でエラー状態と案内を解消する', async () => {
       const fetchDiaryRange = vi.fn().mockRejectedValueOnce(new Error('取得に失敗しました'))
       const fetchDiary = vi.fn()
 
@@ -338,12 +362,15 @@ describe('useAnalytics', () => {
       await waitFor(() => {
         expect(result.current.hasError).toBe(true)
       })
+      const createdToast = vi.mocked(toast.error).mock.calls.at(-1)?.[1]?.id
+      expect(createdToast).toBeDefined()
 
       fetchDiaryRange.mockImplementation((from: string, to: string) => {
         const dates = buildDates(to).filter((date) => date >= from)
         return Promise.resolve(dates.map((date) => buildRangeItemResponse(date, 1, 0)))
       })
 
+      vi.mocked(toast.dismiss).mockClear()
       await act(async () => {
         await result.current.retry()
       })
@@ -351,6 +378,7 @@ describe('useAnalytics', () => {
       await waitFor(() => {
         expect(result.current.hasError).toBe(false)
       })
+      expect(toast.dismiss).toHaveBeenCalledWith(createdToast)
     })
 
     it('セッション切れ(401)の場合はエラートーストを表示しない', async () => {

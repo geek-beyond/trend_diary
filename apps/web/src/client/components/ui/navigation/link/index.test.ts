@@ -26,7 +26,10 @@ describe('AnchorLink', () => {
 
     render(createElement(AnchorLink, { to: 'https://example.com', onClick }, '公式サイト'))
 
-    fireEvent.click(screen.getByRole('link', { name: '公式サイト' }))
+    const link = screen.getByRole('link', { name: '公式サイト' })
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow')
+    fireEvent.click(link)
 
     expect(onClick).toHaveBeenCalledTimes(1)
   })

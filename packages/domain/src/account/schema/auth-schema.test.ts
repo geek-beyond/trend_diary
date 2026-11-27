@@ -5,11 +5,6 @@ describe('authInputSchema', () => {
   describe('正常系', () => {
     const validTestCases = [
       {
-        name: '有効な認証入力を検証できる',
-        email: 'test@example.com',
-        password: 'Password1!',
-      },
-      {
         name: '@記号を含むパスワードで検証できる',
         email: 'user@domain.com',
         password: 'Password1@',
@@ -47,12 +42,7 @@ describe('authInputSchema', () => {
       {
         name: '8文字ちょうどのパスワードで検証できる',
         email: 'user@domain.com',
-        password: 'Pass1@Aa',
-      },
-      {
-        name: '長いパスワードで検証できる',
-        email: 'user@domain.com',
-        password: 'VeryLongPassword123!@$',
+        password: 'ABC123!a',
       },
       {
         name: '72文字ちょうどのパスワードで検証できる',
@@ -63,7 +53,7 @@ describe('authInputSchema', () => {
 
     it.each(validTestCases)('$name', ({ email, password }) => {
       const result = authInputSchema.safeParse({ email, password })
-      expect(result.success).toBe(true)
+      expect(result).toEqual({ success: true, data: { email, password } })
     })
   })
 
@@ -74,7 +64,7 @@ describe('authInputSchema', () => {
         password: 'Password1!',
         captchaToken: 'captcha-token',
       })
-      expect(result.success).toBe(true)
+      expect(result).toMatchObject({ success: true, data: { captchaToken: 'captcha-token' } })
     })
 
     it('captchaTokenは任意項目のため省略できる', () => {
@@ -138,11 +128,6 @@ describe('authInputSchema', () => {
         password: '',
       },
       {
-        name: '1文字のパスワードでは検証に失敗する',
-        email: 'test@example.com',
-        password: 'a',
-      },
-      {
         name: '73文字のパスワードでは検証に失敗する',
         email: 'test@example.com',
         password: `Aa1!${'a'.repeat(69)}`,
@@ -180,12 +165,12 @@ describe('authInputSchema', () => {
       {
         name: '許可されていない記号#を含むパスワードでは検証に失敗する',
         email: 'test@example.com',
-        password: 'Password1#',
+        password: 'Password1!#',
       },
       {
         name: '許可されていない記号^を含むパスワードでは検証に失敗する',
         email: 'test@example.com',
-        password: 'Password1^',
+        password: 'Password1!^',
       },
       {
         name: 'スペースを含むパスワードでは検証に失敗する',

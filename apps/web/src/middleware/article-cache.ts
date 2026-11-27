@@ -29,7 +29,7 @@ const articleCache = createMiddleware<Env>(async (c, next) => {
 
   const cache = caches.default
   // Cookie の有無で応答が変わるため、キャッシュキーは URL のみで構成し Cookie 等のヘッダは含めない
-  const cacheKey = new Request(c.req.url, { method: 'GET' })
+  const cacheKey = new Request(c.req.url)
 
   const hit = await cache.match(cacheKey)
   // Cache API が返す Response はヘッダが immutable のため、素通しすると後続の secureHeaders 等が

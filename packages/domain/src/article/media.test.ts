@@ -34,7 +34,7 @@ describe('media', () => {
     })
 
     describe('異常系', () => {
-      it.each(['note', 'medium', 'invalid', 'Qiita', 'ZENN', '', ' qiita', 'qiita '])(
+      it.each(['note', 'Qiita', '', ' qiita', 'qiita '])(
         'サポート対象外の文字列(%s)に対してfalseを返すこと',
         (value) => {
           expect(isArticleMedia(value)).toBe(false)

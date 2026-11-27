@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import Logger from './logger'
-import { StdTestHelper } from './test-helper/std'
+import { captureStdout } from './test-helper/std'
 
 const parseLogObjects = (lines: string[]) =>
   lines
@@ -42,35 +42,29 @@ describe('Logger', () => {
 
   it('withでコンテキストを合成する', async () => {
     const logger = new Logger('debug')
-    const { logs, restore } = StdTestHelper.captureStdout(vi)
+    const { logs, restore } = captureStdout(vi)
 
     const root = logger.with({})
     const parent = root.with({ traceId: 'base' })
-    parent.with({ requestId: 'child' }).info('child-msg')
+    parent.with({ requestId: 'child' }).info('child-msg', 'ignored')
     parent.info('parent-msg')
 
     restore()
 
     const entries = parseLogObjects(logs)
-    expect(entries[0]).toMatchObject({ traceId: 'base', requestId: 'child', msg: 'child-msg' })
+    expect(entries[0]).toMatchObject({
+      traceId: 'base',
+      requestId: 'child',
+      msg: 'child-msg',
+      level: 'info',
+    })
+    expect(entries[0]).not.toHaveProperty('0')
     expect(entries[1]).toMatchObject({ traceId: 'base', msg: 'parent-msg' })
-  })
-
-  it('文字列メッセージでもコンテキストが出力される', async () => {
-    const logger = new Logger('debug')
-    const { logs, restore } = StdTestHelper.captureStdout(vi)
-
-    logger.with({ requestId: 'abc' }).info('hello world')
-
-    restore()
-
-    const [entry] = parseLogObjects(logs)
-    expect(entry).toMatchObject({ requestId: 'abc', msg: 'hello world', level: 'info' })
   })
 
   it('オブジェクトメッセージはコンテキストとマージされる', async () => {
     const logger = new Logger('debug')
-    const { logs, restore } = StdTestHelper.captureStdout(vi)
+    const { logs, restore } = captureStdout(vi)
 
     logger.with({ requestId: 'abc' }).info({ message: 'hello', foo: 'bar' })
 
@@ -82,7 +76,7 @@ describe('Logger', () => {
 
   it('debugで文字列メッセージにError引数を渡すとerrに整形される', async () => {
     const logger = new Logger('debug')
-    const { logs, restore } = StdTestHelper.captureStdout(vi)
+    const { logs, restore } = captureStdout(vi)
 
     logger.with({ requestId: 'abc' }).debug('boom happened', new Error('boom'))
 
@@ -99,19 +93,31 @@ describe('Logger', () => {
 
   it('warnで文字列メッセージに付加オブジェクトをマージする', async () => {
     const logger = new Logger('debug')
-    const { logs, restore } = StdTestHelper.captureStdout(vi)
+    const { logs, restore } = captureStdout(vi)
 
-    logger.with({ requestId: 'abc' }).warn('processed', { count: 3 })
+    logger
+      .with({ requestId: 'abc' })
+      .warn('processed', { count: 3, error: new Error('validation failed') })
 
     restore()
 
     const [entry] = parseLogObjects(logs)
-    expect(entry).toMatchObject({ requestId: 'abc', msg: 'processed', level: 'warn', count: 3 })
+    expect(entry).toMatchObject({
+      requestId: 'abc',
+      msg: 'processed',
+      level: 'warn',
+      count: 3,
+      error: expect.objectContaining({
+        type: 'Error',
+        message: 'validation failed',
+        stack: expect.any(String),
+      }),
+    })
   })
 
   it('errorはerrプロパティに整形された例外を含める', async () => {
     const logger = new Logger('debug')
-    const { logs, restore } = StdTestHelper.captureStdout(vi)
+    const { logs, restore } = captureStdout(vi)
     const scoped = logger.with({ requestId: 'abc' })
     const error = new Error('boom')
 
@@ -129,7 +135,7 @@ describe('Logger', () => {
   })
 
   it('errorはオブジェクトメッセージにもerrをマージする', async () => {
-    const { logs, restore } = StdTestHelper.captureStdout(vi)
+    const { logs, restore } = captureStdout(vi)
     const logger = new Logger('debug')
 
     logger.error({ event: 'failure' }, new Error('boom'))

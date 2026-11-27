@@ -1,5 +1,5 @@
 import { HTTPException } from 'hono/http-exception'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { assert, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { assertCaptchaVerified, verifyTurnstile } from './captcha'
 
 const fetchMock = vi.fn()
@@ -20,11 +20,15 @@ describe('verifyTurnstile', () => {
 
       const result = await verifyTurnstile('secret', 'valid-token')
 
-      expect(result._unsafeUnwrap()).toBe(true)
+      assert(result.isOk())
+      expect(result.value).toBe(true)
       expect(fetchMock).toHaveBeenCalledWith(
         'https://challenges.cloudflare.com/turnstile/v0/siteverify',
         expect.objectContaining({ method: 'POST' }),
       )
+      const body = fetchMock.mock.calls[0]?.[1]?.body
+      expect(body).toBeInstanceOf(URLSearchParams)
+      expect(Object.fromEntries(body)).toEqual({ secret: 'secret', response: 'valid-token' })
     })
   })
 
@@ -32,16 +36,23 @@ describe('verifyTurnstile', () => {
     it('トークンが無い場合は検証を通さない', async () => {
       const result = await verifyTurnstile('secret', undefined)
 
-      expect(result._unsafeUnwrap()).toBe(false)
+      assert(result.isOk())
+      expect(result.value).toBe(false)
       expect(fetchMock).not.toHaveBeenCalled()
     })
 
-    it('トークンが無効なら検証を通さない', async () => {
-      fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: false })))
+    it.each([
+      { name: '無効トークン', response: { success: false } },
+      { name: 'nullの応答', response: null },
+      { name: '文字列の応答', response: 'unexpected' },
+      { name: 'boolean以外のsuccess', response: { success: 1 } },
+    ])('$name は検証を通さない', async ({ response }) => {
+      fetchMock.mockResolvedValue(new Response(JSON.stringify(response)))
 
       const result = await verifyTurnstile('secret', 'invalid-token')
 
-      expect(result._unsafeUnwrap()).toBe(false)
+      assert(result.isOk())
+      expect(result.value).toBe(false)
     })
   })
 
@@ -51,7 +62,8 @@ describe('verifyTurnstile', () => {
 
       const result = await verifyTurnstile('secret', 'token')
 
-      expect(result._unsafeUnwrapErr().message).toBe('network down')
+      assert(result.isErr())
+      expect(result.error.message).toBe('network down')
     })
 
     it('siteverifyの応答を解析できないときは検証できずに失敗する', async () => {

@@ -21,14 +21,23 @@ describe('usePasskeyDisable', () => {
 
   describe('正常系', () => {
     it('無効化に成功するとtrueを返し成功トーストを出す', async () => {
-      mockApiClient.passkey.$delete.mockResolvedValue({ ok: true, status: 204 })
+      const response = Promise.withResolvers<{ ok: boolean; status: number }>()
+      mockApiClient.passkey.$delete.mockReturnValue(response.promise)
 
       const { result } = renderHook(() => usePasskeyDisable())
 
+      expect(result.current.isSubmitting).toBe(false)
+      let pending: Promise<boolean> | undefined
+      act(() => {
+        pending = result.current.disable()
+      })
+      expect(result.current.isSubmitting).toBe(true)
       let returned: boolean | undefined
       await act(async () => {
-        returned = await result.current.disable()
+        response.resolve({ ok: true, status: 204 })
+        returned = await pending
       })
+      expect(result.current.isSubmitting).toBe(false)
 
       expect(returned).toBe(true)
       expect(toast.success).toHaveBeenCalledWith('パスキーを無効にしました')

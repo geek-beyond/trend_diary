@@ -2,12 +2,13 @@ import { type ExternalPath, isExternalPath } from '@/client/components/ui/naviga
 
 export function toSafeExternalPath(url: string): ExternalPath | null {
   try {
-    const parsed = new URL(url)
-    if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && isExternalPath(url)) {
+    // oxlint-disable-next-line no-new -- URL構文の検証にはコンストラクタが投げる例外だけを使うため
+    new URL(url)
+    if (isExternalPath(url)) {
       return url
     }
   } catch {
-    // Invalid URL format is treated as unsafe input.
+    // 不正なRSS URLでも日記画面全体の表示を継続するため。
   }
 
   return null

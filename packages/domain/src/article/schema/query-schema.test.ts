@@ -1,17 +1,21 @@
 import { articleQuerySchema } from './query-schema'
 
 describe('記事検索スキーマ', () => {
-  it('有効な記事検索パラメータを受け入れること', () => {
-    expect(() => {
-      articleQuerySchema.parse({
-        title: 'テスト記事',
-        author: 'テスト著者',
-        media: 'qiita',
-        from: '2024-01-01',
-        to: '2024-01-31',
-        readStatus: false,
-      })
-    }).not.toThrow()
+  it('有効な記事検索パラメータを保持し、mediaとページ既定値を正規化すること', () => {
+    const input = {
+      title: 'テスト記事',
+      author: 'テスト著者',
+      media: 'qiita',
+      from: '2024-01-01',
+      to: '2024-01-31',
+      readStatus: false,
+    }
+    expect(articleQuerySchema.parse(input)).toEqual({
+      ...input,
+      media: ['qiita'],
+      page: 1,
+      limit: 20,
+    })
   })
 
   it('空のオブジェクトを受け入れること', () => {
@@ -93,6 +97,8 @@ describe('記事検索スキーマ', () => {
 
     it('空文字のmediaは未指定として扱うこと', () => {
       expect(articleQuerySchema.parse({ media: '' }).media).toBeUndefined()
+      expect(articleQuerySchema.parse({ media: null }).media).toBeUndefined()
+      expect(articleQuerySchema.parse({ media: undefined }).media).toBeUndefined()
     })
 
     it('重複したmedia値を除去すること', () => {
@@ -202,7 +208,7 @@ describe('記事検索スキーマ', () => {
 
       expect(() => {
         articleQuerySchema.parse({
-          from: 'invalid-date',
+          from: 'prefix2024-01-01',
         })
       }).toThrow()
     })
@@ -244,7 +250,7 @@ describe('記事検索スキーマ', () => {
 
       expect(() => {
         articleQuerySchema.parse({
-          to: 'invalid-date',
+          to: '2024-01-01suffix',
         })
       }).toThrow()
     })

@@ -118,6 +118,10 @@ async function settleAction(action: Promise<void>, settleRequest: () => void): P
 describe('useUnreadDigestion', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // 変異で途中失敗しても、未消費のOnce応答を次のケースへ持ち越さないため。
+    mockUnreadDigestionGet.mockReset()
+    mockSkipPost.mockReset()
+    mockMarkAsRead.mockReset()
     vi.useRealTimers()
     sessionStorage.clear()
     vi.spyOn(window, 'open').mockImplementation(() => null)
@@ -281,11 +285,15 @@ describe('useUnreadDigestion', () => {
       total: 0,
     })
 
-    const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    const { result, unmount } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
 
     await waitFor(() => {
       expect(result.current.isJustCompleted).toBe(true)
     })
+    expect(completionPendingStorage.has()).toBe(false)
+    unmount()
+    const remounted = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
+    expect(remounted.result.current.isJustCompleted).toBe(false)
   })
 
   it('バッチを消化しきっても未読が残っていれば次バッチを取得し、完了演出は出さない', async () => {
@@ -578,7 +586,7 @@ describe('useUnreadDigestion', () => {
       )
     })
 
-    it('未読一覧の取得に失敗するとhasErrorがtrueになり、retryで再取得に成功するとfalseに戻る', async () => {
+    it('未読一覧の取得に失敗するとhasErrorがtrueになり、retry成功でエラー状態と案内を解消する', async () => {
       mockUnreadDigestionGet.mockRejectedValueOnce(new Error('取得に失敗しました'))
 
       const { result } = renderHook(() => useUnreadDigestion(ALL_MEDIA), { wrapper })
@@ -586,12 +594,15 @@ describe('useUnreadDigestion', () => {
       await waitFor(() => {
         expect(result.current.hasError).toBe(true)
       })
+      const createdToast = vi.mocked(toast.error).mock.calls.at(-1)?.[1]?.id
+      expect(createdToast).toBeDefined()
 
       mockUnreadDigestionGet.mockResolvedValueOnce({
         data: [baseArticle],
         total: 1,
       })
 
+      vi.mocked(toast.dismiss).mockClear()
       await act(async () => {
         await result.current.retry()
       })
@@ -599,6 +610,7 @@ describe('useUnreadDigestion', () => {
       await waitFor(() => {
         expect(result.current.hasError).toBe(false)
       })
+      expect(toast.dismiss).toHaveBeenCalledWith(createdToast)
     })
 
     it('スキップAPIが401の場合はエラートーストを表示しない', async () => {

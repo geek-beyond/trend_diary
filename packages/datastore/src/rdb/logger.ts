@@ -13,8 +13,7 @@ const VALID_LOG_LEVELS: ReadonlyArray<LogLevel> = [
 ]
 
 export function isLogLevel(value: string | undefined): value is LogLevel {
-  const validLevels: ReadonlyArray<string> = VALID_LOG_LEVELS
-  return value !== undefined && validLevels.includes(value)
+  return VALID_LOG_LEVELS.some((level) => level === value)
 }
 
 // 既定を info にすることで、PII(email等)を含むクエリログ(debug)は LOG_LEVEL=debug/trace

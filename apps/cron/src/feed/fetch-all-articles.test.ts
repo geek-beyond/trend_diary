@@ -2,7 +2,7 @@ import { ARTICLE_MEDIA, type ArticleMedia } from '@trend-diary/domain/article/me
 import Logger from '@trend-diary/logger'
 import { DiscordWebhookClient } from '@trend-diary/notification'
 import { err, ok } from 'neverthrow'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import TEST_ENV from '../test-helper/env'
 import { fetchAllArticles } from './fetch-all-articles'
 import { runScheduledFetch } from './fetch-articles'
@@ -11,6 +11,10 @@ import { RssFetchError } from './rss-client'
 vi.mock('./fetch-articles', () => ({
   runScheduledFetch: vi.fn(),
 }))
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 const runScheduledFetchMock = vi.mocked(runScheduledFetch)
 const logger = new Logger('silent')
@@ -38,6 +42,8 @@ beforeEach(() => {
 describe('fetchAllArticles', () => {
   describe('準正常系', () => {
     it('一部メディアが失敗した場合は失敗メディアをDiscordへ通知したうえでthrowする', async () => {
+      const infoSpy = vi.spyOn(logger, 'info')
+      vi.spyOn(Date, 'now').mockReturnValue(100)
       const feedError = new Error('feed error')
       runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
         media === 'hatena' ? err(feedError) : ok(1),
@@ -49,8 +55,22 @@ describe('fetchAllArticles', () => {
       )
 
       expect(sendMessageSpy).toHaveBeenCalledTimes(1)
-      expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('media: hatena'))
-      expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('error: feed error'))
+      expect(sendMessageSpy).toHaveBeenCalledWith(
+        '[trend-diary cron] fetch failed\ncron: 0 * * * *\nmedia: hatena\nerror: feed error',
+      )
+      expect(infoSpy).toHaveBeenCalledWith({
+        msg: 'cron job completed',
+        successCount: ARTICLE_MEDIA.length - 1,
+        failedCount: 1,
+        insertedTotal: ARTICLE_MEDIA.length - 1,
+        durationMs: 0,
+      })
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          msg: 'cron media fetch completed',
+          durationMs: 0,
+        }),
+      )
     })
 
     it('RssFetchErrorの場合は診断情報をログとDiscord通知に含める', async () => {
@@ -83,9 +103,16 @@ describe('fetchAllArticles', () => {
         fetchError,
       )
       expect(sendMessageSpy).toHaveBeenCalledWith(
-        expect.stringContaining('headers: retry-after=30, cf-mitigated=challenge'),
+        [
+          '[trend-diary cron] fetch failed',
+          'cron: 0 * * * *',
+          'media: zenn',
+          'error: Failed to fetch rss feed: https://zenn.dev/feed, status=429',
+          'headers: retry-after=30, cf-mitigated=challenge',
+          'body: Rate limited',
+          'note: rate limited (retry on next scheduled run)',
+        ].join('\n'),
       )
-      expect(sendMessageSpy).toHaveBeenCalledWith(expect.stringContaining('body: Rate limited'))
     })
 
     it('診断情報が無い場合はDiscord通知に空の診断行を足さない', async () => {
@@ -101,30 +128,6 @@ describe('fetchAllArticles', () => {
         '[trend-diary cron] fetch failed\ncron: 0 * * * *\nmedia: zenn\nerror: Failed to fetch rss feed: https://zenn.dev/feed, status=503',
       )
     })
-
-    // レート制限は次回の定期実行で回復する見込みのため、通知の受け手が即時対応の要否を判断できる必要がある
-    const rateLimitNoteCases = [
-      { status: 429, expectsNote: true },
-      { status: 503, expectsNote: false },
-    ]
-
-    it.each(rateLimitNoteCases)(
-      'status=$status の失敗では通知への再試行注記の有無が $expectsNote になる',
-      async ({ status, expectsNote }) => {
-        const fetchError = new RssFetchError('https://zenn.dev/feed', { status, headers: {} })
-        runScheduledFetchMock.mockImplementation(async (media: ArticleMedia) =>
-          media === 'zenn' ? err(fetchError) : ok(1),
-        )
-        const { discord, sendMessageSpy } = buildDiscord()
-
-        await expect(runFetchAllArticles(discord, 5000)).rejects.toThrow()
-
-        const noted = sendMessageSpy.mock.calls.some(([message]) =>
-          message.includes('note: rate limited (retry on next scheduled run)'),
-        )
-        expect(noted).toBe(expectsNote)
-      },
-    )
   })
 
   describe('異常系', () => {

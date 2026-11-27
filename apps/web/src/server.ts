@@ -15,7 +15,7 @@ app.onError(errorHandler)
 
 // SameSite属性のみに依存せず、Origin検証による多層防御でCSRFを防ぐ
 app.use('/api/*', csrf())
-app.use('/api', timeout(5000))
+app.use('/api/*', timeout(5000))
 app.route('/api', apiApp)
 
 export default app

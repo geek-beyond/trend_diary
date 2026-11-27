@@ -4,10 +4,10 @@ import { extractRssDescriptionText } from './rss-description'
 describe('extractRssDescriptionText', () => {
   it.each([
     {
-      name: 'ネストしたHTMLから文の順序と段落の区切りを保ってテキストを取り出す',
+      name: 'ネストしたHTMLから文の順序と段落・箇条書き・整形済み本文の区切りを保って取り出す',
       input:
-        '<blockquote><p>この記事は<a href="/example"><strong>参考</strong></a>になります。</p><div>概要<br>追記</div></blockquote>',
-      expected: 'この記事は参考になります。\n概要\n追記',
+        '<blockquote><p>この記事は<a href="/example"><strong>参考</strong></a>になります。</p><div>概要<br>追記</div><ol><li>項目1</li><li>項目2</li></ol><pre>例\nコード</pre></blockquote>',
+      expected: 'この記事は参考になります。\n概要\n追記\n項目1\n項目2\n例\nコード',
     },
     {
       name: '空文字を空文字として返す',

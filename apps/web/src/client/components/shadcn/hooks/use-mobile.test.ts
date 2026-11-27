@@ -10,7 +10,9 @@ function mockMatchMedia() {
   // jsdom は matchMedia を実装しないため、フックが購読するAPIを差し替える
   vi.stubGlobal('matchMedia', (query: string) => {
     return {
-      get matches() { return window.innerWidth < 768 },
+      get matches() {
+        return window.innerWidth < 768
+      },
       media: query,
       onchange: null,
       addEventListener: (_type: string, listener: MediaQueryListener) => {
@@ -47,18 +49,20 @@ describe('useIsMobile', () => {
 
   describe('正常系', () => {
     it.each([
-      { width: 375, expected: true, label: 'モバイル幅ではtrueを返す' },
       { width: 767, expected: true, label: 'ブレークポイント未満ではtrueを返す' },
       { width: 768, expected: false, label: 'ブレークポイント以上ではfalseを返す' },
-      { width: 1280, expected: false, label: 'デスクトップ幅ではfalseを返す' },
     ])('$label', ({ width, expected }) => {
       Object.defineProperty(window, 'innerWidth', { value: width, configurable: true })
       mockMatchMedia()
 
-      const { result } = renderHook(() => useIsMobile())
-
-      // 初回レンダーで確定し、副作用後の再レンダー（ちらつき）を伴わない
+      const observed: boolean[] = []
+      const { result } = renderHook(() => {
+        const isMobile = useIsMobile()
+        observed.push(isMobile)
+        return isMobile
+      })
       expect(result.current).toBe(expected)
+      expect(observed).not.toContain(!expected)
     })
 
     it('同じ MediaQueryList を再利用しアンマウント時に購読を解除する', () => {
@@ -67,6 +71,7 @@ describe('useIsMobile', () => {
       const { rerender, unmount } = renderHook(() => useIsMobile())
       rerender()
       expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy).toHaveBeenCalledWith('(max-width: 767px)')
       expect(listeners.size).toBe(1)
       unmount()
       expect(listeners.size).toBe(0)

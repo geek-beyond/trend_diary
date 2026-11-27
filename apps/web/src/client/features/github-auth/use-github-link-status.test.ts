@@ -1,4 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react'
+import { createElement, type ReactNode } from 'react'
+import { SWRConfig } from 'swr'
 import type { MockedFunction } from 'vitest'
 import getApiClientForClient from '@/infrastructure/api'
 import SwrTestWrapper from '@/test/helper/swr'
@@ -33,6 +35,9 @@ describe('useGithubLinkStatus', () => {
       await waitFor(() => {
         expect(result.current.linked).toBe(true)
       })
+      expect(mockApiClient.oauth[':provider'].$get).toHaveBeenCalledWith({
+        param: { provider: 'github' },
+      })
     })
 
     it('未連携のレスポンスなら連携なしと判定する', async () => {
@@ -51,15 +56,35 @@ describe('useGithubLinkStatus', () => {
   })
 
   describe('準正常系', () => {
-    it('取得に失敗したら連携なし扱いになる', async () => {
-      mockApiClient.oauth[':provider'].$get.mockResolvedValue({ ok: false, status: 401 })
-
-      const { result } = renderHook(() => useGithubLinkStatus(), { wrapper: SwrTestWrapper })
-
-      await waitFor(() => {
-        expect(mockApiClient.oauth[':provider'].$get).toHaveBeenCalled()
-      })
-      expect(result.current.linked).toBe(false)
-    })
+    it.each([
+      { status: 401, shouldReport: false },
+      { status: 503, shouldReport: true },
+    ])(
+      'status=$status は未連携表示とし、障害通知の要否を区別する',
+      async ({ status, shouldReport }) => {
+        const onError = vi.fn()
+        const json = vi.fn()
+        mockApiClient.oauth[':provider'].$get.mockResolvedValue({ ok: false, status, json })
+        const wrapper = ({ children }: { children: ReactNode }) =>
+          createElement(
+            SWRConfig,
+            { value: { onError, shouldRetryOnError: false } },
+            createElement(SwrTestWrapper, null, children),
+          )
+        const { result } = renderHook(() => useGithubLinkStatus(), { wrapper })
+        await waitFor(() => expect(result.current.isLoading).toBe(false))
+        expect(result.current.linked).toBe(false)
+        expect(json).not.toHaveBeenCalled()
+        if (shouldReport) {
+          expect(onError).toHaveBeenCalledWith(
+            expect.objectContaining({ message: 'Failed to fetch GitHub link status: 503' }),
+            expect.anything(),
+            expect.anything(),
+          )
+        } else {
+          expect(onError).not.toHaveBeenCalled()
+        }
+      },
+    )
   })
 })

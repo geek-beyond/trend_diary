@@ -14,14 +14,10 @@ export const toJstDate = (date: string) => new Date(`${date}T00:00:00+09:00`)
 export const toJstDateString = (rawDate: Date): string => {
   assert(!Number.isNaN(rawDate.getTime()), 'Invalid date')
 
-  const jstParts = jstDateFormatter.formatToParts(rawDate)
-  const year = jstParts.find((part) => part.type === 'year')?.value
-  const month = jstParts.find((part) => part.type === 'month')?.value
-  const day = jstParts.find((part) => part.type === 'day')?.value
-
-  assert(year && month && day, 'Failed to resolve JST date parts')
-
-  return `${year}-${month}-${day}`
+  const parts = Object.fromEntries(
+    jstDateFormatter.formatToParts(rawDate).map(({ type, value }) => [type, value]),
+  )
+  return `${parts.year}-${parts.month}-${parts.day}`
 }
 
 // 呼び出し元は検証済み・内部生成の日付文字列を渡す契約のため、失敗は契約違反として送出する

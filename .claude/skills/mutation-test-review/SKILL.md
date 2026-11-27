@@ -9,7 +9,7 @@ description: ミューテーションテストの結果を全件調査し、不�
 
 ## 全件を取得して判断する
 
-1. まず既存artifactとローカル結果から全対象の調査結果を取得する。結果がない対象や変更の影響を受ける対象は、ローカルで `pnpm mutate:audit <対象>` を実行する。修正のたびに全10対象を再実行しない。CIの全件調査は初回、大きなテスト整理、計測設定の変更など、全体の比較が必要な節目にまとめて使う。`node scripts/mutation/summarize.mjs <取得先>` で集約する。Job Summaryの抜粋やログの末尾だけで調査範囲を決めない。`summary.json` の全 `findings` を読み、対象欠落・古い実行結果・調査未完了を0件と混同しない。
+1. まず既存artifactとローカル結果から全対象の調査結果を取得する。結果がない対象や変更の影響を受ける対象は、ローカルで `pnpm mutate:audit <対象>` を実行する。修正のたびに全10対象を再実行しない。CIの全件調査は初回、大きなテスト整理、計測設定の変更など、全体の比較が必要な節目にまとめて使う。`node scripts/mutation/summarize.mjs <取得先>` で集約する。Job Summaryの抜粋やログの末尾だけで調査範囲を決めない。`summary.json` の全対象の `report`（mutatorの元JSON）を読み、対象欠落・古い実行結果・調査未完了を0件と混同しない。
 2. survived、noCoverage、duplicates、subsumed、noKills、timeout、incompleteを分け、各項目のID、変異位置、関係するテストを確認する。timeoutやmoduleロード失敗はテスト単位の比較が成立した証拠にはならない。
 3. 各項目について実装・テスト・仕様・呼び出し側を読む。同じ原因の項目はまとめて調査してよいが、PRコメントでの判断は全IDを対象とする。根拠なしに分類単位で一括承認しない。
 4. survivedでは不要な実装の削除・条件の簡略化を先に検討する。必要な仕様の検証が欠けている場合にテストを改善する。warningを消すためだけにテストを増やさない。
@@ -41,7 +41,7 @@ pnpm mutate:audit domain
 node scripts/mutation/summarize.mjs mutation-audit
 ```
 
-JSON・HTMLの出力先は `mutation-audit/<対象>/`。CIの対象別artifactにはログも含まれ、保存期間は30日。全対象の構造化データは `mutation-audit-summary` artifactの `summary.json`、完全な表示は `summary.md` から取得する。Job Summaryがサイズ制限でID一覧やartifactへの案内になっている場合も、JSONから全項目を取得する。
+JSON・HTMLの出力先は `mutation-audit/<対象>/`。対象別artifactにはログも含み、保存期間は30日。集約artifactの `summary.json` は全対象の元JSONを `report`、実行記録を `run` として加工せず保持する。Job Summaryは件数表とartifactの案内だけを表示する。変異・テスト・警告の詳細は各対象の元JSONを読む。
 
 通常CIは差分の回帰検出に使い、既存のcritical判定とstdの閾値を維持する。全件調査の `Mutation audit` はスコアの閾値を設けず、手動実行または調査スクリプト・設定・ワークフローを変更するPRの作成時に起動する。PR更新時には自動で再実行しない。
 

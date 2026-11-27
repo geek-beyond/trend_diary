@@ -205,7 +205,7 @@ function emptyProject(project, run) {
   }
 }
 
-export function summarizeProject(project, report, run, expectedRevision, review = {}) {
+export function summarizeProject(project, report, run, expectedRevision) {
   const result = emptyProject(project, run)
   if (!report) {
     result.issues.push('mutation.jsonがありません。未実行・失敗・中断を確認してください。')
@@ -233,16 +233,7 @@ export function summarizeProject(project, report, run, expectedRevision, review 
       project,
       category,
       ...detail,
-      evidenceHash: hash([reportHash, category, key, detail]),
     }
-    const decision = review[id]
-    finding.review =
-      decision?.evidenceHash === finding.evidenceHash &&
-      ['maintain', 'fix', 'defer'].includes(decision.action) &&
-      decision.reason?.trim() &&
-      decision.references?.length
-        ? decision
-        : { action: 'unreviewed' }
     result.findings.push(finding)
   }
   const incompleteMutants = collectMutants(project, report, add)
@@ -274,16 +265,7 @@ function findReports(dir, project, filename = 'mutation.json') {
   return paths
 }
 
-export function reviewDecisions(ledger) {
-  return Object.fromEntries(
-    Object.entries(ledger.decisions ?? {}).map(([id, decision]) => [
-      id,
-      { ...ledger.groups?.[decision.group], ...decision },
-    ]),
-  )
-}
-
-export function aggregate(dir, { expectedRevision, review = {} } = {}) {
+export function aggregate(dir, { expectedRevision } = {}) {
   const results = Object.keys(projects).map((project) => {
     const paths = findReports(dir, project)
     if (paths.length > 1)
@@ -302,7 +284,6 @@ export function aggregate(dir, { expectedRevision, review = {} } = {}) {
         path ? readJson(path) : null,
         runPath && existsSync(runPath) ? readJson(runPath) : null,
         expectedRevision,
-        review,
       )
     } catch (error) {
       return { ...summarizeProject(project), state: 'invalid', issues: [error.message] }
@@ -314,11 +295,6 @@ export function aggregate(dir, { expectedRevision, review = {} } = {}) {
     projects: results,
     findings: results.flatMap((r) => r.findings),
     complete: results.every((r) => r.state === 'complete'),
-    reviewComplete:
-      results.every(
-        (r) => r.executionValid && r.reportValid && !['missing', 'invalid'].includes(r.state),
-      ) &&
-      results.flatMap((r) => r.findings).every((finding) => finding.review.action !== 'unreviewed'),
   }
 }
 
@@ -348,16 +324,8 @@ function findingMarkdown(finding, result, repository) {
   )
   for (const test of findingTests(finding)) lines.push(`  - ${text(test)}`)
   if (finding.reason) lines.push(`  - ${text(finding.reason)}`)
-  lines.push(
-    `  - 判断: ${text(finding.review.action)}${finding.review.reason ? ` — ${text(finding.review.reason)}` : ''}`,
-  )
   return lines
 }
-
-const unreviewedCount = (result) =>
-  ['missing', 'invalid'].includes(result.state)
-    ? '—'
-    : result.findings.filter((f) => f.review.action === 'unreviewed').length
 
 export function markdown(summary, repository = process.env.GITHUB_REPOSITORY) {
   const lines = [
@@ -367,17 +335,17 @@ export function markdown(summary, repository = process.env.GITHUB_REPOSITORY) {
     '',
     'survived/noCoverage/timeoutは変異数、duplicatesはテスト群数、subsumed/noKillsはテスト数、incompleteは未比較変異・実行警告の件数です。',
     '',
-    '| 対象 | 調査状態 | コミット | ' + categories.join(' | ') + ' | 未判断 |',
-    '| --- | --- | --- | ' + categories.map(() => '---:').join(' | ') + ' | ---: |',
+    '| 対象 | 調査状態 | コミット | ' + categories.join(' | ') + ' |',
+    '| --- | --- | --- | ' + categories.map(() => '---:').join(' | ') + ' |',
   ]
   for (const result of summary.projects) {
     lines.push(
-      `| ${result.project} | ${result.state} | ${result.revision?.slice(0, 8) ?? '不明'} | ${categories.map((c) => result.counts[c] ?? '—').join(' | ')} | ${unreviewedCount(result)} |`,
+      `| ${result.project} | ${result.state} | ${result.revision?.slice(0, 8) ?? '不明'} | ${categories.map((c) => result.counts[c] ?? '—').join(' | ')} |`,
     )
   }
   lines.push(
     '',
-    '全件の構造化データはartifactのsummary.jsonを参照してください。維持・保留の根拠も同じIDで追跡します。',
+    '全件の構造化データはartifactのsummary.jsonを参照してください。判断理由はPRコメントに項目IDとともに残してください。',
     '',
   )
   for (const result of summary.projects) {
@@ -403,7 +371,7 @@ export function jobSummary(summary, { maxBytes = 950_000 } = {}) {
   const header = full.split('<details>')[0]
   const lines = [
     header,
-    '詳細がサイズ制限を超えたため全項目のIDを表示します。変異・テスト・判断の詳細はartifactのsummary.json・summary.mdを参照してください。',
+    '詳細がサイズ制限を超えたため全項目のIDを表示します。変異・テストの詳細はartifactのsummary.json・summary.mdを参照してください。',
     '',
   ]
   for (const result of summary.projects) {
@@ -432,10 +400,8 @@ if (
 ) {
   const dir = resolve(process.argv[2] ?? 'mutation-audit')
   const output = resolve(process.argv[3] ?? join(dir, 'summary'))
-  const reviewFile = resolve('docs/mutation/review.json')
   const summary = aggregate(dir, {
     expectedRevision: process.env.AUDIT_REVISION,
-    review: existsSync(reviewFile) ? reviewDecisions(readJson(reviewFile)) : {},
   })
   mkdirSync(output, { recursive: true })
   writeFileSync(join(output, 'summary.json'), JSON.stringify(summary, null, 2) + '\n')

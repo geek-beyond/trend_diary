@@ -89,28 +89,6 @@ test('テストファイル単位のkill・未実行・帰属不明のmatrixを�
   assert.equal(result.state, 'partial')
 })
 
-test('結果が変わった項目は以前の判断を適用せず未判断に戻す', () => {
-  const raw = report([mutant('s', 'Survived')])
-  const finding = summarizeProject('std', raw, run).findings[0]
-  const review = {
-    [finding.id]: {
-      evidenceHash: finding.evidenceHash,
-      action: 'maintain',
-      reason: '公開契約を検証する別の入力',
-      references: ['src/a.test.ts'],
-    },
-  }
-  assert.equal(
-    summarizeProject('std', raw, run, undefined, review).findings[0].review.action,
-    'maintain',
-  )
-  raw.files['src/a.ts'].source = 'changed()'
-  assert.equal(
-    summarizeProject('std', raw, run, undefined, review).findings[0].review.action,
-    'unreviewed',
-  )
-})
-
 test('同じ対象の別実行を混ぜた場合は集約を拒否する', () => {
   const dir = mkdtempSync(join(tmpdir(), 'mutation-summary-'))
   try {
@@ -144,37 +122,15 @@ test('ソースが0件の場合は検出0件でも調査完了としない', () 
   assert.equal(summarizeProject('std', raw, run).state, 'partial')
 })
 
-test('ローカルとCIの絶対パス・実行順の違いだけでは判断を失効させない', () => {
+test('絶対パス・実行順の違いでは計測内容のハッシュが変わらない', () => {
   const raw = report([mutant('s', 'Survived', { coveredBy: ['b#two', 'a#one'] })])
   raw.projectRoot = '/Users/local/project'
-  const finding = summarizeProject('std', raw, run).findings[0]
-  const review = {
-    [finding.id]: {
-      evidenceHash: finding.evidenceHash,
-      action: 'maintain',
-      reason: '契約を維持',
-      references: ['src/a.ts'],
-    },
-  }
+  const before = summarizeProject('std', raw, run).reportHash
   raw.projectRoot = '/home/runner/project'
   raw.files['src/a.ts'].mutants[0].coveredBy.reverse()
-  assert.equal(
-    summarizeProject('std', raw, run, undefined, review).findings[0].review.action,
-    'maintain',
-  )
-})
-
-test('同じ根拠の判断をグループ化しても、列挙した項目だけに適用する', async () => {
-  const { reviewDecisions } = await import('./summarize.mjs')
-  const result = reviewDecisions({
-    groups: {
-      contract: { action: 'maintain', reason: '異なるAPIの契約', references: ['src/a.test.ts'] },
-    },
-    decisions: { one: { group: 'contract', evidenceHash: 'hash' } },
-  })
-  assert.equal(result.one.reason, '異なるAPIの契約')
-  assert.equal(result.one.evidenceHash, 'hash')
-  assert.equal(result.two, undefined)
+  assert.equal(summarizeProject('std', raw, run).reportHash, before)
+  raw.files['src/a.ts'].source = 'changed()'
+  assert.notEqual(summarizeProject('std', raw, run).reportHash, before)
 })
 
 test('集約JSONだけで元の式と置換後の式を確認できる', () => {

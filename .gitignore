@@ -21,6 +21,7 @@
 !/docs/
 !/e2e/
 !/knip.ts
+!/mutator.audit.config.ts
 !/mise.toml
 !/package.json
 !/packages/

@@ -1,14 +1,6 @@
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  realpathSync,
-  writeFileSync,
-} from 'node:fs'
+import { appendFileSync, existsSync, readFileSync, realpathSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { projects } from './projects.mjs'
 
 const categories = [
   'survived',
@@ -18,6 +10,7 @@ const categories = [
   'noKills',
   'timeout',
   'incomplete',
+  'warning',
 ]
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 
@@ -41,6 +34,7 @@ function reportCounts(report) {
     subsumed: killMatrix.subsumed.length,
     noKills: killMatrix.noKills.length,
     timeout: count('Timeout'),
+    warning: report.warnings?.length ?? 0,
     incomplete: Math.max(
       killMatrix.mutants?.incomplete ?? 0,
       mutants.filter(
@@ -56,7 +50,7 @@ function reportCounts(report) {
 function executionIssues({ report, run, counts }, expectedRevision) {
   const checks = [
     [Object.keys(report.files).length === 0, '対象ソースがありません。'],
-    [!run?.finishedAt || run.exitCode !== 0, '正常終了の記録がありません。'],
+    [run?.outcome !== 'success', '正常終了の記録がありません。'],
     [
       expectedRevision && (run?.revision !== expectedRevision || run?.worktreeDirty),
       '期待するコミットの結果ではありません。',
@@ -75,8 +69,8 @@ function executionIssues({ report, run, counts }, expectedRevision) {
   return checks.filter(([failed]) => failed).map(([, reason]) => reason)
 }
 
-export function aggregate(dir, expectedRevision) {
-  return Object.keys(projects).map((project) => {
+export function aggregate(dir, projects, expectedRevision) {
+  return projects.map(({ project }) => {
     const result = { project, state: 'missing', issues: [], counts: null, run: null, report: null }
     try {
       const root = join(dir, project)
@@ -113,7 +107,7 @@ export function markdown(results) {
     '',
     'survived/noCoverage/timeout/incompleteは変異数、duplicatesはテスト群数、subsumed/noKillsはテスト数です。実行警告は元レポートを確認してください。',
     '',
-    'Artifact mutation-audit-summaryのsummary.jsonには、対象ごとの元レポートをreport、実行記録をrunとして加工せず収録しています。変異・テスト・警告の全件は元レポートを参照してください。HTMLとログは対象別のmutation-audit-* artifactにあります。',
+    'Artifact mutation-audit-reportsに全対象の元レポート・HTML・ログ・実行記録を対象別フォルダのまま収録しています。変異・テスト・警告の全件は各対象のmutation.jsonを参照してください。',
     '',
     ...results.flatMap((result) => result.issues.map((issue) => `- ${result.project}: ${issue}`)),
     '',
@@ -126,10 +120,11 @@ if (
   realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
 ) {
   const dir = resolve(process.argv[2] ?? 'mutation-audit')
-  const output = resolve(process.argv[3] ?? join(dir, 'summary'))
-  const results = aggregate(dir, process.env.AUDIT_REVISION)
-  mkdirSync(output, { recursive: true })
-  writeFileSync(join(output, 'summary.json'), JSON.stringify(results, null, 2) + '\n')
+  const results = aggregate(
+    dir,
+    JSON.parse(process.env.AUDIT_MATRIX).include,
+    process.env.AUDIT_REVISION,
+  )
   const summary = markdown(results)
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary)
   process.stdout.write(summary)

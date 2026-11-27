@@ -9,6 +9,8 @@ on:
       - '.github/workflows/mutation-audit.yaml'
       - 'scripts/mutation/**'
       - 'apps/web/vitest.mutation*.ts'
+      - '**/mutator.audit*.ts'
+      - 'mutator.audit.config.ts'
 
 permissions:
   contents: read
@@ -21,8 +23,24 @@ defaults:
   run:
     shell: bash
 
+env:
+  AUDIT_MATRIX: >-
+    {"include":[{"project":"std","root":"packages/std","config":"mutator.audit.config.ts"},{"project":"authentication","root":"packages/authentication","config":"mutator.audit.config.ts"},{"project":"datastore","root":"packages/datastore","config":"mutator.audit.config.ts"},{"project":"domain","root":"packages/domain","config":"mutator.audit.config.ts"},{"project":"logger","root":"packages/logger","config":"mutator.audit.config.ts"},{"project":"notification","root":"packages/notification","config":"mutator.audit.config.ts"},{"project":"runtime","root":"packages/runtime","config":"mutator.audit.config.ts"},{"project":"web-client","root":"apps/web","config":"apps/web/mutator.audit.client.config.ts"},{"project":"web-server","root":"apps/web","config":"apps/web/mutator.audit.server.config.ts"},{"project":"cron","root":"apps/cron","config":"apps/cron/mutator.audit.config.ts"}]}
+
 jobs:
+  plan:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - id: matrix
+        run: echo "matrix=$AUDIT_MATRIX" >> "$GITHUB_OUTPUT"
+
   audit:
+    needs: plan
     name: audit (${{ matrix.project }})
     permissions:
       contents: read
@@ -30,20 +48,10 @@ jobs:
     timeout-minutes: 180
     strategy:
       fail-fast: false
-      matrix:
-        project:
-          - std
-          - authentication
-          - datastore
-          - domain
-          - logger
-          - notification
-          - runtime
-          - web-client
-          - web-server
-          - cron
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     env:
       DATABASE_URL: file:./test.db
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -62,14 +70,24 @@ jobs:
           version: v0.1.8
           addr: 127.0.0.1:54321
           webauthn-rp-id: 127.0.0.1
-      - name: Audit command tests
-        run: node --test scripts/mutation/audit.test.mjs
       - name: Full kill matrix
+        id: mutation
         env:
           AUDIT_PROJECT: ${{ matrix.project }}
+          AUDIT_ROOT: ${{ matrix.root }}
+          AUDIT_CONFIG: ${{ matrix.config }}
         run: |
-          mkdir -p mutation-audit
-          node scripts/mutation/audit.mjs "$AUDIT_PROJECT" 2>&1 | tee "mutation-audit/$AUDIT_PROJECT.log"
+          report="$GITHUB_WORKSPACE/mutation-audit/$AUDIT_PROJECT"
+          mkdir -p "$report"
+          pnpm exec mutator --root "$AUDIT_ROOT" --config-file "$GITHUB_WORKSPACE/$AUDIT_CONFIG" --report-dir "$report" 2>&1 | tee "$report/run.log"
+      - name: Record execution outcome
+        if: ${{ always() }}
+        env:
+          AUDIT_PROJECT: ${{ matrix.project }}
+          AUDIT_OUTCOME: ${{ steps.mutation.outcome }}
+        run: |
+          mkdir -p "mutation-audit/$AUDIT_PROJECT"
+          jq -n --arg revision "$GITHUB_SHA" --arg outcome "$AUDIT_OUTCOME" '{revision: $revision, outcome: $outcome}' > "mutation-audit/$AUDIT_PROJECT/run.json"
       - name: Save reports and logs
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -104,16 +122,16 @@ jobs:
           path: mutation-audit-input
       - name: Summary tests
         run: node --test scripts/mutation/summarize.test.mjs
-      - name: Summarize every finding
+      - name: Summarize report counts
         if: ${{ always() }}
         env:
           AUDIT_REVISION: ${{ github.sha }}
-        run: node scripts/mutation/summarize.mjs mutation-audit-input mutation-audit-summary
+        run: node scripts/mutation/summarize.mjs mutation-audit-input
       - name: Save complete machine-readable findings
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: mutation-audit-summary
-          path: mutation-audit-summary/
+          name: mutation-audit-reports
+          path: mutation-audit-input/
           if-no-files-found: error
           retention-days: 30

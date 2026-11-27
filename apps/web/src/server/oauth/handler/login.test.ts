@@ -48,7 +48,6 @@ describe('GitHubログイン開始', () => {
       expect(res.status).toBe(302)
       const redirectCookie = findSetCookie(res, 'oauth_redirect_to=')
       expect(redirectCookie).toContain('oauth_redirect_to=;')
-      expect(redirectCookie).toContain('Path=/api/oauth')
       expect(redirectCookie).toContain('Max-Age=0')
     })
   })

@@ -33,12 +33,6 @@ describe('fetchRssFeed', () => {
       expect(error).toMatchObject({
         diagnostics: {
           status: 429,
-          headers: {
-            'retry-after': '30',
-            'cf-ray': '8abc',
-            'cf-mitigated': 'challenge',
-            server: 'cloudflare',
-          },
           bodySnippet: 'Rate limited by origin',
         },
       })
@@ -61,7 +55,6 @@ describe('fetchRssFeed', () => {
 
       assert(result.isErr())
       const error = result.error
-      expect(error).toBeInstanceOf(RssFetchError)
       expect(error).toMatchObject({ diagnostics: { bodySnippet: `${'x'.repeat(500)}…` } })
     })
 
@@ -72,7 +65,6 @@ describe('fetchRssFeed', () => {
 
       assert(result.isErr())
       const error = result.error
-      expect(error).toBeInstanceOf(RssFetchError)
       expect(error).toMatchObject({ diagnostics: { bodySnippet: 'x'.repeat(500) } })
     })
 

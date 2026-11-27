@@ -30,4 +30,28 @@ description: ミューテーションテストの結果を全件調査し、不�
 - 全対象の実行結果が揃い、すべての検出項目に根拠付きの対応要否判断があることを確認する。未取得・実行中断された対象や未判断項目がある間は作業完了と報告しない。timeout・incompleteを維持する場合も、計測できない理由と判断根拠を明示する。
 - 最終報告には削減・修正内容、再実行の範囲、未対応項目と理由を含める。残る項目は個別IDと判断記録から追跡できるようにする。
 
-実行方法、件数の単位、判断記録の形式は [調査ガイド](../../../docs/how_to_guides/mutation_audit.md) を参照する。
+## 実行と結果の取得
+
+対象は `scripts/mutation/projects.mjs` の10対象。`pnpm mutate:audit <対象>` は対象を省略すると利用可能な名前を表示する。web serverのローカル実行には127.0.0.1:54321の認証エミュレータが必要。CIはsupa-emuを起動する。
+
+```sh
+pnpm mutate:audit domain
+node scripts/mutation/summarize.mjs mutation-audit
+```
+
+JSON・HTMLの出力先は `mutation-audit/<対象>/`。CIの対象別artifactにはログも含まれ、保存期間は30日。全対象の構造化データは `mutation-audit-summary` artifactの `summary.json`、完全な表示は `summary.md` から取得する。Job Summaryがサイズ制限でID一覧やartifactへの案内になっている場合も、JSONから全項目を取得する。
+
+通常CIは差分の回帰検出に使い、既存のcritical判定とstdの閾値を維持する。全件調査の `Mutation audit` はスコアの閾値を設けず、手動実行または調査スクリプト・設定・ワークフローを変更するPRの作成時に起動する。PR更新時には自動で再実行しない。
+
+## 集約と判断記録の形式
+
+- レポート欠落・形式不正は「—」、有効な計測で検出がない場合は0件。`partial` は未完了や旧コミットの結果を含む。`complete` は計測の状態であり、判断完了を意味しない。
+- survived・noCoverage・timeoutは変異数、duplicatesはテスト群数、subsumed・noKillsはテスト数。incompleteは未比較変異や実行警告の件数。
+- 各項目のIDから変異位置、元の式と置換後の式、関係するテストIDを取得できる。duplicates・subsumedにはkill setの変異の内容も含まれる。
+- `docs/mutation/review.json` の `decisions` に項目IDをキーとして `action`（maintain / fix / defer）、`reason`、`references`、集約の `evidenceHash` を記録する。`defer` は未対応理由を記録した状態。
+- 共通の根拠は `groups` にまとめ、各 `decisions` に `group` と `evidenceHash` を指定できる。グループ定義だけでは未列挙のIDは判断済みにならない。結果の変化でハッシュが変わった項目は未判断に戻る。
+- `reviewComplete` は全対象の有効な実行記録と全項目の根拠付き判断が揃った状態。timeout・incompleteの理由を判断しても、未実施の比較が完了したことにはならない。
+
+## 計測の範囲
+
+テスト用ヘルパーとStorybookのstoriesは変異対象から除く。Storybookのブラウザ実行とE2EはこのVitest adapterの調査に含まれず、通常のcomponentテストとE2Eで検証する。TypeScript 7との互換性により、変異ごとの型チェックは無効。

@@ -1,5 +1,5 @@
 import { HTTPException } from 'hono/http-exception'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { assert, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { assertCaptchaVerified, verifyTurnstile } from './captcha'
 
 const fetchMock = vi.fn()
@@ -20,7 +20,8 @@ describe('verifyTurnstile', () => {
 
       const result = await verifyTurnstile('secret', 'valid-token')
 
-      expect(result._unsafeUnwrap()).toBe(true)
+      assert(result.isOk())
+      expect(result.value).toBe(true)
       expect(fetchMock).toHaveBeenCalledWith(
         'https://challenges.cloudflare.com/turnstile/v0/siteverify',
         expect.objectContaining({ method: 'POST' }),
@@ -35,7 +36,8 @@ describe('verifyTurnstile', () => {
     it('トークンが無い場合は検証を通さない', async () => {
       const result = await verifyTurnstile('secret', undefined)
 
-      expect(result._unsafeUnwrap()).toBe(false)
+      assert(result.isOk())
+      expect(result.value).toBe(false)
       expect(fetchMock).not.toHaveBeenCalled()
     })
 
@@ -49,7 +51,8 @@ describe('verifyTurnstile', () => {
 
       const result = await verifyTurnstile('secret', 'invalid-token')
 
-      expect(result._unsafeUnwrap()).toBe(false)
+      assert(result.isOk())
+      expect(result.value).toBe(false)
     })
   })
 
@@ -59,7 +62,8 @@ describe('verifyTurnstile', () => {
 
       const result = await verifyTurnstile('secret', 'token')
 
-      expect(result._unsafeUnwrapErr().message).toBe('network down')
+      assert(result.isErr())
+      expect(result.error.message).toBe('network down')
     })
 
     it('siteverifyの応答を解析できないときは検証できずに失敗する', async () => {

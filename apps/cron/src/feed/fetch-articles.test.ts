@@ -2,7 +2,7 @@ import { articles } from '@trend-diary/datastore/schema'
 import Logger from '@trend-diary/logger'
 import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { assert, afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildHatenaRdf,
   buildQiitaAtom,
@@ -451,7 +451,9 @@ describe('fetchHatenaArticles', () => {
         expect(signal?.aborted).toBe(false)
         await vi.advanceTimersByTimeAsync(1)
         expect(signal?.aborted).toBe(true)
-        expect((await pending)._unsafeUnwrapErr()).toBe(aborted)
+        const result = await pending
+        assert(result.isErr())
+        expect(result.error).toBe(aborted)
       } finally {
         vi.useRealTimers()
       }
@@ -462,7 +464,8 @@ describe('fetchHatenaArticles', () => {
 
       const result = await fetchHatenaArticles(cronEnv, logger)
 
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(Error)
+      assert(result.isErr())
+      expect(result.error).toBeInstanceOf(Error)
       expect(await countArticles()).toBe(0)
     })
 
@@ -471,7 +474,8 @@ describe('fetchHatenaArticles', () => {
 
       const result = await fetchHatenaArticles(cronEnv, logger)
 
-      expect(result._unsafeUnwrapErr().message).toContain('status=500')
+      assert(result.isErr())
+      expect(result.error.message).toContain('status=500')
       expect(await countArticles()).toBe(0)
     })
   })

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nonOkResponse } from '../test-helper/feed'
 import { fetchRssFeed, RssFetchError } from './rss-client'
 
@@ -26,7 +26,8 @@ describe('fetchRssFeed', () => {
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
       expect(fetchMock).toHaveBeenCalledTimes(1)
-      const error = result._unsafeUnwrapErr()
+      assert(result.isErr())
+      const error = result.error
       expect(error).toBeInstanceOf(RssFetchError)
       expect(error.name).toBe('RssFetchError')
       expect(error).toMatchObject({
@@ -58,7 +59,8 @@ describe('fetchRssFeed', () => {
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      const error = result._unsafeUnwrapErr()
+      assert(result.isErr())
+      const error = result.error
       expect(error).toBeInstanceOf(RssFetchError)
       expect(error).toMatchObject({ diagnostics: { bodySnippet: `${'x'.repeat(500)}…` } })
     })
@@ -68,7 +70,8 @@ describe('fetchRssFeed', () => {
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      const error = result._unsafeUnwrapErr()
+      assert(result.isErr())
+      const error = result.error
       expect(error).toBeInstanceOf(RssFetchError)
       expect(error).toMatchObject({ diagnostics: { bodySnippet: 'x'.repeat(500) } })
     })
@@ -78,7 +81,8 @@ describe('fetchRssFeed', () => {
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      const error = result._unsafeUnwrapErr()
+      assert(result.isErr())
+      const error = result.error
       expect(error).toBeInstanceOf(RssFetchError)
       if (error instanceof RssFetchError) {
         expect(error.diagnostics).toEqual({ status: 503, headers: {} })
@@ -92,7 +96,8 @@ describe('fetchRssFeed', () => {
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
-      const error = result._unsafeUnwrapErr()
+      assert(result.isErr())
+      const error = result.error
       expect(error).toBeInstanceOf(RssFetchError)
       if (error instanceof RssFetchError) {
         expect(error.diagnostics).toEqual({ status: 503, headers: {} })

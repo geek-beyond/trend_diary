@@ -1,6 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm'
 import { SQLiteSyncDialect } from 'drizzle-orm/sqlite-core'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { assert, beforeEach, describe, expect, it } from 'vitest'
 import getRdbClient, { mockRdbExecutor } from '../../test-helper/rdb'
 import QueryImpl from './query-impl'
 
@@ -80,7 +80,8 @@ describe('QueryImpl', () => {
         expect(result.value.data[0].isRead).toBeUndefined()
       }
       const lastPage = await queryImpl.searchArticles({ page: 3, limit: 20 })
-      expect(lastPage._unsafeUnwrap()).toMatchObject({
+      assert(lastPage.isOk())
+      expect(lastPage.value).toMatchObject({
         totalPages: 3,
         hasNext: false,
         hasPrev: true,
@@ -288,7 +289,8 @@ describe('QueryImpl', () => {
       const cause = new Error('find failed')
       mockRdbExecutor.mockRejectedValue(cause)
       const result = await queryImpl.findArticleById(1n)
-      expect(result._unsafeUnwrapErr()).toMatchObject({ message: 'find failed', cause })
+      assert(result.isErr())
+      expect(result.error).toMatchObject({ message: 'find failed', cause })
     })
   })
 
@@ -470,7 +472,8 @@ describe('QueryImpl', () => {
       }
       const lastPage = await queryImpl.getDailyDiary(10n, '2026-03-07', 2, 2)
       expect(mockRdbExecutor.mock.calls.at(-1)?.[1].slice(-2)).toEqual([2, 2])
-      expect(lastPage._unsafeUnwrap().reads).toMatchObject({
+      assert(lastPage.isOk())
+      expect(lastPage.value.reads).toMatchObject({
         page: 2,
         totalPages: 2,
         hasNext: false,

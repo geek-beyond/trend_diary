@@ -78,7 +78,7 @@ describe('articleCache ミドルウェア', () => {
 
     it('保存する応答に Cache-Control(s-maxage) を付与すること', async () => {
       const { store } = stubEdgeCache()
-      await callArticles()
+      await callArticles({ cookie: 'theme=dark' })
 
       const stored = store.get(ARTICLES_URL)
       expect(stored?.headers.get('Cache-Control')).toBe(
@@ -129,7 +129,7 @@ describe('articleCache ミドルウェア', () => {
 
   describe('準正常系', () => {
     it.each([
-      { name: 'セッション Cookie 付き', options: { cookie: 'sb-abcd-auth-token=xyz; theme=dark' } },
+      { name: 'セッション Cookie 付き', options: { cookie: 'theme=dark; sb-abcd-auth-token=xyz' } },
       { name: 'EDGE_CACHE_DISABLED が有効', options: { disabled: true } },
       { name: 'GET 以外', options: { method: 'POST' } },
     ])('$name はキャッシュせず素通しすること', async ({ options }) => {

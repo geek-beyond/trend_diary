@@ -50,7 +50,7 @@ async function collectDiagnostics(response: Response): Promise<RssFetchDiagnosti
   }
 
   const bodySnippet = await readBodySnippet(response)
-  return { status: response.status, headers, ...(bodySnippet ? { bodySnippet } : {}) }
+  return { status: response.status, headers, bodySnippet }
 }
 
 async function readBodySnippet(response: Response): Promise<string | undefined> {

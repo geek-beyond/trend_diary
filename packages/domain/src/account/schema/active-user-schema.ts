@@ -17,10 +17,6 @@ export const activeUserInputSchema = activeUserSchema.pick({
   displayName: true,
 })
 
-export const activeUserUpdateSchema = activeUserSchema.pick({
-  displayName: true,
-})
-
 export type ActiveUser = z.infer<typeof activeUserSchema>
 export type CurrentUser = ActiveUser
 export type ActiveUserInput = z.infer<typeof activeUserInputSchema>

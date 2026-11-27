@@ -1,0 +1,3165 @@
+{
+  "schemaVersion": 1,
+  "groups": {
+    "std-redirect-equivalent": {
+      "action": "maintain",
+      "reason": "URL解析失敗のcatchは明示的にundefinedを返す。空catchでも関数末尾からundefinedになる等価変異であり、外部URL・不正ホストを拒否する契約を維持する。",
+      "references": [
+        "packages/std/src/sanitization/redirect-target.ts",
+        "packages/std/src/sanitization/redirect-target.test.ts"
+      ]
+    },
+    "std-intl-module": {
+      "action": "maintain",
+      "reason": "Intlのlocale・timeZone・year/month/day書式を空文字へ変えるとモジュール初期化がRangeErrorで失敗する。必要なJST固定設定を維持する。モジュール失敗を個々のテストの完全なkill matrixとは扱わない。",
+      "references": ["packages/std/src/locale/date.ts", "packages/std/src/locale/date.test.ts"]
+    },
+    "std-pagination-contracts": {
+      "action": "maintain",
+      "reason": "pageの整数・下限とlimitの上限・下限・数値化・既定値は異なる公開入力契約。mobileはlimitを別スキーマで置換するため、その境界検証も必要。継承元と同じpageの不正値検証は今回削減済みである。",
+      "references": [
+        "packages/std/src/pagination/schema.ts",
+        "packages/std/src/pagination/schema.test.ts"
+      ]
+    },
+    "std-date-contracts": {
+      "action": "maintain",
+      "reason": "日付の解釈と日付加算は別の公開API。通常日付をJSTとして読む契約と、不正日付の返値・加算時の契約違反をそれぞれ検証しており、加算テストへ含まれるkillだけでは代替できない。",
+      "references": ["packages/std/src/locale/date.ts", "packages/std/src/locale/date.test.ts"]
+    },
+    "std-result-contracts": {
+      "action": "maintain",
+      "reason": "成功値、Promiseのreject、同期throw、Error以外のthrowは別の契約。特にasync関数のrejectと呼び出し自体のthrowを両方捕捉する必要がある。",
+      "references": ["packages/std/src/result/index.ts", "packages/std/src/result/index.test.ts"]
+    },
+    "std-trim-contracts": {
+      "action": "maintain",
+      "reason": "未変更文字列を保持すること、undefined・空文字・空白だけを未指定へ正規化することを個別に検証する。複数種の前後空白を除去する4ケースは混合入力1ケースへ統合済みである。",
+      "references": [
+        "packages/std/src/sanitization/string.ts",
+        "packages/std/src/sanitization/string.test.ts"
+      ]
+    },
+    "std-redirect-contracts": {
+      "action": "maintain",
+      "reason": "クエリ・ハッシュの保持、未指定null/undefined、ログイン画面への自己遷移、外部URL、不正ホスト、制御文字・バックスラッシュによる外部遷移は別の入力契約。kill setが一致してもリダイレクトの安全性を担保する各入力を残す。",
+      "references": [
+        "packages/std/src/sanitization/redirect-target.ts",
+        "packages/std/src/sanitization/redirect-target.test.ts"
+      ]
+    },
+    "auth-diagnostics": {
+      "action": "maintain",
+      "reason": "エラー名と認証設定不足のメッセージは運用上の原因特定に必要。既存テストは例外の型・発生を検証している。文言の完全一致だけを増やす目的ではテストを追加しない。",
+      "references": [
+        "packages/authentication/src/errors.ts",
+        "packages/authentication/src/infrastructure/supabase-client.ts",
+        "packages/authentication/src/admin/client.test.ts"
+      ]
+    },
+    "auth-admin-session": {
+      "action": "maintain",
+      "reason": "service_role用クライアントはテスト専用であり、永続セッション保存・自動リフレッシュを無効にして権限情報の残留やバックグラウンド更新を防ぐ設定を保持する。生成だけのテストではSDK内部のタイマー・ストレージ副作用は検出しないため、設定削除の根拠にはしない。",
+      "references": [
+        "packages/authentication/src/admin/client.ts",
+        "apps/web/src/test/helper/user.ts"
+      ]
+    },
+    "auth-coverage-src/errors.ts": {
+      "action": "defer",
+      "reason": "src/errors.tsはSupabaseの認証・Cookie・業務エラー変換またはテストユーザー後始末に使われ、参照先のWeb結合テストで実際の呼び出しを検証する。authentication単体の6テストは設定構築と管理者生成ガードのみであり、当該変異の検出能力は今回のパッケージ単体測定では未確認。不要コードとして削除せず、SDKの薄いモックを件数目的で追加しない。結合テストを対象にした依存パッケージの変異測定は未対応として残す。",
+      "references": [
+        "packages/authentication/src/errors.ts",
+        "apps/web/src/server/sessions/error.test.ts",
+        "apps/web/src/server/passkey/error.test.ts",
+        "apps/web/src/server/oauth/error.test.ts"
+      ]
+    },
+    "auth-coverage-src/session/client.ts": {
+      "action": "defer",
+      "reason": "src/session/client.tsはSupabaseの認証・Cookie・業務エラー変換またはテストユーザー後始末に使われ、参照先のWeb結合テストで実際の呼び出しを検証する。authentication単体の6テストは設定構築と管理者生成ガードのみであり、当該変異の検出能力は今回のパッケージ単体測定では未確認。不要コードとして削除せず、SDKの薄いモックを件数目的で追加しない。結合テストを対象にした依存パッケージの変異測定は未対応として残す。",
+      "references": [
+        "packages/authentication/src/session/client.ts",
+        "apps/web/src/server/sessions/handler/current.test.ts"
+      ]
+    },
+    "auth-coverage-src/password/client.ts": {
+      "action": "defer",
+      "reason": "src/password/client.tsはSupabaseの認証・Cookie・業務エラー変換またはテストユーザー後始末に使われ、参照先のWeb結合テストで実際の呼び出しを検証する。authentication単体の6テストは設定構築と管理者生成ガードのみであり、当該変異の検出能力は今回のパッケージ単体測定では未確認。不要コードとして削除せず、SDKの薄いモックを件数目的で追加しない。結合テストを対象にした依存パッケージの変異測定は未対応として残す。",
+      "references": [
+        "packages/authentication/src/password/client.ts",
+        "apps/web/src/server/sessions/handler/create.test.ts",
+        "apps/web/src/server/sessions/handler/destroy.test.ts",
+        "apps/web/src/server/registrations/handler/create.test.ts"
+      ]
+    },
+    "auth-coverage-src/passkey/client.ts": {
+      "action": "defer",
+      "reason": "src/passkey/client.tsはSupabaseの認証・Cookie・業務エラー変換またはテストユーザー後始末に使われ、参照先のWeb結合テストで実際の呼び出しを検証する。authentication単体の6テストは設定構築と管理者生成ガードのみであり、当該変異の検出能力は今回のパッケージ単体測定では未確認。不要コードとして削除せず、SDKの薄いモックを件数目的で追加しない。結合テストを対象にした依存パッケージの変異測定は未対応として残す。",
+      "references": [
+        "packages/authentication/src/passkey/client.ts",
+        "apps/web/src/server/passkey/handler/authentication-verify.test.ts",
+        "apps/web/src/server/passkey/handler/registration-verify.test.ts"
+      ]
+    },
+    "auth-coverage-src/oauth/client.ts": {
+      "action": "defer",
+      "reason": "src/oauth/client.tsはSupabaseの認証・Cookie・業務エラー変換またはテストユーザー後始末に使われ、参照先のWeb結合テストで実際の呼び出しを検証する。authentication単体の6テストは設定構築と管理者生成ガードのみであり、当該変異の検出能力は今回のパッケージ単体測定では未確認。不要コードとして削除せず、SDKの薄いモックを件数目的で追加しない。結合テストを対象にした依存パッケージの変異測定は未対応として残す。",
+      "references": [
+        "packages/authentication/src/oauth/client.ts",
+        "apps/web/src/server/oauth/handler/callback.test.ts",
+        "apps/web/src/server/oauth/handler/link.test.ts",
+        "apps/web/src/server/oauth/handler/unlink.test.ts"
+      ]
+    },
+    "auth-coverage-src/oauth/provider.ts": {
+      "action": "defer",
+      "reason": "src/oauth/provider.tsはSupabaseの認証・Cookie・業務エラー変換またはテストユーザー後始末に使われ、参照先のWeb結合テストで実際の呼び出しを検証する。authentication単体の6テストは設定構築と管理者生成ガードのみであり、当該変異の検出能力は今回のパッケージ単体測定では未確認。不要コードとして削除せず、SDKの薄いモックを件数目的で追加しない。結合テストを対象にした依存パッケージの変異測定は未対応として残す。",
+      "references": [
+        "packages/authentication/src/oauth/provider.ts",
+        "apps/web/src/server/oauth/route.test.ts"
+      ]
+    },
+    "auth-coverage-src/infrastructure/supabase-client.ts": {
+      "action": "defer",
+      "reason": "src/infrastructure/supabase-client.tsはSupabaseの認証・Cookie・業務エラー変換またはテストユーザー後始末に使われ、参照先のWeb結合テストで実際の呼び出しを検証する。authentication単体の6テストは設定構築と管理者生成ガードのみであり、当該変異の検出能力は今回のパッケージ単体測定では未確認。不要コードとして削除せず、SDKの薄いモックを件数目的で追加しない。結合テストを対象にした依存パッケージの変異測定は未対応として残す。",
+      "references": [
+        "packages/authentication/src/infrastructure/supabase-client.ts",
+        "apps/web/src/server/sessions/handler/create.test.ts",
+        "apps/web/src/server/sessions/handler/current.test.ts"
+      ]
+    },
+    "auth-coverage-src/infrastructure/supabase-result.ts": {
+      "action": "defer",
+      "reason": "src/infrastructure/supabase-result.tsはSupabaseの認証・Cookie・業務エラー変換またはテストユーザー後始末に使われ、参照先のWeb結合テストで実際の呼び出しを検証する。authentication単体の6テストは設定構築と管理者生成ガードのみであり、当該変異の検出能力は今回のパッケージ単体測定では未確認。不要コードとして削除せず、SDKの薄いモックを件数目的で追加しない。結合テストを対象にした依存パッケージの変異測定は未対応として残す。",
+      "references": [
+        "packages/authentication/src/infrastructure/supabase-result.ts",
+        "apps/web/src/server/sessions/handler/create.test.ts",
+        "apps/web/src/server/oauth/handler/callback.test.ts"
+      ]
+    },
+    "auth-coverage-src/admin/client.ts": {
+      "action": "defer",
+      "reason": "src/admin/client.tsはSupabaseの認証・Cookie・業務エラー変換またはテストユーザー後始末に使われ、参照先のWeb結合テストで実際の呼び出しを検証する。authentication単体の6テストは設定構築と管理者生成ガードのみであり、当該変異の検出能力は今回のパッケージ単体測定では未確認。不要コードとして削除せず、SDKの薄いモックを件数目的で追加しない。結合テストを対象にした依存パッケージの変異測定は未対応として残す。",
+      "references": [
+        "packages/authentication/src/admin/client.ts",
+        "apps/web/src/test/helper/user.ts"
+      ]
+    },
+    "datastore-schema-src/schema/article.ts": {
+      "action": "defer",
+      "reason": "Drizzleのカラム型・必須制約・関連・インデックス・D1クライアント構築は実データ保存とマイグレーションに必要である。単体テストの日時関数・ID変換のみではDDL生成やD1経路を実行しない。通常のschema検証およびWeb/cron結合テストは維持するが、これらの変異をD1接続下で測定する対応は未実施である。",
+      "references": [
+        "packages/datastore/src/schema/article.ts",
+        "apps/cron/src/feed/article-store.test.ts",
+        "apps/web/src/server/article/handler/get-articles.test.ts",
+        "packages/datastore/migrations"
+      ]
+    },
+    "datastore-schema-src/schema/user.ts": {
+      "action": "defer",
+      "reason": "Drizzleのカラム型・必須制約・関連・インデックス・D1クライアント構築は実データ保存とマイグレーションに必要である。単体テストの日時関数・ID変換のみではDDL生成やD1経路を実行しない。通常のschema検証およびWeb/cron結合テストは維持するが、これらの変異をD1接続下で測定する対応は未実施である。",
+      "references": [
+        "packages/datastore/src/schema/user.ts",
+        "apps/cron/src/feed/article-store.test.ts",
+        "apps/web/src/server/article/handler/get-articles.test.ts",
+        "packages/datastore/migrations"
+      ]
+    },
+    "datastore-schema-src/schema/datetime.ts": {
+      "action": "defer",
+      "reason": "Drizzleのカラム型・必須制約・関連・インデックス・D1クライアント構築は実データ保存とマイグレーションに必要である。単体テストの日時関数・ID変換のみではDDL生成やD1経路を実行しない。通常のschema検証およびWeb/cron結合テストは維持するが、これらの変異をD1接続下で測定する対応は未実施である。",
+      "references": [
+        "packages/datastore/src/schema/datetime.ts",
+        "apps/cron/src/feed/article-store.test.ts",
+        "apps/web/src/server/article/handler/get-articles.test.ts",
+        "packages/datastore/migrations"
+      ]
+    },
+    "datastore-schema-src/rdb/client.ts": {
+      "action": "defer",
+      "reason": "Drizzleのカラム型・必須制約・関連・インデックス・D1クライアント構築は実データ保存とマイグレーションに必要である。単体テストの日時関数・ID変換のみではDDL生成やD1経路を実行しない。通常のschema検証およびWeb/cron結合テストは維持するが、これらの変異をD1接続下で測定する対応は未実施である。",
+      "references": [
+        "packages/datastore/src/rdb/client.ts",
+        "apps/cron/src/feed/article-store.test.ts",
+        "apps/web/src/server/article/handler/get-articles.test.ts",
+        "packages/datastore/migrations"
+      ]
+    },
+    "datastore-date-equivalent": {
+      "action": "maintain",
+      "reason": "正規表現の境界アンカー削除は、形式不正の値を後続のDateパースとInvalid Date契約違反で拒否する点が同じである。正しい日時へのTZ補完を限定する読みやすいアンカーを保持する。number/bigintの冗長な分岐は削除し、コロンなしUTCオフセットも既存ケースで検証するよう修正済みである。",
+      "references": [
+        "packages/datastore/src/schema/datetime.ts",
+        "packages/datastore/src/schema/datetime.test.ts"
+      ]
+    },
+    "datastore-id-diagnostics": {
+      "action": "maintain",
+      "reason": "範囲外IDの値を含むメッセージはDB変換エラーの原因調査に必要。RangeErrorと境界値の検証は存在し、文言一致のみを増やすテストは追加しない。",
+      "references": ["packages/datastore/src/rdb/id.ts", "packages/datastore/src/rdb/id.test.ts"]
+    },
+    "datastore-logger-cache": {
+      "action": "maintain",
+      "reason": "同じDrizzle loggerを再利用するキャッシュは、繰り返しのクエリでPinoインスタンスを生成しないために必要。componentタグはクエリログの識別に使う。isLogLevelの冗長なundefinedガードは削除済みである。",
+      "references": [
+        "packages/datastore/src/rdb/logger.ts",
+        "packages/datastore/src/rdb/logger.test.ts"
+      ]
+    },
+    "datastore-error-contracts": {
+      "action": "maintain",
+      "reason": "通常のErrorの保持、Errorであるcauseの取り出し、文字列throwのError化、成功値の保持は別の契約。cause無しのErrorと文字列throwが同じkill setでも、型・参照同一性の期待値が異なる。",
+      "references": [
+        "packages/datastore/src/rdb/error.ts",
+        "packages/datastore/src/rdb/error.test.ts"
+      ]
+    },
+    "datastore-id-contracts": {
+      "action": "maintain",
+      "reason": "bigintとnumberの変換方向、安全整数上限、負数・小数、配列の空入力は別の公開契約。変換を経由したkillが単体の範囲判定を含んでも、戻り値の型と境界を維持する。",
+      "references": ["packages/datastore/src/rdb/id.ts", "packages/datastore/src/rdb/id.test.ts"]
+    },
+    "datastore-level-contracts": {
+      "action": "maintain",
+      "reason": "許可レベルの各値・大文字・未知値・空値・undefinedと、環境変数のtrim/既定値は別の入力契約。単なるqueryLoggerの無例外テストはこれらの真偽値・返値の代替にならない。",
+      "references": [
+        "packages/datastore/src/rdb/logger.ts",
+        "packages/datastore/src/rdb/logger.test.ts"
+      ]
+    },
+    "datastore-mask-contracts": {
+      "action": "maintain",
+      "reason": "ネストした配列と平坦なパラメータ配列、空配列の返却は異なる入力形状。数値・真偽値・nullを保持しながらPII文字列だけを除去する仕様を維持する。",
+      "references": [
+        "packages/datastore/src/rdb/mask.ts",
+        "packages/datastore/src/rdb/mask.test.ts"
+      ]
+    },
+    "datastore-date-contracts": {
+      "action": "maintain",
+      "reason": "epochのnumber/bigint、日付のみ、空白/T区切り、Z/UTCオフセットは過去DB値の別形式。America/New_Yorkで実行してTZ補完の欠落も検出する修正済みであり、入力形式をkill setだけで削除しない。",
+      "references": [
+        "packages/datastore/src/schema/datetime.ts",
+        "packages/datastore/src/schema/datetime.test.ts"
+      ]
+    },
+    "logger-level-contracts": {
+      "action": "maintain",
+      "reason": "コンストラクタのレベル別出力可否を検証するケースはdebugの出力構造テストと期待値が異なる。Pino既定と重複するerr serializer設定を削除した一方、実呼び出し元が使うerror serializerは維持し、type/message/stackの保持を既存warnテストで検証する。文字列の追加引数がcontextへ展開されないことも既存テストに統合済みである。",
+      "references": ["packages/logger/src/logger.ts", "packages/logger/src/logger.test.ts"]
+    },
+    "notification-fallback": {
+      "action": "maintain",
+      "reason": "maxRetries=0時の初期エラー文とstackを持たないError用の表示は運用上のフォールバックである。通常のErrorはstackを持つため未検証だが、診断が空になるよう削除はしない。",
+      "references": [
+        "packages/notification/src/discord.ts",
+        "packages/notification/src/discord.test.ts"
+      ]
+    },
+    "notification-nonerror": {
+      "action": "defer",
+      "reason": "catchでError以外のthrowをErrorへ正規化する処理は必要。通常のfetchはErrorをrejectするため既存テストでは非Error経路が未検証であり、任意throwに対する通知ログ契約の検証は未対応である。Errorの参照保持と最終試行後の不要待機は既存失敗テストを改善して検出済みである。",
+      "references": [
+        "packages/notification/src/discord.ts",
+        "packages/notification/src/discord.test.ts"
+      ]
+    },
+    "notification-delay-timeout": {
+      "action": "maintain",
+      "reason": "delayのsetTimeoutを削除するとPromiseが解決せず、backoff中に永久待機する。これは変異が作る停止であり、通常実装の不具合ではない。timeoutを完全なkill matrixと同一視せず記録する。",
+      "references": [
+        "packages/notification/src/discord.ts",
+        "packages/notification/src/discord.test.ts"
+      ]
+    },
+    "notification-contracts": {
+      "action": "maintain",
+      "reason": "未設定undefinedと空URL、401の失効と404の削除、汎用send/sendMessageと5xx通知のラッパーは別の入力・公開API。各テストのペイロード・ログ・非送信の期待値を残す。送信失敗テストは原因保持と最終待機なしの検証へ改善済みである。",
+      "references": [
+        "packages/notification/src/discord.ts",
+        "packages/notification/src/discord.test.ts"
+      ]
+    },
+    "runtime-signal-timeout": {
+      "action": "maintain",
+      "reason": "signal合成の配列を空にすると呼び出し元とタイムアウトの両方のabortが伝播せず、fetchが解決しない。変異による永久待機としてtimeoutを維持し、個々のテストの完全比較とは区別する。",
+      "references": [
+        "packages/runtime/src/http/index.ts",
+        "packages/runtime/src/http/index.test.ts"
+      ]
+    },
+    "runtime-timeout-contract": {
+      "action": "maintain",
+      "reason": "指定時間でのタイムアウトと呼び出し元signalのabortは別の発火元である。kill setが包含されてもtimeoutMsを実際に経過させる検証は必要。",
+      "references": [
+        "packages/runtime/src/http/index.ts",
+        "packages/runtime/src/http/index.test.ts"
+      ]
+    },
+    "domain-error-diagnostics": {
+      "action": "maintain",
+      "reason": "ドメインエラーの型名・入力エラー文は呼び出し元と運用ログで原因を区別するために保持する。成功と失敗の区別や型の検証は既存テストにあり、文字列だけの変異を消すためのケース追加は行わない。Errorと文字列の原因を受け付ける既存契約も維持する。",
+      "references": [
+        "packages/domain/src/article/error.ts",
+        "packages/domain/src/account/error.ts",
+        "packages/domain/src/article/schema/query-schema.ts",
+        "packages/domain/src/account/schema/auth-schema.ts",
+        "packages/domain/src/account/use-case.test.ts"
+      ]
+    },
+    "domain-sql-measurement": {
+      "action": "defer",
+      "reason": "SQLの検索・既読/スキップのユーザー別条件・JST集計・日付範囲は参照先の実D1テストが要求する仕様であり削除できない。domainのsqlite-proxyテストは返す行を固定するためSQL意味論の変異を検出しない。ページングのメタデータ・bind値と日付のJST境界は既存テストを改善したが、残る変異を実D1の結合テスト下で計測する対応は未実施である。",
+      "references": [
+        "packages/domain/src/article/infrastructure/query-impl.ts",
+        "packages/domain/src/article/infrastructure/query-impl.test.ts",
+        "apps/web/src/server/article/handler/get-articles.test.ts",
+        "apps/web/src/server/article/handler/get-diary.test.ts",
+        "apps/web/src/server/article/handler/unread-digestion-articles.test.ts"
+      ]
+    },
+    "domain-command-projection": {
+      "action": "maintain",
+      "reason": "skip競合時の既存articleId取得とSELECT 1の存在判定は、新規登録と既存登録の冪等性を区別するために必要。sqlite-proxyは固定行を返すため投影の空オブジェクト化を観測しないが、型を外した不正SQLへの書換えを簡略化とは扱わない。",
+      "references": [
+        "packages/domain/src/article/infrastructure/command-impl.ts",
+        "packages/domain/src/article/infrastructure/command-impl.test.ts",
+        "apps/web/src/server/article/handler/skip-article.test.ts"
+      ]
+    },
+    "domain-row-defenses": {
+      "action": "maintain",
+      "reason": "COUNT結果なし・isRead未定義・UNION行の必須列nullは、DB/ドライバの契約破綻や戻り行の形式差を扱う防御である。通常SQLはCOUNT行と非null必須列を保証するが、黙って破損したドメイン値へ変換しないためガードを残す。",
+      "references": [
+        "packages/domain/src/article/infrastructure/query-impl.ts",
+        "packages/domain/src/article/infrastructure/query-impl.test.ts"
+      ]
+    },
+    "domain-empty-date-sources": {
+      "action": "maintain",
+      "reason": "日付ごとのread/skip配列初期値は、一方の履歴が存在しない日の集計に必要。文字列を混入する変異は型として成立せず、typecheckを省いた今回の計測では互換性判断に使えない。空配列初期化を維持する。",
+      "references": [
+        "packages/domain/src/article/infrastructure/query-impl.ts",
+        "apps/web/src/server/article/handler/get-diary.test.ts"
+      ]
+    },
+    "domain-date-loop": {
+      "action": "maintain",
+      "reason": "日付ループの本体を削除するとcurrentが進まず無限ループになるためtimeoutになる。通常の列挙・単日の閉区間・不正日付と逆転範囲の契約は既存テストで検証する。timeoutを完全比較に含めてテスト削除の根拠にしない。",
+      "references": [
+        "packages/domain/src/article/infrastructure/query-impl.ts",
+        "packages/domain/src/article/infrastructure/query-impl.test.ts"
+      ]
+    },
+    "domain-module-failure": {
+      "action": "maintain",
+      "reason": "Zod shape全体の削除は派生pickのロードを、Loggerレベルの空文字化はモジュール初期化を失敗させる。必要なshape/ログ設定を維持し、テスト単位のkillとは区別する。前回の別ファイル失敗が後続変異へ混入するadapterの不具合は修正・再現テストで検証済みであり、再実行後に残った実際のmodule失敗だけを記録する。",
+      "references": [
+        "packages/domain/src/account/schema/active-user-schema.ts",
+        "packages/domain/src/account/infrastructure/command-impl.ts",
+        "scripts/mutation/cache.test.mjs",
+        ".github/patches/mutator-vitest@0.2.0.patch"
+      ]
+    },
+    "domain-account-result-guard": {
+      "action": "maintain",
+      "reason": "users/active_usersのreturning結果が空の場合に成功値として参照せず、失敗を返す/作成済みusersを補償削除するためのガードである。通常のinsertは行を返すため未到達だが、DB契約破綻時の孤立データを避ける意図がある。",
+      "references": [
+        "packages/domain/src/account/infrastructure/command-impl.ts",
+        "packages/domain/src/account/infrastructure/command-impl.test.ts"
+      ]
+    },
+    "domain-account-log-context": {
+      "action": "maintain",
+      "reason": "補償失敗時のuser-commandログを識別するcomponentタグは運用に必要。ログ文言のみの変更を検出する目的でテストを増やさない。",
+      "references": [
+        "packages/domain/src/account/infrastructure/command-impl.ts",
+        "packages/domain/src/account/infrastructure/command-impl.test.ts"
+      ]
+    },
+    "domain-oauth-schema": {
+      "action": "defer",
+      "reason": "OAuthのredirect/code/error/error_descriptionはWebのquery validatorから使われる公開スキーマである。domain単体ではschema定義のロードのみでparse結果を検証しておらず、shapeを空にする変異が生存する。OAuth結合テストは維持し、依存パッケージを変異させたvalidatorの検出能力測定は未対応として残す。",
+      "references": [
+        "packages/domain/src/account/schema/auth-schema.ts",
+        "apps/web/src/server/oauth/schema.ts",
+        "apps/web/src/server/oauth/handler/callback.test.ts",
+        "apps/web/src/server/oauth/handler/login.test.ts"
+      ]
+    },
+    "domain-public-wiring": {
+      "action": "defer",
+      "reason": "createArticleUseCaseとgetDailyDiaryRange委譲は、実際のWeb handlerが使用する公開経路である。domain単体のテストは具象QueryImplを直接使うため当該経路を計測しない。Webのdiary/記事結合テストを保ち、この依存パッケージ変異の結合測定は未対応とする。",
+      "references": [
+        "packages/domain/src/article/index.ts",
+        "packages/domain/src/article/use-case.ts",
+        "apps/web/src/server/article/handler/get-diary.ts",
+        "apps/web/src/server/article/handler/get-diary.test.ts"
+      ]
+    },
+    "domain-contract-account/infrastructure/command-impl": {
+      "action": "maintain",
+      "reason": "登録時のdisplayName有無、active_users作成失敗後の補償成功/失敗、孤立ユーザーの通知は別の結果と副作用。ログと通知を別テストで繰り返すsetupは統合済みであり、元エラー保持と補償成功時の非通知は残す。",
+      "references": [
+        "packages/domain/src/account/infrastructure/command-impl.ts",
+        "packages/domain/src/account/infrastructure/command-impl.test.ts"
+      ]
+    },
+    "domain-contract-account/infrastructure/mapper": {
+      "action": "maintain",
+      "reason": "nullableなdisplayName、空文字、日本語文字列、0と安全整数を超えたbigintはDBからドメインへの異なる値の保持を検証する。フィールド転写のkill setが同じでもnullと空文字、数値精度を区別する。",
+      "references": [
+        "packages/domain/src/account/infrastructure/mapper.ts",
+        "packages/domain/src/account/infrastructure/mapper.test.ts"
+      ]
+    },
+    "domain-contract-account/schema/active-user-schema": {
+      "action": "maintain",
+      "reason": "email/displayName/authenticationId等のフィールド、型、最大長、任意/必須は別の公開契約。成功時もparse後の値を検証するよう改善済みであり、入力の種類をkill setだけで削除しない。",
+      "references": [
+        "packages/domain/src/account/schema/active-user-schema.ts",
+        "packages/domain/src/account/schema/active-user-schema.test.ts"
+      ]
+    },
+    "domain-contract-account/schema/auth-schema": {
+      "action": "maintain",
+      "reason": "メール構文、パスワード長・大文字/小文字/数字/許可記号、任意captchaは別の入力契約。許可文字クラス内部に対する変異が少なく同じkill setになりやすい。小文字の位置を固定しない入力と、成功後の値保持を既存ケースへ反映済みである。",
+      "references": [
+        "packages/domain/src/account/schema/auth-schema.ts",
+        "packages/domain/src/account/schema/auth-schema.test.ts"
+      ]
+    },
+    "domain-contract-account/use-case": {
+      "action": "maintain",
+      "reason": "登録成功と登録失敗のResult、利用者未存在とDB障害は異なるユースケース結果。型だけでなく元エラーとcauseの保持も既存失敗テストで検証する。",
+      "references": [
+        "packages/domain/src/account/use-case.ts",
+        "packages/domain/src/account/use-case.test.ts"
+      ]
+    },
+    "domain-contract-article/infrastructure/command-impl": {
+      "action": "maintain",
+      "reason": "read/skipの新規登録と競合時の既存行返却、削除・DB失敗は異なる冪等性/失敗契約。bigintへの変換が同じでもDBの分岐と副作用を残す。",
+      "references": [
+        "packages/domain/src/article/infrastructure/command-impl.ts",
+        "packages/domain/src/article/infrastructure/command-impl.test.ts"
+      ]
+    },
+    "domain-contract-article/infrastructure/mapper": {
+      "action": "maintain",
+      "reason": "記事mediaの未知値/大文字拒否、空文字・日本語・長文の保持、0と安全整数外のbigintの正確性は別の入力仕様。単純フィールド写像の変異だけでは文字列内容や精度の差を表現しない。",
+      "references": [
+        "packages/domain/src/article/infrastructure/mapper.ts",
+        "packages/domain/src/article/infrastructure/mapper.test.ts"
+      ]
+    },
+    "domain-contract-article/infrastructure/query-impl": {
+      "action": "maintain",
+      "reason": "単数/複数mediaのbind値、日時の文字列/number/bigint、記事IDソート、未読総件数とLIMIT、日付列挙と不正な開始/終了日は異なる検索・変換契約。日時境界とページングの期待値を改善し、入力種類を削らず比較する。",
+      "references": [
+        "packages/domain/src/article/infrastructure/query-impl.ts",
+        "packages/domain/src/article/infrastructure/query-impl.test.ts"
+      ]
+    },
+    "domain-contract-article/media": {
+      "action": "maintain",
+      "reason": "サポート媒体の列挙と判定API、各ラベル、未知媒体・大小文字・前後空白は異なる公開入力契約。Set.hasの内部処理は変異対象でないため多くの入力が同じkill setとなるが、受理範囲の仕様は残す。",
+      "references": [
+        "packages/domain/src/article/media.ts",
+        "packages/domain/src/article/media.test.ts"
+      ]
+    },
+    "domain-contract-article/schema/article-schema": {
+      "action": "maintain",
+      "reason": "記事各フィールドの型・最大長・URL構文・media受理範囲と、isReadのtrue/false/必須性は別の仕様。既読ありと通常記事の両方の公開スキーマを維持する。type推論だけに使っていた任意isReadの実行時スキーマは削除済みである。",
+      "references": [
+        "packages/domain/src/article/schema/article-schema.ts",
+        "packages/domain/src/article/schema/article-schema.test.ts"
+      ]
+    },
+    "domain-contract-article/schema/diary-schema": {
+      "action": "maintain",
+      "reason": "read/skipの非負整数、必須フィールド、媒体と読了履歴ID・URL・日時の型は異なる公開フィールド契約。Zod自体を変異しない計測で失敗ケースが同じkill setでも、別フィールドの検証を削除しない。",
+      "references": [
+        "packages/domain/src/article/schema/diary-schema.ts",
+        "packages/domain/src/article/schema/diary-schema.test.ts"
+      ]
+    },
+    "domain-contract-article/schema/query-schema": {
+      "action": "maintain",
+      "reason": "title/authorの省略・空文字・型、mediaの単数/配列/重複/無指定、日付の片側指定・同日・逆転は別の検索入力契約。成功後の値保持・media正規化と日付正規表現の前後アンカーを既存テストで検証するよう改善済みである。",
+      "references": [
+        "packages/domain/src/article/schema/query-schema.ts",
+        "packages/domain/src/article/schema/query-schema.test.ts"
+      ]
+    },
+    "domain-contract-article/use-case": {
+      "action": "maintain",
+      "reason": "検索の各任意パラメータ単独・片側日付・既読user付きと全指定、成功/DB失敗は委譲する引数と結果が異なる。全指定の同一期待値を重ねた1ケースは削減済みであり、別の省略組合せは維持する。",
+      "references": [
+        "packages/domain/src/article/use-case.ts",
+        "packages/domain/src/article/use-case.test.ts"
+      ]
+    },
+    "domain-invalid-date-loop": {
+      "action": "maintain",
+      "reason": "日付の事前検証から両端の配列を削除すると、不正な終了日との辞書順比較でDateの上限まで日付を列挙し続ける。通常実装の事前検証がこの停止不良を防いでおり、timeoutとして記録してガードと不正終了日の検証を維持する。",
+      "references": [
+        "packages/domain/src/article/infrastructure/query-impl.ts",
+        "packages/domain/src/article/infrastructure/query-impl.test.ts"
+      ]
+    },
+    "domain-contract-article/schema/read-history-schema": {
+      "action": "maintain",
+      "reason": "読了履歴ID・利用者ID・記事IDのbigint、readAt/createdAtのDate、必須性は異なるフィールド契約。Zod内部を変異しない計測で同じkill setでも、別フィールドの型検証を削除しない。",
+      "references": [
+        "packages/domain/src/article/schema/read-history-schema.ts",
+        "packages/domain/src/article/schema/read-history-schema.test.ts"
+      ]
+    },
+    "domain-contract-article/schema/skipped-article-schema": {
+      "action": "maintain",
+      "reason": "skip ID・利用者ID・記事IDのbigint、作成日時のDate、必須性は異なるフィールド契約。Zod内部を変異しない計測で同じkill setでも、別フィールドの型検証を削除しない。",
+      "references": [
+        "packages/domain/src/article/schema/skipped-article-schema.ts",
+        "packages/domain/src/article/schema/skipped-article-schema.test.ts"
+      ]
+    },
+    "cron-worker-diagnostics": {
+      "action": "maintain",
+      "reason": "LOG_LEVELは任意bindingであり未設定時のinfo既定値が必要。scopeとcronは定期実行のログを識別する運用項目である。全テストはsilentを明示するため既定値経路やメタデータ変更は観測しないが、ログ文言だけを守るテストを追加せず保持する。",
+      "references": [
+        "apps/cron/src/worker.ts",
+        "packages/runtime/src/env/bindings.ts",
+        "apps/cron/wrangler.toml",
+        "apps/cron/src/worker.test.ts"
+      ]
+    },
+    "cron-conflict-target": {
+      "action": "maintain",
+      "reason": "URLによる重複排除を指定することが保存の冪等性の契約である。現スキーマで今回の入力が衝突する制約はURLだけなのでtarget削除と同じ結果になるが、将来別の一意制約違反まで黙殺する指定へ広げない。フィード内と保存済みURLの検証は保持する。",
+      "references": [
+        "apps/cron/src/feed/article-store.ts",
+        "apps/cron/src/feed/fetch-articles.test.ts",
+        "packages/datastore/src/schema/article.ts"
+      ]
+    },
+    "cron-rss-error-brand": {
+      "action": "maintain",
+      "reason": "RssFetchErrorのみからdiagnostics/isRateLimitedを取り出す型境界である。通常Errorには両プロパティが無いためinstanceofをtrueにした変異と同じ通知になるが、任意のErrorをRSSレスポンス障害として扱う簡略化はしない。通常Errorの通知本文とRSSエラーの診断/注記は既存ケースで検証する。",
+      "references": [
+        "apps/cron/src/feed/fetch-all-articles.ts",
+        "apps/cron/src/feed/fetch-all-articles.test.ts",
+        "apps/cron/src/feed/rss-client.ts"
+      ]
+    },
+    "cron-issue-path": {
+      "action": "maintain",
+      "reason": "正規化スキーマは現在フラットなフィールドだけなのでZod issue.pathの区切り文字は結果に影響しない等価変異である。pathを診断用文字列へ変換するjoinを保持する。issues自体の欠落・内容欠落は既存の部分成功ケースへ検証を統合して検出済みである。",
+      "references": [
+        "apps/cron/src/feed/fetch-articles.ts",
+        "apps/cron/src/feed/fetch-articles.test.ts",
+        "apps/cron/src/feed/config.ts"
+      ]
+    },
+    "cron-required-fields": {
+      "action": "maintain",
+      "reason": "Qiitaのauthor/title/urlとZennのcreator/title/linkは媒体ごとの異なる必須入力である。今回の演算子ではschema全体の削除が同じkill setになるが、特定フィールドの欠損を許可しない仕様は同一ではない。部分成功とスキップ理由のケースは統合済みであり、必須フィールドごとの拒否は保持する。",
+      "references": [
+        "apps/cron/src/feed/config.ts",
+        "apps/cron/src/feed/fetch-articles.ts",
+        "apps/cron/src/feed/fetch-articles.test.ts"
+      ]
+    },
+    "cron-chunk-boundary": {
+      "action": "maintain",
+      "reason": "バインド上限から求めるチャンク境界ちょうどと境界+1は、単一チャンクと次のチャンクにまたがる保存の入力である。どちらも挿入件数と実DB件数の一致を確認し、境界での欠落を防ぐため保持する。",
+      "references": [
+        "apps/cron/src/feed/article-store.ts",
+        "apps/cron/src/feed/article-store.test.ts"
+      ]
+    },
+    "cron-whitespace-required": {
+      "action": "maintain",
+      "reason": "非空文字列でも空白だけなら入力不正として拒否する契約を確認する。空文字欠損や通常入力とは受理範囲が異なるため、kill setが包含されても保持する。",
+      "references": ["apps/cron/src/feed/config.ts", "apps/cron/src/feed/config.test.ts"]
+    },
+    "cron-hatena-fallback": {
+      "action": "maintain",
+      "reason": "Hatenaのauthorが無い場合の既定値と、descriptionのcontent優先/content:encodedへのfallbackは各入力フィールドの選択規則である。最大長やUnicodeの検証だけでは値の採用元を代替できないため保持する。",
+      "references": ["apps/cron/src/feed/config.ts", "apps/cron/src/feed/fetch-articles.test.ts"]
+    },
+    "cron-url-idempotency": {
+      "action": "maintain",
+      "reason": "同一INSERT内の重複URLと、過去のINSERTで保存済みのURLは異なるDB入力である。返す挿入件数と最終行数をそれぞれ確認し、バッチ内部の競合と再実行の冪等性を保持する。",
+      "references": [
+        "apps/cron/src/feed/article-store.ts",
+        "apps/cron/src/feed/fetch-articles.test.ts"
+      ]
+    },
+    "cron-unicode-truncation": {
+      "action": "maintain",
+      "reason": "UTF-16の途中で切らないことを、絵文字だけのauthorで検証する。ASCIIを含む長いURLの切り詰めとは境界と文字単位が異なり、今回の変異が包含されてもサロゲートペアの契約を保持する。",
+      "references": [
+        "apps/cron/src/feed/article-store.ts",
+        "apps/cron/src/feed/fetch-articles.test.ts"
+      ]
+    },
+    "cron-rss-network-failure": {
+      "action": "maintain",
+      "reason": "fetchのrejectをResult.errへ変換し、DBへ保存しないことは、HTTPの非OK応答や本文解析失敗とは異なる失敗経路である。30秒中断は既存ケースで実時間設定を検証する形へ改善済みであり、通常network errorの契約も保持する。",
+      "references": [
+        "apps/cron/src/feed/rss-client.ts",
+        "apps/cron/src/feed/fetch-articles.test.ts"
+      ]
+    },
+    "cron-worker-orchestration": {
+      "action": "maintain",
+      "reason": "全媒体の同時開始と再スケジュール時の冪等性は、単独fetch/storeの仕様とは異なるworkerの呼び出し契約である。waitUntilに仕事を登録する本番入口で検証し、kill setだけで削除しない。",
+      "references": ["apps/cron/src/worker.ts", "apps/cron/src/worker.test.ts"]
+    }
+  },
+  "decisions": {
+    "std/survived/13di2kmxhn8": {
+      "group": "std-redirect-equivalent",
+      "evidenceHash": "9adc0330402978caeebc1e4b685f05ffd0a1d1d0f98dcca7221d3dda06152e17"
+    },
+    "std/incomplete/1cczldt6sx8": {
+      "group": "std-intl-module",
+      "evidenceHash": "326eef0b02119380e1743714c98426cc2ce38084153dcbc53d0bb266f2a8c4db"
+    },
+    "std/incomplete/s89v3e48ni": {
+      "group": "std-intl-module",
+      "evidenceHash": "0b472a22b3a9304ab3dbdd980098096b6aa1e9fa410620f217ddcc873a4feeeb"
+    },
+    "std/incomplete/1fu9rlgft57": {
+      "group": "std-intl-module",
+      "evidenceHash": "88168335c83fce91eecac4442b822cfac5ec1ec4986b201bf0140bff0f61fb7d"
+    },
+    "std/incomplete/2ficcm7bnuj": {
+      "group": "std-intl-module",
+      "evidenceHash": "f248ad49170a575b4159831e9147a19dd7abaecd409277dde40127d85aaf23ed"
+    },
+    "std/incomplete/1oqcibfadj6": {
+      "group": "std-intl-module",
+      "evidenceHash": "8f493dbaa6398f0cd9428d5b753ebe362e81284dd4c2ff4aa60524cff8d47519"
+    },
+    "std/duplicates/7478a25970502016": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "2401ed56afb34449425dea6a48f0ccc9d53a665d48afeddfddde17fd35a3f779"
+    },
+    "std/duplicates/79f464b74ebfc8ff": {
+      "group": "std-result-contracts",
+      "evidenceHash": "c19238a2007077ac6d7e1735b6011fb776e1c4c047a1596dab69a0bf9e471479"
+    },
+    "std/duplicates/4c733cd43a0f1fc2": {
+      "group": "std-redirect-contracts",
+      "evidenceHash": "31c272391c15ff26865684ba2285e90059bb07597fbbfe2037b0b2b43cc3d0e0"
+    },
+    "std/duplicates/649277ee97716cf6": {
+      "group": "std-redirect-contracts",
+      "evidenceHash": "6efe1b251938af33e305b16c15cf86808b1f07ba49c20783f917a0df7ab7b018"
+    },
+    "std/duplicates/b0f35c2945970a60": {
+      "group": "std-redirect-contracts",
+      "evidenceHash": "31980c212e8024497b35c8f65248ca450082a3f66eacf118a512a9927516fc40"
+    },
+    "std/duplicates/7ae474a8e0509232": {
+      "group": "std-redirect-contracts",
+      "evidenceHash": "aa24ad53f5c4c9f0a0747d57f30d3dcd7ae4f9a45811df1f8d57928112f84f13"
+    },
+    "std/duplicates/eca6d56179c5263c": {
+      "group": "std-redirect-contracts",
+      "evidenceHash": "09db0e1b89d4b9421d96c05bacf07894c13301124ce161a5fed59341f7ddb1ba"
+    },
+    "std/subsumed/68311b80c761b77e": {
+      "group": "std-date-contracts",
+      "evidenceHash": "111f9e7863cc970c077cf03b83640d4d855e17e978c511a69b2cec1e780baae2"
+    },
+    "std/subsumed/56432e8f7eb7d47b": {
+      "group": "std-date-contracts",
+      "evidenceHash": "a403e02462b01b4f7d51feef47be796774256e5f7cefd8617046835cdd2e085c"
+    },
+    "std/subsumed/804853da2ccb719c": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "57cc73ffcf6eda2c519ac7470256c68473432dc9446fcb706ac8808bf895b794"
+    },
+    "std/subsumed/38f717f937da82d0": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "cb3865981e2d0238d0095adb517b8062be7ab1754416cc8ff37e4e24a67bc81d"
+    },
+    "std/subsumed/3feca98f3d406581": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "0fc7b3dacc2526ac6a9514a4c851ed6edc648cce6463191ee0d576e4ed509739"
+    },
+    "std/subsumed/84a5a59e96ebc0be": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "73ea0d1578189351bb4fda075cd02dface53adc1d07e5a9f03de174cf64e87c2"
+    },
+    "std/subsumed/25bb59cb1b904b29": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "cfe4a4c57f3c9e42482d7736f88ec3e5a64670ae707dd9009d3978549fc3eed0"
+    },
+    "std/subsumed/6c4d9e97ae44519e": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "ccfd681e639cb5328021a22fac35fc58778d309bc79a4e3690322a9523fb73e8"
+    },
+    "std/subsumed/8f48d791cd8d5aa7": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "096e52265bb465eaa956c499237b4893a115903da9e538c259342dcf90d6a817"
+    },
+    "std/subsumed/2e276d811cb7f647": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "65905bdc5c5eb60cdd22d4c01532882fbd5955411bbe250a3b2989bad2465049"
+    },
+    "std/subsumed/a9c45cd4b2661a0f": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "58ac7754852f40ce2ad53b2e63ae907d2899890a1abbcd97932e7b90d382e9c2"
+    },
+    "std/subsumed/b75d198ccda1b6aa": {
+      "group": "std-pagination-contracts",
+      "evidenceHash": "29a6d58455288fffe7773f249a2e4d39b63fe873d4d01019119057333fdfa070"
+    },
+    "std/subsumed/fd8797e599cbe475": {
+      "group": "std-result-contracts",
+      "evidenceHash": "8ae2e2634ef5c01ef9a885b11f15427094c002090f37a467d8aa19f945ad1b92"
+    },
+    "std/subsumed/e44e2c9dc3ac15cd": {
+      "group": "std-redirect-contracts",
+      "evidenceHash": "74da5beb0b3f9ba4f0272421f7eb78c4cd1e460411690e370854ab46dfc3e232"
+    },
+    "std/subsumed/3bffd4e339d33598": {
+      "group": "std-redirect-contracts",
+      "evidenceHash": "de9d8858c76cd0a2d98e866ea959926894c58630386605d8493baf141ada55cc"
+    },
+    "std/subsumed/a79ab683bf393929": {
+      "group": "std-redirect-contracts",
+      "evidenceHash": "c1f746925663061832b2d8306889030ab8d6389068cccd23a249c32617d1a1a7"
+    },
+    "std/subsumed/856eb24f6dc320b1": {
+      "group": "std-trim-contracts",
+      "evidenceHash": "9586b1c9a37726bc1762dad3dcf1cd702742609cab29dbc57bdfa4c7a429b661"
+    },
+    "std/subsumed/8ad72d4c4da25300": {
+      "group": "std-trim-contracts",
+      "evidenceHash": "3b1ab13cc390a06e48e8e9659fb275a3380904f1bf139b1012e60ef0956673c6"
+    },
+    "std/subsumed/42f2991ae06bc954": {
+      "group": "std-trim-contracts",
+      "evidenceHash": "f06a4f05a201a9b075705662a1e19e45735c091bbf8d5ad228f80df4c1f61db7"
+    },
+    "authentication/noCoverage/j2a9w8ofap": {
+      "group": "auth-coverage-src/errors.ts",
+      "evidenceHash": "b9939b7610b80226d0dd7be31e205b8e2bf0b95b816e8e65178ccf689726b33b"
+    },
+    "authentication/noCoverage/1v1umibmceg": {
+      "group": "auth-coverage-src/errors.ts",
+      "evidenceHash": "0e7bd0bbe6eeddbc54790667d2f202316f4b860b059eaa246f7a1b4b22daa19d"
+    },
+    "authentication/noCoverage/277cmazwmfq": {
+      "group": "auth-coverage-src/errors.ts",
+      "evidenceHash": "dcb4fca1e5459d0e1616a60fff2caf86dcf5e2dde45d4a0378654af5db9b735e"
+    },
+    "authentication/noCoverage/b78au46wiy": {
+      "group": "auth-coverage-src/errors.ts",
+      "evidenceHash": "3795ff9c6463052e3c24992c95d817dc819e9b17522ea44b44f3a7b686e91c2a"
+    },
+    "authentication/noCoverage/61vuqozdhf": {
+      "group": "auth-coverage-src/errors.ts",
+      "evidenceHash": "97a8481c98e735bd4991fee1bc7df38b38ada029a3aeb6f574aa45f09d743cd0"
+    },
+    "authentication/survived/u414j16d1g": {
+      "group": "auth-diagnostics",
+      "evidenceHash": "9849c7e8f991ef7f9d83f42a5f832ebb4222754906e23ef6d421e14da9af8c12"
+    },
+    "authentication/noCoverage/1ldx0iawowd": {
+      "group": "auth-coverage-src/session/client.ts",
+      "evidenceHash": "a501a5fc44e547c7656b1ad85113c36df868099f72e8c06f4efae034cd5e2f6d"
+    },
+    "authentication/noCoverage/2fhrlc133fn": {
+      "group": "auth-coverage-src/session/client.ts",
+      "evidenceHash": "d0c824acb7083f4129c080c8abc921c79a2967489f5ed9c127079d62523a79c3"
+    },
+    "authentication/noCoverage/1ezzbkkg1fd": {
+      "group": "auth-coverage-src/session/client.ts",
+      "evidenceHash": "c92ae29bc5648417e52b7b45c3a5ed9ae06becd9b7fc3951196933a17ba3ec2f"
+    },
+    "authentication/noCoverage/2at6zff0x5r": {
+      "group": "auth-coverage-src/session/client.ts",
+      "evidenceHash": "aaeabe3df26baeb0e93d93c7a7757740e3671c9184f1a7cc6a17ac29276a51d5"
+    },
+    "authentication/noCoverage/6dtsav0l87": {
+      "group": "auth-coverage-src/session/client.ts",
+      "evidenceHash": "3675d5e636254dc08f83ab70fb28aff3bfdc6c29294cb5fccd90bd0ed34f4a58"
+    },
+    "authentication/noCoverage/drn59y8za6": {
+      "group": "auth-coverage-src/session/client.ts",
+      "evidenceHash": "838286af57dd78c7bac0fa867389a37c14c8f689c849983cefb4f85cd662e31e"
+    },
+    "authentication/noCoverage/n6mu1ob25t": {
+      "group": "auth-coverage-src/session/client.ts",
+      "evidenceHash": "de216db67bf8df5d6b78c526ed4281ba88df993f9bc18486730875afad550fba"
+    },
+    "authentication/noCoverage/25qa7735g45": {
+      "group": "auth-coverage-src/session/client.ts",
+      "evidenceHash": "2ea3182eb6ea45208c55cc35ec036f02c90b2640515300fbe7a2e159ec218dd4"
+    },
+    "authentication/noCoverage/w9agtxy03b": {
+      "group": "auth-coverage-src/session/client.ts",
+      "evidenceHash": "39fa9b4007ea101e980c469214a458f8b147fd644f20d9882daf2e6aa4e51bd0"
+    },
+    "authentication/noCoverage/15ikecdnmx0": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "0c17991d33f8d8f175926631ae0b8cb1a3b722fe6ed784b4482083ccbe27bd8e"
+    },
+    "authentication/noCoverage/2a7i5opkdik": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "e266c544ab4f97f46d775fe33549895bb689ad22d8c0e23c2089b96a4f8fa1fd"
+    },
+    "authentication/noCoverage/1ftfmwperon": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "cb561e4f9e8ea0a0ec58dca96c2544475c517d6607d548790d9cd6432bc24fec"
+    },
+    "authentication/noCoverage/t4i5mjyhkf": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "deb2a8aea9fca197d7c797bf9531a3e2763775a274a58d58ece7fe48e609a9fb"
+    },
+    "authentication/noCoverage/4455q8xf3n": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "89f93f696d47eb1a0bdddf4f0e844c68567d51af930c0d05fbca1d19a9c31516"
+    },
+    "authentication/noCoverage/2fqg0x6z1hs": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "427c1624a19bb2630ebd61550140f34a1ef7281bad5e49068469488b8aeaa37b"
+    },
+    "authentication/noCoverage/2fuk161oulp": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "8bac7c0b39db416bf7ad2fe967f995958f85ffaf6f361eef6975368eff62512a"
+    },
+    "authentication/noCoverage/15x13gxlbdf": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "cc5abd5798438f72197512dc3e03f5f997d45d45e895811fba4cf75b32e01be1"
+    },
+    "authentication/noCoverage/1v3mkitml7n": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "21c8bd626c0a4a56bd41e6b3ab4821b4c8aca6a8c49cf85a46e2b6d622706570"
+    },
+    "authentication/noCoverage/toz4rt1yrl": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "5962902aafc0ba823ca5e1f16f143fccf32019b6c18ab32f56fc7824368bf45d"
+    },
+    "authentication/noCoverage/zic0f7eieo": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "cc2ae2114196718f9b69865bf9527fe9541363888e8f02541bc868e4bfef6b36"
+    },
+    "authentication/noCoverage/29lrdn5l09b": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "3e958d6372ae76d41e069d96d6db596e721a70bf25be2ba061bd24fac18b350b"
+    },
+    "authentication/noCoverage/aktmg4rk1k": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "f4ae63692c26f0a3fe2552cbdea1cc7715579aeb14d63bf555fd721913ac15a1"
+    },
+    "authentication/noCoverage/1y2smigss69": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "1d6a3b776d7d5d3ce2b7216db88655c5e8048676f2f26da53ae805413c99e27f"
+    },
+    "authentication/noCoverage/vhc7h3aeyw": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "c5f8f2f25a7b8ed10f2c411e32229570ca8f606277d3d5ec88b5ce4099561453"
+    },
+    "authentication/noCoverage/27nmbs1mana": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "4a4fb9a392cbd3a26b9f09f4a3ccfd48b849593aaad0ddf55d634e45c39322aa"
+    },
+    "authentication/noCoverage/1kpobv1ryeh": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "b2e240c68123d218263a5cf23056ca769e5f0e6ca8f1ad96a193eb7b19f490b7"
+    },
+    "authentication/noCoverage/822alsyh41": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "44771fb8026d351cd70b032c6904c2b94bf004b4461e52ce5d2ae5dd91aae233"
+    },
+    "authentication/noCoverage/14l0r8afxsz": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "5706fe6c0d9451f8af464e943c998255131a0b95365a2e59544bebe85578c664"
+    },
+    "authentication/noCoverage/9q8emgp0dp": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "25670c8b168dd7b7b055e9fcb4a84d8982141e07095629314965d40a727fda11"
+    },
+    "authentication/noCoverage/1wsxdx3sqp5": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "a67fe4f04cb5cd814de6852ac81d6aeddcc67d4da39bb6d7b4f1f8f757565395"
+    },
+    "authentication/noCoverage/2dr5591m3hw": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "83a195584df79c3b7768e95dd3c76662cb43307bad1da5f8e0c10945f81d8d43"
+    },
+    "authentication/noCoverage/40tpewczxn": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "f2a76b64d48a18efbdcc9c4cbbdbb71fa234d8a6d5da75ee1e21003c54217c81"
+    },
+    "authentication/noCoverage/scl861p0fb": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "5d346f08e767a95cf9ec8a0e73284899920a9914bd2ea921baa98f5425bb56a1"
+    },
+    "authentication/noCoverage/1z9e52b6txh": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "8913e3d3dbe28adf4134a89343bb7a1dc07b94e78d826ccd9870471275344a90"
+    },
+    "authentication/noCoverage/20xnk9ij0e3": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "98f20b071c62d9f233222a0c7c7a469c3e4e0299095c1dee022eee53a73b9265"
+    },
+    "authentication/noCoverage/oprx78j977": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "50029c4bf93310f29fd381e586cf1741ec8834f1289aae53e99f424e24c3ac81"
+    },
+    "authentication/noCoverage/218wih8pzif": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "40026234ee4ac3f402cf19118d4a689d828e397fcb2ef2eee43e31665d9c1f69"
+    },
+    "authentication/noCoverage/jj3vqx6mra": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "130b8122fad8613d70904d51250909db407e1dcdb951914162d2fd0dd9a24466"
+    },
+    "authentication/noCoverage/2awmf9nmabv": {
+      "group": "auth-coverage-src/password/client.ts",
+      "evidenceHash": "d26be8c355c96def01543c7c36cf48dbf18012b22844785a88ecbe09e3f221e6"
+    },
+    "authentication/noCoverage/1aasov06oto": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "2131da184337fb094ae861f32f5907f8366d22330cd2cb54dbab5bcdfb7fcb55"
+    },
+    "authentication/noCoverage/1wi521791ho": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "e37fa84f1d3a4b374d52a5a8f74a3403ed58bbf845eaee37764e6f5b9c53c611"
+    },
+    "authentication/noCoverage/2cz84x3lzw3": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "142a9d6cba17c89dc0a6c4e43c2ca2ea1799d73fe3090fbd2b48a4b76c80da35"
+    },
+    "authentication/noCoverage/2acb1jdslfs": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "589385623894299dec5143a1fac8e035aa0fc57e4cb51adc76bf42f3d7cff8b2"
+    },
+    "authentication/noCoverage/1h0jkmoyfuj": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "775fb1a9a65caaec8d31a077f16099a9573011c1f0a49a15c927a02c304deb7d"
+    },
+    "authentication/noCoverage/157vmja7phy": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "f0e239b42d7c5ed8ddb55b711e11f88100cc1e66bcbcc7d75b60b50e4d2ef8f4"
+    },
+    "authentication/noCoverage/16mihl3bn9p": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "95e662e68e05a8561e2709bda449c0bd7323146bc81394faf754a4a33d02f9ca"
+    },
+    "authentication/noCoverage/2eeux4umbdk": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "7a98d081040d4ef08eb56632d861f00a55b69d88cc3bf2c72447e55663529a48"
+    },
+    "authentication/noCoverage/tv8mkcb4g3": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "61b5f1ec6914fc7a1bef77303eedbf4d5ac2995255e991bc9a1ada4f03c12876"
+    },
+    "authentication/noCoverage/3ez5a2wozu": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "85198eafb9700efcce3d969d38ab4a16b9ce2638dabff860cb4f0c3b29a8205b"
+    },
+    "authentication/noCoverage/2cidka0y0la": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "529b0eb1b50c23bb53084d7543eb624af445160f2d616898c16fcb5e47e90f87"
+    },
+    "authentication/noCoverage/27meb3pcl75": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "f3d016e4be95e553d5ee1ebad3ef9402a23063a7387222fd69d917bd0a86ddb6"
+    },
+    "authentication/noCoverage/gvf1qoyoof": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "305b57871f5ae9716248da891ea458fd1e6b95061291a32f4b439dcc17e33a4a"
+    },
+    "authentication/noCoverage/9whygf4098": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "b3e7340029499ca204c4e53cecb42d43541d43ed7e8c63f587ad08ba23d29093"
+    },
+    "authentication/noCoverage/ln9tush9qd": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "84f4172d1acb7f47b4c81e93e9d9667f5334089adde4c017511a45ffb8c8d90a"
+    },
+    "authentication/noCoverage/yvbvwld9kp": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "c6b51386d3613f1598b9decb2cc04e57f260d11d3410f49952c4c09cca75b4b2"
+    },
+    "authentication/noCoverage/pklvmkw3ij": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "7c7fc0b685ebd03cb9c994acfe90216d8090b622cf5ffc60ae877fe3d09ab19e"
+    },
+    "authentication/noCoverage/1051ps3wb84": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "543f4c08513a40b7df2dd372b6f478b47f68ec353185e1f73010321e4349b3ed"
+    },
+    "authentication/noCoverage/1tkj22p1v83": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "2969079854a350e22018f9b34b966ebd3192cc942bc81dd865d0c4d1ba0390cd"
+    },
+    "authentication/noCoverage/1ggvkck694u": {
+      "group": "auth-coverage-src/passkey/client.ts",
+      "evidenceHash": "3c694bb450473d2d6dc148eb1df64c52bca4f136bd05552ed280709e5a6886d6"
+    },
+    "authentication/noCoverage/1gdm3asbdo0": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "36ddcc75da8e7b27f11e1cac0abca3c1238fc3798cd674324881f81844a425ce"
+    },
+    "authentication/noCoverage/1sceltn7xba": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "0bd54a8a7d87c5ac8d5473a424bc18e7b37bb8b237c9354319363042753c74a2"
+    },
+    "authentication/noCoverage/1yaeaigr5v8": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "7f5a0a0992f153ec90aab32e503aa8f03b7612558cf236403b93d6d854a47dca"
+    },
+    "authentication/noCoverage/180shmnu2ip": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "166207e2ec571d449354cc23248cd45582cd0504d886806983178f189cb4267b"
+    },
+    "authentication/noCoverage/135wxq8wx7t": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "b0009572dc78f27731b17b5548de9146f446471f47bcd56dbcef7aa916cdd580"
+    },
+    "authentication/noCoverage/1yw9cmry723": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "78edf1e57a32da59fb75686c9b098fb8461285f4b193c95c99b589fedab5b69b"
+    },
+    "authentication/noCoverage/wxna7mo199": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "335f2e438bcba909c1693614b04d25136fbb4bfdd67b91ebdece1b84abdae591"
+    },
+    "authentication/noCoverage/rbhi51h2ou": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "5076819dd0a615bc658234d7a0b1fa0cd9297a25efb62d64afe03cc11099cbe3"
+    },
+    "authentication/noCoverage/199mkv9bd3o": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "655b35de0ca77bcae5b9d167f62026fe2704c1b8b2a7695a00c93765fd853af8"
+    },
+    "authentication/noCoverage/1w97n486xmu": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "cc0ff7e2af4582fcdd41adc25c8af9706231659bed715eb193c98c075365cb4d"
+    },
+    "authentication/noCoverage/z29f6jvznl": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "5cb01b7e78563237740e9b9d9c4577afd34add7e308feb6ed6b9c248d7bbfdee"
+    },
+    "authentication/noCoverage/101w8iecfg4": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "b280722bb2aa6091a254bb762bd222690fad3cd779ce404ebe0354ba9c236828"
+    },
+    "authentication/noCoverage/1lzh4089wp": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "ed21b5cd120d883dab385489a955e1ba6abe8a51812e0fd438ebf361e359e80e"
+    },
+    "authentication/noCoverage/2b1s3lk5gjt": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "3edb9867f8288f7c0cf3f68901711f5ef89c1cdf28b93fd61e426a9710b11b37"
+    },
+    "authentication/noCoverage/1z2a7jsvljm": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "910a993ac79550721a46d7b467be9a65b66224ee4d19298b17e0b13dd0da0bb3"
+    },
+    "authentication/noCoverage/vddb9cr2wi": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "496500b5fc01ae621f1034d8622be8f32140bc67dbc0bdef403983ad62cddb0d"
+    },
+    "authentication/noCoverage/1juekoc2s6l": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "e01faa6b4d1a35def892feabcbdcb3fc8ee7b998a6b9956080512e512d71b606"
+    },
+    "authentication/noCoverage/7qmoeupcdt": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "144bd384c5db389b67cb9528dfddb211face6a9499fd9bffc11f8ea2774a29c6"
+    },
+    "authentication/noCoverage/azyp5hx0s8": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "f7ac48b6c2e14fc2cc202bc64ace40e821731768aa299628209cd345e5e1bfae"
+    },
+    "authentication/noCoverage/1zw8yhwzqmc": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "67ffbefeb1f9d1053240ed453e9d33bffeed864d4fcc02c4836889a0c945cc8b"
+    },
+    "authentication/noCoverage/14vnna0p12p": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "e8153131376afaa3e93280c51253cf0238597df05d5b847f71341425eb1ce2a9"
+    },
+    "authentication/noCoverage/hd8ywfkeyw": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "31c5ccbfb90ccce6003436b284482cd25b988aa9b1cf52b5564fb15c4a258e59"
+    },
+    "authentication/noCoverage/658ap97fb6": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "ce1c098211159ff4d4a5b79c442049177a21cfee7036f09c0741a85cb38b334e"
+    },
+    "authentication/noCoverage/16uokrglzhj": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "cb2acc3b6679d762fb1b5b5802c2ae60e2507465939a4fa858d9589c8cdd4e23"
+    },
+    "authentication/noCoverage/1mxifgcbflp": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "5298d625bbd1bd5dcf1e79a6a22d28f518177d17750fd2291d2bc9ed43e22cc7"
+    },
+    "authentication/noCoverage/1p4hvmrdtnh": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "aee26cfc95a42b221348034cfc477fc597260038123bc312cfffeaa9a494791a"
+    },
+    "authentication/noCoverage/1wqfkzk403g": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "77d8f3254e766e8b7dfeeb842623d30a4c0d0a891798c3fe040955aa1b032436"
+    },
+    "authentication/noCoverage/v6wkndmlbo": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "32b3f41b2c0c3c73b55f29ab9a2044d66518c6a3901579d3ecef44d312e4c07f"
+    },
+    "authentication/noCoverage/98xnem24rn": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "7bcf938a5d153244cb735c98da2ad7cfbe310b0c38d5801a54538a47a7376e5b"
+    },
+    "authentication/noCoverage/ak17rsd3qy": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "c99d674cfc2a8d93c65d4412f5a6992e980ad1dac834da81771a1f51b5401c2c"
+    },
+    "authentication/noCoverage/1yknw6jamna": {
+      "group": "auth-coverage-src/oauth/client.ts",
+      "evidenceHash": "a94e8221a1630ab75e1d03309df41d48815c261fd5fae5d12c848d20d4319ce5"
+    },
+    "authentication/noCoverage/1macx63k1ql": {
+      "group": "auth-coverage-src/oauth/provider.ts",
+      "evidenceHash": "49f93442a8db4084a05643b4c0b4213bd9000cb88845c4b828d561c938d18df9"
+    },
+    "authentication/noCoverage/1i678tbukw5": {
+      "group": "auth-coverage-src/oauth/provider.ts",
+      "evidenceHash": "b37e84f2da99cb3c038466292960e80422e6aa8f791a98d75b47b1fd68af5581"
+    },
+    "authentication/survived/e9uu0x1bff": {
+      "group": "auth-diagnostics",
+      "evidenceHash": "d900d4b34c5be7a18067af5b304ce4df89ee6793dd21169fd7ff8ef9b4c857d8"
+    },
+    "authentication/noCoverage/4t1h8ewpam": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "6af249e5c571136bbdc3656f2019d2bec888e5078a0affecdd887b4d2cd6ab2a"
+    },
+    "authentication/noCoverage/1w6itw785u5": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "ccd4fd690bb4654109bec523c4df5fc7bb103f0a0851ddfc2b9bac2abeb9f6e3"
+    },
+    "authentication/noCoverage/11sb2ux2k9e": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "791ab4c5b0b7a9921b8342c6fc4f54331f7889876eda58a69a2d0dae3b07c110"
+    },
+    "authentication/noCoverage/2eeoun3jj3u": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "be5ee889483901f946d843aa628d8236ec6d06f5870525fdd0feeb7ab5d79961"
+    },
+    "authentication/noCoverage/6d7ho3eo0k": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "44ecf83b21bfdae7dd08790c765839fbbaed52e493e4067e5245e55a3bc19392"
+    },
+    "authentication/noCoverage/1wg3foga326": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "a42893ed2b404502bb97ecec9c27defa2c5bf922ee6b666e3e06b2ccb51bd9cc"
+    },
+    "authentication/noCoverage/19adw80314q": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "2ae2af4d8a8633db03882615729fac208919949671c0220a1c657b19dc01875c"
+    },
+    "authentication/noCoverage/1515x9cbhap": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "ac5413969eecee569a7cab6a4cdaab1dceb856f3d3a8ea31bc2f319937de82a0"
+    },
+    "authentication/noCoverage/c55l4zpunp": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "cb4fee71144f5b336be1f737adde5213c1b882b5f0081d5fe5a798c744fd7da5"
+    },
+    "authentication/noCoverage/27evfi9yt49": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "8d7dacc31b554c1f86ab99a0df89aa62df40c0af3e4810296b4e21a7ee344ed3"
+    },
+    "authentication/noCoverage/11k8zv6webj": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "4beddfa6622b48584f5c6bcfc2d8974eb85d079af9a53e1c55aa51e61ef6e7c5"
+    },
+    "authentication/noCoverage/j9tonblte1": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "04524eb39d33fce9c796369c6bf88bfc6770348bf445ba6bc31f2fd7e9173089"
+    },
+    "authentication/noCoverage/3iwk5ckb6u": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "e91ec1c81e7b18ed88f3e10a30e289f7adddfc09b64b9ecaad2779aef8ad2339"
+    },
+    "authentication/noCoverage/1qy7k73r7rq": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "1f0799b551d51c19aba8b364f1dc6b1176814157a860689250774fa8d52e5e7c"
+    },
+    "authentication/noCoverage/1bo9kxa6n69": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "ed42230665381ba2188eaa7673492e79f41cdbf4f567cf28e335cd91a38be1c9"
+    },
+    "authentication/noCoverage/6fwrz15fvf": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "f3e58193322cf067b95feec9f11d95686a023a2825873bbb09f7e130636e7316"
+    },
+    "authentication/noCoverage/1ak3tjnje92": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "f18ba4e598243a3929eeb3261f9b26ffcdb2e0fb5e73901ab69cc0dc5630a7a3"
+    },
+    "authentication/noCoverage/29orgw9xhow": {
+      "group": "auth-coverage-src/infrastructure/supabase-client.ts",
+      "evidenceHash": "6bfed2415f89b22cb845ae76680c946d3d48a38271627fdf9bd1bb73455fda86"
+    },
+    "authentication/noCoverage/bb85e6clez": {
+      "group": "auth-coverage-src/infrastructure/supabase-result.ts",
+      "evidenceHash": "92c202b57f0c13899affad835fa246c622c46a8a981f4b934c0a1e91d13f4a4c"
+    },
+    "authentication/noCoverage/ee43sig648": {
+      "group": "auth-coverage-src/infrastructure/supabase-result.ts",
+      "evidenceHash": "2e3ba3bbcdbbb862a3cf8a76ca67c841ddd0b17cb47c3d07123fec63a00873f3"
+    },
+    "authentication/noCoverage/22huet2x3j9": {
+      "group": "auth-coverage-src/infrastructure/supabase-result.ts",
+      "evidenceHash": "52e34d5fe52307c791bf3d995a0d1b74df008210343575012b70e04cf521816a"
+    },
+    "authentication/noCoverage/1sojqbk5rnd": {
+      "group": "auth-coverage-src/infrastructure/supabase-result.ts",
+      "evidenceHash": "61c646eae6ba1cd8cf4a3ad596b6470b8182bb68a43801b18b522f6a068c9bc8"
+    },
+    "authentication/noCoverage/18eftmqcwx4": {
+      "group": "auth-coverage-src/infrastructure/supabase-result.ts",
+      "evidenceHash": "e10b1abc5fe480cdded24322b95a922b250663cd607001c4aabd2476a76f9410"
+    },
+    "authentication/noCoverage/1d0p2acshnt": {
+      "group": "auth-coverage-src/infrastructure/supabase-result.ts",
+      "evidenceHash": "77219e01b8126319122a527611e048fe0037c8e335ccc61bb0613e1d50ca0a8a"
+    },
+    "authentication/noCoverage/16bwfrxk8zs": {
+      "group": "auth-coverage-src/infrastructure/supabase-result.ts",
+      "evidenceHash": "cc3377dbb8b3d9d753432acec74dbd7996d27840133b7c2606324730014c3637"
+    },
+    "authentication/noCoverage/1o5so0t8ire": {
+      "group": "auth-coverage-src/infrastructure/supabase-result.ts",
+      "evidenceHash": "1e08770953acaf05de3e041b25a131bc2d0e1d7e2a7bafc2f798800f7d71df62"
+    },
+    "authentication/survived/278w1qd98wc": {
+      "group": "auth-diagnostics",
+      "evidenceHash": "d1c12ced2b7b5e10570e9cb82c8f3db68c143274dc33c23b95fcba08dd9fdb7f"
+    },
+    "authentication/survived/edw2491q0k": {
+      "group": "auth-admin-session",
+      "evidenceHash": "149f743ba47facc4c0e9e595d11e6b57a961aecfcd26dfa68c0b3c83d506d7eb"
+    },
+    "authentication/survived/1pks2ipey15": {
+      "group": "auth-admin-session",
+      "evidenceHash": "6986db182156a00ba9da6faa408899c69e8636d58323bf347bd18e7183c96604"
+    },
+    "authentication/survived/1vh7f77fii3": {
+      "group": "auth-admin-session",
+      "evidenceHash": "d17161bb7499d9826771a949e974053495e77355eca0cfcd1e7b66fa30e60532"
+    },
+    "authentication/survived/24udf96vvim": {
+      "group": "auth-admin-session",
+      "evidenceHash": "8b40fcf2838688320c097801add3428f55870575b10e7bbbe272bc5bb9199587"
+    },
+    "authentication/noCoverage/sbfvr4llue": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "07a5386898c377d5b2534180acfd8765cbfbfd7697feea6ae919e5931b274c53"
+    },
+    "authentication/noCoverage/1k0gglklwqt": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "66a329e63b8249fa6e38847c5a2fac0c3fca57d40e90f3764617a970c6ac7970"
+    },
+    "authentication/noCoverage/u78v1q42us": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "fb04ced2823a906ce9c6a160f7a4eb75971c316853fe66c0053031c2e631b9bc"
+    },
+    "authentication/noCoverage/hjo688ba82": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "2a8d335ff6eb90b67f629381959944ca1c97656b8a9260a0dcc8bab14257e34e"
+    },
+    "authentication/noCoverage/w0a1ovr2tn": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "fde06e5227764e7369ef21b52da3775bb6bc0881965c85658f90d4fbf42cdc75"
+    },
+    "authentication/noCoverage/24zvz5u0uw1": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "32720e47f32fd93a7e33d1b30c22119efa9e61de5b123bdef1ca008ce23e8ea2"
+    },
+    "authentication/noCoverage/101v037ti5d": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "c945432da167ca97181306096bfe5d0c0473281939e8604d1b07e10a0d48bfb9"
+    },
+    "authentication/noCoverage/18f9irhyzz6": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "14df0c389dff3007885871ee5b86d4a6d5fecbe4e1f839828188695bc55480c4"
+    },
+    "authentication/noCoverage/qukvp2p9aq": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "952e2f454546d1c68c97ab1a3a317d2823c7a4958ee1fb4cc741f9c194627406"
+    },
+    "authentication/noCoverage/2dxm4qdcm47": {
+      "group": "auth-coverage-src/admin/client.ts",
+      "evidenceHash": "63cd2b4208abea2a482ecbb3aca735ae41663e89177e4d779287ead84e853bb4"
+    },
+    "datastore/noCoverage/2emepn0u9jv": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "f7dff291a062a50c4a511bfe537f1ace2811ba306c8682f2c81c9bbc103b5116"
+    },
+    "datastore/noCoverage/my3lhg1wa3": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "eae59de6cd626c0f923dfc2b5fe3f54faa6e1e11d7c7add463efdcff29584a6a"
+    },
+    "datastore/noCoverage/1o7ac0vfer2": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "def83a5decbc2818a4d1cbeacd0e0bbebe73b9a5b68e81816fe631172ac39f69"
+    },
+    "datastore/noCoverage/8vg4h9nodh": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "677437b286045ade7bcb479f8988ba8397fb849e656940d61dee510e31ce13b9"
+    },
+    "datastore/noCoverage/2d4289xc46l": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "4e54fd0c1a9cbddcd2e69741ad86bafe09963f3304d34b6b43fd4ff576165ad2"
+    },
+    "datastore/noCoverage/1bfj7zz7x1": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "99f9ea8583afb75814854abdb74204fc36ad4c6ce00f815014783a6fff651418"
+    },
+    "datastore/noCoverage/z1jdmwfadk": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "dfa751d0c2b561d6442a8df87df455e4cf0a0da228332006d2c22c55384d0f4d"
+    },
+    "datastore/noCoverage/1yd0i34d50v": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "8b85fd5828b974ab59d9f6d848b13154957e535cbcd95c7715e3b8af7ff14b81"
+    },
+    "datastore/noCoverage/14jyhryrbpi": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "c215e242495ab90f6dff4ecc4d95e94dfa36ac96f85f0ffa72b23c126bfc0816"
+    },
+    "datastore/noCoverage/ptv1p5lett": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "0d3a23d4741e7277b94be0632bcabf37aed2daf8d20190ef250f87539b14cc05"
+    },
+    "datastore/noCoverage/j6cn6v79ic": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "f286e3a6c03e3051dad3b9226c2f69d714500f805d060d1e86f9f7d8713b4588"
+    },
+    "datastore/noCoverage/2ek49l1pffk": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "2dad65b2eb781f42b2f72e00b415471f3db6633dd5fef5e1f19e4f69ee17ac5d"
+    },
+    "datastore/noCoverage/15ktz7we79e": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "165e510416919679f60a3398a87f3d1c0c67627498c31f5071cf9717151dd310"
+    },
+    "datastore/noCoverage/u3ueopor98": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "3b1c786a583ced53d76f8e6f1f527150fda8831ab246021d73a9a7eb19b8c3e7"
+    },
+    "datastore/noCoverage/19l9qlpstne": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "886e1a28b64a28933ddb9723a5eeffcc2f38f6fb396419dc95dcccd16b920da8"
+    },
+    "datastore/noCoverage/19et6u6cdyz": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "8ea940d1f36d18ae33859650110d2ce43e358749f8b21add80d321cba6a04bfa"
+    },
+    "datastore/noCoverage/27jk7hzh9gd": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "b4164339d864838dd507d1c203541e561a3612ea27f22bc14be9ecf8ca14a0d5"
+    },
+    "datastore/noCoverage/ekp68tz0b8": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "8faccaabe582d9d97eec07ab68e781ae390bf9b0df8d8efa3af0a5b3cdab03e8"
+    },
+    "datastore/noCoverage/r4zifo68ro": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "823386e1a5ec11b6b385ae3d3006c7166090fcc021d63b24cd7d4356387e7acc"
+    },
+    "datastore/noCoverage/18hb8hledel": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "9cbde42adbacac7a8dbe9d54675936a098db73c9d7837050e90115e50dbc68cb"
+    },
+    "datastore/noCoverage/gmttqstba0": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "95b5b75e694f2ec90b9cba4669ca34447b654891fb30770755cff0b11b691af1"
+    },
+    "datastore/noCoverage/1k221c7t4c7": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "a292b1be7de580e53a6554981f73bab336a1a1d1f7556e261a5bbb3fed0eab4f"
+    },
+    "datastore/noCoverage/sbxluumoj4": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "a19e50298213168d222106356b2987be85f77556187f8afa68f5ee6faa73f932"
+    },
+    "datastore/noCoverage/2gbvzulmqy2": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "34bfc983cdb13537f0a6dd23c5944f1a94d18d69d958e81539aa4b1b70d1ff81"
+    },
+    "datastore/noCoverage/qck5r4j6vr": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "99963ff56bc927a4f22689cd1b2321de93bfd75e90e08b8ddbda73c6aa72b1be"
+    },
+    "datastore/noCoverage/12chw197ttc": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "2df8823a2876bad06e61621c22d7f0bdd30aab1275a2057e84b26f2bed2519a7"
+    },
+    "datastore/noCoverage/prp7yheykh": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "39ed74f0eea333ddd82e7e58af177fb996403d55e424e657e92888a78bb06917"
+    },
+    "datastore/noCoverage/28wvp4lq31y": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "77ecc4d39b19505076185b642b8a6054974b76658a5bccf12784c380e934d4e2"
+    },
+    "datastore/noCoverage/g92k2y9tqp": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "5188f152e2b405183a854b9c94ff8a301ad7182ba42a8a7d4a23b089e1d75a92"
+    },
+    "datastore/noCoverage/1kgq2ta9517": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "1f3a7ab162e7197aab573e6b7cefd5749ee57d7fb29dc537baf40daa2ed669b1"
+    },
+    "datastore/noCoverage/20u44it7lhs": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "a3a647265e727484d692b088300e9805f3c633cdb41b15bf52eee9c24460f9d0"
+    },
+    "datastore/noCoverage/28srbxlohc9": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "a788fa2314862366264dcaa636b22aa4eb09417dc7211f544906e629eeb06f11"
+    },
+    "datastore/noCoverage/ypijdcflel": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "b749c2dc0ffa694800b96089b41a564b01b9aec591d7771cce09aaf05ffbc824"
+    },
+    "datastore/noCoverage/1p1wv1tb1b4": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "2e379780afa009f6becd2ea1795aea531261b4a770eaefe07b2a37209ab507d0"
+    },
+    "datastore/noCoverage/29vm7grav1j": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "9fd47e9e28f95cef6d9a4e184251585ae0ac13a852990b3dccda6d538dba5ac2"
+    },
+    "datastore/noCoverage/1j4rz5u4q6": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "44b55bbe10e339691941c6d72014f9fcc93503997dee8b7016b421034808c091"
+    },
+    "datastore/noCoverage/n962s0lfk": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "3939a4605466631af182e9362176e4df610e040a397eb8071e14939b96264041"
+    },
+    "datastore/noCoverage/29fxtsrkznf": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "76d36b3ad02ce8c134053f027511ae50ef74377660d89873a71f03ff2f47fbf9"
+    },
+    "datastore/noCoverage/2cgfsovkduq": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "6b4743fb4588f68cf93da5f1af192a14dd18c411c583dcbe15dfe1c5eccbc9f2"
+    },
+    "datastore/noCoverage/pvydz59oj7": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "a0bec64d445f6f998e6fbd9eaa1621294578b6c79e7271ff770d9d365b66f3dc"
+    },
+    "datastore/noCoverage/zy5yhfo0d1": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "68be1ece0354f8313f5f4273c3e9700c074e3e52264bf081bc46b5bdf3d74629"
+    },
+    "datastore/noCoverage/2brb6v2gz24": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "4788c793f8c7d42a30aa73377e2c35e255df4262e8b344e23de92e8cd97eae15"
+    },
+    "datastore/noCoverage/2ak3tpfjntm": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "4ab9c696dab5179b39d332f15fb25c88b375d5784d724b83bd9183ed48dd1b59"
+    },
+    "datastore/noCoverage/1sh6zhk6ob3": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "56761c68ce340966110b37dd8fff216111c7f492b5920e21baa1ecbea859e98f"
+    },
+    "datastore/noCoverage/1u5hx91hke4": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "9346ac69d83832bd683720859041be25d56eee4b34f15418fb79c23ea7c0f945"
+    },
+    "datastore/noCoverage/84kjhj0vkj": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "cb8b38d2968e6f6560c1b6d277f8e558326af32b2a5607f3d2afc02a65171f9e"
+    },
+    "datastore/noCoverage/8ta5fpbnrc": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "4991a0ed10900f6489f0abb3ebff7a8538c2c3eefdffd3e3dc3fd56bcc70e27a"
+    },
+    "datastore/noCoverage/10iad63rewv": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "7774749d03fe9351ea10e3259f170e218816d7d40d3a01a600a11d47f2da3a6a"
+    },
+    "datastore/noCoverage/bc9dw7pmzn": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "5d91c26b53e9836dd9730d33287f686606a132e4bf4206256e14ab3aaeb0be14"
+    },
+    "datastore/noCoverage/g9wqmqctkj": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "02aee42ee797a977ce9f4e26a4614a51186667d9c40dfc5eb7099446bb655628"
+    },
+    "datastore/noCoverage/1fp0luwitpl": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "229c720e3681436abdae793d7e724de32a3a985de6f78f7c72ef75e633d71a7f"
+    },
+    "datastore/noCoverage/128hnszdi89": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "eddeab230803d28af34d6d9ac6aa3ce11678a0f1f497a506ee7a1e95fcc6447e"
+    },
+    "datastore/noCoverage/1jm68tfsjma": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "535a950d17977d06463ab88000ac480271e9e1ded0ac332d9c3aea40fca4cea6"
+    },
+    "datastore/noCoverage/1lu4m5qcap9": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "14728fa0ab08b62880935577643e246055427800dd722db25d3975c405052727"
+    },
+    "datastore/noCoverage/6r9fge5ea2": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "3c6a0fdbe6c3714cfa93cbeabafcb6d2d23979305bca8d00a740c123f641481f"
+    },
+    "datastore/noCoverage/2c7zksh751l": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "4be25ae4491266840f0e68d95ac7070e9765448492c68717e340822ca785a09d"
+    },
+    "datastore/noCoverage/zzzxs7hafq": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "12721c71a5913209e8d9f02640b4daec6e321ab6e3ac0e188a02d6a33fffef75"
+    },
+    "datastore/noCoverage/kfntz7yfjr": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "6bf516ddf18993c2f71c1b98478a323edc8f22d59183b25a0c2f48dd81b8b933"
+    },
+    "datastore/noCoverage/17elqvkhai7": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "a5158c6e0b0fd232c5139279706e1af2ac5dc0b32081a2fdceba975533351d82"
+    },
+    "datastore/noCoverage/fka5t6rl8t": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "3778d2e6302ee6a0fc394cbcb106911315b9c9208f5ad716f63ba2a0be0d6d96"
+    },
+    "datastore/noCoverage/1ps5o6jv1u6": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "4bdd188b388114bc7b05553898a3993d930895c29c0192da16acc56b1f6f50aa"
+    },
+    "datastore/noCoverage/1uzgcfj3xp0": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "5fc75632003f4b429f8e35a5990f3b8f4cb4e316968e3bc98d5358ba99aecf82"
+    },
+    "datastore/noCoverage/r9jjvf9j2x": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "a93db01b665f3c536a13ff1df7c2e3c143997db0cc103d099becd3113bab7abc"
+    },
+    "datastore/noCoverage/11x1k3fbif0": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "15314320b86f69f85669e5b44eaf2c547ee0e4a2a100c492bea9df13f96cff09"
+    },
+    "datastore/noCoverage/1amk2cnk73u": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "5afe99ba968c9a68d7d5a2ce458dbc86dbb861238abf02c15c98dab809e50152"
+    },
+    "datastore/noCoverage/1iomwrqo72": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "38c0be6b8cb3e2144240018f644e850bffe5fecdd0abdac2a010c11304177e30"
+    },
+    "datastore/noCoverage/i47fnp829w": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "459a1d8324d7c65a8aa72842e7ca6948c6bff0bce7cc855babced37920f569a4"
+    },
+    "datastore/noCoverage/c2a5lihuiy": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "88f830558724325b5f69272362d282d2e222caf665bf03699c5671eeb58bcfd2"
+    },
+    "datastore/noCoverage/15p1977ki51": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "6a0dfc7c42043ffc23e5e707db083b5c0c62eea8bbd6363738555fc650acfff5"
+    },
+    "datastore/noCoverage/1106muo3k2o": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "8822fb23fc56bf1b69ad14bcaf6691fc1a4a1724b6e0cdf20e450598d738d739"
+    },
+    "datastore/noCoverage/62idst7jep": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "b9c4e035ec92fad07b009dd0a59f5fc9278224e7ae00bc6d9a267672931f1086"
+    },
+    "datastore/noCoverage/1043twlhx97": {
+      "group": "datastore-schema-src/schema/article.ts",
+      "evidenceHash": "f53046b78a0f9946491b11d70a13b3accf8768d0d97b63940ab59d7c96ad058a"
+    },
+    "datastore/survived/1z8rj9571e0": {
+      "group": "datastore-date-equivalent",
+      "evidenceHash": "db86d689ef9154325f53313c780cf0daa3eda7cc0e2b95e700920c194b79ac6d"
+    },
+    "datastore/survived/f00id6hads": {
+      "group": "datastore-date-equivalent",
+      "evidenceHash": "bbad26d286262ef0a5a3db2ae2101f8675776748d3c9279753423fd0931d2919"
+    },
+    "datastore/survived/oz2nx4g1q": {
+      "group": "datastore-schema-src/schema/datetime.ts",
+      "evidenceHash": "5e949a701463adbdbdd5f6367fabe2642e3625ba62a330ece050f0ddc990634f"
+    },
+    "datastore/noCoverage/2c9k7awcbmv": {
+      "group": "datastore-schema-src/schema/datetime.ts",
+      "evidenceHash": "d2e3b816227243b5a4bfdbf38f71995b07c4420306d54c5f8fc8c8000e692936"
+    },
+    "datastore/noCoverage/13ig2facrno": {
+      "group": "datastore-schema-src/schema/datetime.ts",
+      "evidenceHash": "14bef09ccf8c550cb2c1aba1da975effe6cf483ae7fc83fdb77e212a6f3632a4"
+    },
+    "datastore/noCoverage/f7ah9819sl": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "6c5b164417c959609e804c02a8eb1e688f283d66e1f027c487c33ad87aeccab5"
+    },
+    "datastore/noCoverage/1fia3lb4ixt": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "466274178aa0da06a9f6a2f4ddf4492d719d861ffbd77456eef061c8b3bacf5d"
+    },
+    "datastore/noCoverage/6xri09jfs3": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "7d1c94283d27200e7144513fd1a57525553ac89200810d124b21b9d3056eb23e"
+    },
+    "datastore/noCoverage/1ezbbutaqbv": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "9866db4e33136f813c6fe6a34e1a89c225b8d6012f8f0ba1787f690f3dc2d251"
+    },
+    "datastore/noCoverage/1gv2acwks8f": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "83c2fb526d608d0ae26132408c1b62e5ad9453c46ab195713cf106e2e6fcd654"
+    },
+    "datastore/noCoverage/1uzfpg62210": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "40a5abde2ae5718bfa6eb6cd7be9afd11eb3c421ae34d391d96e40da1ce0df4b"
+    },
+    "datastore/noCoverage/2biw5wxavky": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "69de93aebcfa8d948485f3d0a3555abc71b67a26fdf02f7313fc3f7085888a3f"
+    },
+    "datastore/noCoverage/1420gvpxe2x": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "861cba6b6f6bd70451c0a6454681aa78d0ca11bb78c13c78320e9d6bcbd24837"
+    },
+    "datastore/noCoverage/13d7nudxqlb": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "3968e08b98672c42d287657b787547fc99348e64eeccadb197d919fa0c0e1378"
+    },
+    "datastore/noCoverage/14uuuo75aqg": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "9d9fc77f70b8c712cf4a0909b62991ec95419ec3a62cb598eef3946eeb53ff7d"
+    },
+    "datastore/noCoverage/lgs1vl9o46": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "2c0a94f4eb5241e1d3cc2533a5871fc18fdc11230dfe3d1f94eb59ca4c822be3"
+    },
+    "datastore/noCoverage/p9z381z3o1": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "e0b1685a71dd801300b320624ccdbd4ebde20c2ea11667112dbbb26880b77d96"
+    },
+    "datastore/noCoverage/1ws9k3898d6": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "f042bfe62d134185e8b6cb245130cd964e514d7d80cf5875e34896af5a077cde"
+    },
+    "datastore/noCoverage/1f2f3frsger": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "a50cc0d77f9046d6ff8545169f99870c4cab7d7780d61276081066451fb9cd17"
+    },
+    "datastore/noCoverage/2a3bhgg4op9": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "f0a28199ff18ce721b3799cfd410517c75f701eec13051998e24eccedc7c2d8f"
+    },
+    "datastore/noCoverage/baq7s3qrax": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "05bb8d3fcbc96bac4388c16bb02cf6a896963b59c57db3033387e5fe948b8bfd"
+    },
+    "datastore/noCoverage/fyfi7xjnpc": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "483c034e178da39852e8889f9242737e0a6f1d0ce6ef2391eca34a6e2d11fea0"
+    },
+    "datastore/noCoverage/gg8a7cl1w7": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "bdf70ac08f0e872e9038769d0195023249bdcc61369f2cce56977bc7c8b54118"
+    },
+    "datastore/noCoverage/q34bk1ka7x": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "8792fd7071100c3c1cf7c461db2cb78848a9e332ad3fa4c6416b87d5c2223147"
+    },
+    "datastore/noCoverage/oy9cot9lrr": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "a0b07a1dbda9ba7a01c8b7d04febb3170dcceb7afe3c9fc8dc7f0d228c0759f3"
+    },
+    "datastore/noCoverage/buuvjwlieq": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "af2b1d93b72be266946b5954b4ea107f52809717d6323a68b7b8efd8f60f3250"
+    },
+    "datastore/noCoverage/fhkq53skop": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "131a8438dac731ab618cccce849b908bb11f2cbb94b032b90907cecb05fdb9ae"
+    },
+    "datastore/noCoverage/9dvg0uuqyt": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "15ecc3d60a11534d77e73581c04c62c7000460bfde696e256bdc4569fe936a3f"
+    },
+    "datastore/noCoverage/1iz7jkahhh7": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "5e505ad2ae4d5a80293c1d4e3b183eed45b7113a60dcb259a9cd37c5f0fcfba0"
+    },
+    "datastore/noCoverage/ucss71f1jh": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "7069c4d63520b43845f41d2626fc8e5b493f1fd2549c88d24576cd85de21627e"
+    },
+    "datastore/noCoverage/z0ssjpsc6b": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "6e12a70b1b8dbd6d333c203ff3971893b17d628ee7fc295b0bfdfe650d53d385"
+    },
+    "datastore/noCoverage/coq6dfvruc": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "e97a44ef3a20864425462ceaf6644887f0e9f5359674a849f7a5300c77d7a7da"
+    },
+    "datastore/noCoverage/18yk1u2lyn5": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "8fe2a134b75030b55dc2759f68a71b4555844f9b740d90c37e7a3f932103f65a"
+    },
+    "datastore/noCoverage/22rapo3h16x": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "149011e0b4662a8b5d6d98629d07c304c5ab3435d3866fbade3ec16cd7a41ebc"
+    },
+    "datastore/noCoverage/fa55pbxpuc": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "855b8074752ed00993668828b9850d7d044a6e9051d5fb6beb79ac026622b162"
+    },
+    "datastore/noCoverage/o8bdgrk6p8": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "71f9d6fd294d72645cbaecab1881267d8babd328505ebcb91de0b96828a6ee7e"
+    },
+    "datastore/noCoverage/vs49n23yg3": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "8cbe780f5fa47b9ce3aa8a51917fae4e3733758e32a28b3d37688a2082165caf"
+    },
+    "datastore/noCoverage/134sgq5uc02": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "882f373d7e5b4517d3d3cb5e3b1689be49b41fceb92e011a85d13b194507b5a8"
+    },
+    "datastore/noCoverage/2sge5imqh9": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "22095fd8d6d466a701d68f4f02b0bab3f5d199cbd18d098db0a3c161ef35c7a0"
+    },
+    "datastore/noCoverage/2cl7e9hljj3": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "7c1800bb4c1108e4b470b87f0acbc8489183a6d89ba73730b9f6219746621fc2"
+    },
+    "datastore/noCoverage/1d8x5rie3xz": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "87b278e0b3d371c6269b173462da69579b36e227db79fd70ac03c41547898e18"
+    },
+    "datastore/noCoverage/15g9tnrexzg": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "2f81a9b88ef5e76431f024e6939fcfead520908e5a3ca1f905ce14557e4c911e"
+    },
+    "datastore/noCoverage/27j6xruozll": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "27cfdbdd57787aa40b621c0c46447eb88cd24e1a1e10672933c2dccce86f8346"
+    },
+    "datastore/noCoverage/1ill43nt2vp": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "22aa8e7824b044bf547ae599f2e8ab069ed9eeb2a2781e392711858b8e80a5ad"
+    },
+    "datastore/noCoverage/nc6c9yjznv": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "9cb8944a0dc7521d7511c9240b179c902c67927180871b1b2fc21e4fe34811f6"
+    },
+    "datastore/noCoverage/17yz5nkkqq2": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "0410175537bf3d320fdd00b9cd1d11450535703b5b13a3a29ad252606c3bddf6"
+    },
+    "datastore/noCoverage/ysgsg37c9x": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "56da44fcc76fc4c61b60b5b39cfd65c4c2713dd2560b9a89ee021dd708f7ee63"
+    },
+    "datastore/noCoverage/1gze8l4zxue": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "d9aa18bae4062b3390d4afe2d0ead9fec9e466f3aed459014b5d1b1e3d958585"
+    },
+    "datastore/noCoverage/2ek0zbgg4u3": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "ca8eaada0473c3137efeab447dbadb0cbbb371b8b605127824852a0c634560ba"
+    },
+    "datastore/noCoverage/ss8vzdww2x": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "5e2be8e0421b78aafa8a880778abc97b26e4426bdd9e2cfc38e289d512bedf93"
+    },
+    "datastore/noCoverage/1go82feyuw": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "56a4554f77bab5517255dacfc95166688bdb58f513344def70f7fdb4089b47d3"
+    },
+    "datastore/noCoverage/b5ef9yx7v9": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "9763e3154cf77c64348904f5cbb159289ac19a819a170a522cfa887cc2525eaa"
+    },
+    "datastore/noCoverage/mpwxfnh796": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "68255f01c685515b28ffb94ffc94e72677d15a8662ecf45c9b5c0d2f97ce5021"
+    },
+    "datastore/noCoverage/4pjfm4xh6h": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "b969fc32fb790c612860ffa8d89abfbbd20a8d0c8d3a4394555eab1bfca90b93"
+    },
+    "datastore/noCoverage/gx222dgrrj": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "d6db3c342a6f3903acf7f793344a04612341ccd684ba89560027cd8cf19548b1"
+    },
+    "datastore/noCoverage/1s2ppytp4d2": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "cd1e6704d2ded270cac2e073fa97d2f4337d0e930e80065eb5edcaf4d79cef8d"
+    },
+    "datastore/noCoverage/19q98r69zfg": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "26c3599b856bab856d805d1d9b27c743397f9178c6dbedf99f8237fd2026f465"
+    },
+    "datastore/noCoverage/1m56bjhbzum": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "5b19ea07522ed7ed9bc109c0f5782145017a1200613a95c2abb3e6b839d5c21a"
+    },
+    "datastore/noCoverage/2176zofnpb5": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "03bf320cb709b6e7fa7459859718c17cd9926d9b6fe86e3c738716a2e1aeecce"
+    },
+    "datastore/noCoverage/1dqxjfswd7q": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "3b6b3893d7b48df3dab17221ca5b0a5232bd940975eb4a57e460516aeb60c8ce"
+    },
+    "datastore/noCoverage/1uu0ljw740o": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "94cb44a07602729c7079966dcd9624b43d9bd7b18d4e76692f4d0f97b1730e2f"
+    },
+    "datastore/noCoverage/1heq5kt7a4f": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "f83290ef984c6418779f19d1da4959ca39116e821fd519c2b536ae7db1e05085"
+    },
+    "datastore/noCoverage/17s0bvccyiy": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "07f0d5e42cc48652a99f7ba6e2698743a524602fd4401a0997639ea50f79ca0d"
+    },
+    "datastore/noCoverage/23o7qwa227x": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "42c4ebb0e6e404b51761ceeaf188eee423ab92d2bf150ffe41230f07a1630b1e"
+    },
+    "datastore/noCoverage/1lvb9uz72jm": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "f8bb3879426ad3e691284892a25a90ce0bc7601e80b8be319fb003aff49fa938"
+    },
+    "datastore/noCoverage/14rwvmb2chq": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "dace08c54509f5a65727ad6e95b7b5cacecedaf0ac8f1868a6b650735d80521b"
+    },
+    "datastore/noCoverage/1wpgjsg2cnr": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "2065c2c851795a84a98272bfd099fc1a37e187c7cfc8b18e8ef0a49b0ee2d3e2"
+    },
+    "datastore/noCoverage/go4kzd93y4": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "f98224e31b1f11350a807d6b653862ae8ad76a781e432be67af411243133057d"
+    },
+    "datastore/noCoverage/16c5pdwzs09": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "bb882afb281739b00cb9756869b9ae5f42a5d9b2dcc1edb9af5bc83343e5cdc3"
+    },
+    "datastore/noCoverage/1pcxzvv87ml": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "38814a46fb4ec7b63de1b4a220f215f55f3ed573c45111a891881af786e1bc7e"
+    },
+    "datastore/noCoverage/1dxwfm5zux4": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "3d5655d37c429f4d5436b1b6d0ac8e6d66add91485a6c2054c3ebcdfc4a2876a"
+    },
+    "datastore/noCoverage/3qkwbfm4a7": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "610d557eea54479068e25340197385b8635effbda66a0daf45fea70d906e7549"
+    },
+    "datastore/noCoverage/20ai9jbjhrv": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "10155f73624b3475c89dd594930b80216b38b1523ec0707f22022274272d4590"
+    },
+    "datastore/noCoverage/w0mw9c2wf6": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "8e7842351089524ceca3d0d23123fb02fbe8b3be3d5b6488d4ec50866394de6e"
+    },
+    "datastore/noCoverage/f3bpqix6bi": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "92a62c2cc98f21a8f65ad6a91fa3f3fee0263e17c4e4290323b496ed7b2260d0"
+    },
+    "datastore/noCoverage/22l363unjnc": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "01eb4992db97f07d4b6437c3d981d8571a185314a99ba6559ed1e89cf7318320"
+    },
+    "datastore/noCoverage/1rdkho842l6": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "ece28a243a765cf4dac2f8e06ce9ee1803b86214f61afb426bb1e5c3da31d906"
+    },
+    "datastore/noCoverage/b7n8gm9yce": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "ec4c4815869cc850197ef9bc39c7fb5233f4dacc53cd344c932340ab6083f769"
+    },
+    "datastore/noCoverage/rxbwdtpwzx": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "602a48980a6138a95814f989813c88e048c6e651150af68f078b8aef9733a3c7"
+    },
+    "datastore/noCoverage/xlyroh14ec": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "2eaeff8748d96a2f569635cb4c27ebc14eafea81d460b7141af9cb77698938af"
+    },
+    "datastore/noCoverage/24l952x0xr8": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "7dd9c0b19af0c45537816ab1ce0dbe92addcac8827e0377fa30fd1c62303d12c"
+    },
+    "datastore/noCoverage/3f0izwi2jg": {
+      "group": "datastore-schema-src/schema/user.ts",
+      "evidenceHash": "f711c3930924a73c548e91feb4a87b582056bc6727ec5203b55d053f4304ef08"
+    },
+    "datastore/noCoverage/uj8jpucatx": {
+      "group": "datastore-schema-src/rdb/client.ts",
+      "evidenceHash": "a496d30d476ed8e69392b3d117a1d807e4add69fcebe6faea6a0f9618d753501"
+    },
+    "datastore/noCoverage/29bpph0vrf6": {
+      "group": "datastore-schema-src/rdb/client.ts",
+      "evidenceHash": "82e12c710f8d113b76c28474f4f0b2b54956a8dbf7dd0cf3998610fcb13d9b4f"
+    },
+    "datastore/survived/26scf84mxmx": {
+      "group": "datastore-id-diagnostics",
+      "evidenceHash": "0f5acfe4c6b6f842c4c502098fb1b477360d5a9d869e20a8b65bd703936b117a"
+    },
+    "datastore/survived/1zcvgjmu03e": {
+      "group": "datastore-id-diagnostics",
+      "evidenceHash": "930c775098b48236ec7bf152129d5cfd9d2209e138d951c4a7f3a46e711044a6"
+    },
+    "datastore/survived/ms3whmmd3b": {
+      "group": "datastore-logger-cache",
+      "evidenceHash": "a066916fd05ed8fb1cb5075ad1f94ee807265fcfd95ce72cd77c2bd0ca450a75"
+    },
+    "datastore/survived/1150l0tgu2k": {
+      "group": "datastore-logger-cache",
+      "evidenceHash": "bd0006ea60e4c3e663acc83e152e165d6b95fda21989765d93b67e4cbad97bfa"
+    },
+    "datastore/survived/1k676l1i5a7": {
+      "group": "datastore-logger-cache",
+      "evidenceHash": "ad410d1427ada34daf15db1611f45e7b858a553c4cc95baa294802a8e365fd53"
+    },
+    "datastore/duplicates/1ede9444f84ff0a1": {
+      "group": "datastore-error-contracts",
+      "evidenceHash": "82350ea52201086444955cbb4a0a9f99acfa98e8b890245f31f14c0582530823"
+    },
+    "datastore/duplicates/b6af4ae28bcb38fc": {
+      "group": "datastore-level-contracts",
+      "evidenceHash": "e97f0d7bc99d0187dc4ec304043b42cb1f0536224125619435116b4506c3d79b"
+    },
+    "datastore/subsumed/f99d0c7389304030": {
+      "group": "datastore-error-contracts",
+      "evidenceHash": "971a16f143118b6336491cf6477bb58c15e30c529db75ff3fa48b15c0b9338cd"
+    },
+    "datastore/subsumed/6790e2313d4f963c": {
+      "group": "datastore-id-contracts",
+      "evidenceHash": "a7de5d28a07486bf0e20c866d0f084064d29987fb431cf68939c18148858eefb"
+    },
+    "datastore/subsumed/9d4be5b0c7b4afdc": {
+      "group": "datastore-id-contracts",
+      "evidenceHash": "0275c7f497dea9311a78fcf962c65e1366494831fa7fad8d89636633a502ddca"
+    },
+    "datastore/subsumed/f7aa151d99402c86": {
+      "group": "datastore-id-contracts",
+      "evidenceHash": "2c581313008d207f2809d3cca2107e662f055036f2c20ddb1ad5d067f69a0c79"
+    },
+    "datastore/subsumed/4661d1eb7e00e821": {
+      "group": "datastore-id-contracts",
+      "evidenceHash": "ebab20a478538df47351ff30853e45708811fd62b9332dd4e5098b5e386fe2a0"
+    },
+    "datastore/subsumed/1c8593790c1d8a03": {
+      "group": "datastore-id-contracts",
+      "evidenceHash": "38e2ab0fb0179c505342ee6cfa3a0a8415d5edaaac419588b1dd8d2a8b27a749"
+    },
+    "datastore/subsumed/2d672f6f1aab7500": {
+      "group": "datastore-level-contracts",
+      "evidenceHash": "7c52ecd25db90b94a1efa1da0c6d2e18119de164db546cb601a082b0fd95b908"
+    },
+    "datastore/subsumed/55a3cecb1dd51f23": {
+      "group": "datastore-level-contracts",
+      "evidenceHash": "03c93bc8879a659c60633429028fbc9125e6bea242dcb7afbb20fde92646bd51"
+    },
+    "datastore/subsumed/fb18a3aaace1293c": {
+      "group": "datastore-level-contracts",
+      "evidenceHash": "e7ce5dc6414488b4b67c776c4aa48aee6481898a754ca3aa6db643f45e59d3e8"
+    },
+    "datastore/subsumed/3b91daf9448a6182": {
+      "group": "datastore-level-contracts",
+      "evidenceHash": "f8cd43205f8e724faca2bc887d55cbde092c236b734dc90fe4b2566df216eb29"
+    },
+    "datastore/subsumed/36c6aaf449b5a3cf": {
+      "group": "datastore-level-contracts",
+      "evidenceHash": "9aeb4359b1b1d2427acde87458619b993a1a3466a77d2dd19baacbe4293dfc70"
+    },
+    "datastore/subsumed/3d9c7c049c2e94be": {
+      "group": "datastore-level-contracts",
+      "evidenceHash": "d2512a4f2e51e7911cfb593578d54e80a578b691b5403ec9aeb0fa8371219499"
+    },
+    "datastore/subsumed/6319a20dee3a4a2c": {
+      "group": "datastore-level-contracts",
+      "evidenceHash": "be1e4c27faf863711de5ff2d50e2c0b5568850a44c9190cecc789272da9ba95a"
+    },
+    "datastore/subsumed/a7d9ed960f7777b6": {
+      "group": "datastore-mask-contracts",
+      "evidenceHash": "53183b56928b8e1ad8c56084afdb7a5c00847852d7fa57ccc77f9b3aaa0ce15c"
+    },
+    "datastore/subsumed/5451b7b7a55add58": {
+      "group": "datastore-mask-contracts",
+      "evidenceHash": "f88756c5690a02b4a0ccbdd1a7a6cf63c736eb8d41e1531f3c9bb03e6799207d"
+    },
+    "datastore/subsumed/1d3f556125a9d2aa": {
+      "group": "datastore-date-contracts",
+      "evidenceHash": "380906eb08794f5d55e54540d2735ee310611cd7dd6188bf7a44c2d66e4b3114"
+    },
+    "datastore/subsumed/7e2ace6f0366dd7b": {
+      "group": "datastore-date-contracts",
+      "evidenceHash": "ca2a48dd3b495f5b5d44cf8773952e48a51c3143774db0eedc6a869a77882a00"
+    },
+    "datastore/subsumed/85e4dfae54b829a9": {
+      "group": "datastore-date-contracts",
+      "evidenceHash": "12ef58802c5c8926d3a712604c62685b81e4dbe6a85466eb60b63af367ef050a"
+    },
+    "datastore/subsumed/861efab504c9100b": {
+      "group": "datastore-date-contracts",
+      "evidenceHash": "92391f984f15c389a4e80b720e30f9076df761bf5128887684b483ea3290cb9b"
+    },
+    "logger/subsumed/c7d5f443cac845c5": {
+      "group": "logger-level-contracts",
+      "evidenceHash": "2828ab8c32a3299d9f2e6fe3bf94eea712f12a065835b09d765a363209ce64c2"
+    },
+    "notification/survived/a40rnb12bn": {
+      "group": "notification-fallback",
+      "evidenceHash": "8750a4eab91b0affcf0769760520e7008912ad2eece8b5e1954f8f82436d44bd"
+    },
+    "notification/survived/176iwmro1ut": {
+      "group": "notification-nonerror",
+      "evidenceHash": "dcf1b34a00dc91d4c41aafc7f2f848338a9d1a524e8e7a1ac98f7aa0c62890e8"
+    },
+    "notification/timeout/jgydeiuika": {
+      "group": "notification-delay-timeout",
+      "evidenceHash": "144e0e9ef5fbe19f6ce4259b8810831549485d882a2e69d2d14561f249937587"
+    },
+    "notification/noCoverage/xsu4dz51pu": {
+      "group": "notification-fallback",
+      "evidenceHash": "f28e86df435ecabe1d60df82957960352242b574dfdf68e3a554bde2208f5125"
+    },
+    "notification/duplicates/184edb343d54acf3": {
+      "group": "notification-contracts",
+      "evidenceHash": "52539f0b7687d5aa8dea0a0df4bd8b7c194a12a6669b89732b8c5c749a921338"
+    },
+    "notification/duplicates/a5a67440d470b803": {
+      "group": "notification-contracts",
+      "evidenceHash": "96c96a70af3ec53a636b121373bd52f47c5f70d8a0a16131c15443c1f2b9945d"
+    },
+    "notification/subsumed/cb27a04d5e804fd2": {
+      "group": "notification-contracts",
+      "evidenceHash": "296a5592a8e28075fc21a9cb1538c84e24ef53a7d19aa5eea4a8fae12c252155"
+    },
+    "notification/subsumed/a6d005d1f459c220": {
+      "group": "notification-contracts",
+      "evidenceHash": "b760a2f582ae8aef313df9d19347e7b64a0779ee4d725ab64bb6ee20d7bb4581"
+    },
+    "notification/subsumed/d4c2bcbb7190f295": {
+      "group": "notification-contracts",
+      "evidenceHash": "2acf65b1f2894c14033e41b4d34da9ce447c96eba5f1de1311e9cf65e13fcae7"
+    },
+    "runtime/timeout/1vt84u7x4m4": {
+      "group": "runtime-signal-timeout",
+      "evidenceHash": "78e8286a1960233464a3d2d6a2fd0e16bcd6d3154159f2c656f5b3b563fa72ed"
+    },
+    "runtime/subsumed/9a2a3956ccca5ce4": {
+      "group": "runtime-timeout-contract",
+      "evidenceHash": "6277ec5d5909f599b79861718e0de7766d56d84ca2bc5b169a6057c6d3ad520f"
+    },
+    "domain/survived/1svs9cufah4": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "b937dc620724627fe1cd741640c631586ece68645fffd93b6bd666f9923ebc6e"
+    },
+    "domain/survived/2dvgryba9aq": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "286d21ce6cf437683d196b4d56cc8cc60171f3281271c6277a72583ecf849e19"
+    },
+    "domain/survived/2afg5b097hs": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "8bfd94d693015094d2b23aa81a1efe8ad69080e4a469f6c973f8273931c7af50"
+    },
+    "domain/noCoverage/kgneuuu91t": {
+      "group": "domain-public-wiring",
+      "evidenceHash": "cdb21dab149c2279b4a74d09db7d5e8d65e9ac43338510688df57b11a3ab2a81"
+    },
+    "domain/noCoverage/2apji3ri1qb": {
+      "group": "domain-public-wiring",
+      "evidenceHash": "01804a006262baa83de678fee8a0ed7e2424ba64aed4fc143c1d0f0311b4895d"
+    },
+    "domain/survived/4zsya4i27n": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "ab8c624d9574aa713dbaef75b1fb566cb2ca82eaddd032b08fc2cc34bb206cc7"
+    },
+    "domain/survived/v07rla04re": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "0bfe11f2ef16ee00c75107d78ae2c33bd5cddf942aa0369cdbca20c23fec459a"
+    },
+    "domain/survived/1d3gbvb66mh": {
+      "group": "domain-command-projection",
+      "evidenceHash": "6569757b907c07948d957fdedd4432a56ef0d285c94ae6269d615c8a34a8415c"
+    },
+    "domain/survived/wfxzva92f8": {
+      "group": "domain-command-projection",
+      "evidenceHash": "7d3317e6ee7693017f144aed8926c7492ffb048e9bb4f795546920b668d1abb7"
+    },
+    "domain/survived/136fq96mxus": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "a29bb1d7dd069908175605be73a1f9707f1168d98826ff48cf87c0dffecefb77"
+    },
+    "domain/survived/1atgbuur6s0": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "c295b8bc583a19319ea1d6594d1f270a36e9da8f2d20c28d1af0f44cf7b98298"
+    },
+    "domain/survived/1pkzer6hmft": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "27144ae358e0cf88c2eff5dfd95e4afb6f019a9a700b2d52ba4455394bff4be0"
+    },
+    "domain/survived/jcysek1skk": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "55dbeaa739991aef6f093698685614ef748434a06e2999ff0bc42f2f63a2aa57"
+    },
+    "domain/survived/kqsvd0c1g5": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "22dd853144c441d799e8b8eaa1c9fb03562a423c0886da36ec55c6dea63a4a07"
+    },
+    "domain/survived/m0x2htd0da": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "86e61227dcc6f72d407d000d21ee812b82a20afbca205ce8aad9cbc400fdcded"
+    },
+    "domain/survived/1l3w7a9j9li": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "024faea8adea48c06b57f1540c01564c4f2d1c640770c673185d94b5a907342e"
+    },
+    "domain/survived/c9ygw6ti59": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "b462d20d46a203be848e6e01a3259eb61429f1b40fcf65118a03ee26ca292a31"
+    },
+    "domain/survived/uxnma6y90n": {
+      "group": "domain-row-defenses",
+      "evidenceHash": "fdc3040e5b99f4a92b0fb8e4890b2c8abcdf84cf34bd1a65f8424083eb99bc61"
+    },
+    "domain/survived/1gb0gyx8rsd": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "e3f4566e3b237080a48a316de5829d3d065374b5919a1d004594dbdcbc12be0e"
+    },
+    "domain/survived/24nw8wpz585": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "c9fd98c7363befdd2f28d797d52a7407f08a07d3c847fdd7752d1cb56f0ad0cd"
+    },
+    "domain/survived/1wlt7t1llzo": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "756abc268af82144972c7062a07e7bc650ec08b9f2773cfa04ffccd3d654c200"
+    },
+    "domain/survived/1qxnng6wrup": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "901b4df8487bdd867a8e6a0bffd0ebd9fddfb71fb2a670ec7e043bb5e6e7a14a"
+    },
+    "domain/survived/22f27qv04rv": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "e00f7877f224f850066f0aa51b5e736eda62b0b9fbfc3306088dc7a0617daf01"
+    },
+    "domain/survived/sb8q8py357": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "be8ff6326f7b2a59d19d115f01741e1c9f7c0192c8431aac4806d3642288ceec"
+    },
+    "domain/noCoverage/16v73soc877": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "5d7769d71e36f04f3e3f23931f876327719a51861e561891bcfbe312a84beb11"
+    },
+    "domain/survived/12bmahkich7": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "d5c2daf70117ec7b42550e15808bd9c52c04490042ef7d55af02b1a151454213"
+    },
+    "domain/survived/9c921x3fgn": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "9455c612cd6644770db0c5a332fe863e2535997dcc6b289c08288a00556a4492"
+    },
+    "domain/survived/2aaolnd69pa": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "108d9b65d083862b963a91acec9b6137fea03f25b3609dd3b2f90fceae119e16"
+    },
+    "domain/survived/28cmup42m97": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "614f44dd9e8a239149936f6ff6c99429f250c38585fdfd6d2a030ec14100c7fe"
+    },
+    "domain/survived/1mohfgwoybl": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "8e3b79b357dd833a552c3d34f2ee32502a779d3c515d606dcb62fb5af3fe51d8"
+    },
+    "domain/survived/dyeqm3wsbd": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "53fe489c952a2e87535256f0aa3f0068525f525e1ad20ecb34586f30eff996bd"
+    },
+    "domain/noCoverage/19yz9qwgf71": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "ff2749521f8d7b1043383d0b9ce1c6cae6b0ba9345f996f8564cde99eb134941"
+    },
+    "domain/noCoverage/pt3p6e7a5q": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "eddfbb6cb2f95a7b828828c439897a28604d023c365e6eec771b0cb0badcd6ae"
+    },
+    "domain/noCoverage/1r9z58f85me": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "cb92bbdb625f2a9c8e594b2bb9f5c277655017d03788fcfe4537a989fa8e0072"
+    },
+    "domain/noCoverage/258njv4lnq3": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "b896f253d8cf4cfbeb4cbfba95399ac4e219a2f49eb3dcbe635f9bee0235d39b"
+    },
+    "domain/noCoverage/z7c8geqvff": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "52c272506c4a5a214a7e1aa2aa7edd7e32392ae6178abf1d3db86dfecadc59d7"
+    },
+    "domain/noCoverage/2dzdjyu9b99": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "1db549adfe2cf060cc4c37753a6e97cf2d18a3c42c77e3d2973e5b18a0a96640"
+    },
+    "domain/noCoverage/2fudel9azdp": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "af2f92fa9fa8a8ba75889c5693135b131b8442c2b0bb67702ee94cb9df74ebb6"
+    },
+    "domain/survived/13y3b6lo2af": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "513682e2d5e9cd77ac410b180d9c3b2b531c395658b90fb74ba4e47d7b5e67d5"
+    },
+    "domain/noCoverage/2fbiz2r6i3j": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "76661e8f5a5075623fd311232ac1680f787fb8b6fa12dec6799149e87b0a482a"
+    },
+    "domain/noCoverage/1ykvohdjber": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "5f52fe6a0aa6b69fe8c55d03847fc289090681fa5a4cf53237ecd2f7d9fa4c8b"
+    },
+    "domain/survived/164utm5yviv": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "ee4e3c042513dc3545650ad974d060c25f2573865c102b7a327d2b3180d4e09c"
+    },
+    "domain/noCoverage/2dilc021pyi": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "a7f06bf1035953b566a1a0aafb1aed5cbee83a595839d7a5d7a4d6601b74bd4e"
+    },
+    "domain/noCoverage/2a57xb4xx2w": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "e96f98f6d08b0f8d912f7da11251f9e827baca4eb4681134a057902b5ae78953"
+    },
+    "domain/survived/mm8kqqxwp1": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "3bb4dad943020247d3d6aed7c63ddfa1d040eef4f0af3c40b2911f20feb1d1dd"
+    },
+    "domain/survived/130rjqg6r4a": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "4b745b68610549670df7e323c717a1736a3051804b39c5f3cda1fb1939444994"
+    },
+    "domain/survived/1gqj6esqkqs": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "8358cf2ddced4ffd5c8ba69348579226173694ffbc25051905bb6de0c391c432"
+    },
+    "domain/survived/1f4ijw9bvkv": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "27181a372575b3f7e6aba783ad5e5af1c3d6c1a67bf68caf171835fe8a5fb5fc"
+    },
+    "domain/survived/288gvsw3ldm": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "fb7d243cbada81f66892383b1471cb0923acf113031ccee04b756198b3c6fc41"
+    },
+    "domain/survived/1b407hp8i4b": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "1897c0dbbfdb75cdb93b4d0103a40a538f5e0e4dea4fa60cec8182e7d7ba7a7d"
+    },
+    "domain/survived/1qvdcmqwru3": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "fd260e73beb22744936f8f28c5261fe59205b7bbc1c5d5470b13b0bc6feb5682"
+    },
+    "domain/survived/23onowty793": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "d22c50e9d6a29ca87e30e21cc5215e93569686ea7286adf9117ce6bde0d654b4"
+    },
+    "domain/survived/294lbkpmvgi": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "60ac3d78c73ff94ad16a400be213d1d8b2e1c4a360c93c892eee35819eec9477"
+    },
+    "domain/noCoverage/2d48cdzy86a": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "70638ad133976fe29ca6a2f6b1e793c3ac288160047ea760de2b1b69739cf70d"
+    },
+    "domain/noCoverage/ao3qxc9d4f": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "8481faa4f96aed1ce999abdda323ba429685e7eeb744eaa96ec0a725fc7c23cb"
+    },
+    "domain/noCoverage/2ryi5a0jj6": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "3b2a8a72e13270045a41129a2a73a519314c00a86fb4bda35622c9011819cd96"
+    },
+    "domain/noCoverage/15futd7h581": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "271244d429c70154a1a1686a2a8b07690a0f2f21d4e9673d2c7597bfcb057b99"
+    },
+    "domain/survived/1yzn7go1qyf": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "5340bd176a7f56bb389eaf1f524733eb1f1a45b58214ace88b4ae588d92c6db6"
+    },
+    "domain/survived/1bvxj26cwdo": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "b99ee61ea4606e4a50fa47cb101958c2440c4a612200ecf394a09220bad0b303"
+    },
+    "domain/survived/2a7nw70m0mh": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "c2aaec209d14492254be4b1362baea1768aade01f35e4f90ade2e221bceefe56"
+    },
+    "domain/survived/1ag1ebamwts": {
+      "group": "domain-sql-measurement",
+      "evidenceHash": "d88a64d88d7483093b098fb6591cd01c9f3caddd9cf024d87e89b23d0e396851"
+    },
+    "domain/survived/sw1r47rees": {
+      "group": "domain-row-defenses",
+      "evidenceHash": "722c0f38ca0ce42b642b233517cf806706415745ce2c365ab1051f54e6e8fdc3"
+    },
+    "domain/survived/1av16c56hy1": {
+      "group": "domain-row-defenses",
+      "evidenceHash": "cba6bdddd74761dda52ba707cf3f80ea410a0f270488398e90d0a1d011f5b9eb"
+    },
+    "domain/survived/8nr5f608iv": {
+      "group": "domain-row-defenses",
+      "evidenceHash": "9d0872ab156f14d57e2245076c4cc3f3dbfbcb078a5aa9c4ab40e13e0295788d"
+    },
+    "domain/survived/21jcsfdwdx9": {
+      "group": "domain-row-defenses",
+      "evidenceHash": "a4ecba06e076fa2119a1c1490f11b43fab09efacd673c37160ec28f79cbf2466"
+    },
+    "domain/survived/mkjcg8c4hy": {
+      "group": "domain-empty-date-sources",
+      "evidenceHash": "7dfb1cdded11aa20ffcbaac6214217c13b965824dc31f83f42afda7504a55f1a"
+    },
+    "domain/survived/1nelpa7ba6a": {
+      "group": "domain-empty-date-sources",
+      "evidenceHash": "d584fe158b04e781ce109b98ae1a570b5b98a53c73e17e6d2092167a75ef054f"
+    },
+    "domain/timeout/azlldtxcp": {
+      "group": "domain-date-loop",
+      "evidenceHash": "1516e69d672c39cda100f552e307da21938dc4bb79d4cdfff1d6bfa2071bac97"
+    },
+    "domain/survived/t63g2ay8sj": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "985cc5e3eb831b38727a7dfefb72f40944a69ddc002736f9347721400b4e939c"
+    },
+    "domain/survived/1dlmfbl9xjy": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "a6790647cd9a3cb30e795319bbaef91568854f78c7575c8179982571020964f8"
+    },
+    "domain/survived/2b8hdapkt8v": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "3048f47b0ab02f5754d03afecf56bef3aaecdda24a5cec524582803cf929d69b"
+    },
+    "domain/survived/xno7dfky1n": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "dc61a05975d9b5442c4fda125154a2a135ad9029354e5467f18e489092c43fbd"
+    },
+    "domain/incomplete/yxr5jpbiwe": {
+      "group": "domain-module-failure",
+      "evidenceHash": "4b61cabbcfbcef1ebf150537715fe9278b1f5d00c0d2ee38eb689dd883d6feaf"
+    },
+    "domain/survived/1ctu3yzu36j": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "6e187c634f4f7f7f2d360a7f09acfd14e42f0a8c9e9cf13fa0e25f916e529e00"
+    },
+    "domain/survived/24ir6c5yjas": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "b61ca0c81d383ced1c59289a5b79fc6a51b90f35cdb6bd80ba25d59ec99bcf0d"
+    },
+    "domain/survived/154zx25n8em": {
+      "group": "domain-error-diagnostics",
+      "evidenceHash": "c249aeb6b0573846fe6cb302014bd5f558cddc806860e65dffa398a1c86b59c2"
+    },
+    "domain/survived/2fc4oypn590": {
+      "group": "domain-oauth-schema",
+      "evidenceHash": "1c555c3e6e263096730ad961cf8fe108ecc34f19aa2573314516142ca54a5cd9"
+    },
+    "domain/survived/t2wqfgvhw9": {
+      "group": "domain-oauth-schema",
+      "evidenceHash": "e72ea413c09afd62e86e664bb9ace3f74dcb39e60faca59b5c678d9cee7bfbd7"
+    },
+    "domain/incomplete/8rlcpdug4a": {
+      "group": "domain-module-failure",
+      "evidenceHash": "d4c24d9040ecc0ccdb141631002fb11ac6c16e311da27a083f18234469ad862b"
+    },
+    "domain/survived/5a5uljlr03": {
+      "group": "domain-account-log-context",
+      "evidenceHash": "20a869b29ef4432bed159866b6f7cb7ecf183b65159fcb0cdf5dc4ff84fa9d46"
+    },
+    "domain/survived/1cr04foag9u": {
+      "group": "domain-account-log-context",
+      "evidenceHash": "2ff4a81a9cf82013c30a69065860252ebbdfafb1a498b6f96cadbaf24e7c8666"
+    },
+    "domain/survived/1nlhp18v8jp": {
+      "group": "domain-account-result-guard",
+      "evidenceHash": "4debea2a2cc42519854b38e74ac040d8f11d7c161d957af66a6e9ae823cd479f"
+    },
+    "domain/noCoverage/vw7rg4crcp": {
+      "group": "domain-account-result-guard",
+      "evidenceHash": "c41c0576db3efea0afb5ae1373e7310a93815828a24046e55302bbb9f9e9846e"
+    },
+    "domain/noCoverage/2eo3kqliqea": {
+      "group": "domain-account-result-guard",
+      "evidenceHash": "11ac89aea2b67654bacc3f13db4f6a9e5c092b0be90a9bcf2635dabfa483257b"
+    },
+    "domain/survived/1jtdlt2qpd0": {
+      "group": "domain-account-result-guard",
+      "evidenceHash": "b925cf3835e2ced4ad441194cd9521f7d0fa948a2810db578edba15c922ed977"
+    },
+    "domain/noCoverage/qm9m9u3vkp": {
+      "group": "domain-account-result-guard",
+      "evidenceHash": "8cb1fac97cefc219a79ba3d3260616782a6dc092c48f9e231dad17382b80b86f"
+    },
+    "domain/duplicates/e3e8f01b6bf5eccb": {
+      "group": "domain-contract-account/infrastructure/mapper",
+      "evidenceHash": "7bc3459c37c2c557e7179a382d6281be4cfe0005f93e8d1f561b4550930cd09a"
+    },
+    "domain/duplicates/2bbd4341e84c87d6": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "92624baf053acc6efd6e34a507929a0193bb8b318128c324c0ae55373bbb481b"
+    },
+    "domain/duplicates/58f33ee7927e46e9": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "82e11158c86c00e6a1bf78e7b89c5261d6881eda631ed4624026fc5ad5111b54"
+    },
+    "domain/duplicates/a023e9ec8704a0d5": {
+      "group": "domain-contract-account/use-case",
+      "evidenceHash": "728652ab295e5a2edf8422f9e432a3385fe6b5f4bff4c542abece94611c3b942"
+    },
+    "domain/duplicates/1c9e09683a5614d7": {
+      "group": "domain-contract-article/infrastructure/command-impl",
+      "evidenceHash": "0f3b342aa2cf68425e668ebc82a99973f6b184afc128d92f51c6277be35bbc6c"
+    },
+    "domain/duplicates/62724f8131141de9": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "6bfd97e6c29e09dac127200596ca72b9ac8c09f4198473f6a8d30cef6b83b37c"
+    },
+    "domain/duplicates/9e0107e3568ea14c": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "a53ff635fda3752bca4872ee1382c931f772e0a3e2f56ff270b1b0e96bcc3fe5"
+    },
+    "domain/duplicates/1eaf941ae400dc5d": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "e9e335cf050dff95ac6bee35d28791e867b2f2586282c8cd116e4f0ff4f70380"
+    },
+    "domain/duplicates/75700bae05713adf": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "43c38cf5c1f178f1e5f05b12b9265a7c0f37d7df3b2020c9285fcc784390e79f"
+    },
+    "domain/duplicates/53306ed6d6326da4": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "dbb19ade4ae3f5fae18bd6c05ee64e0252f76a182e23fe595706ac58c404891a"
+    },
+    "domain/duplicates/528bfba181a19a4d": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "43ef669c5638cae3126b9637cb7dd0990bf38e02b09b2163156934484c5f4bcf"
+    },
+    "domain/duplicates/4ff0231a31a2728b": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "5801ee7ccf56a47517d664ae80a4bfad8c79811e514e0c26cca1b18707b49451"
+    },
+    "domain/duplicates/65743a4ad7d9770c": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "257db1132a1d2212a289b73c3a089237233fa5131d39fe7174889464259c8b10"
+    },
+    "domain/duplicates/bbcd0e88e2104e3f": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "60c3ca2464aec5a706c23927163fa029613be522371435b584d0f51329e1082b"
+    },
+    "domain/duplicates/30cbbab382b8b9a8": {
+      "group": "domain-contract-article/schema/diary-schema",
+      "evidenceHash": "27b59bc346956aebe07531c212399a355d0faec0a39c6270cc4bddbf596a2550"
+    },
+    "domain/duplicates/1fba415bfd8c7e73": {
+      "group": "domain-contract-article/schema/diary-schema",
+      "evidenceHash": "03a6385ed362c44cdd2c0e30f5e80b90e6096761028d29d67dc1b67677d9cf1e"
+    },
+    "domain/duplicates/0f76a893208da3fc": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "416380d743cdc98fd974c5262578dcf3db4376275b529669e1766010a1f52a9a"
+    },
+    "domain/duplicates/e3d6a23816db2269": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "9d494c8e1ca5e88b3f87a77b7ee1f3e0053d380409c7659d89a8f2a799d15797"
+    },
+    "domain/duplicates/b44df53ce5eb7085": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "70f1caa14c184a82643ad77adbd6147befaabec7273d1ef66ed3c6b180c70ec0"
+    },
+    "domain/duplicates/45cf0fcf5bf204a1": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "88dd6d652de7def26c25241830c6c359dd5199f281ce33c48f3faa4340c9366e"
+    },
+    "domain/duplicates/ce7588628646c266": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "cd50ec536c04c0630d184fc13e7436fe01aeb60f8acb115227b074524ce18c48"
+    },
+    "domain/duplicates/ee1fa17a98f6c5ab": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "10ae583cace5a356f5a17a13d2d8c08e28aa7aed3711c79e6d557dd83ce61edc"
+    },
+    "domain/duplicates/0a5dd6106cb50a3c": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "8c0c9ca9bbff49c409db932fadd2bcf2b6687cfde79802536080a08e5b788a5c"
+    },
+    "domain/duplicates/d6bfdcfb21c87abb": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "042511f026591608e31b14e478480603746419bef12a7b6feda60cb26d3a91dc"
+    },
+    "domain/duplicates/3f22a0fa5ba838fb": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "75ee190ce2e2a7824fcd4f85f269d7a3d0928beb8e9b30c8c38c20704b2a0eef"
+    },
+    "domain/subsumed/4707403e0d820a3d": {
+      "group": "domain-contract-account/infrastructure/command-impl",
+      "evidenceHash": "afc130932588d64444257bd38a8baa89a4a97c8bbfcb2415584124b2684d2e16"
+    },
+    "domain/subsumed/da23b29df5ee0221": {
+      "group": "domain-contract-account/infrastructure/command-impl",
+      "evidenceHash": "6bb6fca68beeef8c31fb84dbd64849ee15ae7e57118c805410b69c57ccfa6020"
+    },
+    "domain/subsumed/d7fdab5ae8a43f1f": {
+      "group": "domain-contract-account/infrastructure/command-impl",
+      "evidenceHash": "49b8a2865debe23f088d091126fac56bac49ac3bdd80b00dc12f2a0827137846"
+    },
+    "domain/subsumed/ab754cecc04952cc": {
+      "group": "domain-contract-account/infrastructure/mapper",
+      "evidenceHash": "75a27d1402ff20f5af605317f577038d26fc4cdbd262e7ddb2067c3d8f332a1e"
+    },
+    "domain/subsumed/80c3ddc98bce8e54": {
+      "group": "domain-contract-account/infrastructure/mapper",
+      "evidenceHash": "b9f6a90902b64fb58b5535f7c3e181893f12ae234542f99aa79f9477195788a9"
+    },
+    "domain/subsumed/3b423034bbd3d5a9": {
+      "group": "domain-contract-account/infrastructure/mapper",
+      "evidenceHash": "b517adff92e30adda55bd49fa4c159fe8bb47ab3007f73cc3f9fc5f0df066cb7"
+    },
+    "domain/subsumed/19cd5f9ae22b18ac": {
+      "group": "domain-contract-account/infrastructure/mapper",
+      "evidenceHash": "1d702a2fd6b2a34b2a1922386b6043447ab405b2e847aeaa2772ab41dfbbc83d"
+    },
+    "domain/subsumed/08d076cf8836b61e": {
+      "group": "domain-contract-account/infrastructure/mapper",
+      "evidenceHash": "3e20e468f40d02a81bec9658d60b858c47f26256c0b070524aabd2e30f240db5"
+    },
+    "domain/subsumed/4d45ff9807b9c5ff": {
+      "group": "domain-contract-account/infrastructure/mapper",
+      "evidenceHash": "a8c1a923ca56c28e8193ff1dadf9f80bdd21ee0dd64ded9989d0f77b1690e76f"
+    },
+    "domain/subsumed/720b586d3c99e5de": {
+      "group": "domain-contract-account/schema/active-user-schema",
+      "evidenceHash": "6aac594e0540d948937cddea3a07e51b02d6783c1b7630cdd8fab9ed15cd2581"
+    },
+    "domain/subsumed/ebec8700ed0bfac7": {
+      "group": "domain-contract-account/schema/active-user-schema",
+      "evidenceHash": "7c763b2076b50f156f13092b6cc7af1fa234ddde0fd9a4868b69ca6f6b976d20"
+    },
+    "domain/subsumed/d58ff9f68bc6e7eb": {
+      "group": "domain-contract-account/schema/active-user-schema",
+      "evidenceHash": "62fe3347b8546be0fa2f94331f23df3e00cdbff1595a8c684bfb6203cb0d523e"
+    },
+    "domain/subsumed/8f52ab6b34a69609": {
+      "group": "domain-contract-account/schema/active-user-schema",
+      "evidenceHash": "db76ddeccac5b684592b63b4f7a409cf16387921a1d8d06d37899059ec1ced06"
+    },
+    "domain/subsumed/dd77b76e21a7ea3a": {
+      "group": "domain-contract-account/schema/active-user-schema",
+      "evidenceHash": "6e1e2d2302853cb1bd07205cdd84e5e670ceb64c561b3360051c827c691c1b4b"
+    },
+    "domain/subsumed/07d11c23f04fc042": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "67680226020b068d2f751d5154985ef802cda1a29fd82b60cc11204c952bd3a0"
+    },
+    "domain/subsumed/60f019cc326b77d6": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "67278dce7d36170c7af36d52f14c5a337ccf448a76ce0fa41bcdeed432efaeda"
+    },
+    "domain/subsumed/4cb912e960f3e654": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "09f7f7e74d6e6323df63a4db0e8eace2ae46c2619aa94324ae6b25064b92aa29"
+    },
+    "domain/subsumed/297b60eb65c56e1e": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "bd0cc5b2bea8b93fb5f5925626ba288ad8258637e360ad5699cadb0835874c50"
+    },
+    "domain/subsumed/f5562ef79138d5fd": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "0abdb1124f4fe87fcc92032005ebe59b6a78fe9a4d256e6155d67488f80f4387"
+    },
+    "domain/subsumed/08641b7bc6d5c880": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "ee75062e3e2b6a5708549bbd9bb6feb90f333923c4de3e020f416743b2ca5d3c"
+    },
+    "domain/subsumed/439a790fd080d81d": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "224aa3238f5ab25b212b3cfd24bb861b4d8de8e2187c0dfada0cd6cc1ac4d3dd"
+    },
+    "domain/subsumed/19d40cf54d6273c2": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "e8da11eeac93fcdefafa9524f1b50635e62e3b0089b5f791fd7677970cb46c9a"
+    },
+    "domain/subsumed/75e35aac533d7ab0": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "e9b87c3c2f429f015c38f29bbb7850a75012d6175db8048f78b7b6a86131651e"
+    },
+    "domain/subsumed/29e2469e7ec8c2dd": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "740195175cdb9b8784f2e9502c7252e47021758a3aa4fd5c58e00513ea235249"
+    },
+    "domain/subsumed/f4ea5593aa2290f9": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "d4cddfcba15872dc58639d7e36e2c2d2d9adf69451161f8a88dad427cd2d642d"
+    },
+    "domain/subsumed/95609e1bb25dc39f": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "47a5b82be14ea7e4bc2e7da79ae1667620672da47b7ec71a6dcf28fb5170fcf7"
+    },
+    "domain/subsumed/59bee81574df9be1": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "3e732c76453e769b5ef198da998f9ef784af1f33c480621d0d87d8193bcd1e3d"
+    },
+    "domain/subsumed/c457e86285c79614": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "8eb529612d858b91be580463693e9e06ee0f071f7d296101ce669fae046424f5"
+    },
+    "domain/subsumed/74c44608c11d2bc3": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "64c372e4c32de7bd4f69fa398d33f0cf12e9f1c5511d21b6a749037caf5ac556"
+    },
+    "domain/subsumed/79e638c6dc640333": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "800a3a74de7712fc6247254273f4105144c3e640e1bab986819d2edbcb664f9c"
+    },
+    "domain/subsumed/bd20e669673a35cd": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "7678e3968a57e366ec92b134c544ae47b102582e4c790f950c8746cb53803f6e"
+    },
+    "domain/subsumed/27555f673ff1f128": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "2a57fdbec611ee0f5318ee2d5e76a91d47c58f6d210de55016bed44b84afff1d"
+    },
+    "domain/subsumed/0b703b91a58dae39": {
+      "group": "domain-contract-article/infrastructure/mapper",
+      "evidenceHash": "b56a8199a2755f1a1735d61dc664d53efb281a7b7d02933bf0059bda79fe7a6f"
+    },
+    "domain/subsumed/cf5fb99025560be9": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "161b3a25de741065a999443a3279c7cf74f031e321fbf84d27d990e0f94389c5"
+    },
+    "domain/subsumed/d8164ff82c956379": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "e25847aaf28ef1f045e98522fdb4f7ec86b5f97370ef7366e8515b3dd648c3db"
+    },
+    "domain/subsumed/298178483e5e52cb": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "c182492e9d2ccfd8a33f49b61910047b855702b02778def990d7df13d5c3eff3"
+    },
+    "domain/subsumed/8f781ab8759db685": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "b42db087195f8f69b7e5522b2d9086a8d0327180b4eaf7cf88a938d81b1a1c8a"
+    },
+    "domain/subsumed/5feda9ca60398e1a": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "9d56a5fd75113642bd43fbc7059f2320cca66d90465416895ed555a36bd1d320"
+    },
+    "domain/subsumed/9a56a2f06fdac3c2": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "4dd2fcb65ea6a37da3ebc874983c9767cc0274bf1bc69e827ef1c0fe0434951c"
+    },
+    "domain/subsumed/f4c8ccc12fc2b7a9": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "456ad02c1bd76add25d7ca820ed776139dd4385eb261599263fac1a5e09f5ebc"
+    },
+    "domain/subsumed/57e80e153a00077a": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "acfaaeea989bd18e37cf35f91dc4aedc3447e88134b1b1c9b785a2714889edd9"
+    },
+    "domain/subsumed/c9501c98ab23ecbc": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "a1737db8ffcdcdf15b738b9e71054fc08953b254a3bfdaf0e2c59c72fcfbff5f"
+    },
+    "domain/subsumed/47b908374020a759": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "21ecf328e921f20e876f9d9027ae7c19081697bf16abea9450d690fe57e35385"
+    },
+    "domain/subsumed/c6f9ba59aff4f8e3": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "9ecab4aa70ef5570078c9b22fd7e6b71376216c1d7c6fddf176f72de123e2c68"
+    },
+    "domain/subsumed/2fd8a89c32e01bb0": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "2bb75047407a10ab18806d87d2358c3c2e354136e2501265c0436c789d19885f"
+    },
+    "domain/subsumed/4e0b6e400f73dd34": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "5608c740b3802032eeacd06b7114d501f69961becd1a79e00983df1eeb1312b0"
+    },
+    "domain/subsumed/90ef672060e17012": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "8580210954854f3b189c802e146df08849da21eaaab8e50fc73b26e75d97ed68"
+    },
+    "domain/subsumed/1d2c395d0dd23de8": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "0b4f602cca757f8197e7a8bfbc71a88573287b30cd1dc365494c5cb2a2b2912d"
+    },
+    "domain/subsumed/c60a53700c79b03c": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "b31cab4109c1799927385b73f8db1924bb23e2a26c6bc8e228627fbc4e9bee44"
+    },
+    "domain/subsumed/c9a065d278baf6c5": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "80abb1508be963cf06038d0062087d457a762ae7285f1611e47fc2cc33d21e05"
+    },
+    "domain/subsumed/44771522099469b8": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "4e81a8a23df77dcc0867cedcc88682195f4c71f989498a2f1c2d7687c0d4e92d"
+    },
+    "domain/subsumed/4d0dc4dcef2044e6": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "8771929a0d87d5d33359b2f4760159b734a9fb23986d51cf5858afefc0976d0b"
+    },
+    "domain/subsumed/9c7919074074262a": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "42a591ca7e6fe0bac703e4e6f379597afda296aca498d983ace93a97ddaa22bc"
+    },
+    "domain/subsumed/5ed54a7182e33f25": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "b30bd285e47bfe8a2032d9393f3eaa2b27f78cd6c76df688ed979d344f53974d"
+    },
+    "domain/subsumed/b163b749d3c3bbae": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "74c403246a1f182631d5a7ce67c56383d132e133a1da1a253a085f186849ae71"
+    },
+    "domain/subsumed/4210c637950ce1bf": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "c28d896911f101bbd63a63615dfd70dd58aa2be5b0a4711ee7f8efff1b270bf1"
+    },
+    "domain/subsumed/5cfa07b9d9ef2d82": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "208d2e8a67950c7c13aec2c03e71b91ede35dba20d5d5e409a97232600aa9ad0"
+    },
+    "domain/subsumed/9d3ddfd86b7cb68d": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "c023c580f6ca3301edb9f0873ef392a14b9cc5268538d601631f9aba4fea8255"
+    },
+    "domain/subsumed/5d1f8a52680ecf21": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "1189cc7fc400419e17e2a552ad3637a4b4350d23a07083c4cce9080cdae9019b"
+    },
+    "domain/subsumed/467c36f9a3b01e44": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "9500bbeae7f21bb7bfaef067f2779ec6fa22c12d32d96ca33d569be7adb547c2"
+    },
+    "domain/subsumed/97b5a4a7d9668003": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "c6bff31d3642c8ee7e40153c4bf427842e31cacaad9ec33d1742cce0770f0372"
+    },
+    "domain/subsumed/2440a233834bd9e9": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "7c42113ada1fa52a2e50ec8d6b27378f65065334df18fedcf5982b10ebb5411e"
+    },
+    "domain/subsumed/066d7591b1fd9b9b": {
+      "group": "domain-contract-article/schema/article-schema",
+      "evidenceHash": "f1097876093d0f52126c570bb59cf8d22c7d95aed94b7cf40093b88f50ab88a5"
+    },
+    "domain/subsumed/7507b5af059643e8": {
+      "group": "domain-contract-article/schema/diary-schema",
+      "evidenceHash": "d919b045cf354f9770120a15e5fc2f1fc7b3ae09d97de921efb2253f5110f358"
+    },
+    "domain/subsumed/db3846db143b17d7": {
+      "group": "domain-contract-article/schema/diary-schema",
+      "evidenceHash": "b6c1f5ce6fb40e3e56dffaa096c8df129b007cecd25fb9365f564c9780855fa1"
+    },
+    "domain/subsumed/fc49519926cfe28c": {
+      "group": "domain-contract-article/schema/diary-schema",
+      "evidenceHash": "158d39168e70ed081221ee0ed6d5df3ec743717a591fc7bdbb8055e48cc074f0"
+    },
+    "domain/subsumed/d06d92777f9861c4": {
+      "group": "domain-contract-article/schema/diary-schema",
+      "evidenceHash": "596356a75879a61dee4f9aa9fd73422f5286f37329759f823f0a1da42eb2151c"
+    },
+    "domain/subsumed/a967f8efa5d18fdf": {
+      "group": "domain-contract-article/schema/diary-schema",
+      "evidenceHash": "d3ff0dc500260fda85554183b8188c33f051d4f6b6e9c49050b365556a4fea2e"
+    },
+    "domain/subsumed/9173c4cf03d6c71b": {
+      "group": "domain-contract-article/schema/diary-schema",
+      "evidenceHash": "68cfc9dce0b2a1b930df99a8586c0b8ec32e59e32db22890a54e91f9c5fae967"
+    },
+    "domain/subsumed/1ab0861a6cc7cd66": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "e0e326e3104816222c8eeb086a54498fc05220c786e1a554e588404f2b138bff"
+    },
+    "domain/subsumed/7efabbe02ca9497f": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "ed8526e51578ae8abe785ac2d0149891f3e4007b25344a061480398340a15ac8"
+    },
+    "domain/subsumed/3b609c4f6c88f162": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "0c970dd02c63ff7c00ce445f8f2323795a90d90cae5ae4ed391f8724bfe034f0"
+    },
+    "domain/subsumed/7015c39ee17c93b8": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "9de3c7104fae2ce9c909a4c5be63fa5114e1808f6ddcd019e61cb87598bf2890"
+    },
+    "domain/subsumed/383bccc25dbcaecb": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "a072ae418c626b7bee2202132f9a7aad99d148e32a7c2d60b6253e7f31705d8c"
+    },
+    "domain/subsumed/199d106dbddb019f": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "9f82c03332b7ac49422f8b260fc11e355e1c6efb204dff755b1808eb45f30215"
+    },
+    "domain/subsumed/673d2f95f00df568": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "38504b9917684f149f93e8dbc3f42652be13880b348aa770c958620149a34542"
+    },
+    "domain/subsumed/e6a863d1b9feb6ca": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "19f19a036d16a45c9ab8eea6cce1a92cc2414bf9d5894652756f0b8e037864e3"
+    },
+    "domain/subsumed/25b91209627c57a4": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "7d41b215a23f842458a4d18eb75ea70caec5a974fd40d5dd37462e87c41c0dd7"
+    },
+    "domain/subsumed/32bfbf28c88a7cda": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "e946f55e1de2a7c5efb846c81dec53a1e5201739cae058d31d2b8ada6c18ea6b"
+    },
+    "domain/subsumed/305ecd4e705bd535": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "a06e5c4fc22db9aa1daf012e8f297a8aef9e203eb973b95b269d9daccae4907a"
+    },
+    "domain/subsumed/d2303d4f64a574da": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "3edeb526218c61c180360fe75bdf6757588db7291ca20897282acbd9836bcd17"
+    },
+    "domain/subsumed/dd5b1a764912d048": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "a8e0c670e5dab619aa1321d21e117b1a5b8a53b78002d2d85a3b29d742fd19b5"
+    },
+    "domain/subsumed/ec4b0772b64c1413": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "2381ebce534ef41d4d1a1cf79894b4aa7ce43767ff8c6798e0226c8382308aba"
+    },
+    "domain/subsumed/b824376a61c0c378": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "be85c2ead2bc29fe17b054a7c74a5b7bd719defbd13d49e4c8ccd854842ad4bf"
+    },
+    "domain/subsumed/9c6d12ec26da12e8": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "277350ac06c8a7ab79785c3d5da0d3cbac805c1ca38190f67d7d4bd9084b2abb"
+    },
+    "domain/subsumed/05087534f640a955": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "612fa4df4f001ae4674a54d626d64addf52341133f4d7f3489857914193a0c3a"
+    },
+    "domain/subsumed/fc14c25543c55f6a": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "0f2ff3a6209fde052d0496f8fedaff14d95a0a68fd8302391fe920b9df957298"
+    },
+    "domain/subsumed/47eddb3aaf9fb431": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "968927d95cfb4eb18d619f55dcbed33c023e441f2e7a7e718a0d3b9c14a86696"
+    },
+    "domain/subsumed/746b183ea6faaee2": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "625a903635a3b4070d4f2d2cf4bab666a6632952b937514220ae365f901c74f3"
+    },
+    "domain/subsumed/1a9bf6744f6899c3": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "bdc7f90993cbfbebbef98def065fae75333e910af2b8322c89ebc30b7d5c574c"
+    },
+    "domain/subsumed/858fe7d9ecd91a75": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "bba3a6d9d28f97cb094a3221bec20d6627561eb7f9c9b52b11c730a4d9c2e32a"
+    },
+    "domain/subsumed/1c1232c08982766e": {
+      "group": "domain-contract-article/use-case",
+      "evidenceHash": "33453a6e662690084733f4e7d66988773f6e287e13ca36eb9d5fafe2ea2ca9e6"
+    },
+    "domain/timeout/16nz6ptxckt": {
+      "group": "domain-invalid-date-loop",
+      "evidenceHash": "90caf1e70059031539b1072fb2bce7d9a6f65b97abc31b3ccbb60caec293f284"
+    },
+    "domain/duplicates/336a864503f4c002": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "5f1829a79f7a1f6ea3444622dee90df09d7b23a4bd9cffde90669913876cd669"
+    },
+    "domain/duplicates/e629086874445675": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "a43c76e07ed354c5cf5839bd06ede2d1ba0888fc185ef9c48eddf9825458a8bc"
+    },
+    "domain/duplicates/af38db214f53792b": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "249c1b2fbc16ad41e9a79111fb48ed653c6877df90f55ac1b4556301acdf27e9"
+    },
+    "domain/subsumed/39d1e5c11edd2de0": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "23d4e71865d0ebf04d32366e5ed5853619703f01d6239492314d4ab7cd9152b4"
+    },
+    "domain/subsumed/8498afde539f3599": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "8ccfefcf6af8f25c9104cd0269e8ac08bdc2f28f59c156c621bde59b92ef149f"
+    },
+    "domain/subsumed/66186c1db575a9ad": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "f99f8a53f756442781e3b8385b6e5102c7e5a6886ef91b101b4952981aad3998"
+    },
+    "domain/subsumed/8f39c74996e0a793": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "56e191750da80a129eec50d76936b0163217338a25607507196ae7cc611379eb"
+    },
+    "domain/subsumed/397f5f3ba5a2de94": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "4e6a99dd743fc9c7f2801fd3bd019615b34d8e7b1c36edb6d17300140ef4ff5a"
+    },
+    "domain/subsumed/88cc780cc3ac1357": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "5051d3058cfc0d24e69ef56f2c15f0d00fcbd33f5332624357e4d83c7abd6348"
+    },
+    "domain/subsumed/17d530243c0ebcba": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "b9d0462d5884810c2ea06f583f09b63a660a08bc9952a70ef15bd003e767c48a"
+    },
+    "domain/subsumed/2e3224c3c01fbb94": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "f383f17b8ac17d6b924bd84890292925200b581497200a7d8931aa0a08f1d389"
+    },
+    "domain/subsumed/d86a7ccfdc7dc6de": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "26ee84d4730a2d46c403ca248015584f0f838579e6777ce2d7d6c0104770206b"
+    },
+    "domain/subsumed/8a03782b049fd4fa": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "8575dd412b429255143b8a88016782ab88b20ed4156aa558950ecd5f4e82d829"
+    },
+    "domain/subsumed/7443804e9c1b5b4f": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "6d4a15a4b3b650da0e0630b94e94dd5328a7f897152a7fe8264019d76b6b4758"
+    },
+    "domain/subsumed/0e6d22caa17dbbda": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "aeb3b915477adfcedaa97a3ba79586f7fd4b589d3e65b87edbe907d94da2d1ff"
+    },
+    "domain/subsumed/08dcb053667ce522": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "22a1c7e0edb96151e038d0d3caa55b098360afb234d1238f6801da847e59aadd"
+    },
+    "domain/subsumed/5963b76d1d0f0f40": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "4240018a222358f663e8245cdfe2d6e3286cded39f4dce84b0e3d839e85ba273"
+    },
+    "domain/subsumed/d2b6a5170e765b52": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "4dfd5423e14bec7a76b762d3502c917c1b6115b8c44a5ce37d677757db349bb9"
+    },
+    "domain/subsumed/4839087175b5c5c9": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "6bffb51792feb7017c7654f8144ee6a499935abb3dc7eeef71ea9b62ab92ae61"
+    },
+    "domain/subsumed/451e10cf710bcd4c": {
+      "group": "domain-contract-article/schema/diary-schema",
+      "evidenceHash": "fe55b8df26f949e37df78a477bdfa2f422aec078d43eed3526665c21cb8a7293"
+    },
+    "domain/subsumed/7242e6eeb425045e": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "85fe12a6998d16fde10464300520ae45d3cc5aa69f76c3be60ea4b2b94fa1b26"
+    },
+    "domain/subsumed/38e705af99eeeed7": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "a6b639e116361084c267045dd6000cb4c054ed073faa0dae30a307d5ba70edae"
+    },
+    "domain/subsumed/a1753476af24ac9b": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "1232cd7e830f83c02e9e8e467e80e729c8e296801ca8dd314171cbebb320fb46"
+    },
+    "domain/subsumed/e41d9570aa8884dc": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "0fa06ce846f64abdc3150dbc78dc5ba1f522e99ae0f92afee70a529398b6a7d3"
+    },
+    "domain/subsumed/2f29b3d53c87f91c": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "109aff6f9f9a213be7bad738fba59db32dc2fe8e497911f645fa9f67031aec6b"
+    },
+    "domain/subsumed/5bb08d7007bc8fac": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "dce53fde499b99f07cf725c47625301285713ae08c20a33d85500471e562cc79"
+    },
+    "domain/subsumed/54d87aabf9331979": {
+      "group": "domain-contract-article/schema/query-schema",
+      "evidenceHash": "21431f384e1fc02a935d30b50bd9dfb0c35af29ca8ca3112fd9df25a5bb3c195"
+    },
+    "domain/duplicates/cefd7ce9f7972d08": {
+      "group": "domain-contract-article/schema/read-history-schema",
+      "evidenceHash": "c94d3555908320730083bff4c5e546966ee777d9d1abbb9747a2b4bfc0648bb6"
+    },
+    "domain/duplicates/44884a5bfb33d916": {
+      "group": "domain-contract-article/schema/skipped-article-schema",
+      "evidenceHash": "db8de1e1d441cb519c5080fb4defe9a03fa3cf8c4332d00a5e998ab566c165ba"
+    },
+    "domain/timeout/1tjj43yj1vp": {
+      "group": "domain-invalid-date-loop",
+      "evidenceHash": "318eb456138a00eca70751b05325900f7bbc5b075097d50fd02d2e81d044fe54"
+    },
+    "domain/duplicates/abf932b6418afe16": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "17d5d2f94e69e125d0aa9d3a9035f36d4ef92c3d5c3c04eb1c9db6d26dcebb18"
+    },
+    "domain/duplicates/054f19ac6f800127": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "066747c08354378c170614c39f3c530c7a4cd79dd11659cf524fbafe2813137c"
+    },
+    "domain/duplicates/c5ab65da22b4950a": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "24f7446e82a5df662bc6d03ed5beec6a266cb4d4b5601d2d7591c93053eaa016"
+    },
+    "domain/duplicates/e368b3654eb3adbc": {
+      "group": "domain-contract-article/infrastructure/query-impl",
+      "evidenceHash": "1d0e080ee71de92cc120b9db098dcdd7cb3d56a4f57d1f83fad353cd8318be2a"
+    },
+    "domain/duplicates/c1cf8be8477bc19d": {
+      "group": "domain-contract-article/media",
+      "evidenceHash": "d5fe937b7a3b9d28c9c1c8096ed27ee2cdec04a6b4236b07d819e078ab437eba"
+    },
+    "domain/subsumed/fbd8018fe474e74f": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "35bfbedb3acccd3c8a0d6ec5e9aae72d54ef2292b9e4b5313049084eafe2ff69"
+    },
+    "domain/subsumed/59e0a9ea1a95b130": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "bcebf2ed7d35b135ff43c0ab9ab9e5a116b14514ba0e4170dfb47c0132926076"
+    },
+    "domain/subsumed/af90a47604082e25": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "5e4ac5b90b4bb38b246c34016911dcb574ae5ba6e61638bed6c1427f8315683e"
+    },
+    "domain/subsumed/04fc05afa508acff": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "ebc833a335f188ae677b314d410b8a50f9b9f02fdaee2dc98d91fe7e14a298c8"
+    },
+    "domain/subsumed/6521958c74e890ad": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "376b08d84300c7f89fce924ff44af04885fc84e56e2ea0210b2bcbf72acee8ae"
+    },
+    "domain/subsumed/02672328487ee3eb": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "780241438d398287aca066d46703744ac8cc81a202d226de5f0b6c58df150521"
+    },
+    "domain/subsumed/62e693fbb7caa9ca": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "bd78b520772a8ad9bb579429297c0cf140554c9136066fcf70a5291fc936c392"
+    },
+    "domain/subsumed/246794effcb6b926": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "882781f695e4b03e71f1f53a29a4a99e5aa028ac64364072a51c32302850b72c"
+    },
+    "domain/subsumed/31a7f0347c020863": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "a0653b990a422530ae559630371abca4f2a0baf410ab7965249ead6b3cc86204"
+    },
+    "domain/subsumed/d70f896fae8cecdf": {
+      "group": "domain-contract-account/schema/auth-schema",
+      "evidenceHash": "cd6b789eb8da6ce71829f8247223cca40560c0fd666d65be0dbb78b9bc0caa3a"
+    },
+    "cron/survived/jnklxk56ze": {
+      "group": "cron-worker-diagnostics",
+      "evidenceHash": "76022ab81dad7759aac42008e71df4d8d9d10a4e6edbce836d766deb9a24fa4e"
+    },
+    "cron/survived/2jfggsuxs0": {
+      "group": "cron-worker-diagnostics",
+      "evidenceHash": "2be1348f6bc6ee254aebf503c2b10c30133bc6f8b5ae0f49929830bbf19fb371"
+    },
+    "cron/noCoverage/1lzoy4j8wkm": {
+      "group": "cron-worker-diagnostics",
+      "evidenceHash": "782d7e8cfda1ca02aa5b36bab890d7a3e69a194c7ab7c6d47f4d331d4ded11f2"
+    },
+    "cron/survived/2ggwl8389lz": {
+      "group": "cron-worker-diagnostics",
+      "evidenceHash": "ad8d53f0be6f4cbde5e343f0265d84976ced13b6e9757f6dbd63963578f990b4"
+    },
+    "cron/survived/1l4y4z0rafn": {
+      "group": "cron-worker-diagnostics",
+      "evidenceHash": "a7b11ae3a657ab67a1daa626253ea4e4ae65f709e39d18c5953991ffa60a1b23"
+    },
+    "cron/survived/1rgsbdk441z": {
+      "group": "cron-conflict-target",
+      "evidenceHash": "cbf485cae12d5c1c5a591f5bee69ee5cf06b7a7b8111c60834fc3b40df15d22a"
+    },
+    "cron/survived/22fciyhe1fo": {
+      "group": "cron-rss-error-brand",
+      "evidenceHash": "dcb71c7114f5f49df959b751cb6c171658d3d936ebaed78a1d16d4ace570cf8a"
+    },
+    "cron/survived/eayff4ajvn": {
+      "group": "cron-issue-path",
+      "evidenceHash": "aac094331063e72346700ea38443750a7412f99158f299742510f24ea17d2a1f"
+    },
+    "cron/duplicates/575cbbda85d1c827": {
+      "group": "cron-required-fields",
+      "evidenceHash": "407987d9815916d2ed89a94d8934093c9bd636c20bf938d3a2d18f252069d9db"
+    },
+    "cron/duplicates/fab9c0d89e1c0ac6": {
+      "group": "cron-required-fields",
+      "evidenceHash": "77d55abab175ae95acd7d3ec90ae01ed0a541b395b5225522cd0d4c64f0201ee"
+    },
+    "cron/subsumed/9cdbba1eb792834d": {
+      "group": "cron-chunk-boundary",
+      "evidenceHash": "5f27226309b2b5d7fb14b5f0d268859ea030bdc4ce33b760b98a9ef00b58e32b"
+    },
+    "cron/subsumed/53379eeb913cbd19": {
+      "group": "cron-whitespace-required",
+      "evidenceHash": "603cb83aa9a376188ab4a2f79411f6a1cae50355b5a8a918a0590aa1097ba9d5"
+    },
+    "cron/subsumed/cd629bba3f274485": {
+      "group": "cron-hatena-fallback",
+      "evidenceHash": "fbce72f00339fbdfade624b23e835e2b1b0411fbe9fdb00da6679dc3957c899a"
+    },
+    "cron/subsumed/60138dc2a609a130": {
+      "group": "cron-hatena-fallback",
+      "evidenceHash": "7d9656a0605ef7162b0597e4f4f8f2aacb7c5beecd8c98497a76441be0328394"
+    },
+    "cron/subsumed/943187df375f8e88": {
+      "group": "cron-url-idempotency",
+      "evidenceHash": "027d49ae716068408e5d72556b1ca352f31acef542015e6d251a1d5defaa5040"
+    },
+    "cron/subsumed/16c8f73cccc5285e": {
+      "group": "cron-url-idempotency",
+      "evidenceHash": "1a1b909a05da66f1195dfad5face209c57aeb16e3f2f0a330b2fc2f3574b666f"
+    },
+    "cron/subsumed/1fcb3191b6730687": {
+      "group": "cron-unicode-truncation",
+      "evidenceHash": "ad03a3d3b0057c6cb2b1bcc954a1254ecc02943588994136829dc34f9911bb7b"
+    },
+    "cron/subsumed/cae082939a7c8a6a": {
+      "group": "cron-rss-network-failure",
+      "evidenceHash": "edbc5950f93d894e4cbdae53af7873e14c9cb1ec0f34ebf274d6f4050ab07363"
+    },
+    "cron/subsumed/5a3d0288cc9f824e": {
+      "group": "cron-worker-orchestration",
+      "evidenceHash": "5a26f5c41d8e8cf7306445d715ed4a83d9fb7301c626ad1517bb237f183fa27f"
+    },
+    "cron/subsumed/fa465b728d283ef5": {
+      "group": "cron-worker-orchestration",
+      "evidenceHash": "fdb99739d5b2a9f3ff7c7750ecd5e28a2a451467194755d81fd729e352c346d5"
+    }
+  }
+}

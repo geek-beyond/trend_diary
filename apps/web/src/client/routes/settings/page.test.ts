@@ -15,22 +15,13 @@ vi.mock('@/client/features/github-auth/github-link-toggle', () => ({
 }))
 
 describe('SettingsPage', () => {
-  it('テーマ設定セクションを表示する', () => {
+  it('テーマ・パスキー・GitHub連携の設定を表示する', () => {
     render(createElement(SettingsPage))
 
+    expect(screen.getByRole('heading', { name: '設定' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'テーマ' })).toBeInTheDocument()
     expect(screen.getByTestId('theme-toggle')).toBeInTheDocument()
-  })
-
-  it('パスキートグルを表示する', () => {
-    render(createElement(SettingsPage))
-
     expect(screen.getByRole('switch', { name: 'パスキーを有効にする' })).toBeInTheDocument()
-  })
-
-  it('GitHub連携トグルを表示する', () => {
-    render(createElement(SettingsPage))
-
     expect(screen.getByRole('switch', { name: 'GitHub連携を有効にする' })).toBeInTheDocument()
   })
 })

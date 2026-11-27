@@ -14,7 +14,7 @@ describe('pageMeta', () => {
       { name: 'description', content: 'ログイン説明' },
       { property: 'og:title', content: 'ログイン | TrendDiary' },
       { property: 'og:description', content: 'ログイン説明' },
-      { property: 'og:url', content: `${SITE_URL}/login` },
+      { property: 'og:url', content: new URL('/login', SITE_URL).href },
       { name: 'twitter:title', content: 'ログイン | TrendDiary' },
       { name: 'twitter:description', content: 'ログイン説明' },
     ])
@@ -27,29 +27,47 @@ describe('mergeMeta', () => {
       buildMatch([
         { charSet: 'utf-8' as const },
         { property: 'og:site_name', content: 'TrendDiary' },
+        { property: 'og:url', content: `${SITE_URL}/` },
+        { name: 'keywords', content: '技術記事' },
+        { name: 'description', content: '親の説明' },
         { title: '親のtitle' },
       ]),
     ]
 
-    expect(mergeMeta(matches, [{ title: '子のtitle' }])).toEqual([
+    expect(
+      mergeMeta(matches, [
+        { title: '子のtitle' },
+        { name: 'description', content: '子の説明' },
+        { property: 'og:url', content: `${SITE_URL}/leaf` },
+      ]),
+    ).toEqual([
       { charSet: 'utf-8' },
       { property: 'og:site_name', content: 'TrendDiary' },
+      { name: 'keywords', content: '技術記事' },
       { title: '子のtitle' },
+      { name: 'description', content: '子の説明' },
+      { property: 'og:url', content: `${SITE_URL}/leaf` },
     ])
   })
 
   it('複数マッチ分のmetaを結合してから同じキーを上書きする', () => {
     const matches = [
       buildMatch([{ title: 'root' }, { name: 'description', content: 'root説明' }]),
-      buildMatch([{ property: 'og:url', content: `${SITE_URL}/` }]),
+      buildMatch([{ property: 'og:url', content: `${SITE_URL}/` }, { charSet: 'windows-1252' }]),
     ]
 
     expect(
-      mergeMeta(matches, [{ title: 'leaf' }, { name: 'description', content: 'leaf説明' }]),
+      mergeMeta(matches, [
+        { title: 'leaf' },
+        { name: 'description', content: 'leaf説明' },
+        { property: 'og:url', content: `${SITE_URL}/leaf` },
+        { charSet: 'utf-8' },
+      ]),
     ).toEqual([
-      { property: 'og:url', content: `${SITE_URL}/` },
       { title: 'leaf' },
       { name: 'description', content: 'leaf説明' },
+      { property: 'og:url', content: `${SITE_URL}/leaf` },
+      { charSet: 'utf-8' },
     ])
   })
 
@@ -81,10 +99,15 @@ describe('mergeMeta', () => {
       ]),
     ]
 
-    expect(mergeMeta(matches, [{ title: '子のtitle' }])).toEqual([
-      { tagName: 'link', rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+    expect(
+      mergeMeta(matches, [
+        { title: '子のtitle' },
+        { tagName: 'link', rel: 'icon', type: 'image/png', href: '/leaf-icon.png' },
+      ]),
+    ).toEqual([
       { tagName: 'link', rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       { title: '子のtitle' },
+      { tagName: 'link', rel: 'icon', type: 'image/png', href: '/leaf-icon.png' },
     ])
   })
 })

@@ -10,7 +10,7 @@ describe('resolveLoginRedirectTarget', () => {
         input: '/settings#security',
         expected: '/settings#security',
       },
-    ])('$outlineはそのまま返す', ({ input, expected }) => {
+    ])('$outline はそのまま返す', ({ input, expected }) => {
       expect(resolveLoginRedirectTarget(input)).toBe(expected)
     })
   })
@@ -21,6 +21,7 @@ describe('resolveLoginRedirectTarget', () => {
       { outline: 'null', input: null },
       { outline: '空文字', input: '' },
       { outline: 'スキーム付きの外部URL', input: 'https://evil.example.com' },
+      { outline: '不正なホストのプロトコル相対URL', input: '//[invalid' },
       { outline: 'プロトコル相対URL', input: '//evil.example.com' },
       { outline: 'バックスラッシュ始まりのURL', input: '/\\evil.example.com' },
       { outline: 'スラッシュから始まらない相対パス', input: 'diary' },
@@ -29,7 +30,7 @@ describe('resolveLoginRedirectTarget', () => {
       { outline: 'ログイン画面自身', input: '/login' },
       { outline: 'クエリ付きのログイン画面自身', input: '/login?foo=bar' },
       { outline: '新規登録画面', input: '/signup' },
-    ])('$outlineはundefinedを返す', ({ input }) => {
+    ])('$outline はundefinedを返す', ({ input }) => {
       expect(resolveLoginRedirectTarget(input)).toBeUndefined()
     })
   })

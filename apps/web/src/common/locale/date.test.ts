@@ -1,13 +1,23 @@
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { formatSummaryDateTick, toJaDateString, toJaTimeString } from './date'
+
+const originalTimezone = process.env.TZ
+// 実行環境がJSTでもタイムゾーン指定の欠落を検出できるようにする。
+beforeAll(() => {
+  process.env.TZ = 'America/New_York'
+})
+afterAll(() => {
+  if (originalTimezone === undefined) delete process.env.TZ
+  else process.env.TZ = originalTimezone
+})
 
 describe('Web Locale Module', () => {
   describe('toJaDateString', () => {
     const testCases = [
       {
         name: '文字列の日付が日本語形式で正しくフォーマットされること',
-        input: '2024-01-01T00:00:00Z',
-        expected: '2024/1/1',
+        input: '2024-01-01T18:00:00Z',
+        expected: '2024/1/2',
       },
       {
         name: '無効な日付文字列の場合、空文字を返すこと',
@@ -16,8 +26,8 @@ describe('Web Locale Module', () => {
       },
       {
         name: 'Dateの日付が日本語形式で正しくフォーマットされること',
-        input: new Date('2024-01-01T00:00:00Z'),
-        expected: '2024/1/1',
+        input: new Date('2024-01-01T18:00:00Z'),
+        expected: '2024/1/2',
       },
       {
         name: '無効なDateオブジェクトの場合、空文字を返すこと',

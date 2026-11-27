@@ -33,7 +33,9 @@ describe('GitHubログイン開始', () => {
       const res = await apiRequest('/api/oauth/github/login')
 
       expect(res.status).toBe(302)
-      expect(findSetCookie(res, 'oauth_redirect_to=')).toContain('Max-Age=0')
+      const redirectCookie = findSetCookie(res, 'oauth_redirect_to=')
+      expect(redirectCookie).toContain('Max-Age=0')
+      expect(redirectCookie).toContain('Path=/api/oauth')
     })
   })
 
@@ -46,6 +48,7 @@ describe('GitHubログイン開始', () => {
       expect(res.status).toBe(302)
       const redirectCookie = findSetCookie(res, 'oauth_redirect_to=')
       expect(redirectCookie).toContain('oauth_redirect_to=;')
+      expect(redirectCookie).toContain('Path=/api/oauth')
       expect(redirectCookie).toContain('Max-Age=0')
     })
   })

@@ -212,7 +212,7 @@ describe('CommandImpl', () => {
       expect(deleteCall).toBeDefined()
     })
 
-    it('補償delete失敗時はusersレコード孤立検知のためuserIdと補償エラーをerrorログに出力する', async () => {
+    it('補償delete失敗時は孤立したuserIdと原因をログ・通知に残す', async () => {
       // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete失敗
       const errorSpy = vi.spyOn(logger, 'error')
       const compensationError = new Error('compensation delete failed')
@@ -232,20 +232,6 @@ describe('CommandImpl', () => {
         }),
         compensationError,
       )
-    })
-
-    it('補償delete失敗時は孤立したusersレコードをnotifierへ通知する', async () => {
-      // Arrange: 呼び出し順 1)users insert成功 2)active_users insert失敗 3)補償delete失敗
-      const compensationError = new Error('compensation delete failed')
-      mockRdbExecutor
-        .mockResolvedValueOnce({ rows: [buildUserRow(2)] })
-        .mockRejectedValueOnce(new Error('create active failed'))
-        .mockRejectedValueOnce(compensationError)
-
-      // Act
-      await useCase.createActiveWithAuthenticationId('test@example.com', 'auth-id-123', notifier)
-
-      // Assert: userId(=2)と補償エラーを含むメッセージを通知すること
       expect(notifier.sendMessage).toHaveBeenCalledWith(expect.stringContaining('userId: 2'))
       expect(notifier.sendMessage).toHaveBeenCalledWith(
         expect.stringContaining('compensation delete failed'),

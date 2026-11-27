@@ -11,7 +11,7 @@ describe('fetchRssFeed', () => {
   })
 
   describe('異常系', () => {
-    it('非ok応答は RssFetchError として status・診断ヘッダ・本文先頭を残す', async () => {
+    it('非ok応答は再試行せず RssFetchError にstatus・診断ヘッダ・本文先頭を残す', async () => {
       fetchMock.mockResolvedValue(
         nonOkResponse(429, 'Rate limited by origin', {
           'retry-after': '30',
@@ -25,6 +25,7 @@ describe('fetchRssFeed', () => {
 
       const result = await fetchRssFeed('https://zenn.dev/feed')
 
+      expect(fetchMock).toHaveBeenCalledTimes(1)
       const error = result._unsafeUnwrapErr()
       expect(error).toBeInstanceOf(RssFetchError)
       expect(error.name).toBe('RssFetchError')
@@ -50,17 +51,6 @@ describe('fetchRssFeed', () => {
           server: 'cloudflare',
         })
       }
-    })
-
-    it('失敗しても run 内でリトライせず1回の試行で失敗を返す', async () => {
-      fetchMock.mockResolvedValue(
-        nonOkResponse(429, 'error code: 1015', { 'retry-after': '281', server: 'cloudflare' }),
-      )
-
-      const result = await fetchRssFeed('https://zenn.dev/feed')
-
-      expect(fetchMock).toHaveBeenCalledTimes(1)
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(RssFetchError)
     })
 
     it('本文が上限を超える場合は先頭のみを残す', async () => {

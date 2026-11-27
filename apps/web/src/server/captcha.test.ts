@@ -25,6 +25,9 @@ describe('verifyTurnstile', () => {
         'https://challenges.cloudflare.com/turnstile/v0/siteverify',
         expect.objectContaining({ method: 'POST' }),
       )
+      const body = fetchMock.mock.calls[0]?.[1]?.body
+      expect(body).toBeInstanceOf(URLSearchParams)
+      expect(Object.fromEntries(body)).toEqual({ secret: 'secret', response: 'valid-token' })
     })
   })
 
@@ -36,8 +39,13 @@ describe('verifyTurnstile', () => {
       expect(fetchMock).not.toHaveBeenCalled()
     })
 
-    it('トークンが無効なら検証を通さない', async () => {
-      fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: false })))
+    it.each([
+      { name: '無効トークン', response: { success: false } },
+      { name: 'nullの応答', response: null },
+      { name: '文字列の応答', response: 'unexpected' },
+      { name: 'boolean以外のsuccess', response: { success: 1 } },
+    ])('$name は検証を通さない', async ({ response }) => {
+      fetchMock.mockResolvedValue(new Response(JSON.stringify(response)))
 
       const result = await verifyTurnstile('secret', 'invalid-token')
 

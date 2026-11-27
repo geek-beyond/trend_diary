@@ -46,7 +46,7 @@ describe('Logger', () => {
 
     const root = logger.with({})
     const parent = root.with({ traceId: 'base' })
-    parent.with({ requestId: 'child' }).info('child-msg')
+    parent.with({ requestId: 'child' }).info('child-msg', 'ignored')
     parent.info('parent-msg')
 
     restore()
@@ -58,6 +58,7 @@ describe('Logger', () => {
       msg: 'child-msg',
       level: 'info',
     })
+    expect(entries[0]).not.toHaveProperty('0')
     expect(entries[1]).toMatchObject({ traceId: 'base', msg: 'parent-msg' })
   })
 
@@ -94,12 +95,24 @@ describe('Logger', () => {
     const logger = new Logger('debug')
     const { logs, restore } = StdTestHelper.captureStdout(vi)
 
-    logger.with({ requestId: 'abc' }).warn('processed', { count: 3 })
+    logger
+      .with({ requestId: 'abc' })
+      .warn('processed', { count: 3, error: new Error('validation failed') })
 
     restore()
 
     const [entry] = parseLogObjects(logs)
-    expect(entry).toMatchObject({ requestId: 'abc', msg: 'processed', level: 'warn', count: 3 })
+    expect(entry).toMatchObject({
+      requestId: 'abc',
+      msg: 'processed',
+      level: 'warn',
+      count: 3,
+      error: expect.objectContaining({
+        type: 'Error',
+        message: 'validation failed',
+        stack: expect.any(String),
+      }),
+    })
   })
 
   it('errorはerrプロパティに整形された例外を含める', async () => {

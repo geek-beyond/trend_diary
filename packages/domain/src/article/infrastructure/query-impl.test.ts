@@ -35,7 +35,7 @@ describe('QueryImpl', () => {
     it('ページネーション付きで記事を検索できる', async () => {
       // INFO: 生SQL(db.all)は実ドライバ(libsql)でカラム別名キーのオブジェクトを返すため、
       // モックも別名キーのオブジェクトで戻り行を注入する。総件数は COUNT(*) OVER() で各行に付与される
-      mockRdbExecutor.mockResolvedValueOnce({
+      mockRdbExecutor.mockResolvedValue({
         rows: [
           {
             articleId: 1,
@@ -46,7 +46,7 @@ describe('QueryImpl', () => {
             url: 'https://example.com/article/1',
             createdAt: '2024-01-15T09:30:00.000Z',
             isRead: null,
-            total: 2,
+            total: 42,
           },
           {
             articleId: 2,
@@ -57,20 +57,34 @@ describe('QueryImpl', () => {
             url: 'https://example.com/article/2',
             createdAt: '2024-01-14T10:00:00.000Z',
             isRead: null,
-            total: 2,
+            total: 42,
           },
         ],
       })
 
-      const result = await queryImpl.searchArticles({ page: 1, limit: 20 })
+      const result = await queryImpl.searchArticles({ page: 2, limit: 20 })
 
       expect(result.isOk()).toBe(true)
       expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
+      expect(mockRdbExecutor.mock.calls[0][1].slice(-2)).toEqual([20, 20])
       if (result.isOk()) {
-        expect(result.value.total).toBe(2)
+        expect(result.value.total).toBe(42)
+        expect(result.value).toMatchObject({
+          page: 2,
+          limit: 20,
+          totalPages: 3,
+          hasNext: true,
+          hasPrev: true,
+        })
         expect(result.value.data).toHaveLength(2)
         expect(result.value.data[0].isRead).toBeUndefined()
       }
+      const lastPage = await queryImpl.searchArticles({ page: 3, limit: 20 })
+      expect(lastPage._unsafeUnwrap()).toMatchObject({
+        totalPages: 3,
+        hasNext: false,
+        hasPrev: true,
+      })
     })
 
     it('activeUserId指定時は既読状態を返す', async () => {
@@ -131,6 +145,7 @@ describe('QueryImpl', () => {
 
       const rawSql = String(mockRdbExecutor.mock.calls[0]?.[0] ?? '')
       expect(rawSql).toContain('media IN (')
+      expect(mockRdbExecutor.mock.calls[0][1]).toEqual([...media, 20, 0])
     })
 
     it('日時式ではなくarticle_idの降順でソートする', async () => {
@@ -151,6 +166,7 @@ describe('QueryImpl', () => {
       expect(result.isOk()).toBe(true)
       if (result.isOk()) {
         expect(result.value.total).toBe(0)
+        expect(result.value).toMatchObject({ totalPages: 0, hasNext: false, hasPrev: false })
         expect(result.value.data).toHaveLength(0)
       }
     })
@@ -178,7 +194,7 @@ describe('QueryImpl', () => {
       }
     })
 
-    it('from/to指定時は取得後に日付で絞り込みできる', async () => {
+    it('from/to指定時はJSTの両端を含む日付範囲をSQLへ渡して記事を返す', async () => {
       mockRdbExecutor.mockResolvedValueOnce({
         rows: [
           {
@@ -213,6 +229,12 @@ describe('QueryImpl', () => {
 
       expect(result.isOk()).toBe(true)
       expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
+      expect(mockRdbExecutor.mock.calls[0][1]).toEqual([
+        '2026-03-04T15:00:00.000Z',
+        '2026-03-05T15:00:00.000Z',
+        20,
+        0,
+      ])
 
       if (result.isOk()) {
         expect(result.value.total).toBe(2)
@@ -258,6 +280,15 @@ describe('QueryImpl', () => {
       if (result.isOk()) {
         expect(result.value).toBeNull()
       }
+    })
+  })
+
+  describe('findArticleByIdの失敗', () => {
+    it('DB障害を記事なしの成功へ変換せず原因付きのエラーとして返す', async () => {
+      const cause = new Error('find failed')
+      mockRdbExecutor.mockRejectedValue(cause)
+      const result = await queryImpl.findArticleById(1n)
+      expect(result._unsafeUnwrapErr()).toMatchObject({ message: 'find failed', cause })
     })
   })
 
@@ -387,7 +418,7 @@ describe('QueryImpl', () => {
   describe('getDailyDiary', () => {
     it('日次サマリーとsources、read一覧を取得できる', async () => {
       // INFO: サマリー集計(rowKind=source)とread一覧(rowKind=read)を1クエリでUNION ALL取得する
-      mockRdbExecutor.mockResolvedValueOnce({
+      mockRdbExecutor.mockResolvedValue({
         rows: [
           { rowKind: 'source', sourceType: 'read', media: 'qiita', count: 2 },
           { rowKind: 'source', sourceType: 'read', media: 'zenn', count: 1 },
@@ -414,7 +445,7 @@ describe('QueryImpl', () => {
         ],
       })
 
-      const result = await queryImpl.getDailyDiary(10n, '2026-03-07', 1, 10)
+      const result = await queryImpl.getDailyDiary(10n, '2026-03-07', 1, 2)
 
       expect(result.isOk()).toBe(true)
       expect(mockRdbExecutor).toHaveBeenCalledTimes(1)
@@ -426,11 +457,25 @@ describe('QueryImpl', () => {
           { media: 'hatena', read: 0, skip: 1 },
         ])
         expect(result.value.reads.total).toBe(3)
+        expect(result.value.reads).toMatchObject({
+          page: 1,
+          totalPages: 2,
+          hasNext: true,
+          hasPrev: false,
+        })
         expect(result.value.reads.data).toHaveLength(2)
         expect(result.value.reads.data[0].readHistoryId).toBe(10n)
         expect(result.value.reads.data[0].url).toBe('https://example.com/go-error-handling')
         expect(result.value.reads.data[1].readHistoryId).toBe(9n)
       }
+      const lastPage = await queryImpl.getDailyDiary(10n, '2026-03-07', 2, 2)
+      expect(mockRdbExecutor.mock.calls.at(-1)?.[1].slice(-2)).toEqual([2, 2])
+      expect(lastPage._unsafeUnwrap().reads).toMatchObject({
+        page: 2,
+        totalPages: 2,
+        hasNext: false,
+        hasPrev: true,
+      })
     })
 
     it('インデックス付き生成列(read_at_norm)で範囲比較・並び替えする', async () => {
@@ -593,6 +638,9 @@ describe('QueryImpl', () => {
       const result = dateRangeEnumerator.enumerateJstDateRange('2026-03-06', '2026-03-08')
 
       expect(result).toEqual(['2026-03-06', '2026-03-07', '2026-03-08'])
+      expect(dateRangeEnumerator.enumerateJstDateRange('2026-03-06', '2026-03-06')).toEqual([
+        '2026-03-06',
+      ])
     })
 
     it.each([
@@ -600,7 +648,7 @@ describe('QueryImpl', () => {
       { name: 'fromDateJstが不正', from: 'invalid', to: '2026-03-08', invalid: 'invalid' },
       // toDateJstが不正だと辞書順比較で常にcurrentより大きく、Date上限まで巨大ループになるのを防ぐ
       { name: 'toDateJstが不正', from: '2026-03-06', to: 'invalid', invalid: 'invalid' },
-    ])('$nameな場合は契約違反として送出する', ({ from, to, invalid }) => {
+    ])('$name な場合は契約違反として送出する', ({ from, to, invalid }) => {
       expect(() => dateRangeEnumerator.enumerateJstDateRange(from, to)).toThrow(
         `enumerateJstDateRange received an invalid date string: ${invalid}`,
       )

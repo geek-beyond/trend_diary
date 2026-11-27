@@ -31,6 +31,9 @@ describe('GitHub連携解除', () => {
       const res = await deleteUnlink(cookies)
 
       expect(res.status).toBe(204)
+      const status = await apiRequest('/api/oauth/github', { cookies })
+      expect(status.status).toBe(200)
+      expect(await status.json()).toEqual({ linked: false })
     })
 
     it('未連携でも冪等に成功する', async () => {

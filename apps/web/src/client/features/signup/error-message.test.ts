@@ -12,7 +12,7 @@ describe('resolveSignupErrorMessage', () => {
     { status: 500, expected: 'サーバーエラーが発生しました。時間をおいて再度お試しください。' },
     { status: 503, expected: 'サーバーエラーが発生しました。時間をおいて再度お試しください。' },
     { status: 400, expected: AUTH_ERROR_MESSAGES.unexpected },
-  ])('ステータス$statusは「$expected」になる', ({ status, expected }) => {
+  ])('ステータス$status は「$expected」になる', ({ status, expected }) => {
     expect(resolveSignupErrorMessage(status)).toBe(expected)
   })
 })

@@ -1,44 +1,32 @@
 import { spawnSync } from 'node:child_process'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { projects } from './projects.mjs'
 
-const packages = [
-  'std',
-  'authentication',
-  'datastore',
-  'domain',
-  'logger',
-  'notification',
-  'runtime',
-]
 const project = process.argv[2]
-const projects = {
-  ...Object.fromEntries(packages.map((name) => [name, { root: `packages/${name}` }])),
-  'web-client': {
-    root: 'apps/web',
-    config: 'apps/web/vitest.mutation.config.ts',
-    include: ['src/client/**/*.{ts,tsx}'],
-  },
-  'web-server': {
-    root: 'apps/web',
-    config: 'apps/web/vitest.mutation.server.config.ts',
-    include: [
-      'src/server.ts',
-      'src/server/**/*.ts',
-      'src/middleware/**/*.ts',
-      'src/common/**/*.ts',
-      'src/infrastructure/**/*.ts',
-    ],
-  },
-  cron: { root: 'apps/cron' },
-}
 if (!Object.hasOwn(projects, project)) {
-  console.error(`対象を指定してください: ${Object.keys(projects).join(', ')}`)
+  process.stderr.write(`対象を指定してください: ${Object.keys(projects).join(', ')}\n`)
   process.exit(1)
 }
 const { root, config, include = ['src/**/*.{ts,tsx}'] } = projects[project]
 const reportDir = resolve('mutation-audit', project)
+// 失敗時に以前のレポートを今回の結果として集約しないため。
+rmSync(reportDir, { recursive: true, force: true })
+// 全件の再評価で、限定調査や過去の判定を今回の測定へ混ぜないため。
+rmSync(resolve(root, '.mutator/snapshot.json'), { force: true })
 mkdirSync(reportDir, { recursive: true })
+const revision = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout?.trim()
+const worktreeDirty = Boolean(
+  spawnSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).stdout?.trim(),
+)
+const run = {
+  worktreeDirty,
+  project,
+  revision,
+  runId: process.env.GITHUB_RUN_ID,
+  startedAt: new Date().toISOString(),
+}
+writeFileSync(resolve(reportDir, 'run.json'), JSON.stringify(run))
 // 差分・過去のcoverageに依存すると、既存テスト全体の重複を比較できないため。
 const args = [
   'exec',
@@ -49,11 +37,11 @@ const args = [
   '--full-dry-run',
   '--kill-matrix',
   '-j',
-  project === 'web-server' ? '1' : '2',
+  ['web-server', 'cron'].includes(project) ? '1' : '2',
   '--exclude',
   '**/*.stories.*',
   '--exclude',
-  'src/test*/**',
+  '**/test*/**',
   '--reporter',
   'text',
   '--reporter',
@@ -70,5 +58,15 @@ const result = spawnSync('pnpm', args, {
   stdio: 'inherit',
   env: { ...process.env, NODE_ENV: 'test' },
 })
-if (result.error) console.error(result.error)
+writeFileSync(
+  resolve(reportDir, 'run.json'),
+  JSON.stringify({
+    ...run,
+    finishedAt: new Date().toISOString(),
+    exitCode: result.status,
+    signal: result.signal,
+    error: result.error?.message,
+  }),
+)
+if (result.error) process.stderr.write(`${result.error.message}\n`)
 process.exit(result.status ?? 1)

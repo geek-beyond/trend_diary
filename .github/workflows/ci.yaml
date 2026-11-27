@@ -186,6 +186,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Mutation audit tooling tests
+        run: node --test scripts/mutation/*.test.mjs
+
       # cross-module の未使用 export は lint / tsc では検出できないため
       - name: Knip
         run: pnpm knip

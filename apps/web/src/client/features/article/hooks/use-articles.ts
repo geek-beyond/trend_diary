@@ -272,18 +272,6 @@ export default function useArticles(isLoggedIn = false) {
     handlePageChange(newPage)
   }
 
-  const handleReadStatusChange = (readStatus: ReadStatusType) => {
-    const newParams = new URLSearchParams(searchParams)
-    if (readStatus === 'unread') {
-      newParams.set('read_status', '0')
-    } else {
-      newParams.delete('read_status')
-    }
-    clearPageParam(newParams)
-
-    setSearchParams(newParams)
-  }
-
   const handleFiltersApply = ({ media, readStatus, datePreset }: FilterParams) => {
     const newParams = new URLSearchParams(searchParams)
     newParams.delete('media')
@@ -320,10 +308,8 @@ export default function useArticles(isLoggedIn = false) {
     isStale,
     hasError: !!error,
     retry,
-    setSearchParams,
     toNextPage,
     toPreviousPage,
-    handleReadStatusChange,
     handleFiltersApply,
     selectedMedia: params.media,
     selectedReadStatus: params.readStatus,

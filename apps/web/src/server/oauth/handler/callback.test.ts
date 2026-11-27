@@ -1,4 +1,4 @@
-import { apiRequest } from '@/test/helper/request'
+import { apiRequest, findSetCookie } from '@/test/helper/request'
 import * as userHelper from '@/test/helper/user'
 
 const TEST_PASSWORD = 'Test@password123'
@@ -38,6 +38,11 @@ describe('GitHub OAuthコールバック', () => {
 
       expect(res.status).toBe(302)
       expect(res.headers.get('Location')).toBe('/trends')
+      for (const name of ['oauth_flow=', 'oauth_redirect_to=']) {
+        const cleared = findSetCookie(res, name)
+        expect(cleared).toContain('Max-Age=0')
+        expect(cleared).toContain('Path=/api/oauth')
+      }
     })
 
     it('未連携ユーザーの初回ログインは新規登録して既定の遷移先へリダイレクトする', async () => {

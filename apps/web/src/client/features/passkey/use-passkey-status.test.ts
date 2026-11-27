@@ -50,14 +50,16 @@ describe('usePasskeyStatus', () => {
 
   describe('準正常系', () => {
     it('取得に失敗したら登録なし扱いになる', async () => {
-      mockApiClient.passkey.$get.mockResolvedValue({ ok: false, status: 401 })
+      const json = vi.fn()
+      mockApiClient.passkey.$get.mockResolvedValue({ ok: false, status: 401, json })
 
       const { result } = renderHook(() => usePasskeyStatus(), { wrapper: SwrTestWrapper })
 
       await waitFor(() => {
-        expect(mockApiClient.passkey.$get).toHaveBeenCalled()
+        expect(result.current.isLoading).toBe(false)
       })
       expect(result.current.hasPasskey).toBe(false)
+      expect(json).not.toHaveBeenCalled()
     })
   })
 })

@@ -10,6 +10,8 @@ const config: KnipConfig = {
     // CI が prebuilt バイナリで供給する Rust 製 CLI で、いずれも npm 依存ではない。
     '.': {
       ignoreBinaries: ['typecheck', 'supabase', 'similarity-ts'],
+      // パッチの回帰テストはmutator自身が使うadapterを依存元から解決し、別バージョンを検証しない。
+      ignoreDependencies: ['@mizchi/mutator-vitest'],
     },
     'apps/web': {
       // vite の devServer プラグインが読む dev サーバのエントリ。plugin 設定からは追えないため明示する。
@@ -34,7 +36,7 @@ const config: KnipConfig = {
     },
     'apps/cron': {
       // Mutator が動的に読む専用設定。
-      entry: ['mutator.config.ts'],
+      entry: ['mutator.config.ts', 'vitest.mutation.config.ts'],
       // `cloudflare:test` は @cloudflare/vitest-plugin が提供する仮想モジュールで、
       // npm 依存の cloudflare ではない。
       ignoreDependencies: ['cloudflare'],

@@ -22,11 +22,7 @@ export default class Logger {
         level: (label) => ({ level: label }),
       },
       messageKey: 'msg',
-      // * pinoでエラーを表示する場合に使用する
-      serializers: {
-        err: pino.stdSerializers.err,
-        error: pino.stdSerializers.err,
-      },
+      serializers: { error: pino.stdSerializers.err },
     })
   }
 

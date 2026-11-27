@@ -28,7 +28,7 @@ function buildContext(): {
   return { c, store, next }
 }
 
-function authError(reason: 'no_session' | 'validation_failed' | 'user_not_found') {
+function authError(reason: 'no_session' | 'validation_failed') {
   return Object.assign(new Error(reason), { reason })
 }
 
@@ -55,15 +55,13 @@ describe('authenticator ミドルウェア', () => {
   })
 
   describe('準正常系', () => {
-    // reason ごとに割り当てるステータスコードの分岐を検証する
     const testCases: Array<{
       name: string
-      reason: 'no_session' | 'validation_failed' | 'user_not_found'
+      reason: 'no_session' | 'validation_failed'
       status: number
     }> = [
       { name: 'セッションなしは401', reason: 'no_session', status: 401 },
       { name: '検証失敗は401', reason: 'validation_failed', status: 401 },
-      { name: 'ユーザー未検出は404', reason: 'user_not_found', status: 404 },
     ]
 
     testCases.forEach(({ name, reason, status }) => {

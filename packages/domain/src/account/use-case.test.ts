@@ -88,13 +88,14 @@ describe('AccountUseCase', () => {
 
     describe('異常系', () => {
       it('クエリが失敗した場合はエラーを返す', async () => {
-        queryMock.findActiveByAuthenticationId.mockResolvedValue(
-          err(new AccountRepositoryError('db down')),
-        )
+        const cause = new Error('db down')
+        const error = new AccountRepositoryError(cause)
+        queryMock.findActiveByAuthenticationId.mockResolvedValue(err(error))
 
         const result = await useCase.resolveActiveUser('auth-user-id-123')
 
-        expect(result._unsafeUnwrapErr()).toBeInstanceOf(AccountRepositoryError)
+        expect(result._unsafeUnwrapErr()).toBe(error)
+        expect(error.cause).toBe(cause)
       })
     })
   })

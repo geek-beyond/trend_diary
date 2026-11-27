@@ -46,9 +46,11 @@ describe('ProtectedLayout', () => {
     it('セッション確定前は配下ページを描画しない', () => {
       mockUseSession.mockReturnValue({ isLoggedIn: false, isLoading: true })
 
-      renderWithChild()
+      const router = renderWithChild()
 
       expect(screen.queryByText('保護ページ本体')).toBeNull()
+      expect(screen.queryByText('ログイン画面')).toBeNull()
+      expect(router.state.location.pathname).toBe('/')
     })
 
     it('未ログインなら元のパスをredirectに付けてログイン画面へ遷移する', () => {

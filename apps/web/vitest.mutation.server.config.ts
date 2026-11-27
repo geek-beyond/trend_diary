@@ -5,8 +5,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    // D1と認証エミュレータを使うため、変異セッション内のファイル並列実行を抑える。
-    fileParallelism: false,
+    // 同じ変異のテストだけを2並列で実行し、認証データの競合と過剰なWorkers起動を避ける。
+    maxWorkers: 2,
     testTimeout: 15_000,
     hookTimeout: 30_000,
     setupFiles: ['src/test/setup/d1.ts'],

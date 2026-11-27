@@ -17,7 +17,10 @@ interface FakeLogger {
   error: ReturnType<typeof vi.fn>
 }
 
-function buildContext(logger?: FakeLogger): Context<Env> {
+function buildContext(
+  logger?: FakeLogger,
+  options: { userAgent: string | undefined } = { userAgent: 'test-agent' },
+): Context<Env> {
   // oxlint-disable-next-line typescript/no-restricted-types -- Hono の変数ストアを模す、任意値を保持する Map のため
   const store = new Map<string, unknown>()
   // APP_LOG 未設定（契約違反）のケースを再現するため、logger 省略時はセットしない
@@ -30,7 +33,7 @@ function buildContext(logger?: FakeLogger): Context<Env> {
       url: 'https://example.com/api/x',
       method: 'GET',
       path: '/api/x',
-      header: (name: string) => (name === 'User-Agent' ? 'test-agent' : undefined),
+      header: (name: string) => (name === 'User-Agent' ? options.userAgent : undefined),
     },
     // oxlint-disable-next-line typescript/no-restricted-types -- Hono の c.json を模すモックで、任意の JSON 値を受けるため
     json: (data: unknown, init: ResponseInit) => new Response(JSON.stringify(data), init),
@@ -60,17 +63,33 @@ describe('errorHandler', () => {
       expect(discordError).not.toHaveBeenCalled()
     })
 
-    it('5xx の HTTPException は error ログと Discord 通知を行うこと', async () => {
-      const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
-      const res = await errorHandler(
-        new HTTPException(503, { message: 'unavailable' }),
-        buildContext(logger),
-      )
-
-      expect(res.status).toBe(503)
-      expect(logger.error).toHaveBeenCalledOnce()
-      expect(discordError).toHaveBeenCalledOnce()
-    })
+    it.each([
+      {
+        label: '500・User-Agentあり',
+        status: 500,
+        userAgent: 'test-agent',
+        expectedAgent: 'test-agent',
+      },
+      { label: '500・User-Agentなし', status: 500, userAgent: undefined, expectedAgent: '' },
+      { label: '503', status: 503, userAgent: 'test-agent', expectedAgent: 'test-agent' },
+    ] as const)(
+      '$label の5xxは診断情報を添えてerrorログとDiscord通知を行う',
+      async ({ status, userAgent, expectedAgent }) => {
+        const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }
+        const error = new HTTPException(status, { message: 'unavailable' })
+        const res = await errorHandler(error, buildContext(logger, { userAgent }))
+        expect(res.status).toBe(status)
+        expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ status, path: '/api/x', method: 'GET' }),
+          error,
+        )
+        expect(discordError).toHaveBeenCalledExactlyOnceWith(error, {
+          url: 'https://example.com/api/x',
+          method: 'GET',
+          userAgent: expectedAgent,
+        })
+      },
+    )
 
     it('HTTPException 以外は500と Discord 通知で返すこと', async () => {
       const logger: FakeLogger = { warn: vi.fn(), error: vi.fn() }

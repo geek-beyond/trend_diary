@@ -11,6 +11,10 @@ function State() {
 }
 
 describe('サイドバーのショートカット', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('Cmd/Ctrl+B は最新の開閉状態・モバイル状態を使い、購読は再作成せず解除する', () => {
     const add = vi.spyOn(window, 'addEventListener')
     const remove = vi.spyOn(window, 'removeEventListener')
@@ -18,7 +22,9 @@ describe('サイドバーのショートカット', () => {
     const subscriptions = () => add.mock.calls.filter(([type]) => String(type) === 'keydown')
     expect(subscriptions()).toHaveLength(1)
     const listener = subscriptions()[0][1]
-    fireEvent.keyDown(window, { key: 'b', ctrlKey: true })
+    const shortcut = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, cancelable: true })
+    fireEvent(window, shortcut)
+    expect(shortcut.defaultPrevented).toBe(true)
     expect(screen.getByRole('status')).toHaveTextContent('false:false')
     fireEvent.keyDown(window, { key: 'b', metaKey: true })
     expect(screen.getByRole('status')).toHaveTextContent('true:false')
@@ -28,9 +34,12 @@ describe('サイドバーのショートカット', () => {
     expect(screen.getByRole('status')).toHaveTextContent('true:true')
     fireEvent.keyDown(window, { key: 'b' })
     expect(screen.getByRole('status')).toHaveTextContent('true:true')
+    const unrelated = new KeyboardEvent('keydown', { key: 'x', ctrlKey: true, cancelable: true })
+    fireEvent(window, unrelated)
+    expect(screen.getByRole('status')).toHaveTextContent('true:true')
+    expect(unrelated.defaultPrevented).toBe(false)
     expect(subscriptions()).toHaveLength(1)
     act(() => view.unmount())
     expect(remove).toHaveBeenCalledWith('keydown', listener)
-    vi.restoreAllMocks()
   })
 })

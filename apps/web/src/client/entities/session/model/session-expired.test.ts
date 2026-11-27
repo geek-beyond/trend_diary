@@ -28,7 +28,7 @@ describe('isSessionExpiredError', () => {
       { outline: 'status が401以外の HttpError', error: new HttpError(400, 'Bad Request') },
       { outline: 'status が500の HttpError', error: new HttpError(500, 'Internal Server Error') },
       { outline: 'Errorインスタンスではない値', error: 'unauthorized' },
-    ])('$outlineはセッション切れと判定しない', ({ error }) => {
+    ])('$outline はセッション切れと判定しない', ({ error }) => {
       expect(isSessionExpiredError(error)).toBe(false)
     })
   })

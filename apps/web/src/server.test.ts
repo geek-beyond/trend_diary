@@ -65,3 +65,33 @@ describe('CSRF対策ミドルウェア', () => {
     })
   })
 })
+
+let completeSlowRequest: (() => void) | undefined
+app.get('/api/__timeout_review', async (c) => {
+  await new Promise<void>((resolve) => {
+    completeSlowRequest = resolve
+  })
+  return c.text('completed')
+})
+
+describe('APIリクエストのタイムアウト', () => {
+  it('/api配下の処理が5秒以内に完了しなければ504を返す', async () => {
+    vi.useFakeTimers()
+    try {
+      const settled = vi.fn()
+      const response = Promise.resolve(
+        app.request('/api/__timeout_review', {}, { ...TEST_ENV, DISCORD_WEBHOOK_URL: '' }),
+      )
+      void response.then(settled, settled)
+      await vi.advanceTimersByTimeAsync(4999)
+      expect(settled).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(1)
+      expect(settled).toHaveBeenCalledTimes(1)
+      expect((await response).status).toBe(504)
+    } finally {
+      completeSlowRequest?.()
+      completeSlowRequest = undefined
+      vi.useRealTimers()
+    }
+  })
+})

@@ -27,7 +27,10 @@ describe('usePasskeyRegister', () => {
     mockGetApiClientForClient.mockReturnValue(mockApiClient)
     mockApiClient.passkey.registration.options.$post.mockResolvedValue({
       ok: true,
-      json: async () => ({ challengeId: 'challenge-1', options: {} }),
+      json: async () => ({
+        challengeId: 'challenge-1',
+        options: { challenge: 'server-challenge' },
+      }),
     })
     startRegistrationMock.mockResolvedValue({ id: 'credential-1' })
     mockApiClient.passkey.registration.verify.$post.mockResolvedValue({ ok: true, status: 201 })
@@ -35,11 +38,34 @@ describe('usePasskeyRegister', () => {
 
   describe('正常系', () => {
     it('start→ceremony→verifyが成功するとtrueを返し成功トーストを出す', async () => {
+      const response = {
+        ok: true,
+        json: async () => ({
+          challengeId: 'challenge-1',
+          options: { challenge: 'server-challenge' },
+        }),
+      }
+      const options = Promise.withResolvers<typeof response>()
+      mockApiClient.passkey.registration.options.$post.mockReturnValue(options.promise)
       const { result } = renderHook(() => usePasskeyRegister())
+      expect(result.current.isSubmitting).toBe(false)
+      let pending: Promise<boolean> | undefined
+      act(() => {
+        pending = result.current.register()
+      })
+      expect(result.current.isSubmitting).toBe(true)
 
       let returned: boolean | undefined
       await act(async () => {
-        returned = await result.current.register()
+        options.resolve(response)
+        returned = await pending
+      })
+      expect(result.current.isSubmitting).toBe(false)
+      expect(startRegistrationMock).toHaveBeenCalledWith({
+        optionsJSON: { challenge: 'server-challenge' },
+      })
+      expect(mockApiClient.passkey.registration.verify.$post).toHaveBeenCalledWith({
+        json: { challengeId: 'challenge-1', credential: { id: 'credential-1' } },
       })
 
       expect(returned).toBe(true)
@@ -49,7 +75,12 @@ describe('usePasskeyRegister', () => {
 
   describe('準正常系', () => {
     it('startが非OKならfalseを返し登録失敗トーストを出す', async () => {
-      mockApiClient.passkey.registration.options.$post.mockResolvedValue({ ok: false, status: 500 })
+      const json = vi.fn()
+      mockApiClient.passkey.registration.options.$post.mockResolvedValue({
+        ok: false,
+        status: 500,
+        json,
+      })
       const { result } = renderHook(() => usePasskeyRegister())
 
       let returned: boolean | undefined
@@ -57,6 +88,10 @@ describe('usePasskeyRegister', () => {
         returned = await result.current.register()
       })
 
+      expect(json).not.toHaveBeenCalled()
+      expect(result.current.isSubmitting).toBe(false)
+      expect(startRegistrationMock).not.toHaveBeenCalled()
+      expect(mockApiClient.passkey.registration.verify.$post).not.toHaveBeenCalled()
       expect(returned).toBe(false)
       expect(toast.error).toHaveBeenCalledWith('パスキーの登録に失敗しました。')
     })
@@ -71,6 +106,7 @@ describe('usePasskeyRegister', () => {
       })
 
       expect(returned).toBe(false)
+      expect(result.current.isSubmitting).toBe(false)
       expect(toast.error).toHaveBeenCalledWith('パスキーの操作がキャンセルされました。')
     })
 
@@ -84,6 +120,7 @@ describe('usePasskeyRegister', () => {
       })
 
       expect(returned).toBe(false)
+      expect(result.current.isSubmitting).toBe(false)
       expect(toast.error).toHaveBeenCalledWith('パスキーの登録に失敗しました。')
     })
   })

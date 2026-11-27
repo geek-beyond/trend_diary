@@ -42,7 +42,6 @@ describe('offsetPaginationSchema', () => {
     },
     { name: 'pageが0', input: { page: 0 }, message: 'Too small: expected number to be >=1' },
     { name: 'pageが小数', input: { page: 1.5 }, message: 'Invalid input: expected int' },
-    { name: 'pageが1未満の小数', input: { page: 0.9 }, message: 'Invalid input: expected int' },
     {
       name: `limitが${MIN_LIMIT}未満`,
       input: { limit: 0 },
@@ -84,17 +83,10 @@ describe('offsetPaginationMobileSchema', () => {
 
   const invalidCases = [
     {
-      name: 'pageが文字列',
-      input: { page: 'abc' },
-      message: 'Invalid input: expected number, received NaN',
-    },
-    {
       name: 'limitが文字列',
       input: { limit: 'invalid' },
       message: 'Invalid input: expected number, received NaN',
     },
-    { name: 'pageが0', input: { page: 0 }, message: 'Too small: expected number to be >=1' },
-    { name: 'pageが小数', input: { page: 1.5 }, message: 'Invalid input: expected int' },
     {
       name: `limitが${MIN_LIMIT}未満`,
       input: { limit: 0 },

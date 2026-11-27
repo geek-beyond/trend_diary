@@ -14,5 +14,7 @@ describe('toSafeExternalPath', () => {
 
   it('URLとして不正な文字列はnullを返す', () => {
     expect(toSafeExternalPath('not-a-url')).toBeNull()
+    expect(toSafeExternalPath('http://')).toBeNull()
+    expect(toSafeExternalPath('https://[invalid')).toBeNull()
   })
 })

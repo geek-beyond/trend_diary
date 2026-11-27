@@ -2,7 +2,7 @@ import { articles } from '@trend-diary/datastore/schema'
 import Logger from '@trend-diary/logger'
 import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildHatenaRdf,
   buildQiitaAtom,
@@ -36,6 +36,10 @@ async function findByUrl(url: string) {
 beforeEach(async () => {
   await db.delete(articles)
   fetchMock.mockReset()
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 afterAll(async () => {
@@ -117,10 +121,13 @@ describe('fetchQiitaArticles', () => {
       expect(await countArticles()).toBe(0)
     })
 
-    it('不正な記事を除外し正常な記事のみ保存する（部分成功）', async () => {
+    it('不正な記事を除外して正常な記事を保存し、欠落フィールドとスキップ件数を警告する', async () => {
+      const spyLogger = new Logger('silent')
+      const warnSpy = vi.spyOn(spyLogger, 'warn')
+      const skippedUrls = ['https://qiita.com/u/items/skip1', 'https://qiita.com/u/items/skip2']
       stubFeed(
         buildQiitaAtom([
-          { author: 'qiita_author', content: '本文', url: 'https://qiita.com/u/items/skip' },
+          ...skippedUrls.map((url) => ({ author: 'qiita_author', content: '本文', url })),
           {
             title: 'Qiita正常',
             author: 'qiita_author',
@@ -130,31 +137,28 @@ describe('fetchQiitaArticles', () => {
         ]),
       )
 
-      const result = await fetchQiitaArticles(cronEnv, logger)
+      const result = await fetchQiitaArticles(cronEnv, spyLogger)
 
       expect(result.isOk()).toBe(true)
       if (result.isOk()) expect(result.value).toBe(1)
       expect(await countArticles()).toBe(1)
       expect((await findByUrl('https://qiita.com/u/items/ok')).title).toBe('Qiita正常')
-    })
-
-    it('スキップした件数を警告ログに出力する', async () => {
-      const spyLogger = new Logger('silent')
-      const warnSpy = vi.spyOn(spyLogger, 'warn')
-      stubFeed(
-        buildQiitaAtom([
-          { author: 'qiita_author', content: '本文', url: 'https://qiita.com/u/items/skip1' },
-          { author: 'qiita_author', content: '本文', url: 'https://qiita.com/u/items/skip2' },
-        ]),
-      )
-
-      await fetchQiitaArticles(cronEnv, spyLogger)
-
+      for (const url of skippedUrls) {
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            msg: 'cron feed item skipped: validation failed',
+            media: 'qiita',
+            url,
+            issues: [expect.objectContaining({ path: 'title', message: expect.any(String) })],
+          }),
+        )
+      }
       expect(warnSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           msg: 'cron feed items skipped',
           media: 'qiita',
           skippedCount: 2,
+          totalCount: 3,
         }),
       )
     })
@@ -422,20 +426,35 @@ describe('fetchHatenaArticles', () => {
   })
 
   describe('異常系', () => {
-    it('fetch にタイムアウト用の AbortSignal を渡す', async () => {
-      stubHatena([
-        {
-          title: 'はてな記事',
-          author: 'hatena_creator',
-          content: '本文',
-          url: 'https://example.com/h1',
-        },
-      ])
-
-      await fetchHatenaArticles(cronEnv, logger)
-
-      const [, options] = fetchMock.mock.calls[0] ?? []
-      expect(options?.signal).toBeInstanceOf(AbortSignal)
+    it('5秒を超えるRSS応答を待ち、30秒で中断して取得失敗を返す', async () => {
+      vi.useFakeTimers()
+      // ネイティブのタイマーはfake timerの対象外なので、中断時刻を制御できるよう置き換える。
+      vi.spyOn(AbortSignal, 'timeout').mockImplementation((milliseconds) => {
+        const controller = new AbortController()
+        setTimeout(() => controller.abort(), milliseconds)
+        return controller.signal
+      })
+      try {
+        let signal: AbortSignal | undefined
+        const aborted = new Error('request aborted')
+        fetchMock.mockImplementation((_input: RequestInfo, options?: RequestInit) => {
+          signal = options?.signal ?? undefined
+          return new Promise<Response>((_resolve, reject) => {
+            signal?.addEventListener('abort', () => reject(aborted), { once: true })
+          })
+        })
+        const pending = fetchHatenaArticles(cronEnv, logger)
+        expect(signal).toBeInstanceOf(AbortSignal)
+        await vi.advanceTimersByTimeAsync(5000)
+        expect(signal?.aborted).toBe(false)
+        await vi.advanceTimersByTimeAsync(24999)
+        expect(signal?.aborted).toBe(false)
+        await vi.advanceTimersByTimeAsync(1)
+        expect(signal?.aborted).toBe(true)
+        expect((await pending)._unsafeUnwrapErr()).toBe(aborted)
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('取得に失敗した場合は err を返し何も保存しない', async () => {

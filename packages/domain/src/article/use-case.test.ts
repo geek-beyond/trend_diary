@@ -82,28 +82,6 @@ describe('ArticleUseCase', () => {
 
   describe('searchArticles', () => {
     describe('正常系', () => {
-      it('有効なパラメータで記事検索成功', async () => {
-        const params: QueryParams = {
-          title: 'test title',
-          author: 'test author',
-          media: ['qiita'],
-          from: '2024-01-01',
-          to: '2024-01-31',
-          readStatus: false,
-          limit: 20,
-          page: 1,
-        }
-
-        queryMock.searchArticles.mockResolvedValue(ok(mockPaginationResult))
-
-        const result = await useCase.searchArticles(params)
-
-        expect(result).toEqual(ok(mockPaginationResult))
-        expect(queryMock.searchArticles).toHaveBeenCalledTimes(1)
-        const calledArgs = queryMock.searchArticles.mock.calls[0][0]
-        expect(calledArgs).toEqual(params)
-      })
-
       it('全てのパラメータが含まれるfrom/to検索', async () => {
         const params: QueryParams = {
           title: 'test title',
@@ -317,6 +295,7 @@ describe('ArticleUseCase', () => {
       const result = await useCase.searchArticles(params)
 
       expect(result).toEqual(err(dbError))
+      expect(dbError.message).toBe('Database error')
     })
   })
 

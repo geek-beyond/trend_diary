@@ -1,7 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { normalizeDateTime, serializeDateTime } from './datetime'
 
 const EPOCH_MS = Date.UTC(2024, 0, 2, 3, 4, 5)
+
+const originalTimezone = process.env.TZ
+// UTC環境ではTZなし日時をローカル解釈する不具合が観測できないため。
+beforeAll(() => {
+  process.env.TZ = 'America/New_York'
+})
+afterAll(() => {
+  if (originalTimezone === undefined) delete process.env.TZ
+  else process.env.TZ = originalTimezone
+})
 
 describe('normalizeDateTime', () => {
   it.each([
@@ -14,8 +24,8 @@ describe('normalizeDateTime', () => {
     },
     // +09:00 は UTC より9時間進んでいるため、UTC では9時間前になる
     {
-      name: 'オフセット付き ISO-8601 はオフセットを尊重する',
-      input: '2024-01-02T12:00:00+09:00',
+      name: 'コロンなしオフセット付き ISO-8601 はオフセットを尊重する',
+      input: '2024-01-02T12:00:00+0900',
       expected: Date.UTC(2024, 0, 2, 3),
     },
     {

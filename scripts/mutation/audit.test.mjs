@@ -53,7 +53,7 @@ test('共有7パッケージ・web両層・cronを差分指定なしの全件kil
     assert.ok(args.includes('--kill-matrix'))
     assert.ok(!args.includes('--since'))
     assert.ok(!args.includes('--time-budget'))
-    assert.ok(args.includes('src/test*/**'))
+    assert.ok(args.includes('**/test*/**'))
     assert.ok(args.includes('json'))
     assert.ok(args.includes('html'))
     if (project === 'web-server') {

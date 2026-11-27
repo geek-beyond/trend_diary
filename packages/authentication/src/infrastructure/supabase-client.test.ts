@@ -7,7 +7,7 @@ import { authClientConfig, type AuthRequestContext } from './supabase-client'
 function buildContext(env: AuthRequestContext['env'], cookie?: string): AuthRequestContext {
   return {
     env,
-    req: { header: () => cookie },
+    req: { header: (name) => (name === 'Cookie' ? cookie : undefined) },
     header: vi.fn(),
   }
 }

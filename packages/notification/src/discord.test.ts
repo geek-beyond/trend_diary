@@ -99,18 +99,31 @@ describe('DiscordWebhookClient', () => {
         expect(logger.error).not.toHaveBeenCalled()
       })
 
-      it('ネットワークエラー時はexponential backoffでリトライして成功する', async () => {
-        const logger = createMockLogger()
-        const client = new DiscordWebhookClient(webhookUrl, logger, noDelay)
-        mockFetch
-          .mockRejectedValueOnce(new Error('Network error'))
-          .mockRejectedValueOnce(new Error('Network error'))
-          .mockResolvedValueOnce({ ok: true, status: 204 })
-
-        await client.send({ content: 'test' })
-
-        expect(mockFetch).toHaveBeenCalledTimes(3)
-        expect(logger.error).not.toHaveBeenCalled()
+      it('ネットワークエラー時は100ms・200msのbackoffでリトライする', async () => {
+        vi.useFakeTimers()
+        try {
+          const logger = createMockLogger()
+          const client = new DiscordWebhookClient(webhookUrl, logger, { baseDelayMs: 100 })
+          mockFetch
+            .mockRejectedValueOnce(new Error('Network error'))
+            .mockRejectedValueOnce(new Error('Network error'))
+            .mockResolvedValueOnce({ ok: true, status: 204 })
+          const sending = client.send({ content: 'test' })
+          await vi.advanceTimersByTimeAsync(0)
+          expect(mockFetch).toHaveBeenCalledTimes(1)
+          await vi.advanceTimersByTimeAsync(99)
+          expect(mockFetch).toHaveBeenCalledTimes(1)
+          await vi.advanceTimersByTimeAsync(1)
+          expect(mockFetch).toHaveBeenCalledTimes(2)
+          await vi.advanceTimersByTimeAsync(199)
+          expect(mockFetch).toHaveBeenCalledTimes(2)
+          await vi.advanceTimersByTimeAsync(1)
+          await sending
+          expect(mockFetch).toHaveBeenCalledTimes(3)
+          expect(logger.error).not.toHaveBeenCalled()
+        } finally {
+          vi.useRealTimers()
+        }
       })
     })
 
@@ -128,13 +141,33 @@ describe('DiscordWebhookClient', () => {
 
         expect(mockFetch).toHaveBeenCalledTimes(expectedCalls)
         expect(logger.error).toHaveBeenCalledTimes(1)
+        expect(logger.error).toHaveBeenCalledWith(
+          expect.objectContaining({ attempts: expectedCalls }),
+          expect.objectContaining({ message: `Discord responded with status ${status}` }),
+        )
       })
 
-      it('送信が失敗してもエラーを投げない', async () => {
-        const client = new DiscordWebhookClient(webhookUrl, createMockLogger(), noDelay)
-        mockFetch.mockRejectedValue(new Error('Network error'))
+      it('ネットワークエラーは最終試行後に待機せず元の原因を記録し、呼び出し元に投げない', async () => {
+        vi.useFakeTimers()
+        try {
+          const logger = createMockLogger()
+          const cause = new Error('Network error')
+          const client = new DiscordWebhookClient(webhookUrl, logger, { baseDelayMs: 100 })
+          mockFetch.mockRejectedValue(cause)
 
-        await expect(client.send({ content: 'test' })).resolves.not.toThrow()
+          const sending = client.send({ content: 'test' })
+          await vi.advanceTimersByTimeAsync(300)
+
+          expect(mockFetch).toHaveBeenCalledTimes(3)
+          expect(logger.error).toHaveBeenCalledWith(
+            { msg: 'Failed to send notification to Discord', attempts: 3 },
+            cause,
+          )
+          expect(vi.mocked(logger.error).mock.calls[0][1]).toBe(cause)
+          await expect(sending).resolves.toBeUndefined()
+        } finally {
+          vi.useRealTimers()
+        }
       })
     })
   })
@@ -242,33 +275,24 @@ describe('DiscordNotifier', () => {
         expect(mockFetch).not.toHaveBeenCalled()
       })
 
-      it('スタックトレースが長い場合は適切に切り詰める', async () => {
-        const notifier = new DiscordNotifier(webhookUrl, createMockLogger())
-
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 204,
-        })
-
-        const error = new Error('Test error')
-        error.stack = `Error: Test error\n${'a'.repeat(1000)}`
-
-        await notifier.error(error, {
-          url: '/test',
-          method: 'GET',
-          userAgent: 'test',
-        })
-
-        const callArgs = mockFetch.mock.calls[0]
-        const body = JSON.parse(callArgs[1].body)
-        const stackTraceField = body.embeds[0].fields.find(
-          (field: { name: string; value: string }) => field.name === 'Stack Trace',
-        )
-
-        // 1024はDiscordのフィールド上限
-        expect(stackTraceField.value.length).toBeLessThanOrEqual(1024)
-        expect(stackTraceField.value).toContain('...(truncated)')
-      })
+      it.each([
+        { length: 1016, expected: `\`\`\`\n${'a'.repeat(1016)}\n\`\`\`` },
+        { length: 1017, expected: `\`\`\`\n${'a'.repeat(1002)}...(truncated)\n\`\`\`` },
+      ])(
+        'スタックが$length 文字なら、コードブロックを含め1024文字以内で保持する',
+        async ({ length, expected }) => {
+          const notifier = new DiscordNotifier(webhookUrl, createMockLogger())
+          mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
+          const error = new Error('Test error')
+          error.stack = 'a'.repeat(length)
+          await notifier.error(error, { url: '/test', method: 'GET', userAgent: 'test' })
+          const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+          const stackTraceField = body.embeds[0].fields.find(
+            (field: { name: string; value: string }) => field.name === 'Stack Trace',
+          )
+          expect(stackTraceField.value).toBe(expected)
+        },
+      )
     })
 
     describe('異常系', () => {

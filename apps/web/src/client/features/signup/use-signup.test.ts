@@ -89,7 +89,7 @@ describe('useSignup', () => {
       },
       { status: 500, expected: 'サーバーエラーが発生しました。時間をおいて再度お試しください。' },
     ])(
-      'APIが$statusを返した場合はformError「$expected」を設定する',
+      'APIが$status を返した場合はformError「$expected」を設定する',
       async ({ status, expected }) => {
         mockApiClient.registrations.$post.mockResolvedValue({ ok: false, status })
         const { result } = renderHook(() => useSignup())
